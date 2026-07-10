@@ -103,8 +103,8 @@ void RSRenderNodeDrawable::Draw(Drawing::Canvas& canvas)
         OnCapture(canvas);
     } else {
 #ifdef USE_PRIMITIVE
-        auto& paintFilterCanvas = static_cast<RSPaintFilterCanvas &>(canvas);
-        auto primListAdapter = paintFilterCanvas.primListAdapter_;
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
+        auto primListAdapter = paintFilterCanvas->primListAdapter_;
         AutoDirtyTypesRestore autoDirtyTypesRestore(primListAdapter.get(), *this);
 #ifdef PRIMITIVE_PROFILER
         if (selfPrimDirtyBitmap_.none()) {
@@ -128,10 +128,6 @@ void RSRenderNodeDrawable::Draw(Drawing::Canvas& canvas)
  */
 void RSRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
-    if (MemorySnapshot::Instance().IsAbnormalProcess(ExtractPid(GetId()))) {
-        RS_LOGE("RSRenderNodeDrawable::OnDraw abnormal process %{public}d .", ExtractPid(GetId()));
-        return;
-    }
     auto& captureParam = RSUniRenderThread::GetCaptureParam();
     if (canvas.GetUICapture() && captureParam.captureFinished_) {
         return;
@@ -225,7 +221,7 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
         !opincCachedMark) && !params.GetRSFreezeFlag()) {
         ClearCachedSurface();
         ClearDrawingCacheDataMap();
-        ClearDrawingCacheContiUpdateTimeMap();
+        ClearDrawingCacheContinuousUpdateTimeMap();
         return;
     }
 
@@ -238,20 +234,15 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
             // If this node is marked node group by arkui again, we should first clear update time here, otherwise
             // update time will accumulate.)
             ClearDrawingCacheDataMap();
-            ClearDrawingCacheContiUpdateTimeMap();
+            ClearDrawingCacheContinuousUpdateTimeMap();
         }
     }
     // generate(first time)/update cache(cache changed) [TARGET -> DISABLED if >= MAX UPDATE TIME]
     int32_t updateTimes = 0;
     bool needUpdateCache = CheckIfNeedUpdateCache(params, updateTimes);
     params.SetNeedUpdateCache(needUpdateCache);
-    int32_t continuousUpdateTimes = 0;
-    {
-        std::lock_guard<std::mutex> lock(drawingCacheContiUpdateTimeMapMutex_);
-        if (drawingCacheContinuousUpdateTimeMap_.count(nodeId_) > 0) {
-            continuousUpdateTimes = drawingCacheContinuousUpdateTimeMap_.at(nodeId_);
-        }
-    }
+    uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
+    int32_t continuousUpdateTimes = GetOrClearContinuousUpdateCount(currentVsyncId, needUpdateCache);
     if (needUpdateCache && params.GetDrawingCacheType() == RSDrawingCacheType::TARGETED_CACHE &&
         continuousUpdateTimes > DRAWING_CACHE_MAX_UPDATE_TIME) {
         RS_LOGD("RSRenderNodeDrawable::GenerateCacheCondition totalUpdateTimes:%{public}d "
@@ -427,11 +418,6 @@ CM_INLINE void RSRenderNodeDrawable::CheckCacheTypeAndDraw(
     Drawing::Canvas& canvas, const RSRenderParams& params, bool isInCapture)
 {
     RS_OPTIONAL_TRACE_BEGIN_LEVEL(TRACE_LEVEL_PRINT_NODEID, "CheckCacheTypeAndDraw nodeId[%llu]", nodeId_);
-    bool hasFilter =
-        params.ChildHasVisibleFilter() || params.ChildHasVisibleEffect() || params.HasChildExcludedFromNodeGroup();
-    RS_LOGI_IF(DEBUG_NODE,
-        "RSRenderNodeDrawable::CheckCacheTAD hasFilter:%{public}d drawingCacheType:%{public}d",
-        hasFilter, params.GetDrawingCacheType());
     auto originalCacheType = GetRenderGroupDrawableCacheType();
     // can not draw cache because special node in capture process, such as security layers...
     if (GetRenderGroupDrawableCacheType() != DrawableCacheType::NONE && params.NodeGroupHasChildInBlacklist() &&
@@ -504,6 +490,15 @@ void RSRenderNodeDrawable::DrawWithNodeGroupCache(Drawing::Canvas& canvas, const
         RS_LOGD("RSRenderNodeDrawable::DrawWithNodeGroupCache curCanvas is null");
         return;
     }
+    if (layerSplitterProcessor_ != nullptr) {
+        if (layerSplitterProcessor_->NeedDrawSplitCanvas(canvas, GetId())) {
+            DrawCachedImage(*(layerSplitterProcessor_->GetSplitCanvas()), params);
+            RS_LOGD("RSRenderNodeDrawable::DrawWithNodeGroupCache curCanvas");
+        }
+        if (layerSplitterProcessor_->CanSkipOpIncNodeDraw(GetId())) {
+            return;
+        }
+    }
     if (LIKELY(!params.IsRenderGroupIncludeProperty())) {
         DrawBackground(canvas, params.GetBounds());
         // traverse children to draw filter/shadow/effect
@@ -521,7 +516,6 @@ void RSRenderNodeDrawable::DrawWithNodeGroupCache(Drawing::Canvas& canvas, const
         DrawCachedImage(*curCanvas, params);
         DrawAfterCacheWithProperty(canvas, params.GetBounds());
     }
-    ClearDrawingCacheContiUpdateTimeMap();
     UpdateCacheInfoForDfx(canvas, params.GetBounds(), params.GetId());
 }
 
@@ -619,10 +613,20 @@ void RSRenderNodeDrawable::ClearDrawingCacheDataMap()
     RSPerfMonitorReporter::GetInstance().ClearRendergroupDataMap(nodeId_);
 }
 
-void RSRenderNodeDrawable::ClearDrawingCacheContiUpdateTimeMap()
+void RSRenderNodeDrawable::ClearDrawingCacheContinuousUpdateTimeMap()
 {
-    std::lock_guard<std::mutex> lock(drawingCacheContiUpdateTimeMapMutex_);
-    drawingCacheContinuousUpdateTimeMap_.erase(nodeId_);
+    RSRenderGroupCacheDrawable::ClearContinuousUpdateCount(nodeId_);
+}
+
+int32_t RSRenderNodeDrawable::GetOrClearContinuousUpdateCount(
+    uint64_t currentVsyncId, bool needUpdateCache)
+{
+    return RSRenderGroupCacheDrawable::GetOrClearContinuousUpdateCount(nodeId_, currentVsyncId, needUpdateCache);
+}
+
+void RSRenderNodeDrawable::UpdateContinuousUpdateCount(uint64_t vsyncId)
+{
+    RSRenderGroupCacheDrawable::UpdateContinuousUpdateCount(nodeId_, vsyncId);
 }
 
 void RSRenderNodeDrawable::SetDrawBlurForCache(bool value)
@@ -1028,6 +1032,9 @@ void RSRenderNodeDrawable::DrawCachedImage(
         RS_LOGE("RSRenderNodeDrawable::DrawCachedImage invalid cacheimage");
         return;
     }
+    if (layerSplitterProcessor_) {
+        layerSplitterProcessor_->RecordNodeWithCacheImage(GetId());
+    }
     RS_OPTIONAL_TRACE_NAME_FMT("DrawCachedImage id:%llu", nodeId_);
     float scaleX = params.GetCacheSize().x_ / static_cast<float>(cacheImage->GetWidth());
     float scaleY = params.GetCacheSize().y_ / static_cast<float>(cacheImage->GetHeight());
@@ -1319,10 +1326,9 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
         drawingCacheUpdateTimeMap_[nodeId_]++;
         updateTimes = drawingCacheUpdateTimeMap_[nodeId_];
     }
-    {
-        std::lock_guard<std::mutex> lock(drawingCacheContiUpdateTimeMapMutex_);
-        drawingCacheContinuousUpdateTimeMap_[nodeId_]++;
-    }
+    uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
+    // Deduplicate per vsync: increment only on new VSYNC so count reflects consecutive frames.
+    UpdateContinuousUpdateCount(currentVsyncId);
     {
         std::lock_guard<std::mutex> lock(drawingCacheInfoMutex_);
         cacheUpdatedNodeMap_.emplace(params.GetId(), true);

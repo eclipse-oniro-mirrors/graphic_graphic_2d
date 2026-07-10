@@ -73,6 +73,7 @@
 #include "recording/mask_cmd_list.h"
 
 #include "property/rs_properties_def.h"
+#include "screen_manager/rs_surface_region_config.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -103,6 +104,7 @@ DATA_CALLBACKS_REGISTER(
 static std::vector<uint8_t> supportedParcelVerFlags = {
     RSPARCELVER_ADD_ANIMTOKEN,
     RSPARCELVER_ADD_ISPROPDIRTY,
+    RSPARCELVER_ADD_NONEED,
 };
 
 #define MARSHALLING_AND_UNMARSHALLING(TYPE, TYPENAME)                      \
@@ -2044,7 +2046,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSMask>&
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSNGRenderFilterBase>& val)
 {
     if (val == nullptr) {
-        ROSEN_LOGW("RSMarshallingHelper::Marshalling RSNGRenderFilterBase is nullptr");
+        ROSEN_LOGD("RSMarshallingHelper::Marshalling RSNGRenderFilterBase is nullptr");
         if (!RSMarshallingHelper::Marshalling(parcel, END_OF_CHAIN)) {
             ROSEN_LOGE("RSMarshallingHelper::Marshalling RSNGRenderFilterBase write end failed");
             return false;
@@ -2071,7 +2073,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRend
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSNGRenderMaskBase>& val)
 {
     if (val == nullptr) {
-        ROSEN_LOGW("RSMarshallingHelper::Marshalling RSNGRenderFilterBase is nullptr");
+        ROSEN_LOGD("RSMarshallingHelper::Marshalling RSNGRenderFilterBase is nullptr");
         if (!RSMarshallingHelper::Marshalling(parcel, END_OF_CHAIN)) {
             ROSEN_LOGE("RSMarshallingHelper::Marshalling RSNGRenderFilterBase write end failed");
             return false;
@@ -2098,7 +2100,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRend
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSNGRenderShaderBase>& val)
 {
     if (val == nullptr) {
-        ROSEN_LOGW("RSMarshallingHelper::Marshalling RSNGRenderShaderBase is nullptr");
+        ROSEN_LOGD("RSMarshallingHelper::Marshalling RSNGRenderShaderBase is nullptr");
         if (!RSMarshallingHelper::Marshalling(parcel, END_OF_CHAIN)) {
             ROSEN_LOGE("RSMarshallingHelper::Marshalling RSNGRenderShaderBase write end failed");
             return false;
@@ -2125,7 +2127,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRend
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSNGRenderShapeBase>& val)
 {
     if (val == nullptr) {
-        ROSEN_LOGW("RSMarshallingHelper::Marshalling RSNGRenderShapeBase is nullptr");
+        ROSEN_LOGD("RSMarshallingHelper::Marshalling RSNGRenderShapeBase is nullptr");
         if (!RSMarshallingHelper::Marshalling(parcel, END_OF_CHAIN)) {
             ROSEN_LOGE("RSMarshallingHelper::Marshalling RSNGRenderShapeBase write end failed");
             return false;
@@ -3221,6 +3223,30 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
     return true;
 }
 
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const DepthCameraPara& val)
+{
+    return Marshalling(parcel, val.position) && Marshalling(parcel, val.quaternion) && Marshalling(parcel, val.yFov) &&
+        Marshalling(parcel, val.zNear) && Marshalling(parcel, val.zFar) && Marshalling(parcel, val.offset);
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, DepthCameraPara& val)
+{
+    return Unmarshalling(parcel, val.position) && Unmarshalling(parcel, val.quaternion) &&
+        Unmarshalling(parcel, val.yFov) && Unmarshalling(parcel, val.zNear) && Unmarshalling(parcel, val.zFar) &&
+        Unmarshalling(parcel, val.offset);
+}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const DepthLightPara& val)
+{
+    return Marshalling(parcel, val.direction) && Marshalling(parcel, val.color) && Marshalling(parcel, val.intensity);
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, DepthLightPara& val)
+{
+    return Unmarshalling(parcel, val.direction) && Unmarshalling(parcel, val.color) &&
+        Unmarshalling(parcel, val.intensity);
+}
+
 #define MARSHALLING_AND_UNMARSHALLING(TYPE)                                                 \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<TYPE>& val) \
     {                                                                                       \
@@ -3336,7 +3362,9 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<Vector2f>)                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<Vector4f>)                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Media::PixelMap>)             \
-    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)        \
+    EXPLICIT_INSTANTIATION(TEMPLATE, DepthCameraPara)                              \
+    EXPLICIT_INSTANTIATION(TEMPLATE, DepthLightPara)
 
 BATCH_EXPLICIT_INSTANTIATION(RSRenderProperty)
 
@@ -3652,6 +3680,53 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RSRenderParticleVector& 
     return false;
 }
 
+#ifndef ROSEN_CROSS_PLATFORM
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SurfaceRegionConfig& val)
+{
+    if (!Marshalling(parcel, val.surface)) {
+        return false;
+    }
+    if (!Marshalling(parcel, val.region)) {
+        return false;
+    }
+    return true;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SurfaceRegionConfig& val)
+{
+    if (!Unmarshalling(parcel, val.surface)) {
+        return false;
+    }
+    if (!Unmarshalling(parcel, val.region)) {
+        return false;
+    }
+    return true;
+}
+#endif
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RSSurfaceRenderNodeConfig& val)
+{
+    return Marshalling(parcel, val.id) && Marshalling(parcel, val.name) &&
+           Marshalling(parcel, static_cast<uint8_t>(val.nodeType)) &&
+           Marshalling(parcel, val.isTextureExportNode) && Marshalling(parcel, val.isSync) &&
+           Marshalling(parcel, val.surfaceWindowType) && Marshalling(parcel, val.bundleName);
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RSSurfaceRenderNodeConfig& val)
+{
+    uint8_t nodeType = 0;
+    bool success = Unmarshalling(parcel, val.id);
+    success &= Unmarshalling(parcel, val.name);
+    success &= Unmarshalling(parcel, nodeType);
+    val.nodeType = static_cast<RSSurfaceNodeType>(nodeType);
+    val.additionalData = nullptr;
+    success &= Unmarshalling(parcel, val.isTextureExportNode);
+    success &= Unmarshalling(parcel, val.isSync);
+    success &= Unmarshalling(parcel, val.surfaceWindowType);
+    success &= Unmarshalling(parcel, val.bundleName);
+    return success;
+}
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, sptr<Surface> surface)
 {
     if (surface != nullptr) {
@@ -3679,7 +3754,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, sptr<Surface> surface)
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sptr<Surface>& surface)
 {
     surface = nullptr;
-    bool hasSurface{false};
+    bool hasSurface { false };
     if (!parcel.ReadBool(hasSurface)) {
         return false;
     }

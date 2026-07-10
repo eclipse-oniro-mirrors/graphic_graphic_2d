@@ -19,6 +19,7 @@
 #include "platform/drawing/rs_surface.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "visitor/rs_node_visitor.h"
+#include "rs_trace.h"
 #ifndef ROSEN_CROSS_PLATFORM
 #include <surface.h>
 #endif
@@ -97,7 +98,8 @@ void RSRootRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
     visitor->PrepareRootRenderNode(*this);
 }
 
-void RSRootRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor)
+void RSRootRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor,
+    bool isParentPrepareInReverseOrder)
 {
     if (!visitor) {
         return;

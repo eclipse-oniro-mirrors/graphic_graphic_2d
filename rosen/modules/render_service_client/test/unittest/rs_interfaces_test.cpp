@@ -790,6 +790,47 @@ HWTEST_F(RSInterfacesTest, GetScreenBacklight002, Function | SmallTest | Level2)
 }
 
 /*
+ * Function: GetScreenVCPFeature
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call GetScreenVCPFeature
+ *                  2. check return value
+ */
+HWTEST_F(RSInterfacesTest, GetScreenVCPFeature001, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    uint16_t currentValue = 0;
+    uint16_t maximumValue = 0;
+    int32_t errorCode = 0;
+    auto ret = rsInterfaces->GetScreenVCPFeature(INVALID_SCREEN_ID, 0x10,
+        currentValue, maximumValue, errorCode);
+    ASSERT_NE(ret, 0);
+    auto defaultId = rsInterfaces->GetDefaultScreenId();
+    rsInterfaces->GetScreenVCPFeature(defaultId, 0x10,
+        currentValue, maximumValue, errorCode);
+}
+
+/*
+ * Function: SetScreenVCPFeature
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call SetScreenVCPFeature
+ *                  2. check return value
+ */
+HWTEST_F(RSInterfacesTest, SetScreenVCPFeature001, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    uint16_t currentValue = 50;
+    ScreenId id = INVALID_SCREEN_ID;
+    auto ret = rsInterfaces->SetScreenVCPFeature(id, 0x10, currentValue);
+    ASSERT_NE(ret, 0);
+    auto defaultId = rsInterfaces->GetDefaultScreenId();
+    rsInterfaces->SetScreenVCPFeature(defaultId, 0x10, currentValue);
+}
+
+/*
  * Function: GetPanelPowerStatus
  * Type: Function
  * Rank: Important(2)
@@ -1480,6 +1521,20 @@ HWTEST_F(RSInterfacesTest, NotifyPackageEvent001, Function | SmallTest | Level0)
     packageList.push_back("NotifyPackageEvent002");
     uint32_t listSize = packageList.size();
     rsInterfaces->NotifyPackageEvent(listSize, packageList);
+    ASSERT_NE(rsInterfaces, nullptr);
+}
+
+/*
+ * @tc.name: NotifyWindowModeTypeEvent001
+ * @tc.desc: Notify window mode type event to render service client
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, NotifyWindowModeTypeEvent001, Function | SmallTest | Level0)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    uint8_t windowModeType = 1;
+    rsInterfaces->NotifyWindowModeTypeEvent(windowModeType);
     ASSERT_NE(rsInterfaces, nullptr);
 }
 

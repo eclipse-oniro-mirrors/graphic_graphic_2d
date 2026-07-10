@@ -224,6 +224,211 @@ HWTEST_F(RSBaseRenderUtilTest, IsBufferValid_001, TestSize.Level2)
 }
 
 /*
+ * @tc.name: ColorGamutConversion_SRGB_To_DisplayP3_001
+ * @tc.desc: Test GenOETF and GenEOTF through color gamut conversion (sRGB to DisplayP3)
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderUtilTest, ColorGamutConversion_SRGB_To_DisplayP3_001, TestSize.Level2)
+{
+    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
+    BufferRequestConfig requestConfig = {
+        .width = TEST_WIDTH,
+        .height = TEST_HEIGHT,
+        .strideAlignment = TEST_STRIDE_ALIGNMENT,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = TEST_TIMEOUT,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
+    };
+    GSError ret = buffer->Alloc(requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    std::vector<uint8_t> newBuffer;
+    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+    Drawing::Bitmap bitmap;
+    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap);
+    ASSERT_EQ(result, true);
+}
+
+/*
+ * @tc.name: ColorGamutConversion_SRGB_To_AdobeRGB_002
+ * @tc.desc: Test GenOETF and GenEOTF through color gamut conversion (sRGB to AdobeRGB)
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderUtilTest, ColorGamutConversion_SRGB_To_AdobeRGB_002, TestSize.Level2)
+{
+    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
+    BufferRequestConfig requestConfig = {
+        .width = TEST_WIDTH,
+        .height = TEST_HEIGHT,
+        .strideAlignment = TEST_STRIDE_ALIGNMENT,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = TEST_TIMEOUT,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
+    };
+    GSError ret = buffer->Alloc(requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    std::vector<uint8_t> newBuffer;
+    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_ADOBE_RGB;
+    Drawing::Bitmap bitmap;
+    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap);
+    ASSERT_EQ(result, true);
+}
+
+/*
+ * @tc.name: ColorGamutConversion_SRGB_To_BT2020_003
+ * @tc.desc: Test RcpResponsePq and ResponsePq through BT2020 conversion (HDR PQ parameters)
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderUtilTest, ColorGamutConversion_SRGB_To_BT2020_003, TestSize.Level2)
+{
+    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
+    BufferRequestConfig requestConfig = {
+        .width = TEST_WIDTH,
+        .height = TEST_HEIGHT,
+        .strideAlignment = TEST_STRIDE_ALIGNMENT,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = TEST_TIMEOUT,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
+    };
+    GSError ret = buffer->Alloc(requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    std::vector<uint8_t> newBuffer;
+    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020;
+    Drawing::Bitmap bitmap;
+    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap);
+    ASSERT_EQ(result, true);
+}
+
+/*
+ * @tc.name: ColorGamutConversion_SRGB_To_BT2100_PQ_004
+ * @tc.desc: Test GenOETF and GenEOTF with HDR PQ parameters through BT2100_PQ conversion
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderUtilTest, ColorGamutConversion_SRGB_To_BT2100_PQ_004, TestSize.Level2)
+{
+    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
+    BufferRequestConfig requestConfig = {
+        .width = TEST_WIDTH,
+        .height = TEST_HEIGHT,
+        .strideAlignment = TEST_STRIDE_ALIGNMENT,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = TEST_TIMEOUT,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
+    };
+    GSError ret = buffer->Alloc(requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    std::vector<uint8_t> newBuffer;
+    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2100_PQ;
+    Drawing::Bitmap bitmap;
+    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap);
+    ASSERT_EQ(result, true);
+}
+
+/*
+ * @tc.name: ColorGamutConversion_DCI_P3_To_SRGB_005
+ * @tc.desc: Test GenOETF and GenEOTF through DCI-P3 to sRGB conversion
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderUtilTest, ColorGamutConversion_DCI_P3_To_SRGB_005, TestSize.Level2)
+{
+    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
+    BufferRequestConfig requestConfig = {
+        .width = TEST_WIDTH,
+        .height = TEST_HEIGHT,
+        .strideAlignment = TEST_STRIDE_ALIGNMENT,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = TEST_TIMEOUT,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DCI_P3,
+    };
+    GSError ret = buffer->Alloc(requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    std::vector<uint8_t> newBuffer;
+    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    Drawing::Bitmap bitmap;
+    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap);
+    ASSERT_EQ(result, true);
+}
+
+/*
+ * @tc.name: GetHdrPqColorSpace_001
+ * @tc.desc: Test GetHdrPqColorSpace through ConvertBufferToBitmap with BT2020 metadata
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderUtilTest, GetHdrPqColorSpace_001, TestSize.Level2)
+{
+    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
+    BufferRequestConfig requestConfig = {
+        .width = TEST_WIDTH,
+        .height = TEST_HEIGHT,
+        .strideAlignment = TEST_STRIDE_ALIGNMENT,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = TEST_TIMEOUT,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020,
+    };
+    GSError ret = buffer->Alloc(requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    std::vector<uint8_t> newBuffer;
+    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    Drawing::Bitmap bitmap;
+    std::vector<GraphicHDRMetaData> metaDatas;
+    metaDatas.push_back({});
+    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap, metaDatas);
+    ASSERT_EQ(result, true);
+}
+
+/*
+ * @tc.name: GetHdrPqColorSpace_002
+ * @tc.desc: Test GetHdrPqColorSpace with complete metadata (keys 0-7)
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderUtilTest, GetHdrPqColorSpace_002, TestSize.Level2)
+{
+    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
+    BufferRequestConfig requestConfig = {
+        .width = TEST_WIDTH,
+        .height = TEST_HEIGHT,
+        .strideAlignment = TEST_STRIDE_ALIGNMENT,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = TEST_TIMEOUT,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020,
+    };
+    GSError ret = buffer->Alloc(requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    std::vector<GraphicHDRMetaData> metaDatas;
+    for (int i = 0; i <= HDR_METADATA_KEY_COUNT; i++) {
+        GraphicHDRMetaData metaData;
+        metaData.key = static_cast<GraphicHDRMetadataKey>(i);
+        metaDatas.push_back(metaData);
+    }
+
+    std::vector<uint8_t> newBuffer;
+    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    Drawing::Bitmap bitmap;
+    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap, metaDatas);
+    ASSERT_EQ(result, true);
+}
+
+/*
  * @tc.name: GetFrameBufferRequestConfig_001
  * @tc.desc: Test GetFrameBufferRequestConfig
  * @tc.type: FUNC
@@ -501,7 +706,7 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_005, TestSize.Level2)
         surfaceHandler.SetHoldBuffer(surfaceBuffer);
         RSBaseSurfaceUtil::DropFrameConfig config; // Default: no drop
         RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, config, parentNodeId);
-        ASSERT_EQ(surfaceConsumer->GetName(), "DisplayNode");
+        ASSERT_EQ(surfaceConsumer->GetName(), "ScreenNode");
         ASSERT_EQ(surfaceConsumer->GetAvailableBufferCount(), 0);
     }
     // release buffer
@@ -598,8 +803,8 @@ HWTEST_F(RSBaseRenderUtilTest, ReleaseBuffer_002, TestSize.Level2)
     int64_t timestamp = 0;
     Rect damage;
     auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
-    surfaceHandler.SetBuffer(buffer, acquireFence, damage, timestamp, bufferOwnerCount);
-    surfaceHandler.SetBuffer(buffer, acquireFence, damage, timestamp, bufferOwnerCount);
+    surfaceHandler.SetBuffer(buffer, acquireFence, damage, timestamp, nullptr);
+    surfaceHandler.SetBuffer(buffer, acquireFence, damage, timestamp, nullptr);
     ASSERT_EQ(true, RSBaseRenderUtil::ReleaseBuffer(surfaceHandler));
 }
 
@@ -1646,7 +1851,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetRotationLockParamTest001, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     auto node = std::make_shared<RSSurfaceRenderNode>(5, rsContext);
     node->InitRenderParams();
-    std::shared_ptr<RSScreenRenderNode> screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
+    auto screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
     screenNode->InitRenderParams();
 
     screenNode->screenProperty_.Set<ScreenPropertyType::CORRECTION>(
@@ -1728,8 +1933,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetRotationLockParam_NullSurfaceNodeParamsTest001
 
     std::shared_ptr<RSScreenRenderNode> screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
     screenNode->InitRenderParams();
-    screenNode->screenProperty_.Set<ScreenPropertyType::CORRECTION>(
-        static_cast<uint32_t>(ScreenRotation::ROTATION_0));
+    screenNode->screenProperty_.Set<ScreenPropertyType::CORRECTION>(static_cast<uint32_t>(ScreenRotation::ROTATION_0));
 
     // Should return early without crash when surfaceNodeParams is nullptr
     EXPECT_NO_FATAL_FAILURE(RSBaseRenderUtil::GetRotationLockParam(*node, screenNode));
@@ -1803,218 +2007,12 @@ HWTEST_F(RSBaseRenderUtilTest, GetRotationLockParam_AllRotationTypesTest001, Tes
     EXPECT_EQ(surfaceParams->GetRotationCorrectionDegree(), 180);
 
     // Test ROTATION_0
-    screenNode->screenProperty_.Set<ScreenPropertyType::CORRECTION>(
-        static_cast<uint32_t>(ScreenRotation::ROTATION_0));
+    screenNode->screenProperty_.Set<ScreenPropertyType::CORRECTION>(static_cast<uint32_t>(ScreenRotation::ROTATION_0));
     screenNodeParams->SetLogicalCameraRotationCorrection(ScreenRotation::ROTATION_0);
     surfaceParams->SetAppRotationCorrection(ScreenRotation::ROTATION_0);
 
     RSBaseRenderUtil::GetRotationLockParam(*node, screenNode);
     EXPECT_EQ(surfaceParams->GetRotationCorrectionDegree(), 0);
-}
-
-/*
- * @tc.name: ColorGamutConversion_SRGB_To_DisplayP3_001
- * @tc.desc: Test GenOETF and GenEOTF through color gamut conversion (sRGB to DisplayP3)
- * @tc.type: FUNC
- * @tc.require: issue41
- */
-HWTEST_F(RSBaseRenderUtilTest, ColorGamutConversion_SRGB_To_DisplayP3_001, TestSize.Level2)
-{
-    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
-    BufferRequestConfig requestConfig = {
-        .width = TEST_WIDTH,
-        .height = TEST_HEIGHT,
-        .strideAlignment = TEST_STRIDE_ALIGNMENT,
-        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
-        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
-        .timeout = TEST_TIMEOUT,
-        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
-    };
-    GSError ret = buffer->Alloc(requestConfig);
-    ASSERT_EQ(ret, OHOS::GSERROR_OK);
-
-    std::vector<uint8_t> newBuffer;
-    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
-    Drawing::Bitmap bitmap;
-    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap);
-    ASSERT_EQ(result, true);
-}
-
-/*
- * @tc.name: ColorGamutConversion_SRGB_To_AdobeRGB_002
- * @tc.desc: Test GenOETF and GenEOTF through color gamut conversion (sRGB to AdobeRGB)
- * @tc.type: FUNC
- * @tc.require: issue41
- */
-HWTEST_F(RSBaseRenderUtilTest, ColorGamutConversion_SRGB_To_AdobeRGB_002, TestSize.Level2)
-{
-    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
-    BufferRequestConfig requestConfig = {
-        .width = TEST_WIDTH,
-        .height = TEST_HEIGHT,
-        .strideAlignment = TEST_STRIDE_ALIGNMENT,
-        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
-        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
-        .timeout = TEST_TIMEOUT,
-        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
-    };
-    GSError ret = buffer->Alloc(requestConfig);
-    ASSERT_EQ(ret, OHOS::GSERROR_OK);
-
-    std::vector<uint8_t> newBuffer;
-    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_ADOBE_RGB;
-    Drawing::Bitmap bitmap;
-    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap);
-    ASSERT_EQ(result, true);
-}
-
-/*
- * @tc.name: ColorGamutConversion_SRGB_To_BT2020_003
- * @tc.desc: Test RcpResponsePq and ResponsePq through BT2020 conversion (HDR PQ parameters)
- * @tc.type: FUNC
- * @tc.require: issue41
- */
-HWTEST_F(RSBaseRenderUtilTest, ColorGamutConversion_SRGB_To_BT2020_003, TestSize.Level2)
-{
-    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
-    BufferRequestConfig requestConfig = {
-        .width = TEST_WIDTH,
-        .height = TEST_HEIGHT,
-        .strideAlignment = TEST_STRIDE_ALIGNMENT,
-        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
-        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
-        .timeout = TEST_TIMEOUT,
-        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
-    };
-    GSError ret = buffer->Alloc(requestConfig);
-    ASSERT_EQ(ret, OHOS::GSERROR_OK);
-
-    std::vector<uint8_t> newBuffer;
-    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020;
-    Drawing::Bitmap bitmap;
-    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap);
-    ASSERT_EQ(result, true);
-}
-
-/*
- * @tc.name: ColorGamutConversion_SRGB_To_BT2100_PQ_004
- * @tc.desc: Test GenOETF and GenEOTF with HDR PQ parameters through BT2100_PQ conversion
- * @tc.type: FUNC
- * @tc.require: issue41
- */
-HWTEST_F(RSBaseRenderUtilTest, ColorGamutConversion_SRGB_To_BT2100_PQ_004, TestSize.Level2)
-{
-    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
-    BufferRequestConfig requestConfig = {
-        .width = TEST_WIDTH,
-        .height = TEST_HEIGHT,
-        .strideAlignment = TEST_STRIDE_ALIGNMENT,
-        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
-        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
-        .timeout = TEST_TIMEOUT,
-        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
-    };
-    GSError ret = buffer->Alloc(requestConfig);
-    ASSERT_EQ(ret, OHOS::GSERROR_OK);
-
-    std::vector<uint8_t> newBuffer;
-    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2100_PQ;
-    Drawing::Bitmap bitmap;
-    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap);
-    ASSERT_EQ(result, true);
-}
-
-/*
- * @tc.name: ColorGamutConversion_DCI_P3_To_SRGB_005
- * @tc.desc: Test GenOETF and GenEOTF through DCI-P3 to sRGB conversion
- * @tc.type: FUNC
- * @tc.require: issue41
- */
-HWTEST_F(RSBaseRenderUtilTest, ColorGamutConversion_DCI_P3_To_SRGB_005, TestSize.Level2)
-{
-    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
-    BufferRequestConfig requestConfig = {
-        .width = TEST_WIDTH,
-        .height = TEST_HEIGHT,
-        .strideAlignment = TEST_STRIDE_ALIGNMENT,
-        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
-        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
-        .timeout = TEST_TIMEOUT,
-        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DCI_P3,
-    };
-    GSError ret = buffer->Alloc(requestConfig);
-    ASSERT_EQ(ret, OHOS::GSERROR_OK);
-
-    std::vector<uint8_t> newBuffer;
-    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    Drawing::Bitmap bitmap;
-    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap);
-    ASSERT_EQ(result, true);
-}
-
-/*
- * @tc.name: GetHdrPqColorSpace_001
- * @tc.desc: Test GetHdrPqColorSpace through ConvertBufferToBitmap with BT2020 metadata
- * @tc.type: FUNC
- * @tc.require: issue41
- */
-HWTEST_F(RSBaseRenderUtilTest, GetHdrPqColorSpace_001, TestSize.Level2)
-{
-    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
-    BufferRequestConfig requestConfig = {
-        .width = TEST_WIDTH,
-        .height = TEST_HEIGHT,
-        .strideAlignment = TEST_STRIDE_ALIGNMENT,
-        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
-        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
-        .timeout = TEST_TIMEOUT,
-        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020,
-    };
-    GSError ret = buffer->Alloc(requestConfig);
-    ASSERT_EQ(ret, OHOS::GSERROR_OK);
-
-    std::vector<uint8_t> newBuffer;
-    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    Drawing::Bitmap bitmap;
-    std::vector<GraphicHDRMetaData> metaDatas;
-    metaDatas.push_back({});
-    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap, metaDatas);
-    ASSERT_EQ(result, true);
-}
-
-/*
- * @tc.name: GetHdrPqColorSpace_002
- * @tc.desc: Test GetHdrPqColorSpace with complete metadata (keys 0-7)
- * @tc.type: FUNC
- * @tc.require: issue41
- */
-HWTEST_F(RSBaseRenderUtilTest, GetHdrPqColorSpace_002, TestSize.Level2)
-{
-    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
-    BufferRequestConfig requestConfig = {
-        .width = TEST_WIDTH,
-        .height = TEST_HEIGHT,
-        .strideAlignment = TEST_STRIDE_ALIGNMENT,
-        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
-        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
-        .timeout = TEST_TIMEOUT,
-        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020,
-    };
-    GSError ret = buffer->Alloc(requestConfig);
-    ASSERT_EQ(ret, OHOS::GSERROR_OK);
-
-    std::vector<GraphicHDRMetaData> metaDatas;
-    for (int i = 0; i <= HDR_METADATA_KEY_COUNT; i++) {
-        GraphicHDRMetaData metaData;
-        metaData.key = static_cast<GraphicHDRMetadataKey>(i);
-        metaDatas.push_back(metaData);
-    }
-
-    std::vector<uint8_t> newBuffer;
-    GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    Drawing::Bitmap bitmap;
-    bool result = RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap, metaDatas);
-    ASSERT_EQ(result, true);
 }
 
 /**
@@ -2122,5 +2120,48 @@ HWTEST_F(RSBaseRenderUtilTest, GetColorTypeFromBufferFormat_AllBranchesCoveredTe
     constexpr int32_t INVALID_PIXEL_FMT = -1;
     colorType = RSBaseRenderUtil::GetColorTypeFromBufferFormat(INVALID_PIXEL_FMT);
     ASSERT_EQ(colorType, Drawing::ColorType::COLORTYPE_RGBA_8888);
+}
+
+/*
+ * @tc.name: ConsumeAndUpdateBufferSimple_001
+ * @tc.desc: Test ConsumeAndUpdateBufferSimple
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBufferSimple_001, TestSize.Level2)
+{
+    NodeId id = 0;
+    auto surfaceHandler = std::make_shared<RSSurfaceHandler>(id);
+    ASSERT_EQ(surfaceHandler->GetAvailableBufferCount(), 0);
+    ASSERT_TRUE(RSBaseSurfaceUtil::ConsumeAndUpdateBufferSimple(*surfaceHandler, 0));
+    surfaceHandler->IncreaseAvailableBuffer();
+    ASSERT_EQ(surfaceHandler->GetAvailableBufferCount(), 1);
+    ASSERT_FALSE(RSBaseSurfaceUtil::ConsumeAndUpdateBufferSimple(*surfaceHandler, 0));
+    surfaceHandler->consumer_ = IConsumerSurface::Create();
+    surfaceHandler->IncreaseAvailableBuffer();
+    surfaceHandler->IncreaseAvailableBuffer();
+    ASSERT_EQ(surfaceHandler->GetAvailableBufferCount(), 3);
+    ASSERT_FALSE(RSBaseSurfaceUtil::ConsumeAndUpdateBufferSimple(*surfaceHandler, 0));
+}
+
+/*
+ * @tc.name: DropFirstFlushedBufferTest
+ * @tc.desc: Test DropFirstFlushedBuffer
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderUtilTest, DropFirstFlushedBufferTest, TestSize.Level2)
+{
+    NodeId id = 0;
+    auto surfaceHandler = std::make_shared<RSSurfaceHandler>(id);
+    ASSERT_EQ(surfaceHandler->GetAvailableBufferCount(), 0);
+    ASSERT_FALSE(RSBaseSurfaceUtil::DropFirstFlushedBuffer(*surfaceHandler, id));
+    surfaceHandler->IncreaseAvailableBuffer();
+    ASSERT_EQ(surfaceHandler->GetAvailableBufferCount(), 1);
+    ASSERT_FALSE(RSBaseSurfaceUtil::DropFirstFlushedBuffer(*surfaceHandler, id));
+    surfaceHandler->IncreaseAvailableBuffer();
+    ASSERT_EQ(surfaceHandler->GetAvailableBufferCount(), 2);
+    ASSERT_FALSE(RSBaseSurfaceUtil::DropFirstFlushedBuffer(*surfaceHandler, id));
+    surfaceHandler->consumer_ = IConsumerSurface::Create();
+    ASSERT_EQ(surfaceHandler->GetAvailableBufferCount(), 2);
+    ASSERT_FALSE(RSBaseSurfaceUtil::DropFirstFlushedBuffer(*surfaceHandler, id));
 }
 } // namespace OHOS::Rosen

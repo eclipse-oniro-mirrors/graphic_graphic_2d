@@ -33,6 +33,9 @@
 #include "feature/ui_capture/rs_divided_ui_capture.h"
 #include "pipeline/rs_render_thread.h"
 #include "ui/rs_proxy_node.h"
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+#include "ui/rs_ui_context.h"
+#endif
 #include "platform/common/rs_log.h"
 #include "render/rs_typeface_cache.h"
 
@@ -120,6 +123,15 @@ bool RSRenderInterface::TakeSurfaceCaptureForUIWithConfig(std::shared_ptr<RSNode
         ROSEN_LOGW("RSRenderInterface::TakeSurfaceCaptureForUIWithConfig rsnode is nullpter return");
         return false;
     }
+    if (node->GetNodeState() == RSNodeState::INACTIVE) {
+        node->RebuildTree();
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+        if (auto uiContext = node->GetRSUIContext()) {
+            uiContext->FlushCanvasDrawingNodeBuffers();
+        }
+#endif // RS_MODIFIERS_DRAW_ENABLE
+        captureConfig.isSync = true;
+    }
     captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
     // textureExportNode process cmds in renderThread of application, isSync is unnecessary.
     if (node->IsTextureExportNode()) {
@@ -193,6 +205,16 @@ bool RSRenderInterface::TakeUICaptureInRangeWithConfig(std::shared_ptr<RSNode> b
         return TakeSurfaceCaptureForUI(beginNode, callback, captureConfig.scaleX,
             captureConfig.scaleY, captureConfig.isSync);
     }
+    // need consider stability
+    if (beginNode->GetNodeState() == RSNodeState::INACTIVE) {
+        beginNode->RebuildTree();
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+        if (auto uiContext = beginNode->GetRSUIContext()) {
+            uiContext->FlushCanvasDrawingNodeBuffers();
+        }
+#endif
+        captureConfig.isSync = true;
+    }
     captureConfig.uiCaptureInRangeParam.endNodeId = endNode->GetId();
     captureConfig.uiCaptureInRangeParam.useBeginNodeSize = useBeginNodeSize;
     if (beginNode->IsTextureExportNode()) {
@@ -226,10 +248,11 @@ std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>>
         ROSEN_LOGW("RSRenderInterface::TakeSurfaceCaptureSoloNodeList rsnode is nullpter return");
         return pixelMapIdPairVector;
     }
-    if (!((node->GetType() == RSUINodeType::ROOT_NODE) ||
-          (node->GetType() == RSUINodeType::CANVAS_NODE) ||
-          (node->GetType() == RSUINodeType::CANVAS_DRAWING_NODE) ||
-          (node->GetType() == RSUINodeType::SURFACE_NODE))) {
+    auto type = node->GetType();
+    if (!((type == RSUINodeType::ROOT_NODE) ||
+          (type == RSUINodeType::CANVAS_NODE) ||
+          (type == RSUINodeType::CANVAS_DRAWING_NODE) ||
+          (type == RSUINodeType::SURFACE_NODE))) {
         ROSEN_LOGE("RSRenderInterface::TakeSurfaceCaptureSoloNodeList unsupported node type return");
         return pixelMapIdPairVector;
     }
@@ -440,6 +463,7 @@ bool RSRenderInterface::SetWindowFreezeImmediately(std::shared_ptr<RSSurfaceNode
         ROSEN_LOGE("%{public}s node is nullptr", __func__);
         return false;
     }
+    node->SetStaticCached(isFreeze);
     RSSurfaceCaptureBlurParam blurParam;
     if (ROSEN_GE(blurRadius, 1.f)) {
         blurParam.isNeedBlur = true;
@@ -649,6 +673,32 @@ int32_t RSRenderInterface::UpdateFrameStabilityDetection(
 void RSRenderInterface::SetFreeMultiWindowStatus(bool enable)
 {
     renderPipelineClient_->SetFreeMultiWindowStatus(enable);
+}
+
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+sptr<Surface> RSRenderInterface::CreateCanvasDrawingNodeSurface(NodeId nodeId)
+{
+    return renderPipelineClient_->CreateCanvasDrawingNodeSurface(nodeId);
+}
+
+void RSRenderInterface::ReleaseCanvasDrawingNodeSurface(NodeId nodeId)
+{
+    renderPipelineClient_->ReleaseCanvasDrawingNodeSurface(nodeId);
+}
+#endif // RS_MODIFIERS_DRAW_ENABLE
+
+void RSRenderInterface::SetOnRenderProcessDiedCallback(const std::function<void()>& callback)
+{
+    if (renderPipelineClient_ == nullptr) {
+        ROSEN_LOGE("RSRenderInterface::SetOnRenderProcessDiedCallback renderPipelineClient_ nullptr");
+        return;
+    }
+    renderPipelineClient_->SetOnRenderProcessDiedCallback(callback);
+}
+
+bool RSRenderInterface::SetDelegateMode(NodeId id, bool isDelegateMode)
+{
+    return renderPipelineClient_->SetDelegateMode(id, isDelegateMode, getpid());
 }
 }
 }

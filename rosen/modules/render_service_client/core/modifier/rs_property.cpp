@@ -83,8 +83,9 @@ void RSPropertyBase::MarkCustomModifierDirty()
 {
     if (auto modifier = modifierNG_.lock()) {
         auto node = target_.lock();
-        if (node && node->GetRSUIContext()) {
-            modifier->SetDirty(true, node->GetRSUIContext()->GetRSModifierManager());
+        auto ctx = node ? node->GetRSUIContext() : nullptr;
+        if (ctx) {
+            modifier->SetDirty(true, ctx->GetRSModifierManager());
         } else {
             modifier->SetDirty(true, RSModifierManagerMap::Instance()->GetModifierManager());
         }
@@ -108,7 +109,7 @@ void RSPropertyBase::UpdateExtendModifierForGeometry(const std::shared_ptr<RSNod
         }
     }
 }
- 
+
 bool RSPropertyBase::IsDeduplicationEnabled() const
 {
     auto modifier = modifierNG_.lock();
@@ -673,6 +674,18 @@ void RSProperty<Drawing::DrawCmdListPtr>::UpdateToRender(
     const Drawing::DrawCmdListPtr& value, PropertyUpdateType type) const
 {
     UPDATE_TO_RENDER(RSUpdatePropertyDrawCmdList, value, type);
+}
+
+template<>
+void RSProperty<DepthCameraPara>::UpdateToRender(const DepthCameraPara& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyDepthCameraPara, value, type);
+}
+
+template<>
+void RSProperty<DepthLightPara>::UpdateToRender(const DepthLightPara& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyDepthLightPara, value, type);
 }
 
 template<>

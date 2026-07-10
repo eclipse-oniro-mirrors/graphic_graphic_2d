@@ -46,13 +46,15 @@
 
 #include "platform/drawing/rs_surface.h"
 #include "platform/common/rs_surface_ext.h"
+#include "transaction/rs_render_service_client.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_node.h"
-
+#include "command_modifier/rs_surface_node_command_modifier.h"
 
 namespace OHOS {
 namespace Rosen {
 class RSCompositeLayerUtils;
+class RSDelegateCompositeBufferManager;
 /**
  * @struct RSSurfaceNodeConfig
  * @brief Configuration structure for creating or managing a surface node.
@@ -74,6 +76,8 @@ struct RSSurfaceNodeConfig {
     std::shared_ptr<RSUIContext> rsUIContext = nullptr;
     /* isSkipCheckInMultiInstance true to skip Multi-Instance check; false otherwise. */
     bool isSkipCheckInMultiInstance = true;
+
+    NodeId nodeId = 0;
 };
 
 enum class ShadowPropertyType : uint8_t {
@@ -118,8 +122,8 @@ public:
     static SharedPtr CreateSurfaceNode(const RSSurfaceNodeConfig& surfaceNodeConfig, bool isWindow = true);
 
     bool SendDataToRender(const RSSurfaceNodeConfig& surfaceNodeConfig,
-    RSSurfaceNodeType type, bool isWindow, bool unobscured);
- 
+
+        RSSurfaceNodeType type, bool isWindow, bool unobscured);
     /**
      * @brief Creates a new instance of RSSurfaceNode with the specified configuration.
      *
@@ -211,7 +215,7 @@ public:
      * @param parcel The Parcel object containing the serialized RSSurfaceNode data.
      * @return A shared pointer to the deserialized RSSurfaceNode instance.
      */
-    static SharedPtr Unmarshalling(Parcel& parcel);
+    static SharedPtr Unmarshalling(Parcel& parcel, bool skip = true);
 
     /**
      * @brief Create RSProxyNode by unmarshalling RSSurfaceNode.
@@ -227,6 +231,7 @@ public:
 
     void AttachToDisplay(uint64_t screenId);
     void DetachToDisplay(uint64_t screenId);
+    void SetStaticCached(bool isFreeze);
     void SetHardwareEnabled(bool isEnabled, SelfDrawingNodeType selfDrawingType = SelfDrawingNodeType::DEFAULT,
         bool dynamicHardwareEnable = true);
 
@@ -303,7 +308,7 @@ public:
      *                - false: Resume normal buffer updates
      */
     void SetFreeze(bool isFreeze, bool isMarkedByUI = false) override;
-    
+
     // codes for arkui-x
 #ifdef USE_SURFACE_TEXTURE
     void SetSurfaceTexture(const RSSurfaceExtConfig& config);
@@ -350,6 +355,16 @@ public:
     // such as transparent background.
     void SetHardwareEnableHint(bool enable);
 
+    void SetSurfaceNodeType(RSSurfaceNodeType nodeType);
+    RSSurfaceNodeType GetSurfaceNodeType() const
+    {
+        return surfaceNodeType_;
+    }
+    bool IsAppWindow() const
+    {
+        return surfaceNodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
+    }
+
     /**
      * @brief Determines whether the surfaceNode is a selfDrawing node.
      *
@@ -374,12 +389,25 @@ public:
     void SetContainerWindowTransparent(bool isContainerWindowTransparent);
     void SetAppRotationCorrection(ScreenRotation appRotationCorrection);
     void SetHDRBrightnessWithType(const float& hdrBrightness, uint32_t hdrType);
-    void SetIsDepthResource(bool isDepthResource);
-
     void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer) override;
-    bool IsNodeSingleFrameComposer() const override { return isNodeSingleFrameComposer_; }
+
+    void RecreateNodeAndSurface(SurfaceId surfaceId = 0, bool unobscured = false);
+    void SetIsDepthResource(bool isDepthResource);
+#ifndef ROSEN_CROSS_PLATFORM
+    using BufferReleaseCallback = std::function<void(int release_fence_fd)>;
+    void SetBuffer(sptr<SurfaceBuffer> buffer, UniqueFd fence_fd, const BufferReleaseCallback& callback);
+    GSError ReleaseBuffer(uint32_t sequence, sptr<SyncFence> fence);
+    void CleanBuffer(bool cleanAll);
+    void SetDesiredPresentTime(int64_t desiredPresentTime);
+    void SetDamageRegion(std::vector<Rect> rects);
+    void SetBufferTransform(GraphicTransformType transform);
+    void SetDelegateDstRect(float positionX, float positionY, float positionZ, float positionW);
+    void SetDelegateSrcRect(float positionX, float positionY, float positionZ, float positionW);
+    bool SetDelegateMode(bool isDelegateMode);
+#endif
 
 protected:
+    bool SetNodeState(RSNodeState state) override;
     bool NeedForcedSendToRemote() const override;
     RSSurfaceNode(const RSSurfaceNodeConfig& config, bool isRenderServiceNode,
         std::shared_ptr<RSUIContext> rsUIContext = nullptr);
@@ -389,6 +417,20 @@ protected:
     RSSurfaceNode(const RSSurfaceNode&&) = delete;
     RSSurfaceNode& operator=(const RSSurfaceNode&) = delete;
     RSSurfaceNode& operator=(const RSSurfaceNode&&) = delete;
+
+    // recreate node
+    RSSurfaceRenderNodeConfig creationConfig_;
+    SurfaceId creationSurfaceId_;
+    RSSurfaceNodeType creationType_;
+    bool unobscured_;
+
+    void CreateRenderNode() override;
+    bool isStaticFreeze_ = false;
+    // For RegisterBufferAvailableListener
+    BufferAvailableCallback BufferAvailableCallbackFunc();
+
+    // For SetHidePrivacyContent
+    bool needHidePrivacyContent_ = false;
 
 private:
 #ifdef USE_SURFACE_TEXTURE
@@ -400,7 +442,8 @@ private:
     /**
      * @brief Called when the bounds size of the surface node changes.
      */
-    void OnBoundsSizeChanged() const override;
+    void OnBoundsSizeChanged() override;
+    void CreateRenderThreadNode(RSSurfaceNodeType type, bool isWindow);
     // this function is only used in texture export
     void SetSurfaceIdToRenderNode();
     void CreateRenderNodeForTextureExportSwitch() override;
@@ -450,8 +493,8 @@ private:
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<SurfaceDelegate> surfaceDelegate_;
     sptr<SurfaceDelegate::ISurfaceCallback> surfaceCallback_;
+    std::shared_ptr<RSDelegateCompositeBufferManager> delegateCompositeBufMgr_ = nullptr;
 #endif
-
     friend class RSUIDirector;
     friend class RSAnimation;
     friend class RSPathAnimation;

@@ -62,7 +62,7 @@ const RSAnimationTimingCurve& RSSpringAnimation::GetTimingCurve() const
 void RSSpringAnimation::SetZeroThreshold(const float zeroThreshold)
 {
     constexpr float ZERO = 0.0f;
-    if (zeroThreshold_ < ZERO) {
+    if (zeroThreshold < ZERO) {
         ROSEN_LOGE("RSSpringAnimation::SetZeroThreshold: invalid threshold.");
         return;
     }
@@ -73,22 +73,7 @@ void RSSpringAnimation::SetZeroThreshold(const float zeroThreshold)
 void RSSpringAnimation::OnStart()
 {
     RSPropertyAnimation::OnStart();
-    auto animation = std::make_shared<RSRenderSpringAnimation>(GetId(), GetPropertyId(),
-        originValue_->GetRenderProperty(), startValue_->GetRenderProperty(), endValue_->GetRenderProperty());
-    // 300: placeholder for estimated duration, will be replaced by real duration on animation start.
-    SetDuration(300);
-    UpdateParamToRenderAnimation(animation);
-    if (const auto& springParams = timingCurve_.springParams_) {
-        animation->SetSpringParameters(springParams->response_, springParams->dampingRatio_,
-            springParams->blendDuration_, springParams->minimumAmplitudeRatio_);
-    }
-    animation->SetAdditive(GetAdditive());
-    if (GetIsLogicallyFinishCallback()) {
-        animation->SetZeroThreshold(zeroThreshold_);
-    }
-    if (initialVelocity_) {
-        animation->SetInitialVelocity(initialVelocity_->GetRenderProperty());
-    }
+    auto animation = CreateRenderAnimation();
     if (isCustom_) {
         animation->AttachRenderProperty(property_->GetRenderProperty());
         StartUIAnimation(animation);
@@ -104,7 +89,6 @@ void RSSpringAnimation::StartRenderAnimation(const std::shared_ptr<RSRenderSprin
         ROSEN_LOGE("Failed to start spring animation, target is null!");
         return;
     }
-
     std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCreateSpring>(target->GetId(), animation);
     target->AddCommand(command, target->IsRenderServiceNode(), target->GetFollowType(), target->GetId());
     if (target->NeedForcedSendToRemote()) {
@@ -149,6 +133,41 @@ void RSSpringAnimation::SetInitialVelocity(const std::shared_ptr<RSPropertyBase>
         ROSEN_LOGE("RSSpringAnimation::SetInitialVelocity: velocity is a nullptr.");
     }
     initialVelocity_ = velocity;
+}
+
+std::shared_ptr<RSRenderSpringAnimation> RSSpringAnimation::CreateRenderAnimation()
+{
+    constexpr int SPRING_DURATION_PLACEHOLDER = 300;  // placeholder for estimated duration
+    auto animation = std::make_shared<RSRenderSpringAnimation>(GetId(), GetPropertyId(),
+        originValue_->GetRenderProperty(), startValue_->GetRenderProperty(), endValue_->GetRenderProperty());
+    SetDuration(SPRING_DURATION_PLACEHOLDER);
+    UpdateParamToRenderAnimation(animation);
+    if (const auto& springParams = timingCurve_.springParams_) {
+        animation->SetSpringParameters(springParams->response_, springParams->dampingRatio_,
+            springParams->blendDuration_, springParams->minimumAmplitudeRatio_);
+    }
+    animation->SetAdditive(GetAdditive());
+    if (GetIsLogicallyFinishCallback()) {
+        animation->SetZeroThreshold(zeroThreshold_);
+    }
+    if (initialVelocity_) {
+        animation->SetInitialVelocity(initialVelocity_->GetRenderProperty());
+    }
+    return animation;
+}
+
+void RSSpringAnimation::RebuildInRender()
+{
+    auto target = GetTarget().lock();
+    if (target == nullptr) {
+        ROSEN_LOGE("Failed to rebuild spring animation, target is null!");
+        return;
+    }
+    auto animation = CreateRenderAnimation();
+    std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationRebuildSpring>(
+        target->GetId(), animation, GetRebuildParam().fraction, GetRebuildParam().isReverseCycle);
+    target->AddCommand(command, target->IsRenderServiceNode(), target->GetFollowType(), target->GetId());
+    SetRebuildParam({});
 }
 } // namespace Rosen
 } // namespace OHOS

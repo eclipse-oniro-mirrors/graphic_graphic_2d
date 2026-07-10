@@ -176,7 +176,6 @@ HWTEST_F(HgmCommandTest, Init001, Function | SmallTest | Level0)
     frameRateMgr->Init(nullptr, nullptr, nullptr, nullptr);
     frameRateMgr->HandleAppStrategyConfigEvent(1, "", {}); // pid=1
     EXPECT_EQ(&(configVisitorImpl->GetXmlData()), configData.get());
-    EXPECT_EQ(configVisitorImpl->xmlModeId_, std::to_string(hgmCore.customFrameRateMode_));
     EXPECT_EQ(configVisitorImpl->screenConfigType_, frameRateMgr->curScreenStrategyId_);
 
     // data null; visitor null
@@ -281,7 +280,7 @@ HWTEST_F(HgmCommandTest, GetAceSceneDynamicSettingMapTest001, Function | SmallTe
 
 /**
  * @tc.name: GetAceSceneDynamicSettingMapTest002
- * @tc.desc: test when screenConfigs_ is empty
+ * @tc.desc: test when settingModeMap is empty
  * @tc.type: FUNC
  * @tc.require:
  */

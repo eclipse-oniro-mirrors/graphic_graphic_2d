@@ -142,7 +142,8 @@ public:
     void CollectSurface(
         const std::shared_ptr<RSBaseRenderNode>& node, std::vector<RSBaseRenderNode::SharedPtr>& vec,
         bool isUniRender, bool onlyFirstLevel) override;
-    void QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
+    void QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor,
+        bool isParentPrepareInReverseOrder = false) override;
     void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
     void Process(const std::shared_ptr<RSNodeVisitor>& visitor) override;
 
@@ -461,11 +462,16 @@ public:
 
     void CollectHdrStatus(NodeId id, HdrStatus hdrStatus);
 
-    const std::unordered_map<NodeId, HdrStatus>& GetDisplayHdrStatusMap() const;
+    const std::unordered_map<NodeId, uint32_t>& GetDisplayHdrStatusMap() const;
 
     void ResetDisplayHdrStatus();
 
     HdrStatus GetDisplayHdrStatus() const;
+
+    void SetLastDisplayHdrStatus(HdrStatus lastDisplayHdrStatus)
+    {
+        lastDisplayTotalHdrStatus_ = lastDisplayHdrStatus;
+    }
 
     HdrStatus GetLastDisplayHDRStatus() const
     {
@@ -494,6 +500,28 @@ public:
     }
 
     void SetNeedForceUpdateHwcNodes(bool needForceUpdate, bool hasVisibleHwcNodes);
+
+    const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& GetChildHwcNodes() const
+    {
+        return childHwcNodes_;
+    }
+
+    void UpdateChildHwcNode()
+    {
+        auto& allHwcNodeAndFilterNode = GetAllHwcNodeAndFilterNode();
+        for (const auto& weakNode : allHwcNodeAndFilterNode) {
+            auto node = weakNode.lock();
+            if (node && node->IsHardwareEnabledType()) {
+                auto hwcNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
+                childHwcNodes_.emplace_back(hwcNode);
+            }
+        }
+    }
+
+    void ResetChildHwcNodes()
+    {
+        childHwcNodes_.clear();
+    }
 
     void SetTargetSurfaceRenderNodeId(NodeId nodeId)
     {
@@ -535,7 +563,10 @@ public:
     
     void SetLogicalCameraRotationCorrection(ScreenRotation logicalCorrection);
     void SetHasForceHwcHdrSurface(bool hasForceHwcHdrSurface);
-    bool GetHasForceHwcHdrSurface() const;
+    void SetHdrForceHwcNodes(const std::unordered_map<NodeId, std::weak_ptr<RSSurfaceRenderNode>>& hdrForceHwcNodes);
+    const std::unordered_map<NodeId, std::weak_ptr<RSSurfaceRenderNode>>& GetHdrForceHwcNodes() const;
+    void ClearHdrForceHwcNodes();
+    void HandleHdrForceHwcNodes();
 
     void SetBootAnimation(bool isBootAnimation) override;
     bool GetBootAnimation() const override;
@@ -544,6 +575,7 @@ protected:
     void OnSync() override;
 private:
     void InitRenderParams() override;
+    void CollectHdrStatusMap(NodeId id, HdrStatus hdrStatus);
 
     bool hasChildCrossNode_ = false;
     bool isFirstVisitCrossNodeDisplay_ = false;
@@ -600,6 +632,7 @@ private:
     std::mutex mtx_;
 
     std::map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> dirtySurfaceNodeMap_;
+    std::vector<std::weak_ptr<RSSurfaceRenderNode>> childHwcNodes_;
 
     // support multiscreen
     std::map<NodeId, RectI> surfaceSrcRects_;
@@ -623,7 +656,8 @@ private:
     // Enable HWCompose
     RSHwcDisplayRecorder hwcDisplayRecorder_;
 
-    bool hasForceHwcHdrSurface_ = false;
+    std::unordered_map<NodeId, uint32_t> displayHDRStatusMap_ = {};
+    std::unordered_map<NodeId, std::weak_ptr<RSSurfaceRenderNode>> hdrForceHwcNodes_ = {};
 };
 } // namespace Rosen
 } // namespace OHOS

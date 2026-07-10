@@ -47,6 +47,7 @@
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
+#include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
 #include "platform/common/rs_innovation.h"
 #include "platform/common/rs_system_properties.h"
 #include "drawable/rs_screen_render_node_drawable.h"
@@ -70,7 +71,7 @@
 #include "../test/unittest/mock_vsync_distributor.h"
 using namespace testing;
 using namespace testing::ext;
-
+#if defined(RS_ENABLE_UNI_RENDER)
 namespace OHOS::Rosen {
 constexpr int32_t INVALID_VALUE = -1;
 constexpr int32_t SCREEN_PHYSICAL_HEIGHT = 10;
@@ -161,6 +162,7 @@ public:
     {
         return connectToRenderConnection_;
     }
+    bool IsValidRenderProcessPid(pid_t pid) const override { return false; }
     sptr<RSIServiceToRenderConnection> serviceToRenderConnection_ = nullptr;
     sptr<IRSComposerToRenderConnection> composerToRenderConnection_ = nullptr;
     sptr<RSIRenderToServiceConnection> renderToServiceConnection_ = nullptr;
@@ -1318,7 +1320,6 @@ HWTEST_F(RSMainThreadTest, SetWatermarkGrid001, TestSize.Level1)
     EXPECT_TRUE(mainThread->watermarkFlag_);
 
     mainThread->SetWatermark(100, watermarkName, nullptr, 0, 0);
-    EXPECT_FALSE(mainThread->watermarkFlag_);
 }
 
 /**
@@ -1827,6 +1828,77 @@ HWTEST_F(RSMainThreadTest, IsMultiDisplayTest003, TestSize.Level1)
     ASSERT_FALSE(mainThread->IsMultiDisplay());
 
     nodeMap.UnregisterRenderNode(node->GetId());
+    ASSERT_FALSE(mainThread->IsMultiDisplay());
+}
+
+/**
+ * @tc.name: IsMultiDisplayTest004
+ * @tc.desc: Test IsMultiDisplay when single RSScreenRenderNode has internal connection type
+ * @tc.type: FUNC
+ * @tc.require: issue#24667
+ */
+HWTEST_F(RSMainThreadTest, IsMultiDisplayTest004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+    ASSERT_FALSE(mainThread->IsMultiDisplay());
+
+    mainThread->isMultiDisplayChange_ = false;
+    ASSERT_FALSE(mainThread->GetMultiDisplayChange());
+
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSScreenRenderNode>(100, 0, rsContext->weak_from_this());
+    auto childNode = std::make_shared<RSRenderNode>(300, true);
+    node->AddChild(childNode);
+    node->screenProperty_.Set<ScreenPropertyType::CONNECTION_TYPE>(
+        static_cast<uint32_t>(ScreenConnectionType::DISPLAY_CONNECTION_TYPE_INTERNAL));
+    auto& nodeMap = mainThread->context_->GetMutableNodeMap();
+    nodeMap.RegisterRenderNode(node);
+    ASSERT_FALSE(mainThread->IsMultiDisplay());
+    ASSERT_FALSE(mainThread->GetMultiDisplayChange());
+
+    nodeMap.UnregisterRenderNode(node->GetId());
+    ASSERT_FALSE(mainThread->IsMultiDisplay());
+}
+
+/**
+ * @tc.name: IsMultiDisplayTest005
+ * @tc.desc: Test IsMultiDisplay when multiple RSScreenRenderNode with different connection types
+ * @tc.type: FUNC
+ * @tc.require: issue#24667
+ */
+HWTEST_F(RSMainThreadTest, IsMultiDisplayTest005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+    ASSERT_FALSE(mainThread->IsMultiDisplay());
+
+    mainThread->isMultiDisplayChange_ = false;
+    ASSERT_FALSE(mainThread->GetMultiDisplayChange());
+
+    auto rsContext = std::make_shared<RSContext>();
+    auto node1 = std::make_shared<RSScreenRenderNode>(100, 0, rsContext->weak_from_this());
+    auto childNode1 = std::make_shared<RSRenderNode>(301, true);
+    node1->AddChild(childNode1);
+    node1->screenProperty_.Set<ScreenPropertyType::CONNECTION_TYPE>(
+        static_cast<uint32_t>(ScreenConnectionType::DISPLAY_CONNECTION_TYPE_INTERNAL));
+
+    auto node2 = std::make_shared<RSScreenRenderNode>(200, 0, rsContext->weak_from_this());
+    auto childNode2 = std::make_shared<RSRenderNode>(302, true);
+    node2->AddChild(childNode2);
+    node2->screenProperty_.Set<ScreenPropertyType::CONNECTION_TYPE>(
+        static_cast<uint32_t>(ScreenConnectionType::DISPLAY_CONNECTION_TYPE_EXTERNAL));
+
+    auto& nodeMap = mainThread->context_->GetMutableNodeMap();
+    nodeMap.RegisterRenderNode(node1);
+    nodeMap.RegisterRenderNode(node2);
+    ASSERT_TRUE(mainThread->IsMultiDisplay());
+    ASSERT_TRUE(mainThread->GetMultiDisplayChange());
+
+    nodeMap.UnregisterRenderNode(node1->GetId());
+    nodeMap.UnregisterRenderNode(node2->GetId());
     ASSERT_FALSE(mainThread->IsMultiDisplay());
 }
 
@@ -2910,6 +2982,52 @@ HWTEST_F(RSMainThreadTest, SurfaceOcclusionCallback005, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SurfaceOcclusionCallBackIfOnTreeStateChanged001
+ * @tc.desc: Verify SurfaceOcclusionCallBackIfOnTreeStateChanged detects on-tree state change
+ * @tc.type: FUNC
+ * @tc.require: issueI24779
+ */
+HWTEST_F(RSMainThreadTest, SurfaceOcclusionCallBackIfOnTreeStateChanged001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    // reset to avoid cross-test state leakage
+    mainThread->savedAppWindowNode_.clear();
+    mainThread->lastRegisteredSurfaceOnTree_.clear();
+
+    // prepare savedAppWindowNode_: two nodes both on tree
+    RSSurfaceRenderNodeConfig config;
+    config.id = 1;
+    auto node1 = std::make_shared<RSSurfaceRenderNode>(config);
+    ASSERT_NE(node1, nullptr);
+    node1->SetIsOnTheTree(true);
+    config.id = 2;
+    auto node2 = std::make_shared<RSSurfaceRenderNode>(config);
+    ASSERT_NE(node2, nullptr);
+    node2->SetIsOnTheTree(true);
+    mainThread->savedAppWindowNode_[1] = std::make_pair(node1, node1);
+    mainThread->savedAppWindowNode_[2] = std::make_pair(node2, node2);
+
+    // first call: lastRegisteredSurfaceOnTree_ was empty, now {1, 2} -> changed
+    bool result = mainThread->SurfaceOcclusionCallBackIfOnTreeStateChanged();
+    EXPECT_TRUE(result);
+
+    // second call: same on-tree state -> not changed
+    result = mainThread->SurfaceOcclusionCallBackIfOnTreeStateChanged();
+    EXPECT_FALSE(result);
+
+    // toggle node2 off the tree: registered set changes to {1} -> changed
+    node2->SetIsOnTheTree(false);
+    result = mainThread->SurfaceOcclusionCallBackIfOnTreeStateChanged();
+    EXPECT_TRUE(result);
+
+    // cleanup
+    mainThread->savedAppWindowNode_.clear();
+    mainThread->lastRegisteredSurfaceOnTree_.clear();
+}
+
+/**
  * @tc.name: CheckSurfaceOcclusionNeedProcess
  * @tc.desc: CheckSurfaceOcclusionNeedProcess Test while node out of appWindow
  * @tc.type: FUNC
@@ -3144,6 +3262,7 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes004, TestSize.Level1)
     ret = psurf->RequestBuffer(bufferEntry.buffer, requestFence, requestConfig);
     ASSERT_EQ(ret, GSERROR_OK);
     rsSurfaceHandlerPtr_->SetBufferTransformTypeChanged(true);
+    rsSurfaceHandlerPtr_->SetSourceType(OHSurfaceSource::OH_SURFACE_SOURCE_VIDEO);
     ASSERT_TRUE(rsSurfaceHandlerPtr_->GetBufferTransformTypeChanged());
     mainThread->ConsumeAndUpdateAllNodes();
     mainThread->isUniRender_ = isUniRender;
@@ -3178,7 +3297,8 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes005, TestSize.Level1)
 
     auto surfaceConsumer1 = rsSurfaceRenderNode1->GetRSSurfaceHandler()->GetConsumer();
     ASSERT_NE(surfaceConsumer1, nullptr);
-    sptr<IBufferConsumerListener> listener1 = new RSRenderServiceListener(rsSurfaceRenderNode1,
+    auto surfaceHandler(rsSurfaceRenderNode1->GetRSSurfaceHandler());
+    sptr<IBufferConsumerListener> listener1 = new RSRenderServiceListener(rsSurfaceRenderNode1, surfaceHandler,
         rsComposerClientManager);
     EXPECT_EQ(surfaceConsumer1->RegisterConsumerListener(listener1), SURFACE_ERROR_OK);
     auto producer1 = surfaceConsumer1->GetProducer();
@@ -3190,7 +3310,8 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes005, TestSize.Level1)
 
     auto surfaceConsumer2 = rsSurfaceRenderNode2->GetRSSurfaceHandler()->GetConsumer();
     ASSERT_NE(surfaceConsumer2, nullptr);
-    sptr<IBufferConsumerListener> listener2 = new RSRenderServiceListener(rsSurfaceRenderNode2,
+    auto surfaceHandler2(rsSurfaceRenderNode2->GetRSSurfaceHandler());
+    sptr<IBufferConsumerListener> listener2 = new RSRenderServiceListener(rsSurfaceRenderNode2, surfaceHandler2,
         rsComposerClientManager);
     EXPECT_EQ(surfaceConsumer2->RegisterConsumerListener(listener2), SURFACE_ERROR_OK);
     auto producer2 = surfaceConsumer2->GetProducer();
@@ -3245,6 +3366,48 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes006, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ConsumeAndUpdateAllNodes_KeepDirectSkipsRedundantVsync
+ * @tc.desc: When the tunnel route stays KEEP_DIRECT (listener owns this vsync), the tail
+ *           "available>0 ⇒ schedule vsync" branch must be skipped so a stale availableBufferCount
+ *           does not request a redundant vsync that re-arrives as KEEP_DIRECT again.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes_KeepDirectSkipsRedundantVsync, TestSize.Level1)
+{
+#ifndef ROSEN_CROSS_PLATFORM
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    bool isUniRender = mainThread->isUniRender_;
+    mainThread->isUniRender_ = true;
+    mainThread->timestamp_ = 1000;
+    mainThread->context_->GetMutableNodeMap().renderNodeMap_.clear();
+    mainThread->context_->GetMutableNodeMap().surfaceNodeMap_.clear();
+
+    auto node = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(node, nullptr);
+    EXPECT_TRUE(mainThread->context_->GetMutableNodeMap().RegisterRenderNode(node));
+
+    auto& tunnelRuntime = RSTunnelRuntimeStore::GetOrCreate(node->GetId());
+    tunnelRuntime.SetBuilding();
+    ASSERT_TRUE(tunnelRuntime.SetActiveFromTunnelLayerAvailable(tunnelRuntime.GetTunnelLayerGeneration()));
+    ASSERT_TRUE(tunnelRuntime.TryClaimByListener());
+    ASSERT_EQ(tunnelRuntime.GetPhase(), RSTunnelRuntimeState::Phase::TUNNEL_INFLIGHT);
+
+    auto surfaceHandler = node->GetMutableRSSurfaceHandler();
+    ASSERT_NE(surfaceHandler, nullptr);
+    surfaceHandler->SetAvailableBufferCount(1);
+    mainThread->requestNextVsyncTime_ = -1;
+
+    mainThread->ConsumeAndUpdateAllNodes();
+
+    EXPECT_EQ(mainThread->requestNextVsyncTime_, -1);
+
+    tunnelRuntime.ReleaseByListener();
+    mainThread->isUniRender_ = isUniRender;
+#endif
+}
+
+/**
  * @tc.name: ConsumeAndUpdateLowPowerVideoNode001
  * @tc.desc: Test ConsumeAndUpdateAllNodes with OH_SURFACE_SOURCE_LOWPOWERVIDEO
  * @tc.type: FUNC
@@ -3274,7 +3437,8 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateLowPowerVideoNode001, TestSize.Level1
 
     auto surfaceConsumer = surfaceHandler->GetConsumer();
     ASSERT_NE(surfaceConsumer, nullptr);
-    sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(rsSurfaceRenderNode, rsComposerClientManager);
+    sptr<IBufferConsumerListener> listener =
+        new RSRenderServiceListener(rsSurfaceRenderNode, surfaceHandler, rsComposerClientManager);
     EXPECT_EQ(surfaceConsumer->RegisterConsumerListener(listener), SURFACE_ERROR_OK);
     auto producer = surfaceConsumer->GetProducer();
     ASSERT_NE(producer, nullptr);
@@ -3288,7 +3452,7 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateLowPowerVideoNode001, TestSize.Level1
 
     uint64_t actualTunnelLayerId = 0;
     uint32_t actualProperty = TUNNEL_PROP_INVALID;
-    rsSurfaceRenderNode->GetTunnelLayerInfo(actualTunnelLayerId, actualProperty);
+    RSTunnelRuntimeStore::GetLayerInfoOrDefault(rsSurfaceRenderNode->GetId(), actualTunnelLayerId, actualProperty);
     EXPECT_NE(actualTunnelLayerId, 0u);
     EXPECT_EQ(actualProperty, TUNNEL_PROP_BUFFER_ADDR | TUNNEL_PROP_DEVICE_COMMIT);
 
@@ -4496,7 +4660,7 @@ HWTEST_F(RSMainThreadTest, HandleScreenPropertyRefreshOneFrameTest, TestSize.Lev
     mainThread->context_->GetGlobalRootRenderNode()->AddChild(node);
 
     mainThread->HandleScreenPropertyRefreshOneFrame(0, ScreenPropertyType::ACTIVE_RECT_OPTION);
-    mainThread->HandleScreenPropertyRefreshOneFrame(0, ScreenPropertyType::PRODUCER_SURFACE);
+    mainThread->HandleScreenPropertyRefreshOneFrame(0, ScreenPropertyType::MULTI_SURFACE_CONFIGS);
 }
 
 /**
@@ -6884,50 +7048,41 @@ HWTEST_F(RSMainThreadTest, AnimateWithAnimationManager, TestSize.Level1)
 
     GTEST_LOG_(INFO) << "RSMainThreadTest AnimateWithAnimationManager end";
 }
-
 /**
- * @tc.name: RequestDelayedVSyncForAnimation_BasicFunction001
- * @tc.desc: Test RequestDelayedVSyncForAnimation basic function with normal parameters.
- *           This method was updated in commit 974b560f with optimization (pre-calculate maxDelayFromTimestamp).
+ * @tc.name: InitCreatePipelineTimeCallbackTest001
+ * @tc.desc: Test InitCreatePipelineTimeCallback with nullptr
  * @tc.type:FUNC
  */
-HWTEST_F(RSMainThreadTest, RequestDelayedVSyncForAnimation_BasicFunction001, TestSize.Level1)
+HWTEST_F(RSMainThreadTest, InitCreatePipelineTimeCallbackTest001, TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "RSMainThreadTest RequestDelayedVSyncForAnimation_BasicFunction001 start";
+    GTEST_LOG_(INFO) << "RSMainThreadTest InitCreatePipelineTimeCallbackTest001 start";
 
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
 
-    int64_t minLeftDelayTime = 100;
-    uint64_t timestamp = 1000000;
-    int64_t nextFrameTime = 0;
+    mainThread->InitCreatePipelineTimeCallback(nullptr);
 
-    mainThread->RequestDelayedVSyncForAnimation(minLeftDelayTime, timestamp, nextFrameTime);
-
-    GTEST_LOG_(INFO) << "RSMainThreadTest RequestDelayedVSyncForAnimation_BasicFunction001 end";
+    GTEST_LOG_(INFO) << "RSMainThreadTest InitCreatePipelineTimeCallbackTest001 end";
 }
-
+ 
 /**
- * @tc.name: RequestDelayedVSyncForAnimation_DelayOverflowClamp001
- * @tc.desc: Test RequestDelayedVSyncForAnimation when delayTimeNs > maxDelayFromTimestamp.
- *           Line 3842 branch: if (delayTimeNs > maxDelayFromTimestamp) -> true
- *           When timestamp is near INT64_MAX, maxDelayFromTimestamp is small,
- *           delayTimeNs can exceed it and should be clamped.
- * @tc.type:FUNC
+ * @tc.name: SetWindowModeType001
+ * @tc.desc: Test SetWindowModeType when IsSplitScreenSourceTuning is true
+ * @tc.type: FUNC
+ * @tc.require:
  */
-HWTEST_F(RSMainThreadTest, RequestDelayedVSyncForAnimation_DelayOverflowClamp001, TestSize.Level1)
+HWTEST_F(RSMainThreadTest, SetWindowModeType001, TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "RSMainThreadTest RequestDelayedVSyncForAnimation_DelayOverflowClamp001 start";
-
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
-
-    int64_t minLeftDelayTime = 18;
-    uint64_t timestamp = static_cast<uint64_t>(INT64_MAX - 500000);
-    int64_t nextFrameTime = 0;
-
-    mainThread->RequestDelayedVSyncForAnimation(minLeftDelayTime, timestamp, nextFrameTime);
-
-    GTEST_LOG_(INFO) << "RSMainThreadTest RequestDelayedVSyncForAnimation_DelayOverflowClamp001 end";
+ 
+    mainThread->hwcContext_ = std::make_shared<RSHwcContext>(
+        std::unordered_map<std::string, std::string>(), std::unordered_map<std::string, std::string>());
+    HWCParam::SetSplitScreenSourceTuning(true);
+    mainThread->SetWindowModeType(1);
+    HWCParam::SetSplitScreenSourceTuning(false);
+    mainThread->SetWindowModeType(1);
 }
+
 } // namespace OHOS::Rosen
+#endif

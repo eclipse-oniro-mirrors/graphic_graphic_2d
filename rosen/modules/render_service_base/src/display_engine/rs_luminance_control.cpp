@@ -19,6 +19,7 @@
 #include <string_view>
 
 #include "common/rs_common_def.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 
 namespace {
@@ -169,12 +170,26 @@ double RSLuminanceControl::GetHdrBrightnessRatio(ScreenId screenId, uint32_t mod
         rSLuminanceControlInterface_->GetNonlinearRatio(screenId, mode) : 1.0;
 }
 
+float RSLuminanceControl::CalAIHDRScaler(const RSSurfaceRenderNode& surfaceNode, const float& ratio,
+    HdrStatus hdrStatus)
+{
+    return (rSLuminanceControlInterface_ != nullptr) ?
+        rSLuminanceControlInterface_->CalAIHDRScaler(surfaceNode, ratio, hdrStatus) : HDR_DEFAULT_SCALER * ratio;
+}
+
 float RSLuminanceControl::CalScaler(const float& maxContentLightLevel,
     const std::vector<uint8_t>& dynamicMetadata, const float& ratio, HdrStatus hdrStatus)
 {
     return (rSLuminanceControlInterface_ != nullptr) ?
         rSLuminanceControlInterface_->CalScaler(maxContentLightLevel,
             dynamicMetadata, ratio, hdrStatus) : HDR_DEFAULT_SCALER * ratio;
+}
+
+float RSLuminanceControl::GetSurfaceNodeMaxScaler(RSSurfaceRenderNode& surfaceNode, ScreenId screenId,
+    HdrStatus hdrstatus)
+{
+    return (rSLuminanceControlInterface_ != nullptr) ?
+        rSLuminanceControlInterface_->GetSurfaceNodeMaxScaler(surfaceNode, screenId, hdrstatus) : HDR_DEFAULT_SCALER;
 }
 
 bool RSLuminanceControl::IsHdrPictureOn()
@@ -266,10 +281,10 @@ void RSLuminanceControl::SetDualScreenStatus(ScreenId screenId, DualScreenStatus
     }
 }
 
-float RSLuminanceControl::HdrDimmingProcess(ScreenId screenId, uint64_t nodeId)
+float RSLuminanceControl::HdrDimmingProcess(ScreenId screenId, const RSSurfaceRenderNode& surfaceNode)
 {
     if (rSLuminanceControlInterface_ != nullptr) {
-        return rSLuminanceControlInterface_->HdrDimmingProcess(screenId, nodeId);
+        return rSLuminanceControlInterface_->HdrDimmingProcess(screenId, surfaceNode);
     }
     return 1.0f;
 }

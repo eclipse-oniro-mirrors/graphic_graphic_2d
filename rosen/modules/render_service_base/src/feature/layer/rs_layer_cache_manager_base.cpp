@@ -14,9 +14,41 @@
  */
 
 #include "feature/layer/rs_layer_cache_manager_base.h"
+#include "params/rs_render_params.h"
 
 namespace OHOS {
 namespace Rosen {
-    std::vector<std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter>> RSLayerCacheManagerBase::layerDrawables_;
+std::vector<std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter>> RSLayerCacheManagerBase::layerDrawables_;
+
+bool RSLayerCacheManagerBase::IsNodeUnSupportLayer(std::shared_ptr<RSRenderNode> node)
+{
+    if (!node->GetStagingRenderParams()) {
+        return false;
+    }
+    auto layerParams = node->GetStagingRenderParams()->GetLayerParams();
+    if (layerParams) {
+        return layerParams->isUnSupportLayer;
+    }
+    return false;
+}
+
+bool RSLayerCacheManagerBase::IsNodeUnSupportLayer(RSRenderNode& node)
+{
+    if (!node.GetStagingRenderParams()) {
+        return false;
+    }
+    auto layerParams = node.GetStagingRenderParams()->GetLayerParams();
+    if (layerParams) {
+        return layerParams->isUnSupportLayer;
+    }
+    return false;
+}
+
+void RSLayerCacheManagerBase::SetLayerParamsIsUnSupportLayer(RSRenderNode& node, bool isUnSupportLayer)
+{
+    if (node.GetStagingRenderParams()) {
+        node.GetStagingRenderParams()->SetLayerParamsIsUnSupportLayer(isUnSupportLayer);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

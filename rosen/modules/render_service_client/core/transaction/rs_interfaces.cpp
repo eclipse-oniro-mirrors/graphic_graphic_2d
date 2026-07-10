@@ -91,6 +91,17 @@ ScreenId RSInterfaces::CreateVirtualScreen(
         name, width, height, surface, associatedScreenId, flags, whiteList);
 }
 
+int32_t RSInterfaces::AddVirtualScreenSurface(
+    ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
+{
+    return renderServiceClient_->AddVirtualScreenSurface(id, surfaceConfigs);
+}
+
+int32_t RSInterfaces::RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces)
+{
+    return renderServiceClient_->RemoveVirtualScreenSurface(id, surfaces);
+}
+
 int32_t RSInterfaces::SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList)
 {
     return renderServiceClient_->SetVirtualScreenBlackList(id, blackList);
@@ -188,6 +199,22 @@ bool RSInterfaces::SetWatermark(const std::string& name, std::shared_ptr<Media::
         return false;
     }
     return renderServiceClient_->SetWatermark(name, watermark, rowCount, colCount);
+#else
+    return false;
+#endif
+}
+
+bool RSInterfaces::SetUifirstScale(float scaleFactor)
+{
+#ifdef ROSEN_OHOS
+    scaleFactor = std::round(scaleFactor * 100.0f) / 100.0f;
+    // scaleFactor must in (0,1]
+    if (ROSEN_LE(scaleFactor, 0.0f) || ROSEN_GNE(scaleFactor, 1.0f)) {
+        ROSEN_LOGE("RSInterfaces::SetUifirstScale invalid scaleFactor:%{public}f", scaleFactor);
+        return false;
+    }
+    ROSEN_LOGI("RSInterfaces::SetUifirstScale called, scaleFactor:%{public}f", scaleFactor);
+    return renderServiceClient_->SetUifirstScale(scaleFactor);
 #else
     return false;
 #endif
@@ -597,6 +624,17 @@ void RSInterfaces::SetScreenBacklight(const RsScreenBrightnessData& brightnessDa
     renderServiceClient_->SetScreenBacklight(brightnessData);
 }
 
+int32_t RSInterfaces::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    return renderServiceClient_->GetScreenVCPFeature(id, vcpCode, currentValue, maximumValue, errorCode);
+}
+
+int32_t RSInterfaces::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
+{
+    return renderServiceClient_->SetScreenVCPFeature(id, vcpCode, currentValue);
+}
+
 int32_t RSInterfaces::GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode)
 {
     return renderServiceClient_->GetScreenSupportedColorGamuts(id, mode);
@@ -915,6 +953,11 @@ void RSInterfaces::NotifyPackageEvent(uint32_t listSize, const std::vector<std::
     renderServiceClient_->NotifyPackageEvent(listSize, packageList);
 }
 
+void RSInterfaces::NotifyWindowModeTypeEvent(uint8_t windowModeType)
+{
+    renderServiceClient_->NotifyWindowModeTypeEvent(windowModeType);
+}
+
 void RSInterfaces::NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
     const std::vector<std::pair<std::string, std::string>>& newConfig)
 {
@@ -1123,6 +1166,11 @@ int32_t RSInterfaces::SetOverlayDisplayMode(int32_t mode)
 }
 #endif
 
+int32_t RSInterfaces::SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo)
+{
+    return renderServiceClient_->SendVideoRateInfo(videoRateInfo);
+}
+
 void RSInterfaces::NotifyPageName(const std::string& packageName, const std::string& pageName, bool isEnter)
 {
     auto pageNameList = RSFrameRatePolicy::GetInstance()->GetPageNameList();
@@ -1156,6 +1204,11 @@ bool RSInterfaces::SetBehindWindowFilterEnabled(bool enabled)
 bool RSInterfaces::GetBehindWindowFilterEnabled(bool& enabled)
 {
     return renderServiceClient_->GetBehindWindowFilterEnabled(enabled);
+}
+
+bool RSInterfaces::SetApsConfigParams(ApsEventType event, const std::unordered_map<std::string, std::string>& params)
+{
+    return renderServiceClient_->SetApsConfigParams(event, params);
 }
 
 void RSInterfaces::ClearUifirstCache(NodeId id)

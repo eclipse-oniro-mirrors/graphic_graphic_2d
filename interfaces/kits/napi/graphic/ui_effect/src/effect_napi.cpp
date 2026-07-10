@@ -124,6 +124,7 @@ napi_value EffectNapi::CreateEffect(napi_env env, napi_callback_info info)
         DECLARE_NAPI_FUNCTION("colorGradient", CreateColorGradientEffect),
         DECLARE_NAPI_FUNCTION("liquidMaterial", CreateHarmoniumEffect),
         DECLARE_NAPI_FUNCTION("frostedGlass", CreateFrostedGlassEffect),
+        DECLARE_NAPI_FUNCTION("distortionCollapse", CreateDistortionCollapseEffect),
     };
     status = napi_define_properties(env, object, sizeof(resultFuncs) / sizeof(resultFuncs[0]), resultFuncs);
     UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, effectObj,
@@ -134,7 +135,9 @@ napi_value EffectNapi::CreateEffect(napi_env env, napi_callback_info info)
 napi_value ParseJsValue(napi_env env, napi_value jsObject, const std::string& name)
 {
     napi_value value = nullptr;
-    napi_get_named_property(env, jsObject, name.c_str(), &value);
+    if (napi_get_named_property(env, jsObject, name.c_str(), &value) != napi_ok) {
+        return nullptr;
+    }
     return value;
 }
 
@@ -178,13 +181,6 @@ bool CheckCreateBrightnessBlender(napi_env env, napi_value jsObject)
 
 napi_value EffectNapi::CreateBrightnessBlender(napi_env env, napi_callback_info info)
 {
-    if (!UIEffectNapiUtils::IsSystemApp() && !UIEffectNapiUtils::IsFormRenderServiceCall()) {
-        UIEFFECT_LOG_E("CreateBrightnessBlender failed");
-        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
-            "EffectNapi CreateBrightnessBlender failed, is not system app or frs call");
-        return nullptr;
-    }
-
     const size_t requireArgc = NUM_1;
     size_t realArgc = NUM_1;
     napi_value argv[NUM_1];
@@ -668,6 +664,19 @@ napi_value EffectNapi::CreateShadowBlender(napi_env env, napi_callback_info info
     return nativeObj;
 }
 
+static bool CheckNullOrUndefined(napi_env env, napi_value argv, const char* paramName)
+{
+    napi_valuetype type = UIEffectNapiUtils::GetType(env, argv);
+    if (type == napi_null || type == napi_undefined) {
+        std::string msg =
+            std::string("EffectNapi CreateHdrDarkenBlender failed, ") + paramName + " is null or undefined";
+        UIEFFECT_LOG_E("EffectNapi CreateHdrDarkenBlender %{public}s is null or undefined", paramName);
+        napi_throw(env, CreateJsError(env, ERR_INVALID_PARAM, msg));
+        return false;
+    }
+    return true;
+}
+
 napi_value EffectNapi::CreateHdrDarkenBlender(napi_env env, napi_callback_info info)
 {
     size_t realArgc = NUM_2;
@@ -679,33 +688,37 @@ napi_value EffectNapi::CreateHdrDarkenBlender(napi_env env, napi_callback_info i
     UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && (realArgc == NUM_1 || realArgc == NUM_2), nullptr,
         UIEFFECT_LOG_E("EffectNapi CreateHdrDarkenBlender parsing input fail"));
 
+    if (!CheckNullOrUndefined(env, argv[NUM_0], "hdrBrightnessRatio")) {
+        return nullptr;
+    }
+    if (realArgc == NUM_2 && !CheckNullOrUndefined(env, argv[NUM_1], "grayscaleFactor")) {
+        return nullptr;
+    }
+
     HdrDarkenBlender* blender = new(std::nothrow) HdrDarkenBlender();
+    UIEFFECT_NAPI_CHECK_RET_D(blender != nullptr, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateHdrDarkenBlender blender is nullptr"));
 
-    float hdrBrightnessRatio = 0.0f;
-    Vector3f grayscaleFactor = {0.299, 0.587, 0.114};
-
-    hdrBrightnessRatio = GetSpecialValue(env, argv[NUM_0]);
-
+    float hdrBrightnessRatio = GetSpecialValue(env, argv[NUM_0]);
+    Vector3f grayscaleFactor = {0.299f, 0.587f, 0.114f};
     blender->SetGrayscaleFactor(grayscaleFactor);
 
     if (realArgc == NUM_2) {
-        UIEFFECT_NAPI_CHECK_RET_D(ParsegrayscaleFactor(env, argv[NUM_1], grayscaleFactor), nullptr,
+        UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(
+            ParsegrayscaleFactor(env, argv[NUM_1], grayscaleFactor), nullptr, blender,
             UIEFFECT_LOG_E("EffectNapi CreateHdrDarkenBlender parse grayscaleFactor failed"));
-
         blender->SetGrayscaleFactor(grayscaleFactor);
     }
 
     blender->SetHdrBrightnessRatio(hdrBrightnessRatio);
     napi_value nativeObj = nullptr;
     status = napi_create_object(env, &nativeObj);
-
-    status = napi_wrap(
-        env, nativeObj, blender,
+    UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, blender,
+        UIEFFECT_LOG_E("EffectNapi CreateHdrDarkenBlender create object fail"));
+    status = napi_wrap(env, nativeObj, blender,
         [](napi_env env, void* data, void* hint) {
-            HdrDarkenBlender* blenderObj = (HdrDarkenBlender*)data;
-            delete blenderObj;
-        },
-        nullptr, nullptr);
+            delete static_cast<HdrDarkenBlender*>(data);
+        }, nullptr, nullptr);
     UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, blender,
         UIEFFECT_LOG_E("EffectNapi CreateHdrDarkenBlender wrap fail"));
     return nativeObj;
@@ -1181,6 +1194,85 @@ napi_value EffectNapi::CreateHarmoniumEffect(napi_env env, napi_callback_info in
         UIEFFECT_LOG_E("EffectNapi CreateHarmoniumEffect napi_unwrap fail"));
     visualEffectObj->AddPara(para);
     API_STATS_HISTOGRAM("Arkgraphics2d.UIEffect.liquidMaterial", 1);
+    return thisVar;
+}
+
+bool EffectNapi::ParseDistortionCollapseEffectPara(napi_env env, napi_value jsObject,
+    DistortionCollapseEffectPara* para)
+{
+    // Mark as disabled when the JS parameter is undefined or null
+    napi_valuetype valueType = UIEffectNapiUtils::GetType(env, jsObject);
+    if (valueType == napi_undefined || valueType == napi_null) {
+        para->SetDisabled(true);
+        return true;
+    }
+    napi_value tmpValue = nullptr;
+    Vector2f tmpVector2;
+    Vector4f tmpVector4;
+    int parseTimes = 0;
+
+    if (napi_get_named_property(env, jsObject, "topLeft", &tmpValue) == napi_ok && tmpValue != nullptr) {
+        if (ParseJsPoint(env, tmpValue, tmpVector2)) {
+            para->SetLUCorner(tmpVector2);
+            parseTimes++;
+        }
+    }
+    if (napi_get_named_property(env, jsObject, "topRight", &tmpValue) == napi_ok && tmpValue != nullptr) {
+        if (ParseJsPoint(env, tmpValue, tmpVector2)) {
+            para->SetRUCorner(tmpVector2);
+            parseTimes++;
+        }
+    }
+    if (napi_get_named_property(env, jsObject, "bottomLeft", &tmpValue) == napi_ok && tmpValue != nullptr) {
+        if (ParseJsPoint(env, tmpValue, tmpVector2)) {
+            para->SetLBCorner(tmpVector2);
+            parseTimes++;
+        }
+    }
+    if (napi_get_named_property(env, jsObject, "bottomRight", &tmpValue) == napi_ok && tmpValue != nullptr) {
+        if (ParseJsPoint(env, tmpValue, tmpVector2)) {
+            para->SetRBCorner(tmpVector2);
+            parseTimes++;
+        }
+    }
+    napi_value barrelValue = nullptr;
+    if (napi_get_named_property(env, jsObject, "barrelDistortion", &barrelValue) == napi_ok && barrelValue != nullptr) {
+        if (ParseJsVector4f(env, barrelValue, tmpVector4)) {
+            para->SetBarrelDistortion(tmpVector4);
+            parseTimes++;
+        }
+    }
+    return (parseTimes == NUM_5);
+}
+
+napi_value EffectNapi::CreateDistortionCollapseEffect(napi_env env, napi_callback_info info)
+{
+    constexpr size_t requireArgc = NUM_1;
+    size_t realArgc = NUM_1;
+    napi_value argv[requireArgc];
+    napi_value thisVar = nullptr;
+    napi_status status;
+    UIEFFECT_JS_ARGS(env, info, status, realArgc, argv, thisVar);
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && realArgc == requireArgc, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateDistortionCollapseEffect parsing input fail"));
+
+    napi_value jsObject = argv[0];
+    UIEFFECT_NAPI_CHECK_RET_D(jsObject != nullptr, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateDistortionCollapseEffect jsObject is nullptr"));
+
+    auto para = std::make_shared<DistortionCollapseEffectPara>();
+    UIEFFECT_NAPI_CHECK_RET_D(para != nullptr, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateDistortionCollapseEffect para is nullptr"));
+
+    UIEFFECT_NAPI_CHECK_RET_D(ParseDistortionCollapseEffectPara(env, jsObject, para.get()), nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateDistortionCollapseEffect parse fail"));
+
+    VisualEffect* visualEffectObj = nullptr;
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&visualEffectObj));
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && visualEffectObj != nullptr, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateDistortionCollapseEffect napi_unwrap fail"));
+
+    visualEffectObj->AddPara(para);
     return thisVar;
 }
 

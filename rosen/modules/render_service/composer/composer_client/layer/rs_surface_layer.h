@@ -133,6 +133,8 @@ public:
     uint64_t GetNodeId() const override;
     void SetAncoFlags(uint32_t ancoFlags) override;
     uint32_t GetAncoFlags() const override;
+    bool GetDelegateMode() const override;
+    void SetDelegateMode(bool isDelegateMode) override;
     bool IsAncoNative() const override;
     void SetLayerMaskInfo(LayerMask mask) override;
     LayerMask GetLayerMaskInfo() const override;
@@ -178,7 +180,11 @@ public:
     void CopyLayerInfo(const std::shared_ptr<RSLayer>& rsLayer) override {};
     void Dump(std::string& result) const override;
     void DumpCurrentFrameLayer() const override;
+    void SetSplitLayerTag(bool splitLayerTag) override;
+    bool GetSplitLayerTag() const override;
 
+    void SetDelegateModeCropRect(const GraphicIRect& crop) override;
+    GraphicIRect GetDelegateModeCropRect() override;
 protected:
     bool AddRSLayerParcel(RSLayerId layerId, std::shared_ptr<RSLayerParcel>& layerParcel);
 
@@ -199,6 +205,7 @@ private:
     std::vector<GraphicIRect> visibleRegions_;
     std::vector<GraphicIRect> dirtyRegions_;
     GraphicIRect cropRect_ = {0};
+    GraphicIRect delegateModeCropRect_ = {0};
     GraphicMatrix matrix_ = {0.0}; // matrix used for uni render redraw
     int32_t gravity_ = 0; // used for uni render redraw
     bool isUniRender_ = false; // true for uni render layer (DisplayNode)
@@ -256,7 +263,11 @@ private:
     HpaeOriginalInfo hpaeOriginalInfo_;
     // hpae_offline end
     bool ignoreAlpha_ = false;
+    bool isDelegateMode_ = false;
     GraphicIRect ancoSrcRect_ {-1, -1, -1, -1};
+    // opinc_split begin
+    bool splitLayerTag_ = false;
+    // opinc_split end
     friend class RSSurfaceRCDLayer;
     friend std::shared_ptr<RSLayer> Create(RSLayerId rsLayerId, const std::shared_ptr<RSComposerContext>& context);
 };

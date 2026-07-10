@@ -120,6 +120,15 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::HUE_ROTATE, ThresholdType::COARSE },
     { RSPropertyType::COLOR_BLEND, ThresholdType::COLOR },
     { RSPropertyType::PARTICLE, ThresholdType::ZERO },
+    { RSPropertyType::DEPTH_IMAGE, ThresholdType::ZERO },
+    { RSPropertyType::DEPTH_CAMERA_PARA, ThresholdType::ZERO },
+    { RSPropertyType::DEPTH_LIGHT_PARA, ThresholdType::ZERO },
+    { RSPropertyType::DEPTH_IMAGE_MATRIX, ThresholdType::ZERO },
+    { RSPropertyType::SPATIAL_EFFECT_LEFT_TOP, ThresholdType::ZERO },
+    { RSPropertyType::SPATIAL_EFFECT_RIGHT_TOP, ThresholdType::ZERO },
+    { RSPropertyType::SPATIAL_EFFECT_LEFT_BOTTOM, ThresholdType::ZERO },
+    { RSPropertyType::SPATIAL_EFFECT_RIGHT_BOTTOM, ThresholdType::ZERO },
+    { RSPropertyType::SPATIAL_EFFECT_OCCLUSION_WEIGHT, ThresholdType::ZERO },
     { RSPropertyType::SHADOW_IS_FILLED, ThresholdType::ZERO },
     { RSPropertyType::SHADOW_DISABLE_SDF_BLUR, ThresholdType::ZERO },
     { RSPropertyType::OUTLINE_COLOR, ThresholdType::COLOR },
@@ -281,7 +290,6 @@ void RSModifier::SetPropertyThresholdType(RSPropertyType type, std::shared_ptr<R
 {
     auto it = g_propertyTypeToThresholdTypeMap.find(type);
     if (it == g_propertyTypeToThresholdTypeMap.end()) {
-        RS_LOGE("RSPropertyType is not exist! type: %{public}d", static_cast<int32_t>(type));
         return;
     }
     if (it->second != ThresholdType::DEFAULT) {

@@ -62,12 +62,31 @@ namespace OHOS::Rosen {
 #if defined(ROSEN_OHOS) || defined(ROSEN_ARKUI_X)
 using namespace Media;
 namespace {
+bool CheckDrawingPixelMapMeshParams(int column, int row, int& vertCounts, int& indexCount)
+{
+    int64_t tempVertCounts = (static_cast<int64_t>(column) + 1) * (static_cast<int64_t>(row) + 1);
+    if (tempVertCounts > INT_MAX) {
+        ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh vertCounts overflow");
+        return false;
+    }
+    vertCounts = static_cast<int>(tempVertCounts);
+    int64_t tempIndexCount = static_cast<int64_t>(column) * static_cast<int64_t>(row) * 6;
+    if (tempIndexCount > INT_MAX) {
+        ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh indexCount overflow");
+        return false;
+    }
+    indexCount = static_cast<int>(tempIndexCount);
+    return true;
+}
+
 void DrawingPixelMapMesh(std::shared_ptr<Media::PixelMap> pixelMap, int column, int row,
     float* vertices, uint32_t* colors, Drawing::Canvas* m_canvas)
 {
-    const int vertCounts = (column + 1) * (row + 1);
-    int32_t size = 6; // triangle * 2
-    const int indexCount = column * row * size;
+    int vertCounts = 0;
+    int indexCount = 0;
+    if (!CheckDrawingPixelMapMeshParams(column, row, vertCounts, indexCount)) {
+        return;
+    }
     uint32_t flags = Drawing::BuilderFlags::HAS_TEXCOORDS_BUILDER_FLAG;
     if (colors) {
         flags |= Drawing::BuilderFlags::HAS_COLORS_BUILDER_FLAG;
@@ -93,10 +112,6 @@ void DrawingPixelMapMesh(std::shared_ptr<Media::PixelMap> pixelMap, int column, 
     const float height = static_cast<float>(pixelMap->GetHeight());
     const float width = static_cast<float>(pixelMap->GetWidth());
 
-    if (column == 0 || row == 0) {
-        ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh column or row is invalid");
-        return;
-    }
     const float dy = height / row;
     const float dx = width / column;
 
@@ -1090,6 +1105,7 @@ bool GetGlyphIds(napi_env env, napi_value& jsGlyphIds, uint32_t size, std::uniqu
         ROSEN_LOGE("GetGlyphIds size exceeds the upper limit");
         return false;
     }
+    glyphIds = std::make_unique<uint16_t[]>(size);
     for (uint32_t i = 0; i < size; i++) {
         napi_value tempGlyphIds = nullptr;
         napi_get_element(env, jsGlyphIds, i, &tempGlyphIds);
@@ -1112,6 +1128,11 @@ bool GetGlyphIds(napi_env env, napi_value& jsGlyphIds, uint32_t size, std::uniqu
 bool GetGlyphPositions(napi_env env, napi_value& jsPosition, uint32_t size,
                        std::unique_ptr<Drawing::Point[]>& positions)
 {
+    if (size > MAX_ELEMENTSIZE) {
+        ROSEN_LOGE("GetGlyphPositions size exceeds the upper limit");
+        return false;
+    }
+    positions = std::make_unique<Drawing::Point[]>(size);
     if (!OnMakePoints(env, positions.get(), size, jsPosition)) {
         ROSEN_LOGE("JsCanvas::OnDrawGlyphs Argv[ARGC_TWO] is invalid");
         return false;
@@ -1184,12 +1205,10 @@ napi_value JsCanvas::OnDrawGlyphs(napi_env env, napi_callback_info info)
         (positionsSize < static_cast<uint32_t>(GlyphSafeAdd(positionOffSet, glyphCount)))) {
         return NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Input out of range.");
     }
-    std::unique_ptr<uint16_t[]> glyphIds = std::make_unique<uint16_t[]>(glyphIdsSize);
-    if (!GetGlyphIds(env, jsGlyphIds, glyphIdsSize, glyphIds)) {
-        return nullptr;
-    }
-    std::unique_ptr<Drawing::Point[]> positions = std::make_unique<Drawing::Point[]>(positionsSize);
-    if (!GetGlyphPositions(env, jsPosition, positionsSize, positions)) {
+    std::unique_ptr<uint16_t[]> glyphIds;
+    std::unique_ptr<Drawing::Point[]> positions;
+    if (!GetGlyphIds(env, jsGlyphIds, glyphIdsSize, glyphIds) ||
+        !GetGlyphPositions(env, jsPosition, positionsSize, positions)) {
         return nullptr;
     }
     DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
@@ -1380,7 +1399,10 @@ napi_value JsCanvas::OnDrawPixelMapMesh(napi_env env, napi_callback_info info)
     napi_value verticesArray = argv[ARGC_THREE];
     uint32_t verticesSize = 0;
     napi_get_array_length(env, verticesArray, &verticesSize);
-    int64_t tempVerticesSize = ((column + 1) * (row + 1) + vertOffset) * 2; // x and y two coordinates
+    int64_t tempVerticesSize =
+        (static_cast<int64_t>(column) + 1) * (static_cast<int64_t>(row) + 1) + static_cast<int64_t>(vertOffset);
+    constexpr int32_t coordinateDim = 2;
+    tempVerticesSize *= coordinateDim;
     if (verticesSize != tempVerticesSize) {
         ROSEN_LOGE("JsCanvas::OnDrawPixelMapMesh vertices are invalid");
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter3 type.");
@@ -1404,12 +1426,14 @@ napi_value JsCanvas::OnDrawPixelMapMesh(napi_env env, napi_callback_info info)
         }
         vertices[i] = vertex;
     }
-    float* verticesMesh = verticesSize ? (vertices + vertOffset * 2) : nullptr; // offset two coordinates
+    float* verticesMesh =
+        verticesSize ? (vertices + static_cast<int64_t>(vertOffset) * 2) : nullptr; // offset two coordinates
 
     napi_value colorsArray = argv[ARGC_FIVE];
     uint32_t colorsSize = 0;
     napi_get_array_length(env, colorsArray, &colorsSize);
-    int64_t tempColorsSize = (column + 1) * (row + 1) + colorOffset;
+    int64_t tempColorsSize =
+        (static_cast<int64_t>(column) + 1) * (static_cast<int64_t>(row) + 1) + static_cast<int64_t>(colorOffset);
 
     if (colorsSize != 0 && colorsSize != tempColorsSize) {
         ROSEN_LOGE("JsCanvas::OnDrawPixelMapMesh colors are invalid");
@@ -1473,6 +1497,10 @@ bool GetPositions(napi_env env, uint32_t pointLength, napi_value& positionsArray
         NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid positions params.");
         return false;
     }
+    if (positionsSize > MAX_ELEMENTSIZE) {
+        ROSEN_LOGE("JsCanvas::OnDrawVertices positionsSize exceeds the upper limit");
+        return false;
+    }
     positions.resize(positionsSize);
     if (!OnMakePoints(env, positions.data(), positionsSize, positionsArray)) {
         ROSEN_LOGE("JsCanvas::OnDrawVertices positions is invalid");
@@ -1490,6 +1518,10 @@ bool GetTexs(napi_env env, uint32_t pointLength, napi_value& texsArray,
         if (texsSize != pointLength) {
             ROSEN_LOGE("JsCanvas::OnDrawVertices texsSize is invalid");
             NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid texs params.");
+            return false;
+        }
+        if (texsSize > MAX_ELEMENTSIZE) {
+            ROSEN_LOGE("JsCanvas::OnDrawVertices texsSize exceeds the upper limit");
             return false;
         }
         texs.resize(texsSize);

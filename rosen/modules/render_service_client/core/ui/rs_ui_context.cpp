@@ -17,8 +17,10 @@
 
 #include "animation/rs_interactive_implict_animator.h"
 #include "command/rs_animation_command.h"
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+#include "command/rs_delegate_composite_command.h"
+#endif
 #include "command/rs_node_command.h"
-#include "modifier/rs_modifier_manager_map.h"
 #include "platform/common/rs_log.h"
 #include "ui/rs_ui_context_manager.h"
 
@@ -32,6 +34,12 @@ RSUIContext::RSUIContext(uint64_t token, sptr<IRemoteObject>& connectToRenderRem
         std::make_shared<RSTransactionHandler>(token, rsRenderInterface_->GetRSRenderPipelineClient());
     rsSyncTransactionHandler_ = std::shared_ptr<RSSyncTransactionHandler>(new RSSyncTransactionHandler());
     rsSyncTransactionHandler_->SetTransactionHandler(rsTransactionHandler_);
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+    if (RSSystemProperties::GetHybridRenderCanvasEnabled()) {
+        modifiersDrawThread_ = std::make_shared<RSModifiersDrawThread>();
+        canvasModifiersDrawAgent_ = std::make_shared<RSCanvasModifiersDrawAgent>();
+    }
+#endif
 }
 
 RSUIContext::~RSUIContext()
@@ -62,7 +70,6 @@ const std::shared_ptr<RSModifierManager> RSUIContext::GetRSModifierManager()
     if (isUniRender) {
         if (rsModifierManager_ == nullptr) {
             rsModifierManager_ = std::make_shared<RSModifierManager>();
-            rsModifierManager_->SetRSUIContext(weak_from_this());
         }
         return rsModifierManager_;
     } else {
@@ -77,7 +84,6 @@ const std::shared_ptr<RSModifierManager> RSUIContext::GetRSModifierManager()
         }
 
         auto rsModifierManager = std::make_shared<RSModifierManager>();
-        rsModifierManager->SetRSUIContext(weak_from_this());
         rsModifierManagerMap_.emplace(gettid(), rsModifierManager);
         return rsModifierManager;
     }
@@ -270,5 +276,132 @@ void RSUIContext::RemoveInteractiveImplictAnimator(InteractiveImplictAnimatorId 
     std::lock_guard<std::mutex> lock(interactiveImplictAnimatorMutex_);
     interactiveImplictAnimators_.erase(id);
 }
+
+void RSUIContext::SetRebuildState(RebuildState state)
+{
+    std::lock_guard<std::mutex> lock(rebuildStateMutex_);
+    rebuildState_ = state;
+    if (state == RebuildState::Normal) {
+        rebuildStateCV_.notify_all();
+    }
+}
+
+bool RSUIContext::WaitForRebuildNormal(uint32_t timeoutMs)
+{
+    std::unique_lock<std::mutex> lock(rebuildStateMutex_);
+    if (rebuildState_ == RebuildState::Normal) {
+        return true;
+    }
+    auto timeoutDuration = std::chrono::milliseconds(timeoutMs);
+    rebuildStateCV_.wait_for(lock, timeoutDuration, [this] {
+        return rebuildState_ == RebuildState::Normal;
+    });
+    if (rebuildState_ != RebuildState::Normal) {
+        ROSEN_LOGW("WaitForRebuildNormal timeout after %{public}u ms", timeoutMs);
+        return false;
+    }
+    return true;
+}
+
+void RSUIContext::DestroyModifiersDraw()
+{
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+    if (!RSSystemProperties::GetHybridRenderCanvasEnabled() || modifiersDrawThread_ == nullptr) {
+        return;
+    }
+    canvasModifiersDrawAgent_->WaitAllTasksFinish();
+    canvasModifiersDrawAgent_->Destroy();
+    canvasModifiersDrawAgent_ = nullptr;
+    modifiersDrawThread_->WaitAllTasksFinish();
+    modifiersDrawThread_->Destroy();
+    modifiersDrawThread_ = nullptr;
+#endif
+}
+
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+void RSUIContext::UnblockUIThread()
+{
+    std::unique_lock<std::mutex> uiLock(uiMutex_);
+    if (canBlockUIThread_) {
+        canBlockUIThread_ = false;
+        uiCV_.notify_all();
+    }
+}
+
+CommitTransactionCallback RSUIContext::CreateCommitTransactionCallback()
+{
+    if (modifiersDrawThread_ == nullptr) {
+        RS_LOGE("RSUIContext::CreateCommitTransactionCallback, null modifiersDrawThread.");
+        return nullptr;
+    }
+
+    modifiersDrawThread_->Start();
+    std::weak_ptr<RSUIContext> weakContext = shared_from_this();
+    return [weakContext](std::shared_ptr<RSRenderPipelineClient>& renderPiplineClient,
+        std::unique_ptr<RSTransactionData>&& rsTransactionData, uint32_t& transactionDataIndex) {
+        if (renderPiplineClient == nullptr) {
+            RS_LOGE("RSUIContext::CreateCommitTransactionCallback, null renderPiplineClient.");
+            return;
+        }
+        if (rsTransactionData == nullptr) {
+            RS_LOGE("RSUIContext::CreateCommitTransactionCallback, null transactionData.");
+            return;
+        }
+        auto uiContext = weakContext.lock();
+        if (uiContext == nullptr) {
+            RS_LOGE("RSUIContext::CreateCommitTransactionCallback, null uiContext.");
+            return;
+        }
+        if (uiContext->modifiersDrawThread_ == nullptr) {
+            RS_LOGE("RSUIContext::CreateCommitTransactionCallback, null modifiersDrawThread inner.");
+            return;
+        }
+        static uint32_t commitIndex = 0;
+        std::unique_lock<std::mutex> uiLock(uiContext->uiMutex_);
+        uiContext->canBlockUIThread_ = true;
+        commitIndex++;
+        RS_TRACE_NAME_FMT("Post CommitTransaction, index=%u", commitIndex);
+        uiContext->modifiersDrawThread_->ScheduleTask(
+            [weakContext, renderPiplineClient, transactionData = std::move(rsTransactionData),
+                &transactionDataIndex, index = commitIndex]() mutable {
+                auto uiContext = weakContext.lock();
+                if (uiContext == nullptr) {
+                    return;
+                }
+                if (uiContext->modifiersDrawThread_ != nullptr && uiContext->canvasModifiersDrawAgent_ != nullptr) {
+                    RS_TRACE_NAME_FMT("Do CommitTransaction, index=%u", index);
+                    uiContext->modifiersDrawThread_->CommitTransaction(uiContext->canvasModifiersDrawAgent_,
+                        renderPiplineClient, std::move(transactionData), transactionDataIndex);
+                }
+                uiContext->canvasDrawingNodeBufferFlushed_ = false;
+                uiContext->UnblockUIThread();
+            });
+    };
+}
+
+void RSUIContext::FlushCanvasDrawingNodeBuffers()
+{
+    if (!RSSystemProperties::GetHybridRenderCanvasEnabled()) {
+        return;
+    }
+    if (!canvasDrawingNodeUpdated_) {
+        return;
+    }
+    auto transaction = GetRSTransaction();
+    if (transaction == nullptr) {
+        return;
+    }
+    RS_TRACE_NAME_FMT("RSUIContext::FlushCanvasDrawingNodeBuffers, token=%" PRIu64, token_);
+    if (!canvasDrawingNodeBufferFlushed_) {
+        std::unique_ptr<RSCommand> command = std::make_unique<TransactionBufferCommand>(rootNodeId_);
+        transaction->AddCommand(command, true);
+    }
+    if (canvasModifiersDrawAgent_ != nullptr) {
+        canvasModifiersDrawAgent_->SubmitAndCollectCanvasBuffers();
+    }
+    canvasDrawingNodeBufferFlushed_ = true;
+    canvasDrawingNodeUpdated_ = false;
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

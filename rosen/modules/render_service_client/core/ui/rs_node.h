@@ -29,6 +29,7 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_UI_RS_NODE_H
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_NODE_H
 
+#include <algorithm>
 #include <optional>
 #include <unordered_map>
 
@@ -41,6 +42,9 @@
 #include "animation/rs_particle_params.h"
 #include "animation/rs_symbol_node_config.h"
 #include "animation/rs_transition_effect.h"
+#include "command/rs_node_command.h"
+#include "command/rs_base_node_command.h"
+#include "command_modifier/rs_node_command_modifier.h"
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
 #include "modifier/rs_modifier_extractor.h"
@@ -79,10 +83,23 @@ enum class FilterQuality;
 namespace ModifierNG {
 class RSModifier;
 class RSCustomModifier;
+class RSContentStyleModifier;
 class RSForegroundFilterModifier;
 class RSBackgroundFilterModifier;
 enum class RSModifierType : uint16_t;
 }
+
+/**
+ * @enum RSNodeState
+ *
+ * @brief Defines the state of RSNode.
+ */
+enum class RSNodeState : uint8_t {
+    ACTIVE = 0,    // renderNode has been created on the render side, default value
+    INACTIVE,      // only client node exists, render side node has been destroyed (was created)
+    LAZY_LOAD      // only client node exists, service side node has not been created
+};
+
 /**
  * @class RSNode
  *
@@ -112,6 +129,15 @@ public:
      * @brief Destructor for RSNode.
      */
     virtual ~RSNode();
+
+    void RebuildTree();
+
+    /**
+     * @brief Dumps all RSCmdModifiers to the output string.
+     *
+     * @param out The string to which the dump information will be appended.
+     */
+    void DumpRSCmdModifiers(std::string& out) const;
 
     /*
     * <important>
@@ -281,6 +307,13 @@ public:
     void DumpTree(int depth, std::string& out) const;
 
     /**
+     * @brief Gets the node state as a string.
+     *
+     * @return std::string The node state string (ACTIVE, INACTIVE, LAZY_LOAD, or empty).
+     */
+    std::string DumpNodeState() const;
+
+    /**
      * @brief Dumps the information of current node into the provided output string.
      *
      * @param out The string to which the dump information will be appended.
@@ -397,6 +430,16 @@ public:
     const RSModifierExtractor& GetStagingProperties() const;
 
     const RSShowingPropertiesFreezer& GetShowingProperties() const;
+    
+    /**
+     * @brief Sets the bounds and frame of the node without mutex.
+     *
+     * The bounds typically define the position and size of the node within its parent.
+     *
+     * @param bounds A Vector4f representing the new bounds (X, Y, width, height).
+     * @param frame A Vector4f representing the new frame, containing values for x, y, width, and height.
+     */
+    void SetBoundsAndFrame(const Vector4f& bounds, const Vector4f& frame);
 
     /**
      * @brief Sets the bounds of the node.
@@ -1642,6 +1685,8 @@ public:
 
     void SetUseEffect(bool useEffect);
     void SetUseEffectType(UseEffectType useEffectType);
+    void SetSDFUnionMode(int sdfUnionMode);
+    void SetUnionSpacing(float unionSpacing);
     void SetAlwaysSnapshot(bool enable);
 
     void SetUseShadowBatching(bool useShadowBatching);
@@ -1910,6 +1955,17 @@ public:
     {
         return rsUIContext_;
     }
+
+    /**
+     * @brief Gets the current state of the node.
+     *
+     * @return The current RSNodeState.
+     */
+    RSNodeState GetNodeState() const
+    {
+        return nodeState_;
+    }
+
     void SetUIContextToken();
 
     /**
@@ -1925,23 +1981,6 @@ public:
      * @param isSkipCheckInMultiInstance true to skip check; false otherwise.
      */
     void SetSkipCheckInMultiInstance(bool isSkipCheckInMultiInstance);
-
-    /**
-     * @brief Gets whether the canvas enables hybrid rendering.
-     *
-     * @return true if hybrid rendering is enabled; false otherwise.
-     */
-    bool IsHybridRenderCanvas() const
-    {
-        return hybridRenderCanvas_;
-    }
-
-    /**
-     * @brief Sets whether the canvas enables hybrid rendering.
-     *
-     * @param hybridRenderCanvas true to enable hybrid rendering; false otherwise.
-     */
-    virtual void SetHybridRenderCanvas(bool hybridRenderCanvas) {}
 
     /**
      * @brief Gets whether the node is on the tree.
@@ -1971,6 +2010,13 @@ public:
     void UpdateOcclusionCullingStatus(bool enable, NodeId keyOcclusionNodeId);
 
     /**
+     * @brief Mark the node for layer part rendering optimization
+     *
+     * @param isLayerPartRender true to enable layer part rendering optimization; false to disable
+     */
+    void MarkLayerPartRender(bool isLayerPartRender);
+
+    /**
      * @brief Set the spatial effect parameters of the node
      *
      * @param para spatial effect parameters
@@ -1984,14 +2030,77 @@ public:
      */
     void SetIsDepthBackground(bool isDepthBackground);
 
-    /**
-     * @brief Mark the node for layer part rendering optimization
-     *
-     * @param isLayerPartRender true to enable layer part rendering optimization; false to disable
-     */
-    void MarkLayerPartRender(bool isLayerPartRender);
-
     void ReSortChildrenByZIndex();
+
+    static NodeId GenerateId();
+
+    // Set RSCmdModifier property (reuse existing modifier or create new one)
+    template<typename ModifierType, typename ParamType>
+    void SetRSCmdProperty(const ParamType& param)
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+
+        auto modifier = GetRSCmdModifier(ModifierType::Type);
+
+        if (modifier == nullptr) {
+            modifier = std::make_shared<ModifierType>(weak_from_this(), param);
+            rsCmdModifiers_.emplace(modifier->GetType(), modifier);
+            // Newly created modifier is dirty and needs update
+            if (GetNodeState() != RSNodeState::INACTIVE) {
+                modifier->UpdateToRender();
+            }
+        } else {
+            auto typedModifier = std::static_pointer_cast<ModifierType>(modifier);
+            bool paramChanged = typedModifier->SetParam(param);
+            // Only update when parameter changed
+            if (paramChanged) {
+                modifier->index_ = RSCmdModifier::GenerateCmdModifierIndex();
+                if (GetNodeState() != RSNodeState::INACTIVE) {
+                    modifier->UpdateToRender();
+                }
+            }
+        }
+    }
+
+    // Set RSCmdModifier property (with return value)
+    template<typename ModifierType, typename ParamType>
+    RSCmdModifier::UpdateResult SetRSCmdPropertyWithResult(const ParamType& param)
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+
+        auto modifier = GetRSCmdModifier(ModifierType::Type);
+
+        if (modifier == nullptr) {
+            modifier = std::make_shared<ModifierType>(weak_from_this(), param);
+            rsCmdModifiers_.emplace(modifier->GetType(), modifier);
+            // Newly created modifier is dirty and needs update
+            if (GetNodeState() != RSNodeState::INACTIVE) {
+                return modifier->UpdateToRenderWithResult();
+            }
+        } else {
+            auto typedModifier = std::static_pointer_cast<ModifierType>(modifier);
+            bool paramChanged = typedModifier->SetParam(param);
+            // Only update when parameter changed
+            if (paramChanged) {
+                modifier->index_ = RSCmdModifier::GenerateCmdModifierIndex();
+                if (GetNodeState() != RSNodeState::INACTIVE) {
+                    return modifier->UpdateToRenderWithResult();
+                }
+            }
+        }
+        return false;
+    }
+
+    // HybridDraw Start
+    void SetHybridRenderCanvas(bool hybridRenderCanvas) {}
+    // HybridDraw End
+
+    bool CheckAndWaitForNodeRebuild();
+
+    bool HasCreateRenderNodeInRS() const
+    {
+        return hasCreateRenderNodeInRS_;
+    }
 
 protected:
     explicit RSNode(
@@ -1999,12 +2108,14 @@ protected:
         bool isOnTheTree = false);
     explicit RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode = false,
         std::shared_ptr<RSUIContext> rsUIContext = nullptr, bool isOnTheTree = false);
-
+    
+    virtual void CreateRenderNode() {}
     virtual void DumpSubClass(std::string& out) const {}
 
     void DumpModifiers(std::string& out) const;
 
     mutable bool lazyLoad_ = false;
+    mutable RSNodeState nodeState_ = RSNodeState::ACTIVE;
     bool shadowNodeFlag_ = false;
     bool isRenderServiceNode_;
     bool isTextureExportNode_ = false;
@@ -2018,8 +2129,15 @@ protected:
 
     bool drawContentLast_ = false;
 
+    bool isOnTheTree_ = false;
+    bool isOnTheTreeInit_ = false;
+    
+    bool isCustomTextType_ = false;
+    bool isCustomTypeface_ = false;
+
     bool hybridRenderCanvas_ = false;
 
+    mutable std::unordered_map<RSCmdModifierType, std::shared_ptr<RSCmdModifier>> rsCmdModifiers_;
     /**
      * @brief Called when child nodes are added to this node.
      */
@@ -2039,10 +2157,16 @@ protected:
 
     void DoFlushModifier();
 
-    std::vector<PropertyId> GetModifierIds() const;
+    std::shared_ptr<RSCmdModifier> GetRSCmdModifier(RSCmdModifierType modifierType) const
+    {
+        auto it = rsCmdModifiers_.find(modifierType);
+        if (it != rsCmdModifiers_.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
 
-    bool isCustomTextType_ = false;
-    bool isCustomTypeface_ = false;
+    std::vector<PropertyId> GetModifierIds() const;
 
     /**
      * @brief Gets the mutex used for property access.
@@ -2164,8 +2288,23 @@ protected:
         }
     }
 
+    virtual bool SetNodeState(RSNodeState state);
+
+    virtual bool ReCreateNodeInRender();
+
+    virtual bool IsSkipContentModifierDraw()
+    {
+        return false;
+    }
+
+    virtual void SetSkipContentModifierDraw(bool skip) {}
+
+    virtual bool RenderInClient(Drawing::DrawCmdListPtr drawCmdList)
+    {
+        return false;
+    }
+
 private:
-    static NodeId GenerateId();
     static void InitUniRenderEnabled();
 
     static const std::array<std::pair<uint16_t, uint16_t>, 3> lazyLoadCommandTypes_; // <CommandType, CommandSubType>
@@ -2214,7 +2353,33 @@ private:
     void SetHdrDarkenBlenderParams(const RSHdrDarkenBlenderPara& params);
 
     void NotifyPageNodeChanged() const;
+
+    // for node rebuilding only.
+    void UpdateAllRSCmdModifiersToRender() {
+        // Sort modifiers by index (creation/update order) to ensure
+        // commands are sent in the correct order when pushing to foreground
+        std::vector<std::shared_ptr<RSCmdModifier>> sortedModifiers;
+        for (auto& [type, modifier] : rsCmdModifiers_) {
+            if (modifier) {
+                sortedModifiers.push_back(modifier);
+            }
+        }
+        std::sort(sortedModifiers.begin(), sortedModifiers.end(),
+            [](const std::shared_ptr<RSCmdModifier>& a, const std::shared_ptr<RSCmdModifier>& b) {
+                return a->GetIndex() < b->GetIndex();
+            });
+        for (auto& modifier : sortedModifiers) {
+            modifier->UpdateToRender();
+        }
+    }
+ 
+    void ClearAllRSCmdModifiers() {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        rsCmdModifiers_.clear();
+    }
+
     bool AnimationCallback(AnimationId animationId, AnimationCallbackEvent event);
+    void AnimationDestroyInRenderCallback(AnimationId animationId, float fraction, bool isReverseCycle);
     bool FireColorPickerCallback(uint32_t color);
     bool HasPropertyAnimation(const PropertyId& id);
     std::vector<AnimationId> GetAnimationByPropertyId(const PropertyId& id);
@@ -2223,6 +2388,8 @@ private:
     void FinishAnimationByProperty(const PropertyId& id);
     void RemoveAnimationInner(const std::shared_ptr<RSAnimation>& animation);
     void CancelAnimationByProperty(const PropertyId& id, const bool needForceSync = false);
+    void RebuildAnimationInRender();
+    void RemoveParticleAnimations();
 
     const std::shared_ptr<RSPropertyBase> GetProperty(const PropertyId& propertyId);
     void RegisterProperty(std::shared_ptr<RSPropertyBase> property);
@@ -2231,13 +2398,17 @@ private:
     /**
      * @brief Called when the bounds size of the node has changed.
      */
-    virtual void OnBoundsSizeChanged() const {};
+    virtual void OnBoundsSizeChanged() {};
     void UpdateModifierMotionPathOption();
     void MarkAllExtendModifierDirty();
     void ResetExtendModifierDirty();
     void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
 
+    void DetachUIFilterProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
+
     std::shared_ptr<ModifierNG::RSModifier> GetModifierCreatedBySetter(ModifierNG::RSModifierType modifierType);
+
+    bool CheckMultiThreadContextAccess(const std::string& func) const;
 
     /**
      * @brief Clears all modifiers associated with this node.
@@ -2247,6 +2418,7 @@ private:
     void ClearAllModifiers();
 
     void LoadRenderNodeIfNeed() const;
+    void ReleaseInRender();
 
     void AddChildInner(SharedPtr child, int index);
 
@@ -2254,6 +2426,12 @@ private:
 
     bool AddCommandInner(std::unique_ptr<RSCommand>& command, bool isRenderServiceCommand,
         FollowType followType, NodeId nodeId) const;
+    
+    void _RebuildTreeInternal();
+    void _RebuildTreeLevel(const std::vector<std::tuple<RSNode*, RSNode*, size_t>>& level);
+
+    void SetBoundsInner(const Vector4f& bounds);
+    void SetFrameInner(const Vector4f& frame);
 
     uint32_t dirtyType_ = static_cast<uint32_t>(NodeDirtyType::NOT_DIRTY);
 
@@ -2281,6 +2459,7 @@ private:
     bool isForceFlag_ = false;
     bool isUifirstEnable_ = false;
     int8_t collectColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    float lastHDRColorHeadroom_ = 1.0f;
     bool isSkipCheckInMultiInstance_ = true;
     RSUIFirstSwitch uiFirstSwitch_ = RSUIFirstSwitch::NONE;
     std::shared_ptr<RSUIContext> rsUIContext_;
@@ -2294,7 +2473,7 @@ private:
     std::shared_ptr<RectF> drawRegion_;
     OutOfParentType outOfParent_ = OutOfParentType::UNKNOWN;
 
-    std::unordered_map<AnimationId, std::shared_ptr<RSAnimation>> animations_;
+    std::map<AnimationId, std::shared_ptr<RSAnimation>> animations_;
     std::unordered_map<PropertyId, uint32_t> animatingPropertyNum_;
     std::shared_ptr<RSMotionPathOption> motionPathOption_;
     std::shared_ptr<const RSTransitionEffect> transitionEffect_;
@@ -2323,8 +2502,6 @@ private:
     mutable std::recursive_mutex propertyMutex_;
     mutable std::recursive_mutex lazyLoadMutex_;
 
-    bool isOnTheTree_ = false;
-    bool isOnTheTreeInit_ = false;
     ColorPickerCallback colorPickerCallback_;
 
     std::bitset<3> hasReportedSetUIXXFilterCascade_ = 0b000;
@@ -2339,20 +2516,26 @@ private:
     friend class RSModifierExtractor;
     friend class ModifierNG::RSModifier;
     friend class ModifierNG::RSCustomModifier;
+    friend class ModifierNG::RSContentStyleModifier;
+    friend class ModifierNG::RSForegroundFilterModifier;
+    friend class ModifierNG::RSBackgroundFilterModifier;
     friend class RSKeyframeAnimation;
     friend class RSInterpolatingSpringAnimation;
     friend class RSImplicitCancelAnimationParam;
     friend class RSImplicitAnimator;
     friend class RSCurveAnimation;
+    friend class RSParticleAnimation;
     friend class RSAnimation;
-    friend class ModifierNG::RSForegroundFilterModifier;
-    friend class ModifierNG::RSBackgroundFilterModifier;
     template<typename T>
     friend class RSProperty;
     template<typename T>
     friend class RSAnimatableProperty;
     friend class RSInteractiveImplictAnimator;
     friend class RSSurfaceNode;
+
+    // RSCmdModifier
+    friend class RSCmdModifier; // for AddCommand
+    friend class AttachRootNodeCmdModifier; // for SetIsOnTheTree
 };
 // backward compatibility
 using RSBaseNode = RSNode;

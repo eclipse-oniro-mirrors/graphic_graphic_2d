@@ -77,6 +77,7 @@ rs_display_effect_sources = [
   "rs_display_effect/property_display/appearance_pixelstretch_test.cpp",
   "rs_display_effect/property_display/appearance_point_light_test.cpp",
   "rs_display_effect/property_display/appearance_shadow_test.cpp",
+  "rs_display_effect/property_display/appearance_spatial_effect_test.cpp",
   "rs_display_effect/property_display/appearance_spherize_test.cpp",
   "rs_display_effect/property_display/appearance_visibility_test.cpp",
   "rs_display_effect/property_display/background_alpha_blender_test.cpp",
@@ -156,6 +157,7 @@ rs_display_effect_sources = [
 ]
 rs_effect_feature_sources = [
   "rs_effect_feature/effect_background_blur_test.cpp",
+  "rs_effect_feature/effect_light_up_effect_test.cpp",
   "rs_effect_feature/effect_ai_bar_glow_test.cpp",
   "rs_effect_feature/effect_aurora_noise_test.cpp",
   "rs_effect_feature/effect_linear_gradient_blur_test.cpp",
@@ -190,6 +192,8 @@ rs_effect_feature_sources = [
   "rs_effect_feature/ng_shader_test/ng_shader_color_gradient_effect_test.cpp",
   "rs_effect_feature/ng_shader_test/ng_shader_frosted_glass_effect_test.cpp",
   "rs_effect_feature/ng_shader_test/ng_shader_spatial_point_light_test.cpp",
+  "rs_effect_feature/ng_shader_test/ng_shader_spatial_glass_effect_test.cpp",
+  "rs_effect_feature/ng_shader_test/ng_shader_border_sdf_test.cpp",
   "rs_effect_feature/ng_effect_test/ng_substracted_rect_test.cpp",
   "rs_effect_feature/ng_effect_test/ng_hdrdarken_blender_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_content_light_test.cpp",
@@ -215,6 +219,7 @@ rs_effect_feature_sources = [
   "rs_effect_feature/ng_shape_test/ng_sdf_distort_op_shape_test.cpp",
   "rs_effect_feature/ng_shape_test/ng_sdf_path_shape_test.cpp",
   "rs_effect_feature/ng_shape_test/ng_sdf_ellipse_test.cpp",
+  "rs_effect_feature/ng_shape_test/ng_sdf_sub_op_shape_test.cpp",
   "rs_effect_feature/ng_shape_test/ng_sdf_rrect_test.cpp",
   "rs_effect_feature/ng_shape_test/ng_sdf_triangle_test.cpp",
   "rs_effect_feature/ng_shape_test/ng_sdf_test_utils.cpp",
@@ -353,6 +358,10 @@ ohos_unittest("RSGraphicTest") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
+
+  if (rosen_is_ohos && graphic_2d_feature_enable_vulkan && graphic_2d_feature_rs_modifiers_draw_enable) {
+    defines += [ "RS_MODIFIERS_DRAW_ENABLE" ]
+  }
 
   subsystem_name = "graphic"
   part_name = "graphic_2d"

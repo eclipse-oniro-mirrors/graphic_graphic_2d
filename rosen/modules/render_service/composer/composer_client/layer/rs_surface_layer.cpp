@@ -16,6 +16,7 @@
 #include "rs_surface_layer.h"
 #include <memory>
 #include "common/rs_tunnel_layer_utils.h"
+#include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
 #include "rs_composer_context.h"
 #include "rs_layer_parcel.h"
 #include "rs_surface_layer_parcel.h"
@@ -26,7 +27,8 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-bool ShouldNotifyTunnelLayerDestroyed(const sptr<IConsumerSurface>& surface, uint64_t tunnelLayerId, uint32_t property)
+bool ShouldNotifyTunnelLayerDestroyed(const sptr<IConsumerSurface>& surface, uint64_t tunnelLayerId,
+    uint32_t property, NodeId nodeId)
 {
     if (!IsNewTunnelEnabled()) {
         return false;
@@ -34,13 +36,8 @@ bool ShouldNotifyTunnelLayerDestroyed(const sptr<IConsumerSurface>& surface, uin
     if (surface == nullptr) {
         return false;
     }
-    if (tunnelLayerId == 0 || property == TUNNEL_PROP_INVALID) {
-        TunnelLayerState state;
-        if (surface->GetTunnelLayerInfo(state) != GSERROR_OK) {
-            return false;
-        }
-        tunnelLayerId = state.tunnelLayerId;
-        property = state.property;
+    if (tunnelLayerId == 0 && nodeId != 0) {
+        RSTunnelRuntimeStore::GetLayerInfoIfPresent(nodeId, tunnelLayerId, property);
     }
     return tunnelLayerId != 0;
 }
@@ -138,7 +135,8 @@ RSSurfaceLayer::~RSSurfaceLayer()
         ROSEN_LOGE("%{public}s failed to send destroy command, layerId: %{public}" PRIu64, __func__, GetRSLayerId());
     } else {
         ROSEN_LOGI("%{public}s destroy command sent successfully, layerId: %{public}" PRIu64, __func__, GetRSLayerId());
-        if (context != nullptr && ShouldNotifyTunnelLayerDestroyed(cSurface_, tunnelLayerId_, tunnelLayerProperty_)) {
+        if (context != nullptr && ShouldNotifyTunnelLayerDestroyed(
+            cSurface_, tunnelLayerId_, tunnelLayerProperty_, nodeId_)) {
             context->NotifyLayerStateChanged(GetNodeId(), LayerStateChange::UNAVAILABLE, tunnelLayerGeneration_);
         }
     }
@@ -318,6 +316,24 @@ void RSSurfaceLayer::SetCropRect(const GraphicIRect& crop)
 const GraphicIRect& RSSurfaceLayer::GetCropRect() const
 {
     return cropRect_;
+}
+
+void RSSurfaceLayer::SetDelegateModeCropRect(const GraphicIRect& crop)
+{
+    if (delegateModeCropRect_ == crop) {
+        return;
+    }
+    RS_TRACE_NAME_FMT("SetDelegateModeCropRect in layerId=%" PRIu64 ", %d %d %d %d",
+        rsLayerId_, crop.x, crop.y, crop.w, crop.h);
+    delegateModeCropRect_ = crop;
+    SetRSLayerCmd<RSRenderLayerDelegateModeCropRectCmd>(crop);
+}
+
+GraphicIRect RSSurfaceLayer::GetDelegateModeCropRect()
+{
+    RS_TRACE_NAME_FMT("GetDelegateModeCropRect in layerId=%" PRIu64 ", %d %d %d %d",
+        rsLayerId_, delegateModeCropRect_.x, delegateModeCropRect_.y, delegateModeCropRect_.w, delegateModeCropRect_.h);
+    return delegateModeCropRect_;
 }
 
 void RSSurfaceLayer::SetPreMulti(bool preMulti)
@@ -796,6 +812,20 @@ uint32_t RSSurfaceLayer::GetAncoFlags() const
     return ancoFlags_;
 }
 
+bool RSSurfaceLayer::GetDelegateMode() const
+{
+    return isDelegateMode_;
+}
+
+void RSSurfaceLayer::SetDelegateMode(bool isDelegateMode)
+{
+    if (isDelegateMode_ == isDelegateMode) {
+        return;
+    }
+    isDelegateMode_ = isDelegateMode;
+    SetRSLayerCmd<RSRenderLayerDelegateModeCmd>(isDelegateMode);
+}
+
 bool RSSurfaceLayer::IsAncoNative() const
 {
     static constexpr uint32_t ANCO_NATIVE_NODE_FLAG = static_cast<uint32_t>(AncoFlags::ANCO_NATIVE_NODE);
@@ -1089,6 +1119,7 @@ void RSSurfaceLayer::SetBufferOwnerCount(const std::shared_ptr<RSSurfaceHandler:
     }
     bufferOwnerCounts_[bufferOwnerCount->bufferId_] = bufferOwnerCount;
     if (needUpdate) {
+        bufferOwnerCount->SetTransitionFlag(true);
         bufferOwnerCount_ = bufferOwnerCount;
     }
 }
@@ -1124,6 +1155,7 @@ void RSSurfaceLayer::SetOriginalBufferOwnerCount(
     if (bufferOwnerCounts_.find(bufferOwnerCount->bufferId_) == bufferOwnerCounts_.end()) {
         bufferOwnerCount->AddRef();
     }
+    bufferOwnerCount->SetTransitionFlag(true);
     bufferOwnerCounts_[bufferOwnerCount->bufferId_] = bufferOwnerCount;
     originalBufferOwnerCount_ = bufferOwnerCount;
 }
@@ -1134,6 +1166,21 @@ std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceLayer::GetOriginalB
     return originalBufferOwnerCount_;
 }
 // hpae_offline end
- 
+
+// opinc_split begin
+void RSSurfaceLayer::SetSplitLayerTag(bool splitLayerTag)
+{
+    if (splitLayerTag_ == splitLayerTag) {
+        return;
+    }
+    splitLayerTag_ = splitLayerTag;
+    SetRSLayerCmd<RSRenderLayerSplitLayerTagCmd>(splitLayerTag);
+}
+
+bool RSSurfaceLayer::GetSplitLayerTag() const
+{
+    return splitLayerTag_;
+}
+// opinc_split end
 } // namespace Rosen
 } // namespace OHOS

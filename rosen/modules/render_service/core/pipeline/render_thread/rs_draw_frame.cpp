@@ -23,6 +23,7 @@
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "feature/layer/rs_layer_cache_manager_base.h"
 #include "feature/hpae/rs_hpae_manager.h"
+#include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "gfx/performance/rs_perfmonitor_reporter.h"
 #include "gpuComposition/rs_gpu_cache_manager.h"
@@ -84,17 +85,19 @@ void RSDrawFrame::RenderFrame()
     HitracePerfScoped perfTrace(RSDrawFrame::debugTraceEnabled_, HITRACE_TAG_GRAPHIC_AGP, "OnRenderFramePerfCount");
     RS_TRACE_NAME_FMT("RenderFrame");
     StartCheck();
-
     auto renderEngine = unirenderInstance_.GetRenderEngine();
     // Use GPUGuard to manage GPU draw lifecycle (RAII-based)
     // The guard will automatically call EndGPUDraw() when destroyed
     GPUGuard gpuGuard(renderEngine->GetGPUCacheManager());
-
     RsFrameReport::UniRenderStart();
+
     RSJankStatsRenderFrameHelper::GetInstance().JankStatsStart();
     unirenderInstance_.IncreaseFrameCount();
     RSUifirstManager::Instance().ProcessSubDoneNode();
     Sync();
+#ifndef ROSEN_CROSS_PLATFORM
+    RsDelegateCompositeCallbackManager::GetInstance().NotifyCurrentSurfaceNodeBufferReleaseCallback();
+#endif
     RSJankStatsRenderFrameHelper::GetInstance().JankStatsAfterSync(unirenderInstance_.GetRSRenderThreadParams(),
         unirenderInstance_.GetMinAccumulatedBufferCount());
     unirenderInstance_.UpdateScreenNodeScreenId();
@@ -114,9 +117,9 @@ void RSDrawFrame::RenderFrame()
 #ifdef SUBTREE_PARALLEL_ENABLE
     RSParallelManager::Singleton().Clear();
 #endif
+    RSMainThread::Instance()->CallbackDrawContextStatusToWMS(true);
     ReleaseSelfDrawingNodeBuffer();
     NotifyClearGpuCache();
-    RSMainThread::Instance()->CallbackDrawContextStatusToWMS(true);
     RSRenderNodeGC::Instance().ReleaseDrawableMemory();
     if (RSSystemProperties::GetPurgeBetweenFramesEnabled()) {
         unirenderInstance_.PurgeCacheBetweenFrames();
@@ -180,9 +183,6 @@ void RSDrawFrame::ReleaseSelfDrawingNodeBuffer()
 void RSDrawFrame::PostAndWait()
 {
     RS_TRACE_NAME_FMT("PostAndWait, parallel type %d", static_cast<int>(rsParallelType_));
-
-    RsFrameReport::SendCommandsStart();
-    RsFrameReport::RenderEnd();
  
     uint32_t renderFrameNumber = RS_PROFILER_GET_FRAME_NUMBER();
     switch (rsParallelType_) {
@@ -192,8 +192,8 @@ void RSDrawFrame::PostAndWait()
                 RS_PROFILER_ON_PARALLEL_RENDER_BEGIN(renderFrameNumber);
                 RenderFrame();
                 unirenderInstance_.ClearResource();
-                RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber);
                 unirenderInstance_.SetMainLooping(false);
+                RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber);
             });
             break;
         }
@@ -210,11 +210,12 @@ void RSDrawFrame::PostAndWait()
                 unirenderInstance_.SetMainLooping(true);
                 RS_PROFILER_ON_PARALLEL_RENDER_BEGIN(renderFrameNumber);
                 RSMainThread::Instance()->GetRSVsyncRateReduceManager().FrameDurationBegin();
+                unirenderInstance_.SetMainLooping(true);
                 RenderFrame();
                 unirenderInstance_.ClearResource();
+                unirenderInstance_.SetMainLooping(false);
                 RSMainThread::Instance()->GetRSVsyncRateReduceManager().FrameDurationEnd();
                 RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber);
-                unirenderInstance_.SetMainLooping(false);
             });
 
             frameCV_.wait(frameLock, [this] { return canUnblockMainThread; });
@@ -343,6 +344,7 @@ void RSDrawFrame::Sync()
 #ifdef SUBTREE_PARALLEL_ENABLE
     RSParallelManager::Singleton().Sync();
 #endif
+    RSLayerSplitManager::GetInstance()->Sync();
 }
 
 void RSDrawFrame::UnblockMainThread()

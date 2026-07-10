@@ -440,7 +440,9 @@ VSyncDistributor::VSyncDistributor(sptr<VSyncController> controller, std::string
     (void)dvsyncParam;
 }
 
-VSyncDistributor::~VSyncDistributor() {}
+VSyncDistributor::~VSyncDistributor()
+{
+}
 
 VsyncError VSyncDistributor::AddConnection(const sptr<VSyncConnection>& connection, uint64_t windowNodeId)
 {
@@ -630,7 +632,7 @@ void VSyncDistributor::OnVSyncTrigger(int64_t now, int64_t period,
             CollectConnections(waitForVSync, now, conns, event_.vsyncCount);
         }
         bool canDisableVsync = true;
-        if (!DVSyncLibManager::Instance().IsInitialized()) {
+        if (DVSyncLibManager::Instance().IsInitialized()) {
             canDisableVsync = isRs_ || !DVSyncLibManager::Instance().IsAppDVSyncOn();
         }
         if (!waitForVSync && canDisableVsync) {
@@ -681,12 +683,7 @@ void VSyncDistributor::ConnectionsPostEvent(std::vector<sptr<VSyncConnection>> &
             && !isDvsyncController) {
             actualPeriod = period * static_cast<int64_t>(generatorRefreshRate / conns[i]->refreshRate_);
         }
-        if (vsyncMode_ == VSYNC_MODE_LTPS && conns[i]->highPriorityState_ &&
-            conns[i]->highPriorityRate_ > 0 && !isDvsyncController) {
-            actualPeriod = period * conns[i]->highPriorityRate_;
-            SCOPED_DEBUG_TRACE_FMT("VSYNC_MODE_LTPS highPriorityRate: %d period: %d, actualPeriod: %d",
-                conns[i]->highPriorityRate_, period, actualPeriod);
-        }
+        ComputeActualPeriod(conns[i], period, actualPeriod, isDvsyncController);
         // Start of DVSync
         if (DVSyncCheckSkipAndUpdateTs(conns[i], timestamp)) {
             TriggerNext(conns[i]);
@@ -699,6 +696,18 @@ void VSyncDistributor::ConnectionsPostEvent(std::vector<sptr<VSyncConnection>> &
             continue;
         }
         ConnPostEvent(conns[i], timestamp, actualPeriod, vsyncCount);
+    }
+}
+
+void VSyncDistributor::ComputeActualPeriod(sptr<VSyncConnection> &con, int64_t period, int64_t &actualPeriod,
+    bool isDvsyncController)
+{
+    std::lock_guard<std::mutex> locker(mutex_);
+    if (vsyncMode_ == VSYNC_MODE_LTPS && con->highPriorityState_ &&
+        con->highPriorityRate_ > 0 && !isDvsyncController) {
+        actualPeriod = period * con->highPriorityRate_;
+        SCOPED_DEBUG_TRACE_FMT("VSYNC_MODE_LTPS highPriorityRate: %d period: " PRId64 ", actualPeriod: " PRId64,
+            con->highPriorityRate_, period, actualPeriod);
     }
 }
 
@@ -773,8 +782,8 @@ void VSyncDistributor::CollectConnections(bool &waitForVSync, int64_t timestamp,
             continue;
         }
 
-        RS_TRACE_NAME_FMT("CollectConnections name:%s, proxyPid:%d, highPriorityState_:%d, highPriorityRate_:%d,"
-            " rate_:%d, timestamp:%" PRId64 ", vsyncCount:%" PRId64, connections_[i]->info_.name_.c_str(),
+        RS_TRACE_NAME_FMT("CollectConnections name:%s, proxyPid:%d, highPriorityState:%d, highPriorityRate:%d,"
+            " rate:%d, timestamp:%" PRId64 ", vsyncCount:%" PRId64, connections_[i]->info_.name_.c_str(),
             connections_[i]->proxyPid_, connections_[i]->highPriorityState_,
             connections_[i]->highPriorityRate_, connections_[i]->rate_, timestamp, vsyncCount);
 
@@ -947,7 +956,6 @@ VsyncError VSyncDistributor::QosGetPidByName(const std::string& name, uint32_t& 
     if (name.find("WM") == std::string::npos) {
         return VSYNC_ERROR_INVALID_ARGUMENTS;
     }
-
     if ((name.find("NWeb") != std::string::npos) || (name.find("ArkWebCore") != std::string::npos)) {
         return VSYNC_ERROR_INVALID_ARGUMENTS;
     }
@@ -984,14 +992,13 @@ VsyncError VSyncDistributor::SetQosVSyncRateByPid(uint32_t pid, int32_t rate, bo
         if (connection->highPriorityRate_ != rate) {
             connection->highPriorityRate_ = rate;
             connection->highPriorityState_ = true;
-            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByPid pid:%u, rate:%d",
-                pid, rate);
+            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByPid pid:%u, rate:%d, connName:%s",
+                pid, rate, connection->info_.name_.c_str());
             VLOGD("in, conn name:%{public}s, highPriorityRate:%{public}d", connection->info_.name_.c_str(),
                 connection->highPriorityRate_);
             isNeedNotify = true;
         }
     }
-
     if (isNeedNotify) {
         EnableVSync();
     }
@@ -1099,8 +1106,8 @@ VsyncError VSyncDistributor::SetQosVSyncRateByConnId(uint64_t connId, int32_t ra
         if (connection != nullptr && connection->highPriorityRate_ != rate) {
             connection->highPriorityRate_ = rate;
             connection->highPriorityState_ = rate != 1;
-            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByConnId connId:%" PRIu64 ", rate:%d",
-                connId, rate);
+            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByConnId connId:%" PRIu64 ", rate:%d, connName:%s",
+                connId, rate, connection->info_.name_.c_str());
             VLOGD("in, conn name:%{public}s, highPriorityRate:%{public}d", connection->info_.name_.c_str(),
                 connection->highPriorityRate_);
             isNeedNotify = true;
@@ -1131,8 +1138,8 @@ VsyncError VSyncDistributor::SetQosVSyncRateLocked(uint64_t windowNodeId, int32_
         if (connection != nullptr && connection->highPriorityRate_ != rate) {
             connection->highPriorityRate_ = rate;
             connection->highPriorityState_ = true;
-            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByWindowId windowNodeId:%" PRIu64 ", rate:%d",
-                windowNodeId, rate);
+            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByWindowId windowNodeId:%" PRIu64 ", rate:%d,"
+                " connName:%s", windowNodeId, rate, connection->info_.name_.c_str());
             VLOGD("in, conn name:%{public}s, highPriorityRate:%{public}d", connection->info_.name_.c_str(),
                 connection->highPriorityRate_);
             isNeedNotify = true;
@@ -1258,11 +1265,7 @@ VsyncError VSyncDistributor::SetNativeDVSyncSwitch(bool dvsyncSwitch, const sptr
 uint32_t VSyncDistributor::GetRefreshRate()
 {
     std::lock_guard<std::mutex> locker(mutex_);
-#if defined(RS_ENABLE_DVSYNC)
-    return dvsync_->GetRefreshRate();
-#else
     return generatorRefreshRate_;
-#endif
 }
 
 bool  VSyncDistributor::IsUiDvsyncOn()
@@ -1319,6 +1322,11 @@ void VSyncDistributor::FirstRequestVsync()
 {
     std::unique_lock<std::mutex> locker(mutex_);
     isFirstRequest_ = true;
+}
+
+void VSyncDistributor::SetTaskEndWithTime(uint64_t time)
+{
+    DVSyncLibManager::Instance().SetTaskEndWithTime(time);
 }
 
 void VSyncDistributor::InitDVSync(DVSyncFeatureParam dvsyncParam)
@@ -1456,11 +1464,6 @@ void VSyncDistributor::SetBufferInfo(const BufferInfo& bufferInfo)
     }
 }
 
-void VSyncDistributor::SetTaskEndWithTime(uint64_t time)
-{
-    DVSyncLibManager::Instance().SetTaskEndWithTime(time);
-}
-
 bool VSyncDistributor::NeedUpdateVSyncTime(int32_t& pid)
 {
     return DVSyncLibManager::Instance().NeedUpdateVSyncTime(pid);
@@ -1469,6 +1472,11 @@ bool VSyncDistributor::NeedUpdateVSyncTime(int32_t& pid)
 void VSyncDistributor::SetVSyncTimeUpdated()
 {
     DVSyncLibManager::Instance().SetVSyncTimeUpdated();
+}
+
+bool VSyncDistributor::DvsyncNeedSkipRsCommitDelay() const
+{
+    return DVSyncLibManager::Instance().NeedSkipRsCommitDelay();
 }
 
 int64_t VSyncDistributor::GetLastUpdateTime()

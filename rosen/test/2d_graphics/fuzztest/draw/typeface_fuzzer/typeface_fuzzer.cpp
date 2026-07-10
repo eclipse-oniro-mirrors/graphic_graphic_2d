@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -113,10 +113,12 @@ bool TypefaceFuzzTest003(const uint8_t* data, size_t size)
 
     FontArguments args;
     args.SetCollectionIndex(index);
-    std::shared_ptr<Typeface> typeface2 = Typeface::MakeFromStream(std::move(memoryStream), args);
+    auto memoryStreamWithArgs =
+        std::make_unique<MemoryStream>(reinterpret_cast<const void*>(fontData), length, copyData);
+    std::shared_ptr<Typeface> typeface2 = Typeface::MakeFromStream(std::move(memoryStreamWithArgs), args);
     std::shared_ptr<Typeface> typeface3 = Typeface::MakeFromStream(nullptr, args);
     if (fontData != nullptr) {
-        delete [] fontData;
+        delete[] fontData;
         fontData = nullptr;
     }
     return true;
@@ -178,6 +180,8 @@ bool TypefaceFuzzTest004(const uint8_t* data, size_t size)
 /*
  * 测试以下 Typeface 接口：
  * 1. MakeFromName(const char* familyName, const FontStyle& style)
+ * 2. GetVariationDesignPosition(FontArguments::VariationPosition::Coordinate coordinates[], int coordinateCount)
+ * 3. SetHash(uint32_t hash)
  */
 bool TypefaceFuzzTest005(const uint8_t* data, size_t size)
 {
@@ -196,13 +200,79 @@ bool TypefaceFuzzTest005(const uint8_t* data, size_t size)
     uint32_t slant = GetObject<uint32_t>();
     FontStyle fontStyle = FontStyle(weight, width, static_cast<FontStyle::Slant>(slant % SLANT_SIZE));
     std::shared_ptr<Typeface> typeface = Typeface::MakeFromName(familyName, fontStyle);
+    if (typeface == nullptr) {
+        typeface = Typeface::MakeDefault();
+    }
+    typeface->SetHash(GetObject<uint32_t>());
+    typeface->SetFd(GetObject<int32_t>());
+    typeface->GetFontIndex();
+    std::vector<uint8_t> typefaceData(data, data + size);
+    Typeface::Deserialize(typefaceData.data(), typefaceData.size());
+    uint64_t shareId = GetObject<uint64_t>();
+    SharedTypeface sharedTypeface(shareId, typeface);
+    typeface->GetVariationDesignPosition(
+        sharedTypeface.coords_.data(), static_cast<int>(sharedTypeface.coords_.size()));
     if (familyName != nullptr) {
-        delete [] familyName;
+        delete[] familyName;
         familyName = nullptr;
     }
     return true;
 }
 
+/*
+ * 测试以下 Typeface 接口：
+ * 1. MakeFromFile(const char path[], const FontArguments& fontArguments)
+ * 2. SetIsCustomTypeface(bool isCustom)
+ * 3. SetIsThemeTypeface(bool isTheme)
+ * 4. UpdateStream(std::unique_ptr<MemoryStream> stream)
+ * 5. AssembleFullHash(uint32_t fontArgsHash, uint32_t baseHash)
+ * 6. SetFullHash(uint64_t fullHash)
+ */
+bool TypefaceFuzzTest006(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    size_t length = GetObject<size_t>() % MAX_SIZE + 1;
+    char* path = new char[length];
+    for (size_t i = 0; i < length; i++) {
+        path[i] = GetObject<char>();
+    }
+    path[length - 1] = '\0';
+    FontArguments fontArguments;
+    fontArguments.SetCollectionIndex(GetObject<int>());
+    std::shared_ptr<Typeface> typeface = Typeface::MakeFromFile(path, fontArguments);
+
+    std::shared_ptr<Typeface> defaultTypeface = Typeface::MakeDefault();
+    defaultTypeface->SetIsCustomTypeface(GetObject<bool>());
+    defaultTypeface->IsCustomTypeface();
+    defaultTypeface->SetIsThemeTypeface(GetObject<bool>());
+    defaultTypeface->IsThemeTypeface();
+
+    size_t streamLength = GetObject<size_t>() % MAX_SIZE + 1;
+    char* streamData = new char[streamLength];
+    for (size_t i = 0; i < streamLength; i++) {
+        streamData[i] = GetObject<char>();
+    }
+    auto memoryStream = std::make_unique<MemoryStream>(reinterpret_cast<const void*>(streamData),
+        streamLength, true);
+    defaultTypeface->UpdateStream(std::move(memoryStream));
+
+    Typeface::AssembleFullHash(GetObject<uint32_t>(), GetObject<uint32_t>());
+    defaultTypeface->SetFullHash(GetObject<uint64_t>());
+    defaultTypeface->GetFullHash();
+
+    if (path != nullptr) {
+        delete[] path;
+        path = nullptr;
+    }
+    if (streamData != nullptr) {
+        delete[] streamData;
+        streamData = nullptr;
+    }
+    return true;
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
@@ -221,5 +291,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::Drawing::TypefaceFuzzTest003(data, size);
     OHOS::Rosen::Drawing::TypefaceFuzzTest004(data, size);
     OHOS::Rosen::Drawing::TypefaceFuzzTest005(data, size);
+    OHOS::Rosen::Drawing::TypefaceFuzzTest006(data, size);
     return 0;
 }

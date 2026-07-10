@@ -16,6 +16,9 @@
 #include "rs_connect_to_render_process_stub.h"
 
 #include <iremote_proxy.h>
+#include "transaction/rs_connect_to_render_process.h"
+#include "transaction/rs_client_to_render_connection.h"
+#include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
 
 #include "message_parcel.h"
 
@@ -28,13 +31,17 @@ int RSConnectToRenderProcessStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
     int ret = ERR_NONE;
+    if (auto interfaceToken = data.ReadInterfaceToken();
+        interfaceToken != RSIConnectToRenderProcess::GetDescriptor()) {
+        RS_LOGE("%{public}s: Read interfaceToken failed!", __func__);
+        return ERR_INVALID_STATE;
+    }
     switch (code) {
         case static_cast<uint32_t>(RSIConnectToRenderProcessInterfaceCode::CREATE_CONNECTION) : {
-            RS_LOGE("ccc: RSConnectToRenderProcessStub::CREATE_CONNECTION !");
-            auto interfaceToken = data.ReadInterfaceToken();
-            if (interfaceToken != RSIConnectToRenderProcess::GetDescriptor()) {
-                RS_LOGE("RSConnectToRenderProcessStub::CREATE_CONNECTION ReadInterfaceToken failed");
-                ret = ERR_INVALID_STATE;
+            uint64_t tokenMaskId = INVALID_TOKEN_MASK_ID;
+            if (!data.ReadUint64(tokenMaskId)) {
+                RS_LOGE("RSConnectToRenderProcessStub::CREATE_CONNECTION ReadUint64 tokenMaskId failed!");
+                ret = ERR_NULL_OBJECT;
                 break;
             }
             auto remoteObj = data.ReadRemoteObject();
@@ -53,40 +60,46 @@ int RSConnectToRenderProcessStub::OnRemoteRequest(
                 RS_LOGW("RSConnectToRenderProcessStub::CREATE_CONNECTION remoteObj Read needRefresh Faild");
             }
             auto token = iface_cast<RSIConnectionToken>(remoteObj);
-            auto newRenderConn = CreateRenderConnection(token, needRefresh);
-            reply.WriteBool(newRenderConn != nullptr);
-            if (newRenderConn) {
-                auto replyObj = newRenderConn->AsObject();
-                reply.WriteRemoteObject(replyObj);
+            auto [newRenderConn, returnTokenMaskId] = CreateRenderConnection(tokenMaskId, token, needRefresh);
+            if (newRenderConn == nullptr) {
+                ret = ERR_UNKNOWN_OBJECT;
+                RS_LOGE("RSConnectToRenderProcessStub::CREATE_CONNECTION WriteBool replyBool failed");
+                break;
+            }
+
+            auto replyObj = newRenderConn->AsObject();
+            if (replyObj == nullptr || !reply.WriteRemoteObject(replyObj)) {
+                ret = ERR_UNKNOWN_OBJECT;
+                RS_LOGE("RSConnectToRenderProcessStub::CREATE_CONNECTION WriteRemoteObject replyObj failed");
+                break;
+            }
+
+            if (!reply.WriteUint64(returnTokenMaskId)) {
+                RS_LOGE("RSConnectToRenderProcessStub::CREATE_CONNECTION WriteUint64 returnTokenMaskId failed");
+                ret = ERR_INVALID_STATE;
+                break;
             }
             break;
         }
         case static_cast<uint32_t>(RSIConnectToRenderProcessInterfaceCode::REMOVE_CONNECTION) : {
-            auto interfaceToken = data.ReadInterfaceToken();
-            if (interfaceToken != RSIConnectToRenderProcess::GetDescriptor()) {
-                RS_LOGE("RSConnectToRenderProcessStub::REMOVE_CONNECTION ReadInterfaceToken failed");
-                ret = ERR_INVALID_STATE;
-                break;
-            }
-            auto remoteObj = data.ReadRemoteObject();
-            if (remoteObj == nullptr) {
-                RS_LOGE("RSConnectToRenderProcessStub::REMOVE_CONNECTION Read remoteObj failed!");
+            uint64_t tokenMaskId = INVALID_TOKEN_MASK_ID;
+            if (!data.ReadUint64(tokenMaskId) || tokenMaskId == INVALID_TOKEN_MASK_ID) {
+                RS_LOGE("RSConnectToRenderProcessStub::REMOVE_CONNECTION ReadUint64 tokenMaskId failed!");
                 ret = ERR_NULL_OBJECT;
                 break;
             }
-            if (!remoteObj->IsProxyObject()) {
-                RS_LOGE("RSConnectToRenderProcessStub::REMOVE_CONNECTION remoteObj !IsProxyObject() failed!");
-                ret = ERR_UNKNOWN_OBJECT;
-                break;
+
+            auto [renderConnection, pidTokenMaskId] =
+                static_cast<RSConnectToRenderProcess*>(this)->FindClientToRenderConnection();
+            bool result = false;
+            if (tokenMaskId == pidTokenMaskId && renderConnection != nullptr) {
+                auto connection = static_cast<RSClientToRenderConnection*>(renderConnection.GetRefPtr());
+                connection->CleanAll(true);
+                result = true;
+            } else {
+                RS_LOGE("RSConnectToRenderProcessStub::pidTokenMaskId != tokenMaskId or renderConnection is nullptr");
             }
-            auto token = iface_cast<RSIConnectionToken>(remoteObj);
-            if (token == nullptr) {
-                RS_LOGE("RSConnectToRenderProcessStub::REMOVE_CONNECTION RSIConnectionToken failed!");
-                ret = ERR_UNKNOWN_OBJECT;
-                break;
-            }
-            
-            auto result = RemoveConnection(token);
+
             if (!reply.WriteBool(result)) {
                 RS_LOGE("RSConnectToRenderProcessStub::REMOVE_CONNECTION WriteBool failed!");
                 ret = ERR_UNKNOWN_OBJECT;

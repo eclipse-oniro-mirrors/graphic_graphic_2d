@@ -54,6 +54,7 @@ const std::list<std::u16string> processDumpList = {
     u"flushJankStatsRs",
     u"client",
     u"rsLogFlag",
+    u"uiContextState",
 #ifdef RS_ENABLE_VK
     u"vktextureLimit",
 #endif
@@ -85,6 +86,7 @@ private:
     int32_t processCount_ = 0;
     std::vector<std::string> dumpDataList_;
     sptr<RSDumpCallbackDirector> rsDumpCallbackDirector_ = nullptr;
+    std::mutex callbackDirectorMutex_;
     bool IsDumpCompleted();
     ScreenId GetScreenIdFormArgs(const std::vector<std::u16string>& args);
 };

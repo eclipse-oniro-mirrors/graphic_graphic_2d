@@ -148,6 +148,8 @@ public:
     void ClearEffectCacheWithDrawnRegion(const RSPaintFilterCanvas& canvas, const Drawing::RectI& filterBound);
 
     void MarkDebugEnabled();
+    RSB_EXPORT static void SetScrHdr(float value);
+    RSB_EXPORT static float GetScrHdr();
     bool IsFilterCacheMemExceedThreshold() const;
 
 private:
@@ -166,6 +168,9 @@ private:
     // Check if the cache is valid in current GrContext, since FilterCache will never be used in multi-thread
     // environment, we don't need to attempt to reattach SkImages.
     void CheckCachedImages(RSPaintFilterCanvas& canvas);
+
+    std::shared_ptr<Drawing::Surface> CreateOffscreenSurface(Drawing::Surface* surface,
+        const Drawing::RectI& offscreenRect, const std::shared_ptr<RSDrawingFilter>& filter) const;
 
     std::string GetCacheState() const;
 
@@ -193,6 +198,8 @@ private:
     static inline std::atomic_bool filterInvalid_ = false;
 
     // flags for clearing filter cache
+    NodeId offscreenNodeId_ = INVALID_NODEID;
+
     // All stagingXXX variables should be read & written by render_service thread
     bool stagingForceUseCache_ = false;
     bool stagingForceClearCache_ = false;
@@ -204,7 +211,6 @@ private:
     bool stagingForceClearCacheForLastFrame_ = false;
     bool stagingIsAIBarInteractWithHWC_ = false;
     bool stagingIsEffectNode_ = false;
-    NodeId stagingInForegroundFilter_ = INVALID_NODEID;
 
     // clear one of snapshot cache and filtered cache after drawing
     // All renderXXX variables should be read & written by render_thread or OnSync() function
@@ -234,8 +240,8 @@ private:
     // Whether we need to purge the cache after this frame.
     bool pendingPurge_ = false;
 
-    // last stagingInForegroundFilter_ value
-    NodeId lastInForegroundFilter_ = INVALID_NODEID;
+    // last offscreenNodeId_ value
+    NodeId lastOffscreenNodeId_ = INVALID_NODEID;
 
     bool lastStagingFilterInteractWithDirty_ = false;
 
@@ -246,6 +252,9 @@ private:
     bool snapshotNeedUpdate_ = false;
 
     bool debugEnabled_ = false;
+
+    float cachedHdrBrightness_ = 1.0f;
+
 public:
     static bool isCCMFilterCacheEnable_;
     static bool isCCMEffectMergeEnable_;

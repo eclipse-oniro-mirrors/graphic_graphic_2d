@@ -22,11 +22,6 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
-
-namespace {
-    constexpr int64_t MS_TO_NS = 1000000;  // Milliseconds to nanoseconds conversion
-}
-
 class RSAnimationFractionTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -61,39 +56,34 @@ HWTEST_F(RSAnimationFractionTest, GetAnimationFraction001, TestSize.Level1)
     float resultNegative = 0.0f;
     RSAnimationFraction fraction;
     fraction.SetDuration(0);
-    std::tie(result, isDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(0, leftDelayTime, false, true);
+    std::tie(result, isDelay, isFinished, isRepeatFinished) = fraction.GetAnimationFraction(0, leftDelayTime, false);
     EXPECT_EQ(result, 1.0f);
 
     fraction.SetDuration(300);
     fraction.SetRepeatCount(0);
-    std::tie(result, isDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(0, leftDelayTime, false, true);
+    std::tie(result, isDelay, isFinished, isRepeatFinished) = fraction.GetAnimationFraction(0, leftDelayTime, false);
     EXPECT_EQ(result, 1.0f);
 
     fraction.SetRepeatCount(1);
     RSAnimationFraction::OnAnimationScaleChangedCallback("persist.sys.graphic.animationscale", "0", nullptr);
-    std::tie(result, isDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+    std::tie(result, isDelay, isFinished, isRepeatFinished) = fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_NE(result, 0.0f);
 
     fraction.SetRepeatCount(1);
     fraction.SetDirectionAfterStart(ForwardDirection::REVERSE);
-    std::tie(result, isDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+    std::tie(result, isDelay, isFinished, isRepeatFinished) = fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_NE(result, 0.0f);
 
     leftDelayTime = 100;
     fraction.SetDirectionAfterStart(ForwardDirection::NORMAL);
     std::tie(resultNegative, isDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(90, leftDelayTime, false, true);
+        fraction.GetAnimationFraction(90, leftDelayTime, false);
     EXPECT_TRUE(resultNegative < result);
 
     fraction.startDelay_ = 300;
     leftDelayTime = 100;
     fraction.SetDirectionAfterStart(ForwardDirection::NORMAL);
-    std::tie(result, isDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(0, leftDelayTime, false, true);
+    std::tie(result, isDelay, isFinished, isRepeatFinished) = fraction.GetAnimationFraction(0, leftDelayTime, false);
     EXPECT_FALSE(result);
 
     // Restore animationScale to default value
@@ -121,36 +111,36 @@ HWTEST_F(RSAnimationFractionTest, GetAnimationFraction002, TestSize.Level1)
     fraction.SetDuration(300);
     fraction.SetRepeatCount(1);
     std::tie(result, isDelay, isFinishedFalse, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+        fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_NE(result, 0.0f);
     std::tie(result, isDelay, isFinishedTrue, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+        fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_NE(result, 0.0f);
 
     fraction.SetDirection(false);
     std::tie(result, isDelay, isFinishedFalse, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+        fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_NE(result, 0.0f);
     std::tie(result, isDelay, isFinishedTrue, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+        fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_NE(result, 0.0f);
 
     fraction.SetDirectionAfterStart(ForwardDirection::REVERSE);
     fraction.SetDirection(true);
     std::tie(result, isDelay, isFinishedFalse, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+        fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_NE(result, 0.0f);
     std::tie(result, isDelay, isFinishedTrue, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+        fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_NE(result, 0.0f);
 
     leftDelayTime = 100;
     fraction.SetDirection(false);
     std::tie(result, isDelay, isFinishedFalse, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+        fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_NE(result, 0.0f);
     std::tie(result, isDelay, isFinishedTrue, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+        fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_NE(result, 0.0f);
 
     fraction.SetDirectionAfterStart(ForwardDirection::REVERSE);
@@ -158,7 +148,7 @@ HWTEST_F(RSAnimationFractionTest, GetAnimationFraction002, TestSize.Level1)
     fraction.runningTime_ = 0;
     leftDelayTime = 10000;
     std::tie(result, isDelay, isFinishedFalse, isRepeatFinished) =
-        fraction.GetAnimationFraction(100, leftDelayTime, false, true);
+        fraction.GetAnimationFraction(100, leftDelayTime, false);
     EXPECT_FALSE(result);
 
     GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction002 end";
@@ -658,474 +648,172 @@ HWTEST_F(RSAnimationFractionTest, UpdateGroupWaitingTime015, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetAnimationFraction_OnTreeNode001
- * @tc.desc: Verify GetAnimationFraction for on-tree node (minLeftDelayTime should be 0)
+ * @tc.name: UnInit_001
+ * @tc.desc: Verify UnInit when isInitialized_ is true
  * @tc.type:FUNC
  */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_OnTreeNode001, TestSize.Level1)
+HWTEST_F(RSAnimationFractionTest, UnInit_001, TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_OnTreeNode001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(1);
-    fraction.SetStartDelay(0);
-    fraction.SetLastFrameTime(0);
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = true;
-    bool isInStartDelay = false;
-    bool isFinished = false;
-    bool isRepeatFinished = false;
-    float result = 0.0f;
-
-    std::tie(result, isInStartDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(500 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_EQ(minLeftDelayTime, 0);
-    EXPECT_FALSE(isInStartDelay);
-    EXPECT_FALSE(isFinished);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_OnTreeNode001 end";
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest UnInit_001 start";
+    RSAnimationFraction::isInitialized_ = true;
+    RSAnimationFraction::UnInit();
+    EXPECT_FALSE(RSAnimationFraction::isInitialized_);
+    RSAnimationFraction::isInitialized_ = true;
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest UnInit_001 end";
 }
 
 /**
- * @tc.name: GetAnimationFraction_OffTreeNode001
- * @tc.desc: Verify GetAnimationFraction for off-tree node (minLeftDelayTime should include remaining time)
+ * @tc.name: UnInit_002
+ * @tc.desc: Verify UnInit when isInitialized_ is false (skip branch)
  * @tc.type:FUNC
  */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_OffTreeNode001, TestSize.Level1)
+HWTEST_F(RSAnimationFractionTest, UnInit_002, TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_OffTreeNode001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(2);
-    fraction.SetStartDelay(0);
-    fraction.SetLastFrameTime(0);
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = false;
-    bool isInStartDelay = false;
-    bool isFinished = false;
-    bool isRepeatFinished = false;
-    float result = 0.0f;
-
-    std::tie(result, isInStartDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(500 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_GT(minLeftDelayTime, 0);
-    EXPECT_LT(minLeftDelayTime, INT64_MAX);
-    EXPECT_FALSE(isInStartDelay);
-    EXPECT_FALSE(isFinished);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_OffTreeNode001 end";
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest UnInit_002 start";
+    RSAnimationFraction::isInitialized_ = false;
+    RSAnimationFraction::UnInit();
+    EXPECT_FALSE(RSAnimationFraction::isInitialized_);
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest UnInit_002 end";
 }
 
 /**
- * @tc.name: GetAnimationFraction_InStartDelay_OnTree001
- * @tc.desc: Verify GetAnimationFraction in start delay phase for on-tree node
+ * @tc.name: UnInit_DoubleCall_001
+ * @tc.desc: Verify calling UnInit twice does not crash (idempotent)
  * @tc.type:FUNC
  */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_InStartDelay_OnTree001, TestSize.Level1)
+HWTEST_F(RSAnimationFractionTest, UnInit_DoubleCall_001, TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InStartDelay_OnTree001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(2);
-    fraction.SetStartDelay(500);  // 500ms delay
-    fraction.SetLastFrameTime(0);
-    fraction.runningTime_ = 100 * MS_TO_NS;  // 100ms in nanoseconds, < startDelay (500ms) -> in delay phase
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = true;
-    bool isInStartDelay = false;
-    bool isFinished = false;
-    bool isRepeatFinished = false;
-    float result = 0.0f;
-
-    std::tie(result, isInStartDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(100 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_TRUE(isInStartDelay);
-    EXPECT_FALSE(isFinished);
-    EXPECT_GT(minLeftDelayTime, 0);
-    EXPECT_LT(minLeftDelayTime, 500);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InStartDelay_OnTree001 end";
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest UnInit_DoubleCall_001 start";
+    RSAnimationFraction::isInitialized_ = true;
+    RSAnimationFraction::UnInit();
+    EXPECT_FALSE(RSAnimationFraction::isInitialized_);
+    RSAnimationFraction::UnInit();
+    EXPECT_FALSE(RSAnimationFraction::isInitialized_);
+    RSAnimationFraction::isInitialized_ = true;
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest UnInit_DoubleCall_001 end";
 }
 
 /**
- * @tc.name: GetAnimationFraction_InStartDelay_OffTree001
- * @tc.desc: Verify GetAnimationFraction in start delay phase for off-tree node
- *           (minLeftDelayTime should include total time)
+ * @tc.name: SetAnimationId001
+ * @tc.desc: Verify SetAnimationId sets animationId correctly
  * @tc.type:FUNC
  */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_InStartDelay_OffTree001, TestSize.Level1)
+HWTEST_F(RSAnimationFractionTest, SetAnimationId001, TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InStartDelay_OffTree001 start";
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetAnimationId001 start";
     RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(2);
-    fraction.SetStartDelay(500);  // 500ms delay
-    fraction.SetLastFrameTime(0);
-    fraction.runningTime_ = 100 * MS_TO_NS;  // 100ms in nanoseconds, < startDelay (500ms) -> in delay phase
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = false;
-    bool isInStartDelay = false;
-    bool isFinished = false;
-    bool isRepeatFinished = false;
-    float result = 0.0f;
-
-    std::tie(result, isInStartDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(100 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_TRUE(isInStartDelay);
-    EXPECT_FALSE(isFinished);
-    EXPECT_GT(minLeftDelayTime, 1000);
-    EXPECT_LT(minLeftDelayTime, INT64_MAX);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InStartDelay_OffTree001 end";
+    constexpr AnimationId TEST_ANIMATION_ID = 100;
+    fraction.SetAnimationId(TEST_ANIMATION_ID);
+    EXPECT_EQ(fraction.animationId_, TEST_ANIMATION_ID);
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetAnimationId001 end";
 }
 
 /**
- * @tc.name: GetAnimationFraction_AfterDelay_OnTree001
- * @tc.desc: Verify GetAnimationFraction after delay phase for on-tree node
- *           (minLeftDelayTime should be 0)
+ * @tc.name: SetRebuildFraction001
+ * @tc.desc: Verify SetRebuildFraction with normal forward cycle
  * @tc.type:FUNC
  */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_AfterDelay_OnTree001, TestSize.Level1)
+HWTEST_F(RSAnimationFractionTest, SetRebuildFraction001, TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_AfterDelay_OnTree001 start";
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction001 start";
     RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(1);
+    fraction.SetDuration(300);
+    fraction.SetAnimationId(1);
+    constexpr int64_t TEST_TIME = 1000000000;
+    fraction.SetRebuildFraction(0.5f, TEST_TIME, false);
+    EXPECT_EQ(fraction.currentIsReverseCycle_, false);
+    EXPECT_EQ(fraction.currentRepeatCount_, 0);
+    EXPECT_FLOAT_EQ(fraction.currentTimeFraction_, 0.5f);
+    EXPECT_EQ(fraction.lastFrameTime_, TEST_TIME);
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction001 end";
+}
+
+/**
+ * @tc.name: SetRebuildFraction002
+ * @tc.desc: Verify SetRebuildFraction with reverse cycle and autoReverse enabled
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationFractionTest, SetRebuildFraction002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction002 start";
+    RSAnimationFraction fraction;
+    fraction.SetDuration(300);
+    fraction.SetAutoReverse(true);
+    fraction.SetAnimationId(2);
+    constexpr int64_t TEST_TIME = 2000000000;
+    fraction.SetRebuildFraction(0.3f, TEST_TIME, true);
+    EXPECT_EQ(fraction.currentIsReverseCycle_, true);
+    EXPECT_EQ(fraction.currentRepeatCount_, 1);
+    EXPECT_FLOAT_EQ(fraction.currentTimeFraction_, 0.3f);
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction002 end";
+}
+
+/**
+ * @tc.name: SetRebuildFraction003
+ * @tc.desc: Verify SetRebuildFraction with reverse cycle and autoReverse disabled
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationFractionTest, SetRebuildFraction003, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction003 start";
+    RSAnimationFraction fraction;
+    fraction.SetDuration(300);
+    fraction.SetAutoReverse(false);
+    fraction.SetAnimationId(3);
+    constexpr int64_t TEST_TIME = 3000000000;
+    fraction.SetRebuildFraction(0.4f, TEST_TIME, true);
+    EXPECT_EQ(fraction.currentIsReverseCycle_, true);
+    EXPECT_EQ(fraction.currentRepeatCount_, 0);
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction003 end";
+}
+
+/**
+ * @tc.name: SetRebuildFraction004
+ * @tc.desc: Verify SetRebuildFraction clamps fraction below 0
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationFractionTest, SetRebuildFraction004, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction004 start";
+    RSAnimationFraction fraction;
+    fraction.SetDuration(300);
+    fraction.SetAnimationId(4);
+    fraction.SetRebuildFraction(-0.5f, 0, false);
+    EXPECT_FLOAT_EQ(fraction.currentTimeFraction_, 0.0f);
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction004 end";
+}
+
+/**
+ * @tc.name: SetRebuildFraction005
+ * @tc.desc: Verify SetRebuildFraction clamps fraction above 1
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationFractionTest, SetRebuildFraction005, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction005 start";
+    RSAnimationFraction fraction;
+    fraction.SetDuration(300);
+    fraction.SetAnimationId(5);
+    fraction.SetRebuildFraction(1.5f, 0, false);
+    EXPECT_FLOAT_EQ(fraction.currentTimeFraction_, 1.0f);
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction005 end";
+}
+
+/**
+ * @tc.name: SetRebuildFraction006
+ * @tc.desc: Verify SetRebuildFraction with start delay
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationFractionTest, SetRebuildFraction006, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction006 start";
+    RSAnimationFraction fraction;
+    fraction.SetDuration(300);
     fraction.SetStartDelay(100);
-    fraction.SetLastFrameTime(0);
-    fraction.runningTime_ = 200 * MS_TO_NS;  // 200ms in nanoseconds, > startDelay (100ms)
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = true;
-
-    fraction.GetAnimationFraction(200 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_EQ(minLeftDelayTime, 0);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_AfterDelay_OnTree001 end";
-}
-
-/**
- * @tc.name: GetAnimationFraction_AfterDelay_OffTree001
- * @tc.desc: Verify GetAnimationFraction after delay phase for off-tree node
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_AfterDelay_OffTree001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_AfterDelay_OffTree001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(2);
-    fraction.SetStartDelay(100);
-    fraction.SetLastFrameTime(0);
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = false;
-
-    fraction.GetAnimationFraction(500 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_GT(minLeftDelayTime, 0);
-    EXPECT_LT(minLeftDelayTime, 2000);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_AfterDelay_OffTree001 end";
-}
-
-/**
- * @tc.name: GetAnimationFraction_InfiniteRepeat_OnTree001
- * @tc.desc: Verify GetAnimationFraction with infinite repeat count for on-tree node
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_InfiniteRepeat_OnTree001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InfiniteRepeat_OnTree001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(-1);
-    fraction.SetStartDelay(0);
-    fraction.SetLastFrameTime(0);
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = true;
-
-    fraction.GetAnimationFraction(500 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_EQ(minLeftDelayTime, 0);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InfiniteRepeat_OnTree001 end";
-}
-
-/**
- * @tc.name: GetAnimationFraction_InfiniteRepeat_OffTree001
- * @tc.desc: Verify GetAnimationFraction with infinite repeat count for off-tree node
- *           (minLeftDelayTime should not be calculated for infinite repeat)
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_InfiniteRepeat_OffTree001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InfiniteRepeat_OffTree001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(-1);
-    fraction.SetStartDelay(0);
-    fraction.SetLastFrameTime(0);
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = false;
-
-    fraction.GetAnimationFraction(500 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_EQ(minLeftDelayTime, INT64_MAX);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InfiniteRepeat_OffTree001 end";
-}
-
-/**
- * @tc.name: GetAnimationFraction_Finished_OnTree001
- * @tc.desc: Verify GetAnimationFraction when animation is finished for on-tree node
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_Finished_OnTree001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_Finished_OnTree001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(1);
-    fraction.SetStartDelay(0);
-    fraction.SetLastFrameTime(0);
-    fraction.runningTime_ = 1500 * MS_TO_NS;  // 1500ms in nanoseconds, > duration (1000ms) -> finished
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = true;
-    bool isFinished = false;
-
-    std::tie(std::ignore, std::ignore, isFinished, std::ignore) =
-        fraction.GetAnimationFraction(1500 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_TRUE(isFinished);
-    EXPECT_EQ(minLeftDelayTime, 0);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_Finished_OnTree001 end";
-}
-
-/**
- * @tc.name: GetAnimationFraction_Finished_OffTree001
- * @tc.desc: Verify GetAnimationFraction when animation is finished for off-tree node
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_Finished_OffTree001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_Finished_OffTree001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(1);
-    fraction.SetStartDelay(0);
-    fraction.SetLastFrameTime(0);
-    fraction.runningTime_ = 1500 * MS_TO_NS;  // 1500ms in nanoseconds, > duration (1000ms) -> finished
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = false;
-    bool isFinished = false;
-
-    std::tie(std::ignore, std::ignore, isFinished, std::ignore) =
-        fraction.GetAnimationFraction(1500 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_TRUE(isFinished);
-    EXPECT_EQ(minLeftDelayTime, 0);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_Finished_OffTree001 end";
-}
-
-/**
- * @tc.name: GetAnimationFraction_ZeroMinLeftDelayTime001
- * @tc.desc: Verify GetAnimationFraction when minLeftDelayTime is 0 initially
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_ZeroMinLeftDelayTime001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_ZeroMinLeftDelayTime001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(2);
-    fraction.SetStartDelay(0);
-    fraction.SetLastFrameTime(0);
-
-    int64_t minLeftDelayTime = 0;
-    bool isOnTree = false;
-
-    fraction.GetAnimationFraction(500 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_EQ(minLeftDelayTime, 0);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_ZeroMinLeftDelayTime001 end";
-}
-
-/**
- * @tc.name: GetAnimationFraction_InStartDelay_OffTree_ZeroRepeatCount001
- * @tc.desc: Verify GetAnimationFraction with repeatCount=0.
- *           When repeatCount=0, animation is considered finished immediately (line 236),
- *           skipping HandleStartDelayPhase. isInStartDelay=false, isFinished=true.
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_InStartDelay_OffTree_ZeroRepeatCount001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InStartDelay_OffTree_ZeroRepeatCount001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(0);
-    fraction.SetStartDelay(500);
-    fraction.SetLastFrameTime(0);
-    fraction.runningTime_ = 100 * MS_TO_NS;
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = false;
-    bool isInStartDelay = false;
-    bool isFinished = false;
-    bool isRepeatFinished = false;
-    float result = 0.0f;
-
-    std::tie(result, isInStartDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(100 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_FALSE(isInStartDelay);
-    EXPECT_TRUE(isFinished);
-    EXPECT_EQ(minLeftDelayTime, 0);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InStartDelay_OffTree_ZeroRepeatCount001 end";
-}
-
-/**
- * @tc.name: GetAnimationFraction_InStartDelay_OffTree_InfiniteRepeat001
- * @tc.desc: Verify GetAnimationFraction in start delay phase for off-tree node with infinite repeat.
- *           Line 186 branch: repeatCount_ != INFINITE is false -> branch not entered
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, GetAnimationFraction_InStartDelay_OffTree_InfiniteRepeat001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InStartDelay_OffTree_InfiniteRepeat001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(-1);
-    fraction.SetStartDelay(500);
-    fraction.SetLastFrameTime(0);
-    fraction.runningTime_ = 100 * MS_TO_NS;
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isOnTree = false;
-    bool isInStartDelay = false;
-    bool isFinished = false;
-    bool isRepeatFinished = false;
-    float result = 0.0f;
-
-    std::tie(result, isInStartDelay, isFinished, isRepeatFinished) =
-        fraction.GetAnimationFraction(100 * MS_TO_NS, minLeftDelayTime, false, isOnTree);
-
-    EXPECT_TRUE(isInStartDelay);
-    EXPECT_FALSE(isFinished);
-    EXPECT_GT(minLeftDelayTime, 0);
-    EXPECT_LT(minLeftDelayTime, 500);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest GetAnimationFraction_InStartDelay_OffTree_InfiniteRepeat001 end";
-}
-
-/**
- * @tc.name: HandleStartDelayPhase_ZeroMinLeftDelayTime001
- * @tc.desc: Test HandleStartDelayPhase when minLeftDelayTime <= 0.
- *           Branch: !IsStartRunning -> true, IsFinished -> false, minLeftDelayTime > 0 -> false (line 184)
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, HandleStartDelayPhase_ZeroMinLeftDelayTime001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest HandleStartDelayPhase_ZeroMinLeftDelayTime001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(2);
-    fraction.SetStartDelay(500);
-    fraction.SetLastFrameTime(0);
-    fraction.runningTime_ = 100 * MS_TO_NS;
-
-    int64_t minLeftDelayTime = 0;
-    bool isInStartDelay = false;
-    int64_t startDelayNs = 500 * MS_TO_NS;
-    int64_t deltaTime = 100 * MS_TO_NS;
-
-    auto result =
-        fraction.HandleStartDelayPhase(startDelayNs, deltaTime, false, minLeftDelayTime, isInStartDelay, false);
-
-    ASSERT_TRUE(result.has_value());
-    auto [fractionValue, isDelay, isFinished, isRepeatFinished] = *result;
-    EXPECT_TRUE(isDelay);
-    EXPECT_FALSE(isFinished);
-    EXPECT_EQ(minLeftDelayTime, 0);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest HandleStartDelayPhase_ZeroMinLeftDelayTime001 end";
-}
-
-/**
- * @tc.name: HandleStartDelayPhase_DelayPassed_OnTree001
- * @tc.desc: Test HandleStartDelayPhase when delay phase passed for on-tree node.
- *           Branch: !IsStartRunning -> false, isOnTree -> true (line 196)
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, HandleStartDelayPhase_DelayPassed_OnTree001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest HandleStartDelayPhase_DelayPassed_OnTree001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(1);
-    fraction.SetStartDelay(100);
-    fraction.SetLastFrameTime(0);
-    fraction.runningTime_ = 200 * MS_TO_NS;
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isInStartDelay = false;
-    int64_t startDelayNs = 100 * MS_TO_NS;
-    int64_t deltaTime = 200 * MS_TO_NS;
-
-    auto result =
-        fraction.HandleStartDelayPhase(startDelayNs, deltaTime, false, minLeftDelayTime, isInStartDelay, true);
-
-    EXPECT_FALSE(result.has_value());
-    EXPECT_EQ(minLeftDelayTime, 0);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest HandleStartDelayPhase_DelayPassed_OnTree001 end";
-}
-
-/**
- * @tc.name: HandleStartDelayPhase_DelayPassed_OffTree001
- * @tc.desc: Test HandleStartDelayPhase when delay phase passed for off-tree node.
- *           Branch: !IsStartRunning -> false, isOnTree -> false (line 196 skip)
- * @tc.type:FUNC
- */
-HWTEST_F(RSAnimationFractionTest, HandleStartDelayPhase_DelayPassed_OffTree001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest HandleStartDelayPhase_DelayPassed_OffTree001 start";
-    RSAnimationFraction fraction;
-    fraction.SetDuration(1000);
-    fraction.SetRepeatCount(2);
-    fraction.SetStartDelay(100);
-    fraction.SetLastFrameTime(0);
-    fraction.runningTime_ = 200 * MS_TO_NS;
-
-    int64_t minLeftDelayTime = INT64_MAX;
-    bool isInStartDelay = false;
-    int64_t startDelayNs = 100 * MS_TO_NS;
-    int64_t deltaTime = 200 * MS_TO_NS;
-
-    auto result =
-        fraction.HandleStartDelayPhase(startDelayNs, deltaTime, false, minLeftDelayTime, isInStartDelay, false);
-
-    EXPECT_FALSE(result.has_value());
-    EXPECT_EQ(minLeftDelayTime, INT64_MAX);
-
-    GTEST_LOG_(INFO) << "RSAnimationFractionTest HandleStartDelayPhase_DelayPassed_OffTree001 end";
+    fraction.SetAnimationId(6);
+    fraction.SetRebuildFraction(0.5f, 0, false);
+    EXPECT_FLOAT_EQ(fraction.currentTimeFraction_, 0.5f);
+    GTEST_LOG_(INFO) << "RSAnimationFractionTest SetRebuildFraction006 end";
 }
 
 } // namespace Rosen

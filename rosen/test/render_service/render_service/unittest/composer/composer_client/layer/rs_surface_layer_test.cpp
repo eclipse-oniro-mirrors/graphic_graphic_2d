@@ -25,7 +25,9 @@
 
 #include "connection/rs_render_to_composer_connection.h"
 #include "common/rs_tunnel_layer_utils.h"
+#include "consumer_surface.h"
 #include "feature/hyper_graphic_manager/hgm_context.h"
+#include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
 #include "layer_backend/hdi_output.h"
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/rs_vulkan_context.h"
@@ -44,6 +46,10 @@ using namespace testing::ext;
 namespace OHOS {
 namespace Rosen {
 namespace {
+constexpr uint64_t TEST_TUNNEL_LAYER_ID = 789u;
+constexpr uint64_t TEST_NODE_ID = 456u;
+constexpr uint64_t TEST_LAYER_ID_BASE = 1200u;
+
 class ScopedNewTunnelSwitch {
 public:
     explicit ScopedNewTunnelSwitch(bool enabled) : oldValue_(Rosen::IsNewTunnelEnabled())
@@ -59,6 +65,26 @@ public:
 private:
     bool oldValue_;
 };
+
+std::shared_ptr<RSComposerContext> CreateContextWithLayerStateRecorder(
+    const std::shared_ptr<RSRenderComposerManager>& manager, uint32_t screenId,
+    std::vector<LayerStateChange>& reportedStates)
+{
+    if (manager == nullptr) {
+        return nullptr;
+    }
+    auto conn = manager->GetRSComposerConnection(screenId);
+    sptr<IRSRenderToComposerConnection> ifaceConn = conn;
+    auto localClient = RSComposerClient::Create(ifaceConn, nullptr);
+    if (localClient == nullptr) {
+        return nullptr;
+    }
+    localClient->RegisterLayerStateChangedCB(
+        [&reportedStates](uint64_t, LayerStateChange state, uint64_t) {
+            reportedStates.emplace_back(state);
+        });
+    return localClient->GetComposerContext();
+}
 } // namespace
 
 class RSSurfaceLayerTest : public testing::Test {
@@ -219,6 +245,154 @@ HWTEST_F(RSSurfaceLayerTest, TunnelLayerDestroyedCallback002, Function | SmallTe
 }
 
 /**
+ * @tc.name: TunnelLayerDestroyedCallback003
+ * @tc.desc: Test tunnel layer destruction skips callback for disabled, null-surface, and invalid fallback states.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceLayerTest, TunnelLayerDestroyedCallback003, Function | SmallTest | Level2)
+{
+    struct TestCase {
+        const char* name;
+        bool newTunnelEnabled;
+        bool setSurface;
+        bool initSurface;
+        uint64_t layerTunnelId;
+        uint32_t layerProperty;
+    };
+    const std::vector<TestCase> testCases = {
+        { "new_tunnel_disabled", false, true, true, TEST_TUNNEL_LAYER_ID, TUNNEL_PROP_BUFFER_ADDR },
+        { "surface_null", true, false, false, TEST_TUNNEL_LAYER_ID, TUNNEL_PROP_BUFFER_ADDR },
+        { "fallback_get_info_failed", true, true, false, 0, TUNNEL_PROP_INVALID },
+        { "fallback_tunnel_layer_id_zero", true, true, true, 0, TUNNEL_PROP_INVALID },
+    };
+
+    for (size_t index = 0; index < testCases.size(); ++index) {
+        const auto& testCase = testCases[index];
+        SCOPED_TRACE(testing::Message() << "case=" << testCase.name);
+        ScopedNewTunnelSwitch scopedNewTunnelSwitch(testCase.newTunnelEnabled);
+        std::vector<LayerStateChange> reportedStates;
+        auto context = CreateContextWithLayerStateRecorder(sMgr, screenId, reportedStates);
+        ASSERT_NE(context, nullptr);
+
+        sptr<IConsumerSurface> consumer = nullptr;
+        if (testCase.initSurface) {
+            consumer = IConsumerSurface::Create(testCase.name);
+        } else {
+            consumer = new ConsumerSurface(testCase.name);
+        }
+        ASSERT_NE(consumer, nullptr);
+
+        {
+            auto rsLayer = std::static_pointer_cast<RSSurfaceLayer>(
+                RSSurfaceLayer::Create(TEST_LAYER_ID_BASE + index, context));
+            ASSERT_NE(rsLayer, nullptr);
+            rsLayer->SetNodeId(TEST_NODE_ID + index);
+            if (testCase.setSurface) {
+                rsLayer->SetSurface(consumer);
+            }
+            rsLayer->SetTunnelLayerId(testCase.layerTunnelId);
+            rsLayer->SetTunnelLayerProperty(testCase.layerProperty);
+        }
+
+        EXPECT_TRUE(reportedStates.empty());
+    }
+}
+
+/**
+ * @tc.name: TunnelLayerDestroyedCallback_NodeIdFallback004
+ * @tc.desc: Test tunnel layer destruction uses nodeId fallback
+ *           when layer tunnelLayerId is zero but nodeId has stored info.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceLayerTest, TunnelLayerDestroyedCallback_NodeIdFallback004, Function | SmallTest | Level2)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    auto consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    sptr<IBufferProducer> producerObj = consumer->GetProducer();
+    auto producer = Surface::CreateSurfaceAsProducer(producerObj);
+    ASSERT_NE(producer, nullptr);
+ 
+    constexpr uint64_t testNodeId = 5001u;
+    constexpr uint64_t fallbackTunnelLayerId = 8001u;
+    constexpr uint32_t fallbackProperty = TUNNEL_PROP_BUFFER_ADDR | TUNNEL_PROP_DEVICE_COMMIT;
+    constexpr uint64_t expectedGeneration = 555u;
+ 
+    std::vector<LayerStateChange> reportedStates;
+    uint64_t reportedNodeId = 0;
+    uint64_t reportedGeneration = 0;
+    auto conn = sMgr->GetRSComposerConnection(screenId);
+    sptr<IRSRenderToComposerConnection> ifaceConn = conn;
+    auto localClient = RSComposerClient::Create(ifaceConn, nullptr);
+    ASSERT_NE(localClient, nullptr);
+    localClient->RegisterLayerStateChangedCB(
+        [&reportedNodeId, &reportedGeneration, &reportedStates](
+            uint64_t nodeId, LayerStateChange state, uint64_t generation) {
+            reportedNodeId = nodeId;
+            reportedGeneration = generation;
+            reportedStates.emplace_back(state);
+        });
+ 
+    auto context = localClient->GetComposerContext();
+    ASSERT_NE(context, nullptr);
+ 
+    RSTunnelRuntimeStore::SetLayerInfo(testNodeId, fallbackTunnelLayerId, fallbackProperty);
+    RSTunnelRuntimeStore::GetOrCreate(testNodeId).SetBuilding();
+    RSTunnelRuntimeStore::GetOrCreate(testNodeId).SetActiveFromTunnelLayerAvailable(
+        RSTunnelRuntimeStore::GetOrCreate(testNodeId).GetTunnelLayerGeneration());
+ 
+    {
+        auto rsLayer = std::static_pointer_cast<RSSurfaceLayer>(RSSurfaceLayer::Create(125u, context));
+        ASSERT_NE(rsLayer, nullptr);
+        rsLayer->SetNodeId(testNodeId);
+        rsLayer->SetSurface(consumer);
+        rsLayer->SetTunnelLayerId(0);
+        rsLayer->SetTunnelLayerProperty(TUNNEL_PROP_INVALID);
+        rsLayer->SetTunnelLayerGeneration(expectedGeneration);
+    }
+ 
+    ASSERT_EQ(reportedStates.size(), 1u);
+    EXPECT_EQ(reportedNodeId, testNodeId);
+    EXPECT_EQ(reportedGeneration, expectedGeneration);
+    EXPECT_EQ(reportedStates[0], LayerStateChange::UNAVAILABLE);
+ 
+    RSTunnelRuntimeStore::Erase(testNodeId);
+}
+ 
+/**
+ * @tc.name: TunnelLayerDestroyedCallback_NodeIdFallbackSkipped005
+ * @tc.desc: Test tunnel layer destruction skips callback when both layer and nodeId store have zero tunnelLayerId.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceLayerTest, TunnelLayerDestroyedCallback_NodeIdFallbackSkipped005, Function | SmallTest | Level2)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    auto consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+ 
+    constexpr uint64_t testNodeId = 5002u;
+    std::vector<LayerStateChange> reportedStates;
+    auto context = CreateContextWithLayerStateRecorder(sMgr, screenId, reportedStates);
+    ASSERT_NE(context, nullptr);
+ 
+    RSTunnelRuntimeStore::SetLayerInfo(testNodeId, 0, TUNNEL_PROP_INVALID);
+ 
+    {
+        auto rsLayer = std::static_pointer_cast<RSSurfaceLayer>(RSSurfaceLayer::Create(126u, context));
+        ASSERT_NE(rsLayer, nullptr);
+        rsLayer->SetNodeId(testNodeId);
+        rsLayer->SetSurface(consumer);
+        rsLayer->SetTunnelLayerId(0);
+        rsLayer->SetTunnelLayerProperty(TUNNEL_PROP_INVALID);
+    }
+ 
+    EXPECT_TRUE(reportedStates.empty());
+ 
+    RSTunnelRuntimeStore::Erase(testNodeId);
+}
+
+/**
  * @tc.name: LayerPropertiesChangeTest
  * @tc.desc: Test Change RSLayer Properties
  * @tc.type: FUNC
@@ -298,6 +472,12 @@ HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest2, Function | SmallTest | 
     std::vector<float> drmCornerRadiusInfo;
     layer->SetCornerRadiusInfoForDRM(drmCornerRadiusInfo);
     EXPECT_EQ(layer->GetCornerRadiusInfoForDRM(), drmCornerRadiusInfo);
+
+    RSVcldParam vcldInfo;
+    vcldInfo.enable = true;
+    vcldInfo.radius = 25;
+    layer->SetVcldInfo(vcldInfo);
+    EXPECT_EQ(layer->GetVcldInfo(), vcldInfo);
 
     std::vector<float> matrix;
     layer->SetColorTransform(matrix);
@@ -653,6 +833,60 @@ HWTEST_F(RSSurfaceLayerTest, BufferOwnerCount_UnknownSeq_NoRemoval, Function | S
     auto got = lyr->PopBufferOwnerCountById(9u);
     ASSERT_NE(got, nullptr);
     EXPECT_EQ(got.get(), boc.get());
+}
+
+/**
+ * @tc.name: SetOriginalBufferOwnerCount_BasicTest
+ * @tc.desc: Verify SetOriginalBufferOwnerCount stores and AddRefs for new buffer
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceLayerTest, SetOriginalBufferOwnerCount_BasicTest, Function | SmallTest | Level2)
+{
+    auto lyr = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    ASSERT_NE(lyr, nullptr);
+ 
+    auto boc = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    boc->bufferId_ = 200u;
+    int initialRef = boc->refCount_.load();
+ 
+    lyr->SetOriginalBufferOwnerCount(boc);
+ 
+    EXPECT_EQ(boc->refCount_.load(), initialRef + 1);
+    EXPECT_EQ(lyr->GetOriginalBufferOwnerCount(), boc);
+}
+ 
+/**
+ * @tc.name: SetOriginalBufferOwnerCount_DuplicateBufferNoAddRef
+ * @tc.desc: Verify SetOriginalBufferOwnerCount does NOT AddRef when bufferId already exists
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceLayerTest, SetOriginalBufferOwnerCount_DuplicateBufferNoAddRef, Function | SmallTest | Level2)
+{
+    auto lyr = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    ASSERT_NE(lyr, nullptr);
+ 
+    auto boc = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    boc->bufferId_ = 201u;
+    lyr->SetOriginalBufferOwnerCount(boc);
+ 
+    int refAfterFirst = boc->refCount_.load();
+    lyr->SetOriginalBufferOwnerCount(boc);
+ 
+    EXPECT_EQ(boc->refCount_.load(), refAfterFirst);
+}
+ 
+/**
+ * @tc.name: SetOriginalBufferOwnerCount_NullptrIgnored
+ * @tc.desc: Verify SetOriginalBufferOwnerCount ignores nullptr input
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceLayerTest, SetOriginalBufferOwnerCount_NullptrIgnored, Function | SmallTest | Level2)
+{
+    auto lyr = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    ASSERT_NE(lyr, nullptr);
+ 
+    lyr->SetOriginalBufferOwnerCount(nullptr);
+    EXPECT_EQ(lyr->GetOriginalBufferOwnerCount(), nullptr);
 }
 } // namespace Rosen
 } // namespace OHOS

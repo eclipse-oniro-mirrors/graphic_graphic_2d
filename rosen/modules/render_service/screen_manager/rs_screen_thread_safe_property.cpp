@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
+
 #include "rs_screen_thread_safe_property.h"
 
 #include "platform/common/rs_log.h"
@@ -277,13 +279,6 @@ RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetConnectionTyp
     return { ScreenPropertyType::CONNECTION_TYPE, prop };
 }
 
-RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetProducerSurface(sptr<Surface> producerSurface)
-{
-    UniqueLock lock(propertyMutex_);
-    auto prop = property_->Set<ScreenPropertyType::PRODUCER_SURFACE>(producerSurface);
-    return { ScreenPropertyType::PRODUCER_SURFACE, prop };
-}
-
 RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetScreenScaleMode(ScreenScaleMode scaleMode)
 {
     UniqueLock lock(propertyMutex_);
@@ -339,11 +334,57 @@ RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetFrameGravity(
     return { ScreenPropertyType::SCREEN_FRAME_GRAVITY, prop };
 }
 
+RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetMultiSurfaceConfigs(
+    const std::vector<SurfaceRegionConfig>& configs)
+{
+    UniqueLock lock(propertyMutex_);
+    auto prop = property_->Set<ScreenPropertyType::MULTI_SURFACE_CONFIGS>(configs);
+    return { ScreenPropertyType::MULTI_SURFACE_CONFIGS, prop };
+}
+
+RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::AddSurfaceConfigs(
+    const std::vector<SurfaceRegionConfig>& configs)
+{
+    UniqueLock lock(propertyMutex_);
+    auto current = property_->GetMultiSurfaceConfigs();
+    current.insert(current.end(), configs.begin(), configs.end());
+    auto prop = property_->Set<ScreenPropertyType::MULTI_SURFACE_CONFIGS>(current);
+    return { ScreenPropertyType::MULTI_SURFACE_CONFIGS, prop };
+}
+
+RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::RemoveSurfaceConfigs(
+    const std::unordered_set<uint64_t>& surfaceIdsToRemove)
+{
+    UniqueLock lock(propertyMutex_);
+    auto configs = property_->GetMultiSurfaceConfigs();
+    configs.erase(std::remove_if(configs.begin(), configs.end(),
+        [&surfaceIdsToRemove](const SurfaceRegionConfig& config) {
+            return config.surface != nullptr &&
+                surfaceIdsToRemove.count(config.surface->GetUniqueId()) > 0;
+        }), configs.end());
+    auto prop = property_->Set<ScreenPropertyType::MULTI_SURFACE_CONFIGS>(configs);
+    return { ScreenPropertyType::MULTI_SURFACE_CONFIGS, prop };
+}
+
 RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetAsMainScreen(bool isMainScreen)
 {
     UniqueLock lock(propertyMutex_);
     auto prop = property_->Set<ScreenPropertyType::IS_MAIN_SCREEN>(isMainScreen);
     return { ScreenPropertyType::IS_MAIN_SCREEN, prop };
+}
+
+RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetIsRogResolution(bool isRogResolution)
+{
+    UniqueLock lock(propertyMutex_);
+    auto prop = property_->Set<ScreenPropertyType::IS_ROG_RESOLUTION>(isRogResolution);
+    return { ScreenPropertyType::IS_ROG_RESOLUTION, prop };
+}
+
+RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetHdiRogEnable(bool isHdiRogEnable)
+{
+    UniqueLock lock(propertyMutex_);
+    auto prop = property_->Set<ScreenPropertyType::IS_HDI_ROG_ENABLE>(isHdiRogEnable);
+    return { ScreenPropertyType::IS_HDI_ROG_ENABLE, prop };
 }
 
 ScreenId RSScreenThreadSafeProperty::GetId() const
@@ -581,12 +622,6 @@ ScreenConnectionType RSScreenThreadSafeProperty::GetConnectionType() const
     return property_->GetConnectionType();
 }
 
-sptr<Surface> RSScreenThreadSafeProperty::GetProducerSurface() const
-{
-    SharedLock lock(propertyMutex_);
-    return property_->GetProducerSurface();
-}
-
 ScreenScaleMode RSScreenThreadSafeProperty::GetScreenScaleMode() const
 {
     SharedLock lock(propertyMutex_);
@@ -615,10 +650,27 @@ std::vector<ScreenColorGamut> RSScreenThreadSafeProperty::GetSupportedColorGamut
     return property_->GetScreenSupportedColorGamuts();
 }
 
+std::vector<SurfaceRegionConfig> RSScreenThreadSafeProperty::GetMultiSurfaceConfigs() const
+{
+    SharedLock lock(propertyMutex_);
+    return property_->GetMultiSurfaceConfigs();
+}
 bool RSScreenThreadSafeProperty::IsMainScreen() const
 {
     SharedLock lock(propertyMutex_);
     return property_->IsMainScreen();
+}
+
+bool RSScreenThreadSafeProperty::IsRogResolution() const
+{
+    SharedLock lock(propertyMutex_);
+    return property_->IsRogResolution();
+}
+
+bool RSScreenThreadSafeProperty::GetHdiRogEnable() const
+{
+    SharedLock lock(propertyMutex_);
+    return property_->GetHdiRogEnable();
 }
 
 ScreenInfo RSScreenThreadSafeProperty::GetScreenInfo() const

@@ -39,6 +39,7 @@
 #include "params/rs_surface_render_params.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_effect_render_node.h"
+#include "pipeline/rs_effect_utils.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
@@ -249,7 +250,7 @@ bool RSUniFilterDirtyComputeUtil::FilterCachePartialRenderEnabled(const FilterDi
     // The following are dynamic switch, disable partial render screen conditions and effects
     if (!RSSystemProperties::GetCachedBlurPartialRenderEnabled() ||
         !RSFilterDirtyCollector::GetValidCachePartialRender() || info.forceDisablePartialRender_) {
-            RS_TRACE_NAME("RSUniFilterDirtyComputeUtil::FilterCachePartialRenderEnabled disable");
+        RS_OPTIONAL_TRACE_FMT("RSUniFilterDirtyComputeUtil::FilterCachePartialRenderEnabled disable");
         return false;
     }
     auto drawableAdapter = DrawableV2::RSRenderNodeDrawableAdapter::GetDrawableById(info.id_);
@@ -346,8 +347,7 @@ FilterDirtyRegionInfo RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo
         .intersectRegion_ = filterRegion,
         .filterDirty_ = filterRegion,
         .belowDirty_ = preDirty.value_or(Occlusion::Region()),
-        .isBackgroundFilterClean_ =
-            (filterProperties.GetBackgroundFilter() || filterProperties.GetNeedDrawBehindWindow()) &&
+        .isBackgroundFilterClean_ = RSEffectUtils::HasBackgroundDependentFilter(filterProperties) &&
             !filterNode.IsBackgroundInAppOrNodeSelfDirty(),
         .forceDisablePartialRender_ = filterNode.IsPixelStretchValid() ||
             filterNode.GetRenderProperties().NeedDisabledPartialRender()

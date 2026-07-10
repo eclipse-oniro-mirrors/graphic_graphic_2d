@@ -38,6 +38,7 @@
 #include "command/rs_base_node_command.h"
 #include "command/rs_canvas_drawing_node_command.h"
 #include "command/rs_canvas_node_command.h"
+#include "command/rs_depth_node_command.h"
 #include "command/rs_effect_node_command.h"
 #include "command/rs_proxy_node_command.h"
 #include "command/rs_root_node_command.h"
@@ -1052,6 +1053,8 @@ std::string RSProfiler::UnmarshalNode(RSContext& context, std::stringstream& dat
         EffectNodeCommandHelper::Create(context, nodeId, isTextureExportNode);
     } else if (nodeType == RSRenderNodeType::ROOT_NODE) {
         RootNodeCommandHelper::Create(context, nodeId, isTextureExportNode);
+    } else if (nodeType == RSRenderNodeType::DEPTH_NODE) {
+        RSDepthNodeCommandHelper::Create(context, nodeId, isTextureExportNode);
     } else if (nodeType == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         RSCanvasDrawingNodeCommandHelper::Create(context, nodeId, isTextureExportNode);
     } else if (nodeType == RSRenderNodeType::WINDOW_KEYFRAME_NODE) {
@@ -1239,7 +1242,7 @@ std::string RSProfiler::DumpModifiers(const RSRenderNode& node)
     std::string out;
     out += "<";
     for (uint16_t type = 0; type < ModifierNG::MODIFIER_TYPE_COUNT; type++) {
-        auto slot = node.GetModifiersNG(static_cast<ModifierNG::RSModifierType>(type));
+        const auto& slot = node.GetModifiersNG(static_cast<ModifierNG::RSModifierType>(type));
         if (slot.empty()) {
             continue;
         }
@@ -1463,7 +1466,7 @@ uint32_t RSProfiler::CalcNodeCmdListCount(RSRenderNode& node)
 {
     uint32_t nodeCmdListCount = 0;
     for (uint16_t type = 0; type < ModifierNG::MODIFIER_TYPE_COUNT; type++) {
-        auto slot = node.GetModifiersNG(static_cast<ModifierNG::RSModifierType>(type));
+        const auto& slot = node.GetModifiersNG(static_cast<ModifierNG::RSModifierType>(type));
         if (slot.empty()) {
             continue;
         }

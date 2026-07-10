@@ -986,5 +986,344 @@ HWTEST_F(RSJankStatsTest, SetEarlyZFlagTest014, TestSize.Level1)
     RSSystemProperties::isEnableEarlyZ_ = true;
 }
 
+/**
+ * @tc.name: OnGraphicsPipelineCreatedTest001
+ * @tc.desc: OnGraphicsPipelineCreated with no active animation
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, OnGraphicsPipelineCreatedTest001, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    JankFrames jankFrames;
+    jankFrames.isUpdateJankFrame_ = false;
+    rsJankStats->animateJankFrames_.emplace(std::make_pair(1, ""), jankFrames);
+
+    rsJankStats->OnGraphicsPipelineCreated(0, 100, false);
+    EXPECT_EQ(rsJankStats->animateJankFrames_.begin()->second.curFrameMaxPipelineTime_, 0);
+    EXPECT_EQ(rsJankStats->animateJankFrames_.begin()->second.curFrameTotalPipelineTime_, 0);
+}
+
+/**
+ * @tc.name: OnGraphicsPipelineCreatedTest002
+ * @tc.desc: OnGraphicsPipelineCreated with active animation, accumulates max and total
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, OnGraphicsPipelineCreatedTest002, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    JankFrames jankFrames;
+    jankFrames.isUpdateJankFrame_ = true;
+    rsJankStats->animateJankFrames_.emplace(std::make_pair(1, ""), jankFrames);
+
+    rsJankStats->OnGraphicsPipelineCreated(0, 100, false);
+    rsJankStats->OnGraphicsPipelineCreated(0, 300, false);
+    rsJankStats->OnGraphicsPipelineCreated(0, 200, false);
+
+    auto& frames = rsJankStats->animateJankFrames_.begin()->second;
+    EXPECT_EQ(frames.curFrameMaxPipelineTime_, 300);
+    EXPECT_EQ(frames.curFrameTotalPipelineTime_, 600);
+}
+
+/**
+ * @tc.name: UpdateAnimationGraphicsPipelineTimeTest001
+ * @tc.desc: UpdateAnimationGraphicsPipelineTime first update
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, UpdateAnimationGraphicsPipelineTimeTest001, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    JankFrames jankFrames;
+    jankFrames.curFrameMaxPipelineTime_ = 100;
+    jankFrames.curFrameTotalPipelineTime_ = 250;
+    rsJankStats->UpdateAnimationGraphicsPipelineTime(jankFrames);
+
+    EXPECT_EQ(jankFrames.animationMaxSinglePipelineTime_, 100);
+    EXPECT_EQ(jankFrames.animationMaxSinglePipelineFrameTotal_, 250);
+    EXPECT_EQ(jankFrames.animationMaxTotalPipelineTime_, 250);
+    EXPECT_EQ(jankFrames.animationMaxTotalPipelineFrameSingle_, 100);
+}
+
+/**
+ * @tc.name: UpdateAnimationGraphicsPipelineTimeTest002
+ * @tc.desc: UpdateAnimationGraphicsPipelineTime updates when larger max single found
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, UpdateAnimationGraphicsPipelineTimeTest002, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    JankFrames jankFrames;
+    jankFrames.curFrameMaxPipelineTime_ = 100;
+    jankFrames.curFrameTotalPipelineTime_ = 200;
+    rsJankStats->UpdateAnimationGraphicsPipelineTime(jankFrames);
+
+    // frame2: larger max, smaller total
+    jankFrames.curFrameMaxPipelineTime_ = 150;
+    jankFrames.curFrameTotalPipelineTime_ = 180;
+    rsJankStats->UpdateAnimationGraphicsPipelineTime(jankFrames);
+
+    EXPECT_EQ(jankFrames.animationMaxSinglePipelineTime_, 150);
+    EXPECT_EQ(jankFrames.animationMaxSinglePipelineFrameTotal_, 180);
+    EXPECT_EQ(jankFrames.animationMaxTotalPipelineTime_, 200);
+    EXPECT_EQ(jankFrames.animationMaxTotalPipelineFrameSingle_, 100);
+}
+
+/**
+ * @tc.name: UpdateAnimationGraphicsPipelineTimeTest003
+ * @tc.desc: UpdateAnimationGraphicsPipelineTime updates when larger total found
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, UpdateAnimationGraphicsPipelineTimeTest003, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    JankFrames jankFrames;
+    jankFrames.curFrameMaxPipelineTime_ = 100;
+    jankFrames.curFrameTotalPipelineTime_ = 200;
+    rsJankStats->UpdateAnimationGraphicsPipelineTime(jankFrames);
+
+    // frame2: smaller max, larger total
+    jankFrames.curFrameMaxPipelineTime_ = 50;
+    jankFrames.curFrameTotalPipelineTime_ = 300;
+    rsJankStats->UpdateAnimationGraphicsPipelineTime(jankFrames);
+
+    EXPECT_EQ(jankFrames.animationMaxSinglePipelineTime_, 100);
+    EXPECT_EQ(jankFrames.animationMaxSinglePipelineFrameTotal_, 200);
+    EXPECT_EQ(jankFrames.animationMaxTotalPipelineTime_, 300);
+    EXPECT_EQ(jankFrames.animationMaxTotalPipelineFrameSingle_, 50);
+}
+
+/**
+ * @tc.name: UpdateAnimationGraphicsPipelineTimeTest004
+ * @tc.desc: UpdateAnimationGraphicsPipelineTime saves lastAnimation before update
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, UpdateAnimationGraphicsPipelineTimeTest004, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    JankFrames jankFrames;
+    jankFrames.curFrameMaxPipelineTime_ = 100;
+    jankFrames.curFrameTotalPipelineTime_ = 200;
+    rsJankStats->UpdateAnimationGraphicsPipelineTime(jankFrames);
+
+    // frame2 with larger values, lastAnimation should save frame1's values
+    jankFrames.curFrameMaxPipelineTime_ = 200;
+    jankFrames.curFrameTotalPipelineTime_ = 400;
+    rsJankStats->UpdateAnimationGraphicsPipelineTime(jankFrames);
+
+    EXPECT_EQ(jankFrames.lastAnimationMaxSinglePipelineTime_, 100);
+    EXPECT_EQ(jankFrames.lastAnimationMaxSinglePipelineFrameTotal_, 200);
+    EXPECT_EQ(jankFrames.lastAnimationMaxTotalPipelineTime_, 200);
+    EXPECT_EQ(jankFrames.lastAnimationMaxTotalPipelineFrameSingle_, 100);
+}
+
+/**
+ * @tc.name: UpdateAnimationGraphicsPipelineTimeTest005
+ * @tc.desc: UpdateAnimationGraphicsPipelineTime equal max with larger total updates tuple1
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, UpdateAnimationGraphicsPipelineTimeTest005, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    JankFrames jankFrames;
+    jankFrames.curFrameMaxPipelineTime_ = 100;
+    jankFrames.curFrameTotalPipelineTime_ = 200;
+    rsJankStats->UpdateAnimationGraphicsPipelineTime(jankFrames);
+
+    // frame2: same max, larger total -> tuple1 should update
+    jankFrames.curFrameMaxPipelineTime_ = 100;
+    jankFrames.curFrameTotalPipelineTime_ = 300;
+    rsJankStats->UpdateAnimationGraphicsPipelineTime(jankFrames);
+
+    EXPECT_EQ(jankFrames.animationMaxSinglePipelineTime_, 100);
+    EXPECT_EQ(jankFrames.animationMaxSinglePipelineFrameTotal_, 300);
+}
+
+/**
+ * @tc.name: GetAnimationShaderTimeStringTest001
+ * @tc.desc: GetAnimationShaderTimeString without delay
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, GetAnimationShaderTimeStringTest001, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    JankFrames jankFrames;
+    jankFrames.animationMaxSinglePipelineTime_ = 100;
+    jankFrames.animationMaxSinglePipelineFrameTotal_ = 200;
+    jankFrames.animationMaxTotalPipelineTime_ = 300;
+    jankFrames.animationMaxTotalPipelineFrameSingle_ = 50;
+
+    std::string result = rsJankStats->GetAnimationShaderTimeString(jankFrames, false);
+    EXPECT_EQ(result, "<100,200>,<50,300>");
+}
+
+/**
+ * @tc.name: GetAnimationShaderTimeStringTest002
+ * @tc.desc: GetAnimationShaderTimeString with delay
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, GetAnimationShaderTimeStringTest002, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    JankFrames jankFrames;
+    jankFrames.lastAnimationMaxSinglePipelineTime_ = 10;
+    jankFrames.lastAnimationMaxSinglePipelineFrameTotal_ = 20;
+    jankFrames.lastAnimationMaxTotalPipelineTime_ = 30;
+    jankFrames.lastAnimationMaxTotalPipelineFrameSingle_ = 5;
+
+    std::string result = rsJankStats->GetAnimationShaderTimeString(jankFrames, true);
+    EXPECT_EQ(result, "<10,20>,<5,30>");
+}
+
+/**
+ * @tc.name: SetStartTimeInnerPipelineResetTest001
+ * @tc.desc: SetStartTimeInner resets per-frame pipeline fields
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, SetStartTimeInnerPipelineResetTest001, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    JankFrames jankFrames;
+    jankFrames.curFrameMaxPipelineTime_ = 500;
+    jankFrames.curFrameTotalPipelineTime_ = 1000;
+    rsJankStats->animateJankFrames_.emplace(std::make_pair(1, ""), jankFrames);
+
+    rsJankStats->SetStartTimeInner(false);
+
+    auto& frames = rsJankStats->animateJankFrames_.begin()->second;
+    EXPECT_EQ(frames.curFrameMaxPipelineTime_, 0);
+    EXPECT_EQ(frames.curFrameTotalPipelineTime_, 0);
+}
+
+/**
+ * @tc.name: GetJankCountStrTest
+ * @tc.desc: GetJankCountStr test
+ * @tc.type: FUNC
+ * @tc.require: issueIA61E9
+ */
+HWTEST_F(RSJankStatsTest, GetJankCountStrTest, TestSize.Level1)
+{
+    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
+    EXPECT_NE(rsJankStats, nullptr);
+
+    // Test empty vector
+    std::vector<int32_t> emptyJankCount;
+    EXPECT_EQ(rsJankStats->GetJankCountStr(emptyJankCount), "[]");
+
+    // Test single element
+    std::vector<int32_t> singleJankCount = { 1 };
+    EXPECT_EQ(rsJankStats->GetJankCountStr(singleJankCount), "[1]");
+
+    // Test multiple elements
+    std::vector<int32_t> multiJankCount = { 1, 2, 3, 4, 5 };
+    EXPECT_EQ(rsJankStats->GetJankCountStr(multiJankCount), "[1,2,3,4,5]");
+
+    // Test with zeros
+    std::vector<int32_t> zeroJankCount = { 0, 0, 0 };
+    EXPECT_EQ(rsJankStats->GetJankCountStr(zeroJankCount), "[0,0,0]");
+
+    // Test with negative values
+    std::vector<int32_t> negativeJankCount = { -1, -2, -3 };
+    EXPECT_EQ(rsJankStats->GetJankCountStr(negativeJankCount), "[-1,-2,-3]");
+
+    // Test with boundary values
+    std::vector<int32_t> boundaryJankCount = { INT32_MAX, INT32_MIN };
+    EXPECT_EQ(rsJankStats->GetJankCountStr(boundaryJankCount), "[2147483647,-2147483648]");
+
+    // Test with mixed positive and negative values
+    std::vector<int32_t> mixedJankCount = { -1, 0, 1 };
+    EXPECT_EQ(rsJankStats->GetJankCountStr(mixedJankCount), "[-1,0,1]");
+
+    // Test with large vector
+    std::vector<int32_t> largeJankCount(100, 1);
+    std::string expectedLargeStr = "[";
+    for (int i = 0; i < 100; i++) {
+        if (i > 0) {
+            expectedLargeStr += ",";
+        }
+        expectedLargeStr += "1";
+    }
+    expectedLargeStr += "]";
+    EXPECT_EQ(rsJankStats->GetJankCountStr(largeJankCount), expectedLargeStr);
+}
+
+HWTEST_F(RSJankStatsTest, UpdateJankFrameTestWithJankHistogram, TestSize.Level1)
+{
+    auto rsJankStats = std::make_shared<RSJankStats>();
+    rsJankStats->rsStartTime_ = 0;
+    rsJankStats->rsStartTimeSteady_ = 0;
+    rsJankStats->accumulatedBufferCount_ = 0;
+    rsJankStats->isFirstSetEnd_ = false;
+
+    JankFrames jankFrames;
+    jankFrames.startTime_ = 0;
+    jankFrames.jankCount_ = {0, 0, 0, 0, 0, 0, 0, 0};
+
+    jankFrames.isFirstFrame_ = true;
+    rsJankStats->rtLastEndTimeSteady_ = 0;
+    rsJankStats->rtEndTimeSteady_ = 400;
+    rsJankStats->UpdateJankFrame(jankFrames, false, 60);
+    EXPECT_EQ(jankFrames.jankCount_[0], 0);
+
+    jankFrames.isFirstFrame_ = true;
+    jankFrames.jankCount_ = {};
+    rsJankStats->rtLastEndTimeSteady_ = 0;
+    rsJankStats->UpdateJankFrame(jankFrames, false, 60);
+    EXPECT_EQ(jankFrames.jankCount_.size(), 0);
+
+    jankFrames.isFirstFrame_ = false;
+    jankFrames.jankCount_ = {};
+    rsJankStats->rtLastEndTimeSteady_ = 0;
+    rsJankStats->UpdateJankFrame(jankFrames, false, 60);
+    EXPECT_EQ(jankFrames.jankCount_.size(), 0);
+
+    jankFrames.isFirstFrame_ = false;
+    jankFrames.jankCount_ = {0, 0, 0, 0, 0, 0, 0, 0};
+    rsJankStats->rtLastEndTimeSteady_ = 0;
+    rsJankStats->UpdateJankFrame(jankFrames, false, 60);
+    EXPECT_EQ(jankFrames.jankCount_[0], 1);
+
+    jankFrames.isFirstFrame_ = false;
+    jankFrames.jankCount_ = {0, 0, 0, 0, 0, 0, 0, 0};
+    rsJankStats->rtLastEndTimeSteady_ = 0;
+    rsJankStats->rtEndTimeSteady_ = 600;
+    rsJankStats->UpdateJankFrame(jankFrames, false, 60);
+    EXPECT_EQ(jankFrames.jankCount_[1], 1);
+
+    jankFrames.isFirstFrame_ = false;
+    jankFrames.jankCount_ = {0, 0, 0, 0, 0, 0, 0, 0};
+    rsJankStats->rtLastEndTimeSteady_ = 0;
+    rsJankStats->rtEndTimeSteady_ = 1100;
+    rsJankStats->UpdateJankFrame(jankFrames, false, 60);
+    EXPECT_EQ(jankFrames.jankCount_[4], 1);
+}
 } // namespace Rosen
 } // namespace OHOS

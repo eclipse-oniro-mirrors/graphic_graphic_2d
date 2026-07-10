@@ -44,6 +44,7 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_singleton.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
+#include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
 #include "feature_cfg/feature_param/extend_feature/mem_param.h"
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "memory/rs_tag_tracker.h"
@@ -127,10 +128,15 @@ static std::string Data2String(std::string data, uint32_t targetNumber)
 
 // LCOV_EXCL_START
 void MemoryManager::GetNodeInfo(std::unordered_map<int, std::pair<int, int>>& node_info,
-    std::unordered_map<int, int>& nullnode_info, std::unordered_map<pid_t, size_t>& modifierSize)
+    std::unordered_map<int, int>& nullnode_info, std::unordered_map<pid_t, size_t>& modifierSize, DfxString& log)
 {
-    RS_TRACE_NAME_FMT("MemoryManager::GetNodeInfo MemNodeMap size:%zu", MemoryTrack::Instance().GetMemNodeMap().size());
-    for (auto& [nodeId, info] : MemoryTrack::Instance().GetMemNodeMap()) {
+    auto memNodeMap = MemoryTrack::Instance().GetMemNodeMap();
+    RS_TRACE_NAME_FMT("MemoryManager::GetNodeInfo memNodeMap size:%zu", memNodeMap.size());
+    size_t totalSize = 0;
+    int count = 0;
+    for (auto& [nodeId, info] : memNodeMap) {
+        totalSize += info.size;
+        count++;
         auto node = RSMainThread::Instance()->GetContext().GetMutableNodeMap().GetRenderNode(nodeId);
         int pid = info.pid;
         if (node) {
@@ -150,6 +156,7 @@ void MemoryManager::GetNodeInfo(std::unordered_map<int, std::pair<int, int>>& no
             }
         }
     }
+    log.AppendFormat("Total Node Size = %d KB (%d entries)\n", totalSize / MEMUNIT_RATE, count);
 }
 // LCOV_EXCL_STOP
 
@@ -161,8 +168,8 @@ void MemoryManager::RenderServiceAllNodeDump(DfxString& log)
     std::unordered_map<int, int> nullnode_info; // [pid, count]
     std::unordered_map<pid_t, size_t> modifierSize; // [pid, modifiersize]
     constexpr uint32_t NODE_DUMP_STRING_LEN = 8;
-
-    GetNodeInfo(node_info, nullnode_info, modifierSize);
+    log.AppendFormat("\nRSRenderNode:\n");
+    GetNodeInfo(node_info, nullnode_info, modifierSize, log);
     std::string log_str = Data2String("Pid", NODE_DUMP_STRING_LEN) + "\t" +
         Data2String("Count", NODE_DUMP_STRING_LEN) + "\t" +
         Data2String("OnTree", NODE_DUMP_STRING_LEN) + "\t" +
@@ -278,6 +285,9 @@ void MemoryManager::DumpMem(std::unordered_set<std::u16string>& argSets, std::st
     dumpString.append(log.GetString());
     if (!isLite) {
         RSUniRenderThread::Instance().DumpVkImageInfo(dumpString);
+#ifndef ROSEN_CROSS_PLATFORM
+        RsDelegateCompositeCallbackManager::GetInstance().DumpInfo(dumpString);
+#endif
     }
 #else
     dumpString.append("No GPU in this device");
@@ -1088,7 +1098,7 @@ bool MemoryManager::NeedReportFromKernel(pid_t& abnormalPid)
     std::vector<std::pair<pid_t, MemorySnapshotInfo>> sortedPidInfo(snapshotInfo.begin(), snapshotInfo.end());
     std::sort(sortedPidInfo.begin(), sortedPidInfo.end(),
         [](const std::pair<pid_t, MemorySnapshotInfo>& info1, const std::pair<pid_t, MemorySnapshotInfo>& info2) {
-            return info1.second.GpuMemory() > info2.second.GpuMemory();
+            return info1.second.TotalGpuMemory() > info2.second.TotalGpuMemory();
         });
     // find abnormal pid with the max gpu memory.
     abnormalPid = 0;
@@ -1097,7 +1107,7 @@ bool MemoryManager::NeedReportFromKernel(pid_t& abnormalPid)
         maxIndex++;
     }
     if (maxIndex + 1 < sortedPidInfo.size() &&
-        sortedPidInfo[maxIndex].second.GpuMemory() - sortedPidInfo[maxIndex + 1].second.GpuMemory() >
+        sortedPidInfo[maxIndex].second.TotalGpuMemory() - sortedPidInfo[maxIndex + 1].second.TotalGpuMemory() >
         MEMParam::GetKernelReportMemInterval() * MEMUNIT_RATE * MEMUNIT_RATE) {
         abnormalPid = sortedPidInfo[maxIndex].first;
     }
@@ -1212,7 +1222,7 @@ void MemoryManager::MemoryOverReport(const pid_t pid, const MemorySnapshotInfo& 
 {
     if (pid == 0) {
         RS_LOGE("MemoryManager::MemoryOverReport pid:0 cpu[%{public}zu] gpu[%{public}zu]",
-            info.cpuMemory, info.GpuMemory());
+            info.cpuMemory, info.TotalGpuMemory());
         return;
     }
     RS_TRACE_NAME("MemoryManager::MemoryOverReport HiSysEventWrite");

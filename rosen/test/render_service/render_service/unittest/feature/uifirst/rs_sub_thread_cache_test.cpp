@@ -17,6 +17,8 @@
 #include "common/rs_common_def.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "drawable/rs_screen_render_node_drawable.h"
+#include "feature/opinc/rs_opinc_draw_cache.h"
+#include "feature/opinc/rs_opinc_manager.h"
 #include "feature/uifirst/rs_sub_thread_cache.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "parameters.h"
@@ -689,23 +691,6 @@ HWTEST_F(RSSubThreadCacheTest, MergeUifirstAllSurfaceDirtyRegionTest006, TestSiz
 
 /**
  * @tc.name: SubDraw
- * @tc.desc: Test If SubDraw Can Run
- * @tc.type: FUNC
- * @tc.require: #IB1MHP
- */
-HWTEST_F(RSSubThreadCacheTest, SubDrawTest, TestSize.Level1)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
-    auto rscanvas = RSPaintFilterCanvas(drawingCanvas_.get());
-    surfaceDrawable_->GetRsSubThreadCache().SubDraw(nullptr, rscanvas);
-    EXPECT_TRUE(surfaceDrawable_->uifirstDrawCmdList_.empty());
-    surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
-    EXPECT_TRUE(surfaceDrawable_->uifirstDrawCmdList_.empty());
-}
-
-/**
- * @tc.name: SubDraw
  * @tc.desc: Test If SubDraw Can Run, uifirstDrawCmdList_ is not empty
  * @tc.type: FUNC
  * @tc.require: #IB1MHP
@@ -715,6 +700,9 @@ HWTEST_F(RSSubThreadCacheTest, SubDrawTest001, TestSize.Level1)
     ASSERT_NE(surfaceDrawable_, nullptr);
     drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     auto rscanvas = RSPaintFilterCanvas(drawingCanvas_.get());
+    surfaceDrawable_->GetRsSubThreadCache().SubDraw(nullptr, rscanvas);
+    EXPECT_TRUE(surfaceDrawable_->uifirstDrawCmdList_.empty());
+    surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetUifirstRenderParams().get());
     surfaceParams->uifirstParams_.leashAllEnabled = true;
     surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
@@ -732,6 +720,7 @@ HWTEST_F(RSSubThreadCacheTest, SubDrawTest001, TestSize.Level1)
     EXPECT_FALSE(surfaceDrawable_->uifirstDrawCmdList_.empty());
     surfaceDrawable_->uifirstDrawCmdIndex_.endIndex_ = 0;
     surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
+    EXPECT_FALSE(surfaceDrawable_->uifirstDrawCmdList_.empty());
 }
 
 
@@ -2412,7 +2401,7 @@ HWTEST_F(RSSubThreadCacheTest, UpdateCompletedCacheSurfaceColorSpaceTest, TestSi
     
     // Create a valid cache surface to make UpdateCompletedCacheSurface work
     auto grContext = std::make_shared<Drawing::GPUContext>();
-    subCache.InitCacheSurface(grContext.get(), nullptr, nullptr, 0, false);
+    subCache.InitCacheSurface(grContext.get(), nullptr, nullptr, 0, {false, 1.0});
     
     // Verify current cache color space
     EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
@@ -2504,7 +2493,7 @@ HWTEST_F(RSSubThreadCacheTest, ColorSpaceConsistencyBetweenCacheAndCompletedTest
     
     // Create a valid cache surface to make UpdateCompletedCacheSurface work
     auto grContext = std::make_shared<Drawing::GPUContext>();
-    subCache.InitCacheSurface(grContext.get(), nullptr, nullptr, 0, false);
+    subCache.InitCacheSurface(grContext.get(), nullptr, nullptr, 0, {false, 1.0});
     
     // Before UpdateCompletedCacheSurface, they should be different
     // cacheSurfaceInfo_ has SRGB, cacheCompletedSurfaceInfo_ has default NATIVE
@@ -2529,5 +2518,55 @@ HWTEST_F(RSSubThreadCacheTest, GetCacheSurfaceColorSpaceConstRefTest, TestSize.L
     
     // Should return the same value
     EXPECT_EQ(colorSpace, subCache.GetCacheSurfaceColorSpace());
+}
+/**
+ * @tc.name: SubDrawOpincTest001
+ * @tc.desc: Test SubDraw sets screenRectInfo when opinc enabled and uifirstParams valid
+ * @tc.type: FUNC
+ * @tc.require: #IB1MHP
+ */
+HWTEST_F(RSSubThreadCacheTest, SubDrawOpincTest001, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    RSOpincManager::Instance().SetOPIncSwitch(true);
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 0, 0});
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetUifirstRenderParams().get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->RecordScreenRect({0, 0, 1080, 1920});
+
+    drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto rscanvas = RSPaintFilterCanvas(drawingCanvas_.get());
+    surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
+
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    EXPECT_EQ(opincDrawCache.GetOpincCacheMaxHeight(), 1920);
+
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 0, 0});
+    RSOpincManager::Instance().SetOPIncSwitch(false);
+}
+
+/**
+ * @tc.name: SubDrawOpincTest002
+ * @tc.desc: Test SubDraw skips screenRectInfo when opinc disabled
+ * @tc.type: FUNC
+ * @tc.require: #IB1MHP
+ */
+HWTEST_F(RSSubThreadCacheTest, SubDrawOpincTest002, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    RSOpincManager::Instance().SetOPIncSwitch(false);
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 0, 0});
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetUifirstRenderParams().get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->RecordScreenRect({0, 0, 1080, 1920});
+
+    drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto rscanvas = RSPaintFilterCanvas(drawingCanvas_.get());
+    surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
+
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    EXPECT_EQ(opincDrawCache.GetOpincCacheMaxHeight(), 0);
 }
 } // namespace OHOS::Rosen

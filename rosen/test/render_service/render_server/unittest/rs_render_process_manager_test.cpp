@@ -73,8 +73,7 @@ public:
         const std::shared_ptr<HdiOutput>& output, const sptr<RSScreenProperty>& property) override
     {
         auto composerConn = renderService_.rsRenderComposerManager_->GetRSComposerConnection(property->GetScreenId());
-        renderService_.renderPipeline_->OnScreenConnected(property, composerConn, composerToRenderConnection_,
-            output);
+        renderService_.renderPipeline_->OnScreenConnected(property, composerConn, composerToRenderConnection_, output);
         return connectToRenderConnection_->AsObject();
     }
 
@@ -119,6 +118,9 @@ public:
     {
         return connectToRenderConnection_;
     }
+
+    bool IsValidRenderProcessPid(pid_t pid) const override { return false; }
+
     sptr<RSIServiceToRenderConnection> serviceToRenderConnection_ = nullptr;
     sptr<IRSComposerToRenderConnection> composerToRenderConnection_ = nullptr;
     sptr<RSIRenderToServiceConnection> renderToServiceConnection_ = nullptr;

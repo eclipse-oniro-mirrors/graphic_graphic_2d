@@ -56,7 +56,7 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, AnimationDebugTrace001, TestSize.Level
     GTEST_LOG_(INFO) << "RSRenderSpringAnimationTest AnimationDebugTrace001 start";
 
     RSAnimationTraceUtils::GetInstance().AddAnimationNameTrace(NODE_NAME);
-    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(NODE_NAME, NODE_ID, ANIMATION_ID, false);
+    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(NODE_NAME.c_str(), NODE_ID, ANIMATION_ID, false);
     auto startValue = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
     auto endValue = std::make_shared<RSRenderAnimatableProperty<float>>(100.0f);
     auto renderNode = std::make_shared<RSRenderNode>(NODE_ID);
@@ -81,7 +81,7 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, AnimationDebugTrace002, TestSize.Level
 
     system("param set persist.rosen.animationtrace.enabled 1");
     RSAnimationTraceUtils::GetInstance().AddAnimationNameTrace(NODE_NAME);
-    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(NODE_NAME, NODE_ID, ANIMATION_ID, true);
+    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(NODE_NAME.c_str(), NODE_ID, ANIMATION_ID, true);
     auto startValue = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
     auto endValue = std::make_shared<RSRenderAnimatableProperty<float>>(100.0f);
     auto renderNode = std::make_shared<RSRenderNode>(NODE_ID);
@@ -105,7 +105,7 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, AnimationDebugTrace003, TestSize.Level
 
     RSAnimationTraceUtils::isDebugEnabled_ = true;
     RSAnimationTraceUtils::GetInstance().AddAnimationNameTrace(NODE_NAME);
-    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(NODE_NAME, NODE_ID, ANIMATION_ID, true);
+    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(NODE_NAME.c_str(), NODE_ID, ANIMATION_ID, true);
     auto startValue = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
     auto endValue = std::make_shared<RSRenderAnimatableProperty<float>>(100.0f);
     auto renderNode = std::make_shared<RSRenderNode>(NODE_ID);
@@ -127,12 +127,12 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, AddAnimationFinishTrace, TestSize.Leve
 {
     RSAnimationTraceUtils::isDebugEnabled_ = true;
     auto renderNode = std::make_shared<RSRenderNode>(NODE_ID);
-    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(NODE_NAME, NODE_ID, ANIMATION_ID, true);
+    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(NODE_NAME.c_str(), NODE_ID, ANIMATION_ID, true);
 
     RSAnimationTraceUtils::isDebugEnabled_ = false;
     OHOS::Rosen::RSSystemProperties::SetDebugFmtTraceEnabled(true);
     EXPECT_TRUE(OHOS::Rosen::RSSystemProperties::GetDebugFmtTraceEnabled());
-    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(NODE_NAME, NODE_ID, ANIMATION_ID, true);
+    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(NODE_NAME.c_str(), NODE_ID, ANIMATION_ID, true);
     EXPECT_TRUE(renderNode->GetNodeName().empty());
 }
 
@@ -190,6 +190,9 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, ParseRenderPropertyValue001, TestSize.
     EXPECT_NE(RSAnimationTraceUtils::GetInstance().ParseRenderPropertyValue(quaternionProperty), "None");
     auto vector2fProperty = std::make_shared<RSRenderAnimatableProperty<Vector2f>>(Vector2f(1.0f, 2.0f));
     EXPECT_NE(RSAnimationTraceUtils::GetInstance().ParseRenderPropertyValue(vector2fProperty),
+        "None");
+    auto vector3fProperty = std::make_shared<RSRenderAnimatableProperty<Vector3f>>(Vector3f(1.0f, 2.0f, 3.0f));
+    EXPECT_NE(RSAnimationTraceUtils::GetInstance().ParseRenderPropertyValue(vector3fProperty),
         "None");
     auto vector4fProperty = std::make_shared<RSRenderAnimatableProperty<Vector4f>>(Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
     EXPECT_NE(RSAnimationTraceUtils::GetInstance().ParseRenderPropertyValue(vector4fProperty),
@@ -403,6 +406,19 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, GetNodeTypeString, TestSize.Level1)
         RSAnimationTraceUtils::GetInstance().GetNodeTypeString(RSUINodeType::CANVAS_DRAWING_NODE), "CanvasDrawingNode");
 
     EXPECT_EQ(RSAnimationTraceUtils::GetInstance().GetNodeTypeString(static_cast<RSUINodeType>(-1)), "UNKNOW");
+}
+
+/**
+ * @tc.name: RemoveSystemPropertyWatchers_001
+ * @tc.desc: Verify RemoveSystemPropertyWatchers removes property
+ *           watchers without crash
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationDebugTraceTest, RemoveSystemPropertyWatchers_001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderAnimationDebugTraceTest RemoveSystemPropertyWatchers_001 start";
+    RSAnimationTraceUtils::GetInstance().RemoveSystemPropertyWatchers();
+    GTEST_LOG_(INFO) << "RSRenderAnimationDebugTraceTest RemoveSystemPropertyWatchers_001 end";
 }
 } // namespace Rosen
 } // namespace OHOS

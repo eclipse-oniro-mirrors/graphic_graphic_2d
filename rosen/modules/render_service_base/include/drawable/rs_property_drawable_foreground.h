@@ -21,6 +21,8 @@
 #include "drawable/rs_property_drawable.h"
 #include "property/rs_properties.h"
 #include "property/rs_properties_def.h"
+#include "params/rs_depth_render_params.h"
+#include "params/rs_render_params.h"
 
 namespace OHOS::Rosen {
 class RSFilter;
@@ -162,12 +164,6 @@ public:
     bool OnUpdate(const RSRenderNode& node) override;
 
 private:
-#ifdef USE_PRIMITIVE
-    bool UsePrimList() const override
-    {
-        return true;
-    }
-#endif
 };
 
 class RSForegroundShaderDrawable : public RSDrawable {
@@ -206,6 +202,10 @@ public:
     RSBorderDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
+    static bool IsSDFBorder(const RSProperties& properties, const std::shared_ptr<RSBorder>& border);
+#ifdef USE_PRIMITIVE
+    void OnSync() override;
+#endif
 
 private:
     static void DrawBorder(const RSProperties& properties, Drawing::Canvas& canvas,
@@ -214,10 +214,9 @@ private:
         std::shared_ptr<RSNGRenderShapeBase> shape, std::shared_ptr<RSNGRenderShaderBase> shader);
 
 #ifdef USE_PRIMITIVE
-    bool UsePrimList() const override
-    {
-        return true;
-    }
+    bool UsePrimList() const override;
+    bool stagingIsSDFBorder_ = false;
+    bool isSDFBorder_ = false;
 #endif
 };
 
@@ -229,12 +228,15 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 
+#ifdef USE_PRIMITIVE
+    void OnSync() override;
+#endif
+
 private:
 #ifdef USE_PRIMITIVE
-    bool UsePrimList() const override
-    {
-        return true;
-    }
+    bool UsePrimList() const override;
+    bool stagingIsSDFOutline_ = false;
+    bool isSDFOutline_ = false;
 #endif
 };
 
@@ -274,6 +276,38 @@ private:
     bool stagingBoundsGeoValid_ = false;
     RectF boundsRect_;
     RectF stagingBoundsRect_;
+};
+
+class RSSpatialEffectDrawable : public RSPropertyDrawable {
+public:
+    RSSpatialEffectDrawable() = default;
+    ~RSSpatialEffectDrawable() override = default;
+
+    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
+    void OnSync() override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
+
+private:
+    bool IsParamsValid() const;
+    bool IsNeedSkipOcclusion(const RSDepthRenderParams& depthParam) const;
+    static Vector4f CalcDepthPlane(const RSDepthRenderParams& params, const SpatialEffectVariantPara& para,
+        const std::optional<std::vector<Drawing::Point>>& dstPoints, const Drawing::RectI drawRect);
+    void CalcDepthMapMatrix(
+        Drawing::Matrix& outMatrix, const Drawing::RectI& drawRect, const RSDepthRenderParams& params) const;
+    std::shared_ptr<Drawing::Image> CaptureSurfaceSnapshot(const RSDepthRenderParams& depthParam,
+        Drawing::Canvas* canvas, const Drawing::Rect* rect, Drawing::RectI& outDrawRect) const;
+    std::shared_ptr<Drawing::Image> CreateOcclusionImage(const RSDepthRenderParams& depthParam,
+        Drawing::Canvas* canvas, const Drawing::RectI& drawRect, std::shared_ptr<Drawing::Image> backgroundImage) const;
+    void RenderOcclusionEffect(
+        Drawing::Canvas* canvas, const Drawing::RectI& drawRect, std::shared_ptr<Drawing::Image> occlusionImage) const;
+
+    std::weak_ptr<RSRenderNodeDrawableAdapter> stagingDepthNodeDrawable_;
+    std::weak_ptr<RSRenderNodeDrawableAdapter> depthNodeDrawable_;
+    std::optional<SpatialEffectVariantPara> stagingSpatialEffectPara_;
+    std::optional<SpatialEffectVariantPara> spatialEffectPara_;
+    std::optional<std::vector<Drawing::Point>> stagingSpatialEffectDstPoints_;
+    std::optional<std::vector<Drawing::Point>> spatialEffectDstPoints_;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

@@ -48,6 +48,12 @@ RSEffectNode::SharedPtr RSEffectNode::Create(
     return node;
 }
 
+void RSEffectNode::CreateRenderNode()
+{
+    std::unique_ptr<RSCommand> command = std::make_unique<RSEffectNodeCreate>(GetId(), isTextureExportNode_);
+    AddCommand(command, IsRenderServiceNode());
+}
+
 void RSEffectNode::SetFreeze(bool isFreeze, bool isMarkedByUI)
 {
     if (!IsUniRenderEnabled()) {
@@ -59,8 +65,9 @@ void RSEffectNode::SetFreeze(bool isFreeze, bool isMarkedByUI)
         ROSEN_LOGI("RSEffectNode[%{public}lld]::SetFreeze: %{public}d", static_cast<long long>(GetId()), isFreeze);
     }
     preFreeze_ = isFreeze;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSetFreeze>(GetId(), isFreeze, isMarkedByUI);
-    AddCommand(command, true);
+    SetRSCmdProperty<PreFreezeCmdModifier>(PreFreezeCmdParam{
+        isFreeze, isMarkedByUI
+    });
 }
 
 void RSEffectNode::RegisterNodeMap()

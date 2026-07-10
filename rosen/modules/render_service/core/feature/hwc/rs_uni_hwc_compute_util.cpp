@@ -114,6 +114,12 @@ Drawing::Rect RSUniHwcComputeUtil::CalcSrcRectByBufferRotation(const SurfaceBuff
 
 void RSUniHwcComputeUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix)
 {
+    if (node.GetDelegateMode()) {
+        RS_TRACE_NAME("use webNodeFrame for delegate mode");
+        const Vector4f& frameRect = node.GetDelegateSrcRect();
+        node.SetSrcRect({frameRect.x_, frameRect.y_, frameRect.z_, frameRect.w_});
+        return;
+    }
     auto surfaceHandler = node.GetRSSurfaceHandler();
     if (!surfaceHandler) {
         return;
@@ -566,6 +572,9 @@ void RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(const std::shared_ptr<RSSurfaceR
         return;
     }
     if (hwcNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
+        return;
+    }
+    if (hwcNode->GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)) {
         return;
     }
     RSVcldParam vcldInfo;

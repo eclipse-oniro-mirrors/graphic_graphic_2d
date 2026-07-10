@@ -46,7 +46,6 @@ void BootAnimationOperation::Init(const BootAnimationConfig& config, int32_t wid
     sptr<IRemoteObject> connectToRender)
 {
     LOGI("Init enter, width: %{public}d, height: %{public}d, screenId : " BPUBU64 "", width, height, config.screenId);
-    OHOS::Rosen::RSSystemProperties::SetTypicalResidentProcess(true);
     currentScreenId_ = config.screenId;
     windowWidth_ = width;
     windowHeight_ = height;
@@ -95,6 +94,10 @@ bool BootAnimationOperation::InitRsDisplayNode()
     LOGI("InitRsDisplayNode start");
     OHOS::Rosen::RSDisplayNodeConfig config = { currentScreenId_ };
     rsUIDirector_ = OHOS::Rosen::RSUIDirector::Create(connectToRender_);
+    if (!rsUIDirector_) {
+        LOGE("Create rsUIDirector failed.");
+        return false;
+    }
     auto rsUIContext = rsUIDirector_->GetRSUIContext();
     if (!rsUIContext) {
         LOGE("rsUIContext is nullptr");
@@ -116,6 +119,10 @@ bool BootAnimationOperation::InitRsDisplayNode()
 bool BootAnimationOperation::InitRsSurfaceNode(int32_t degree)
 {
     LOGI("InitRsSurfaceNode start");
+    if (!rsUIDirector_) {
+        LOGE("rsUIDirector_ is nullptr, InitRsDisplayNode may have failed");
+        return false;
+    }
     struct Rosen::RSSurfaceNodeConfig rsSurfaceNodeConfig;
     rsSurfaceNodeConfig.SurfaceNodeName =
         currentScreenId_ == 0 ? "BootAnimationNode" : "BootAnimationNodeExtra";
@@ -202,6 +209,10 @@ void BootAnimationOperation::PlaySound(const std::string& path)
 bool BootAnimationOperation::InitRsSurface()
 {
     LOGI("InitRsSurface start");
+    if (!rsSurfaceNode_) {
+        LOGE("rsSurfaceNode_ is nullptr, InitRsSurfaceNode may have failed");
+        return false;
+    }
     rsSurface_ = OHOS::Rosen::RSSurfaceExtractor::ExtractRSSurface(rsSurfaceNode_);
     if (rsSurface_ == nullptr) {
         LOGE("rsSurface is nullptr");

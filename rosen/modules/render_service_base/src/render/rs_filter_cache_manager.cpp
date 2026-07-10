@@ -17,6 +17,7 @@
 #include "rs_trace.h"
 #include "common/rs_occlusion_region.h"
 #include "render/rs_filter.h"
+#include "rs_profiler.h"
 
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 #include "hpae_base/rs_hpae_base_data.h"
@@ -26,6 +27,8 @@
 #include "common/rs_optional_trace.h"
 #include "draw/canvas.h"
 #include "draw/surface.h"
+#include "drawable/rs_property_drawable_utils.h"
+#include "effect/rs_render_filter_base.h"
 #include "memory/rs_tag_tracker.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -48,9 +51,12 @@ constexpr int ROTATION_CACHE_UPDATE_INTERVAL = 1;
 bool RSFilterCacheManager::isCCMFilterCacheEnable_ = true;
 bool RSFilterCacheManager::isCCMEffectMergeEnable_ = true;
 
+float g_hdrBrightnessRatio = 1.0f;
+
 RSFilterCacheManager::RSFilterCacheManager()
 {
     hpaeCacheManager_ = std::make_shared<RSHpaeFilterCacheManager>();
+    cachedHdrBrightness_ = RSFilterCacheManager::GetScrHdr();
 }
 
 RSFilterCacheManager::~RSFilterCacheManager()
@@ -179,6 +185,7 @@ bool RSFilterCacheManager::DrawFilterWithoutSnapshot(RSPaintFilterCanvas& canvas
     filter->DrawImageRect(canvas, cachedSnapshot_->cachedImage_, srcRect, dstRect, { discardCanvas, false });
     filter->PostProcess(canvas);
     cachedFilterHash_ = filter->Hash();
+    cachedHdrBrightness_ = RSFilterCacheManager::GetScrHdr();
     return true;
 }
 
@@ -237,7 +244,7 @@ void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::sh
     RSTagTracker tagTracker(canvas.GetGPUContext(), RSTagTracker::SOURCETYPE::SOURCE_FILTERCACHEENABLEVMA);
 #endif
     if (!IsCacheValid()) {
-        if (HveFilter::GetHveFilter().HasFilterNode(nodeId)) {
+        if (HveFilter::GetHveFilter().HasValidFilterNode(canvas, nodeId)) {
             TakeSnapshot(canvas, filter, src, nodeId);
         } else {
             TakeSnapshot(canvas, filter, src);
@@ -271,7 +278,7 @@ const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> RSFilterCacheManage
     RSTagTracker tagTrackerCache(canvas.GetGPUContext(), RSTagTracker::TAGTYPE::TAG_FILTER_CACHE);
 #endif
     if (!IsCacheValid()) {
-        if (HveFilter::GetHveFilter().HasFilterNode(filterId)) {
+        if (HveFilter::GetHveFilter().HasValidFilterNode(canvas, filterId)) {
             TakeSnapshot(canvas, filter, src, filterId);
         } else {
             TakeSnapshot(canvas, filter, src);
@@ -280,6 +287,7 @@ const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> RSFilterCacheManage
         if (canvas.GetSurface()) {
             RS_TRACE_NAME_FMT("ForceTakeSnapshot: %s", src.ToString().c_str());
             auto snapshot = canvas.GetSurface()->GetImageSnapshot(src, false);
+            cachedHdrBrightness_ = RSFilterCacheManager::GetScrHdr();
             filter->PreProcess(snapshot);
             ReplaceCachedEffectData(std::move(snapshot), src, cachedSnapshot_);
             InvalidateFilterCache(FilterCacheType::FILTERED_SNAPSHOT);
@@ -332,6 +340,7 @@ void RSFilterCacheManager::TakeSnapshot(RSPaintFilterCanvas& canvas,
     snapshotRegion_ = RectI(srcRect.GetLeft(), srcRect.GetTop(), srcRect.GetWidth(), srcRect.GetHeight());
     ReplaceCachedEffectData(std::move(snapshot), snapshotIBounds, cachedSnapshot_);
     cachedFilterHash_ = 0;
+    cachedHdrBrightness_ = RSFilterCacheManager::GetScrHdr();
 }
 
 void RSFilterCacheManager::GenerateFilteredSnapshot(
@@ -349,7 +358,7 @@ void RSFilterCacheManager::GenerateFilteredSnapshot(
 
     // Create an offscreen canvas with the same size as the filter region.
     auto offscreenRect = dstRect;
-    auto offscreenSurface = surface->MakeSurface(offscreenRect.GetWidth(), offscreenRect.GetHeight());
+    std::shared_ptr<Drawing::Surface> offscreenSurface = CreateOffscreenSurface(surface, offscreenRect, filter);
     if (offscreenSurface == nullptr) {
         RS_LOGD("RSFilterCacheManager::GenerateFilteredSnapshot offscreenSurface is nullptr");
         return;
@@ -539,8 +548,8 @@ void RSFilterCacheManager::MarkFilterRegionIsLargeArea()
 
 void RSFilterCacheManager::MarkInForegroundFilterAndCheckNeedForceClearCache(NodeId offscreenCanvasNodeId)
 {
-    stagingInForegroundFilter_ = offscreenCanvasNodeId;
-    if (stagingInForegroundFilter_ != lastInForegroundFilter_ && lastCacheType_ != FilterCacheType::NONE) {
+    offscreenNodeId_ = offscreenCanvasNodeId;
+    if (offscreenNodeId_ != lastOffscreenNodeId_ && lastCacheType_ != FilterCacheType::NONE) {
         MarkFilterForceClearCache();
     }
 }
@@ -629,6 +638,7 @@ void RSFilterCacheManager::SwapDataAndInitStagingFlags(std::unique_ptr<RSFilterC
     cacheManager->ClearFilterCache();
     cacheManager->forceUseCache_ = stagingForceUseCache_;
     cacheManager->belowDirty_ = stagingFilterInteractWithDirty_;
+    cacheManager->offscreenNodeId_ = offscreenNodeId_;
 
     // renderParams to stagingParams
     lastCacheType_ = cacheManager->lastCacheType_;
@@ -636,7 +646,7 @@ void RSFilterCacheManager::SwapDataAndInitStagingFlags(std::unique_ptr<RSFilterC
     cacheManager->lastHpaeClearCache_ = false;
 
     // save staging param value
-    lastInForegroundFilter_ = stagingInForegroundFilter_;
+    lastOffscreenNodeId_ = offscreenNodeId_;
     lastStagingFilterInteractWithDirty_ = stagingFilterInteractWithDirty_;
 
     // stagingParams init
@@ -656,8 +666,6 @@ void RSFilterCacheManager::SwapDataAndInitStagingFlags(std::unique_ptr<RSFilterC
     stagingIsLargeArea_ = false;
     isFilterCacheValid_ = false;
 
-    stagingInForegroundFilter_ = false;
-
     debugEnabled_ = false;
 }
 
@@ -666,24 +674,24 @@ void RSFilterCacheManager::MarkNeedClearFilterCache(NodeId nodeId)
     RS_TRACE_NAME_FMT("RSFilterCacheManager::MarkNeedClearFilterCache nodeId[%llu] forceUseCache_:%d,"
         "forceClearCache_:%d, hashChanged:%d, regionChanged_:%d, belowDirty_:%d,"
         "lastCacheType:%d, cacheUpdateInterval_:%d, canSkip:%d, isLargeArea:%d, filterType_:%d, pendingPurge_:%d,"
-        "forceClearCacheWithLastFrame:%d, rotationChanged:%d, offscreenCanvasNodeId:%llu", nodeId,
+        "forceClearCacheWithLastFrame:%d, rotationChanged:%d, offscreenNodeId:%llu", nodeId,
         stagingForceUseCache_, stagingForceClearCache_, stagingFilterHashChanged_,
         stagingFilterRegionChanged_, stagingFilterInteractWithDirty_,
         lastCacheType_, cacheUpdateInterval_, canSkipFrame_, stagingIsLargeArea_,
         filterType_, pendingPurge_, stagingForceClearCacheForLastFrame_, stagingRotationChanged_,
-        stagingInForegroundFilter_);
+        offscreenNodeId_);
 
     ROSEN_LOGD("RSFilterDrawable::MarkNeedClearFilterCache, forceUseCache_:%{public}d,"
         "forceClearCache_:%{public}d, hashChanged:%{public}d, regionChanged_:%{public}d, belowDirty_:%{public}d,"
         "lastCacheType:%{public}hhu, cacheUpdateInterval_:%{public}d, canSkip:%{public}d, isLargeArea:%{public}d,"
         "filterType_:%{public}d, pendingPurge_:%{public}d,"
         "forceClearCacheWithLastFrame:%{public}d, rotationChanged:%{public}d,"
-        "offscreenCanvasNodeId:%{public}" PRIu64,
+        "offscreenNodeId:%{public}" PRIu64,
         stagingForceUseCache_, stagingForceClearCache_,
         stagingFilterHashChanged_, stagingFilterRegionChanged_, stagingFilterInteractWithDirty_,
         lastCacheType_, cacheUpdateInterval_, canSkipFrame_, stagingIsLargeArea_,
         filterType_, pendingPurge_, stagingForceClearCacheForLastFrame_, stagingRotationChanged_,
-        stagingInForegroundFilter_);
+        offscreenNodeId_);
 
     // if do not request NextVsync, close skip
     if (stagingForceClearCacheForLastFrame_) {
@@ -780,12 +788,14 @@ void RSFilterCacheManager::MarkRotationChanged()
 bool RSFilterCacheManager::IsFilterCacheValidForOcclusion()
 {
     auto cacheType = GetCachedType();
-    RS_OPTIONAL_TRACE_NAME_FMT("RSFilterCacheManager::IsFilterCacheValidForOcclusion cacheType:%d renderClearType_:%d",
-        cacheType, renderClearType_);
-    ROSEN_LOGD("RSFilterCacheManager::IsFilterCacheValidForOcclusion cacheType:%{public}d renderClearType_:%{public}d",
-        static_cast<int>(cacheType), static_cast<int>(renderClearType_));
+    RS_OPTIONAL_TRACE_NAME_FMT("RSFilterCacheManager::IsFilterCacheValidForOcclusion cacheType:%d renderClearType_:%d"
+        " offscreenNodeId_: %" PRIu64,
+        cacheType, renderClearType_, offscreenNodeId_);
+    ROSEN_LOGD("RSFilterCacheManager::IsFilterCacheValidForOcclusion cacheType:%{public}d renderClearType_:%{public}d"
+        " offscreenNodeId_: %{public}" PRIu64,
+        static_cast<int>(cacheType), static_cast<int>(renderClearType_), offscreenNodeId_);
 
-    return cacheType != FilterCacheType::NONE;
+    return cacheType != FilterCacheType::NONE && offscreenNodeId_ == INVALID_NODEID;
 }
 
 bool RSFilterCacheManager::IsFilterCacheValidForPartialRender() const
@@ -1018,6 +1028,34 @@ void RSFilterCacheManager::PrintDebugInfo(NodeId nodeID)
         " pendingPurge_:%{public}d,",
         nodeID, stagingForceUseCache_, stagingForceClearCache_, stagingFilterInteractWithDirty_,
         cacheUpdateInterval_, pendingPurge_);
+}
+
+void RSFilterCacheManager::SetScrHdr(float value)
+{
+    g_hdrBrightnessRatio = value;
+}
+
+float RSFilterCacheManager::GetScrHdr()
+{
+    return g_hdrBrightnessRatio;
+}
+
+std::shared_ptr<Drawing::Surface> RSFilterCacheManager::CreateOffscreenSurface(
+    Drawing::Surface* surface, const Drawing::RectI& offscreenRect,
+    const std::shared_ptr<RSDrawingFilter>& filter) const
+{
+    // HDR FIX FORMAT
+    if (ROSEN_LNE(g_hdrBrightnessRatio, 1.0f) &&
+        surface->GetImageInfo().GetColorType() == Drawing::ColorType::COLORTYPE_RGBA_1010102 && filter) {
+        auto ngFilter = filter->GetNGRenderFilter();
+        if (ngFilter && ngFilter->ContainsType(RSNGEffectType::FROSTED_GLASS)) {
+            auto info = Drawing::ImageInfo(offscreenRect.GetWidth(), offscreenRect.GetHeight(),
+                Drawing::ColorType::COLORTYPE_RGBA_F16, surface->GetImageInfo().GetAlphaType(),
+                surface->GetImageInfo().GetColorSpace());
+            return surface->MakeSurface(info);
+        }
+    }
+    return surface->MakeSurface(offscreenRect.GetWidth(), offscreenRect.GetHeight());
 }
 } // namespace Rosen
 } // namespace OHOS

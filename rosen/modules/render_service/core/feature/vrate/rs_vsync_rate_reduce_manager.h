@@ -48,7 +48,6 @@ public:
 
     void SetFocusedNodeId(NodeId focusedNodeId);
     void PushWindowNodeId(NodeId nodeId);
-    void ClearLastVisMapForVsyncRate();
     bool CheckNeedNotify();
     bool GetVRateReduceEnabled() const
     {
@@ -59,13 +58,12 @@ public:
     void FrameDurationEnd();
     void SyncOneFramePeriod();
 
-    void SetIsReduceBySystemAnimatedScenes(bool isReduceBySystemAnimatedScenes);
     void Init();
     void ResetFrameValues(uint32_t rsRefreshRate);
     void CollectSurfaceVsyncInfo(const ScreenInfo& screenInfo, RSSurfaceRenderNode& node);
     void SetUniVsync();
 
-    const std::unordered_map<NodeId, int> GetVrateMap() const
+    const std::unordered_map<NodeId, int>& GetVrateMap() const
     {
         return vSyncRateMap_;
     }
@@ -96,8 +94,6 @@ private:
     std::unordered_map<NodeId, int> lastVSyncRateMap_;
     std::vector<NodeId> curAllMainAndLeashWindowNodesIds_;
     std::vector<NodeId> lastAllMainAndLeashWindowNodesIds_;
-    std::map<NodeId, RSVisibleLevel> visMapForVSyncVisLevel_;
-    std::map<NodeId, RSVisibleLevel> lastVisMapForVSyncVisLevel_;
 
     NodeId focusedNodeId_ = 0;
     NodeId lastFocusedNodeId_ = 0;
@@ -112,7 +108,6 @@ private:
     std::deque<float> frameDurations_;
 
     bool isSystemAnimatedScenes_ = false;
-    bool isReduceBySystemAnimatedScenes_ = false;
 
     bool isDeviceSupprotVRate_ = false;
     std::map<NodeId, SurfaceVRateInfo> surfaceVRateMap_;
@@ -127,9 +122,9 @@ public:
     static bool SetVSyncRatesChangeStatus(bool newState);
     static std::map<uint64_t, int> GetLinkersRateMap();
 private:
-        static inline std::map<uint64_t, int> linkersRateMap_;
-        static inline std::unordered_map<NodeId, int> lastVSyncRateMap_;
-        static inline std::atomic<bool> needPostTask_ { false };
+    static inline std::map<uint64_t, int> linkersRateMap_;
+    static inline std::unordered_map<NodeId, int> lastVSyncRateMap_;
+    static inline std::atomic<bool> needPostTask_ { false };
 };
 } // namespace Rosen
 } // namespace OHOS

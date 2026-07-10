@@ -16,7 +16,9 @@
 #include "gtest/gtest.h"
 
 #include "animation/rs_render_curve_animation.h"
+#include "animation/rs_render_particle_animation.h"
 #include "pipeline/rs_canvas_render_node.h"
+#include "pipeline/rs_context.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -387,5 +389,155 @@ HWTEST_F(RSAnimationManagerTest, RateDeciderTest001, TestSize.Level1)
     EXPECT_TRUE(result.IsZero());
     GTEST_LOG_(INFO) << "RSAnimationManagerTest RateDeciderTest001 end";
 }
+/**
+ * @tc.name: DestroyInRender001
+ * @tc.desc: Verify DestroyInRender with empty animations
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationManagerTest, DestroyInRender001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRender001 start";
+    RSAnimationManager animationManager;
+    auto context = std::make_shared<RSContext>();
+    animationManager.DestroyInRender(0, context->weak_from_this());
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRender001 end";
+}
+
+/**
+ * @tc.name: DestroyInRender002
+ * @tc.desc: Verify DestroyInRender with non-infinite-repeat animation skipped
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationManagerTest, DestroyInRender002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRender002 start";
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    renderCurveAnimation->SetRepeatCount(1);
+    RSAnimationManager animationManager;
+    animationManager.AddAnimation(renderCurveAnimation);
+    auto context = std::make_shared<RSContext>();
+    animationManager.DestroyInRender(0, context->weak_from_this());
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRender002 end";
+}
+
+/**
+ * @tc.name: DestroyInRender003
+ * @tc.desc: Verify DestroyInRender with null animation skipped
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationManagerTest, DestroyInRender003, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRender003 start";
+    RSAnimationManager animationManager;
+    animationManager.AddAnimation(nullptr);
+    auto context = std::make_shared<RSContext>();
+    animationManager.DestroyInRender(0, context->weak_from_this());
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRender003 end";
+}
+
+/**
+ * @tc.name: DestroyInRender004
+ * @tc.desc: Verify DestroyInRender with infinite-repeat animation and null context
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationManagerTest, DestroyInRender004, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRender004 start";
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    renderCurveAnimation->SetRepeatCount(-1);
+    RSAnimationManager animationManager;
+    animationManager.AddAnimation(renderCurveAnimation);
+    std::weak_ptr<RSContext> nullContext;
+    animationManager.DestroyInRender(0, nullContext);
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRender004 end";
+}
+
+/**
+ * @tc.name: DestroyInRender005
+ * @tc.desc: Verify DestroyInRender with infinite-repeat PROPERTY_ANIMATION
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationManagerTest, DestroyInRender005, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRender005 start";
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    renderCurveAnimation->SetRepeatCount(-1);
+    RSAnimationManager animationManager;
+    animationManager.AddAnimation(renderCurveAnimation);
+    auto context = std::make_shared<RSContext>();
+    animationManager.DestroyInRender(0, context->weak_from_this());
+    EXPECT_TRUE(animationManager.GetAnimation(ANIMATION_ID) == nullptr);
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRender005 end";
+}
+
+/**
+ * @tc.name: AnimateMarksParticleStartTimeOnBackground001
+ * @tc.desc: An infinite particle animation that is skipped in the background must be marked to realign its
+ *           start time on the next foreground frame once its start time has been consumed, while an
+ *           already-pending mark is left untouched.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationManagerTest, AnimateMarksParticleStartTimeOnBackground001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest AnimateMarksParticleStartTimeOnBackground001 start";
+    std::vector<std::shared_ptr<ParticleRenderParams>> particlesRenderParams;
+    auto particleAnimation =
+        std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
+    ASSERT_TRUE(particleAnimation != nullptr);
+    particleAnimation->SetRepeatCount(-1);
+
+    RSAnimationManager animationManager;
+    animationManager.AddAnimation(particleAnimation);
+
+    int64_t leftDelayTime = 0;
+    EXPECT_TRUE(particleAnimation->GetNeedUpdateStartTime());
+    animationManager.Animate(0, leftDelayTime, true, RSSurfaceNodeAbilityState::BACKGROUND);
+    EXPECT_TRUE(particleAnimation->GetNeedUpdateStartTime());
+
+    particleAnimation->SetStartTime(0);
+    EXPECT_FALSE(particleAnimation->GetNeedUpdateStartTime());
+    animationManager.Animate(0, leftDelayTime, true, RSSurfaceNodeAbilityState::BACKGROUND);
+    EXPECT_TRUE(particleAnimation->GetNeedUpdateStartTime());
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest AnimateMarksParticleStartTimeOnBackground001 end";
+}
+
+/**
+ * @tc.name: DestroyInRenderRebuildsInfiniteParticle001
+ * @tc.desc: DestroyInRender must tear down an infinite particle animation (detach and clear) so it is
+ *           rebuilt on foreground, taking the particle-specific teardown path.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSAnimationManagerTest, DestroyInRenderRebuildsInfiniteParticle001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRenderRebuildsInfiniteParticle001 start";
+    std::vector<std::shared_ptr<ParticleRenderParams>> particlesRenderParams;
+    auto particleAnimation =
+        std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
+    ASSERT_TRUE(particleAnimation != nullptr);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(ANIMATION_ID);
+    particleAnimation->Attach(renderNode.get());
+    particleAnimation->SetRepeatCount(-1);
+
+    RSAnimationManager animationManager;
+    animationManager.AddAnimation(particleAnimation);
+
+    auto context = std::make_shared<RSContext>();
+    animationManager.DestroyInRender(0, context->weak_from_this());
+    EXPECT_TRUE(animationManager.GetAnimation(ANIMATION_ID) == nullptr);
+    GTEST_LOG_(INFO) << "RSAnimationManagerTest DestroyInRenderRebuildsInfiniteParticle001 end";
+}
+
 } // namespace Rosen
 } // namespace OHOS

@@ -30,7 +30,7 @@ using namespace testing::ext;
 
 namespace OHOS::Rosen {
 namespace {
-constexpr uint32_t COLOR_YELLOW = 0xFFFFF00;
+constexpr uint32_t COLOR_YELLOW = 0xFFFFFF00;
 constexpr uint32_t COLOR_BLUE = 0xFF0000FF;
 constexpr uint32_t COLOR_RED = 0xFFFF0000;
 constexpr uint32_t SLEEP_TIME_FOR_PROXY = 1000000;
@@ -96,8 +96,7 @@ public:
         int duration = 500; // the animation lasts for 0.5 second
         protocol.SetDuration(duration);
         auto timingCurve = RSAnimationTimingCurve::EASE_IN_OUT;
-        std::shared_ptr<RSUIContext> rsUIContext;
-        RSNode::Animate(rsUIContext, protocol, timingCurve, [&]() {
+        RSNode::Animate(RSGraphicTestDirector::Instance().GetRSUIContext(), protocol, timingCurve, [&]() {
             canvasNode->SetTranslate(translate);
         }, []() {
             std::cout << "animation finish callback" << std::endl;
@@ -111,8 +110,9 @@ public:
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter01)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter01)
 {
+    SetCaptureCrop({0, 0, screenSize.x_, screenSize.y_});
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
     backgroundNode->SetBounds({ 0, 0, screenSize.x_, screenSize.y_ });
@@ -143,10 +143,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter01)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(subNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    subNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -155,7 +155,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter01)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter02)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter02)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -180,10 +180,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter02)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -192,7 +192,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter02)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter03)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter03)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -217,10 +217,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter03)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -229,7 +229,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter03)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter04)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter04)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -255,10 +255,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter04)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -267,7 +267,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter04)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter05)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter05)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -298,10 +298,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter05)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -310,7 +310,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter05)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter06)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter06)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -341,10 +341,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter06)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -353,7 +353,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter06)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter07)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter07)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -380,10 +380,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter07)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -392,7 +392,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter07)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter08)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter08)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -419,10 +419,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter08)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -431,7 +431,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter08)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter09)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter09)
 {
     auto backgroundNode = SetUpNodeBgImage(TEST_IMG_PATH, { 0, 0, screenSize.x_, screenSize.y_ });
     RegisterNode(backgroundNode);
@@ -464,10 +464,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter09)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -476,7 +476,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter09)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter10)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter10)
 {
     auto backgroundNode = SetUpNodeBgImage(TEST_IMG_PATH, { 0, 0, screenSize.x_, screenSize.y_ });
     RegisterNode(backgroundNode);
@@ -509,10 +509,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter10)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -521,7 +521,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter10)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter11)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter11)
 {
     auto backgroundNode = SetUpNodeBgImage(TEST_IMG_PATH, { 0, 0, screenSize.x_, screenSize.y_ });
     RegisterNode(backgroundNode);
@@ -556,10 +556,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter11)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -568,7 +568,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter11)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter12)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter12)
 {
     auto backgroundNode = SetUpNodeBgImage(TEST_IMG_PATH, { 0, 0, screenSize.x_, screenSize.y_ });
     RegisterNode(backgroundNode);
@@ -603,10 +603,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter12)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -615,7 +615,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter12)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter13)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter13)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -642,10 +642,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter13)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -654,7 +654,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter13)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter14)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter14)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -681,10 +681,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter14)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -693,7 +693,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter14)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter15)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter15)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -720,10 +720,10 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter15)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 
 /*
@@ -732,7 +732,7 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter15)
  * @tc.type: FUNC
  * @tc.require: issue23513
  */
-GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter16)
+GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter16)
 {
     auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     RegisterNode(backgroundNode);
@@ -759,9 +759,9 @@ GRAPHIC_N_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter16)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    TestCaseCapture();
 }
 } // namespace OHOS::Rosen

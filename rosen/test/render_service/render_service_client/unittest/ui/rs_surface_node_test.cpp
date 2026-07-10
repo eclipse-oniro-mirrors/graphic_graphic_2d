@@ -1779,6 +1779,20 @@ HWTEST_F(RSSurfaceNodeTest, SetColorSpace, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetColorSpaceWithoutContextTest
+ * @tc.desc: Test SetColorSpace without RSUIContext
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceNodeTest, SetColorSpaceWithoutContextTest, TestSize.Level1)
+{
+    RSSurfaceNodeConfig config;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(config, true, nullptr);
+    surfaceNode->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    ASSERT_EQ(surfaceNode->colorSpace_, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+}
+
+/**
  * @tc.name: SetSKipDraw
  * @tc.desc: Test function SetSkipDraw
  * @tc.type: FUNC
@@ -2331,5 +2345,121 @@ HWTEST_F(RSSurfaceNodeTest, DumpSubClass004, TestSize.Level1)
     EXPECT_FALSE(out.empty());
     EXPECT_TRUE(out.find("isShadowNode[true") != std::string::npos);
     EXPECT_TRUE(out.find("existsDuplicateModifier[true") != std::string::npos);
+}
+
+/**
+ * @tc.name: SetStaticCached001
+ * @tc.desc: Test SetStaticCached with the same false value branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetStaticCached001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    ASSERT_FALSE(surfaceNode->isStaticFreeze_);
+    surfaceNode->SetStaticCached(false);
+    EXPECT_FALSE(surfaceNode->isStaticFreeze_);
+}
+
+/**
+ * @tc.name: SetStaticCached002
+ * @tc.desc: Test SetStaticCached from false to true branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetStaticCached002, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    ASSERT_FALSE(surfaceNode->isStaticFreeze_);
+    surfaceNode->SetStaticCached(true);
+    EXPECT_TRUE(surfaceNode->isStaticFreeze_);
+}
+
+/**
+ * @tc.name: SendDataToRender001
+ * @tc.desc: Test SendDataToRender returns false when rsUIContext is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SendDataToRender001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::CreateSurfaceNode(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    bool result = surfaceNode->SendDataToRender(c, RSSurfaceNodeType::DEFAULT, true, false);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: SendDataToRender002
+ * @tc.desc: Test SendDataToRender returns false when rsUIContext is nullptr with isWindow=false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SendDataToRender002, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::CreateSurfaceNode(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    bool result = surfaceNode->SendDataToRender(c, RSSurfaceNodeType::DEFAULT, false, false);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: SendDataToRender003
+ * @tc.desc: Test SendDataToRender returns false with LEASH_WINDOW_NODE type and rsUIContext nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SendDataToRender003, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::CreateSurfaceNode(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    bool result = surfaceNode->SendDataToRender(c, RSSurfaceNodeType::LEASH_WINDOW_NODE, true, false);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: SetSurfaceNodeTypeTest001
+ * @tc.desc: Test SetSurfaceNodeType/GetSurfaceNodeType/IsAppWindow;
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetSurfaceNodeTypeTest001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    // Branch: current is ABILITY_COMPONENT_NODE -> SetSurfaceNodeType returns without change
+    auto abilityNode = RSSurfaceNode::Create(c, RSSurfaceNodeType::ABILITY_COMPONENT_NODE, true);
+    ASSERT_NE(abilityNode, nullptr);
+    abilityNode->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
+    EXPECT_EQ(abilityNode->GetSurfaceNodeType(), RSSurfaceNodeType::ABILITY_COMPONENT_NODE);
+
+    // Branch: current is UI_EXTENSION_COMMON_NODE -> SetSurfaceNodeType returns without change
+    auto commonNode = RSSurfaceNode::Create(c, RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE, true);
+    ASSERT_NE(commonNode, nullptr);
+    commonNode->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
+    EXPECT_EQ(commonNode->GetSurfaceNodeType(), RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE);
+
+    // Branch: current is UI_EXTENSION_SECURE_NODE -> SetSurfaceNodeType returns without change
+    auto secureNode = RSSurfaceNode::Create(c, RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE, true);
+    ASSERT_NE(secureNode, nullptr);
+    secureNode->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
+    EXPECT_EQ(secureNode->GetSurfaceNodeType(), RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE);
+
+    // Branch: target is UI_EXTENSION_COMMON_NODE / UI_EXTENSION_SECURE_NODE -> return
+    auto defaultNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(defaultNode, nullptr);
+    defaultNode->SetSurfaceNodeType(RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE);
+    EXPECT_NE(defaultNode->GetSurfaceNodeType(), RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE);
+    defaultNode->SetSurfaceNodeType(RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE);
+    EXPECT_NE(defaultNode->GetSurfaceNodeType(), RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE);
+
+    // Branch: normal set + GetSurfaceNodeType + IsAppWindow true
+    auto appNode = RSSurfaceNode::Create(c, RSSurfaceNodeType::APP_WINDOW_NODE, true);
+    ASSERT_NE(appNode, nullptr);
+    EXPECT_EQ(appNode->GetSurfaceNodeType(), RSSurfaceNodeType::APP_WINDOW_NODE);
+    EXPECT_TRUE(appNode->IsAppWindow());
+
+    // Branch: IsAppWindow false
+    EXPECT_FALSE(defaultNode->IsAppWindow());
 }
 } // namespace OHOS::Rosen

@@ -75,6 +75,12 @@ class RSB_EXPORT RSRenderThreadParams {
 public:
     using DrawablesVec = std::vector<std::tuple<NodeId, NodeId,
         DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>>;
+    struct TunnelLayerSnapshot {
+        uint64_t tunnelLayerId = 0;
+        uint32_t property = 0;
+        uint64_t generation = 0;
+    };
+    using TunnelLayerSnapshotMap = std::unordered_map<NodeId, TunnelLayerSnapshot>;
 
     RSRenderThreadParams() = default;
     virtual ~RSRenderThreadParams() = default;
@@ -89,6 +95,18 @@ public:
     bool IsPartialRenderEnabled() const
     {
         return isPartialRenderEnabled_;
+    }
+
+    bool NeedClipForPartialRender() const noexcept
+    {
+        return partialRenderType_ >= PartialRenderType::CLIP;
+    }
+
+    bool NeedSetDamageForPartialRender() const noexcept
+    {
+        return partialRenderType_ == PartialRenderType::SET_DAMAGE_AND_CLIP_AND_DROP_OP ||
+            partialRenderType_ == PartialRenderType::SET_DAMAGE ||
+            partialRenderType_ == PartialRenderType::FORCE_FULL_SCREEN_DIRTY_REGION;
     }
 
     bool IsRegionDebugEnabled() const
@@ -266,6 +284,11 @@ public:
         return selfDrawables_;
     }
 
+    const std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& GetCanvasDrawingSelfDrawables() const
+    {
+        return canvasDrawingSelfDrawables_;
+    }
+
     const DrawablesVec& GetHardwareEnabledTypeDrawables() const
     {
         return hardwareEnabledTypeDrawables_;
@@ -326,6 +349,27 @@ public:
         watermarkImg_ = watermarkImg;
         watermarkRowCount_ = rowCount;
         watermarkColCount_ = colCount;
+    }
+
+    void SetUifirstScale(float scaleFactor)
+    {
+        // scaleFactor must in (0,1]
+        if (ROSEN_LE(scaleFactor, 0.0f) || ROSEN_GNE(scaleFactor, 1.0f)) {
+            uifirstScale_ = 1.0f;
+        } else {
+            uifirstScale_ = scaleFactor;
+        }
+    }
+
+    bool IsUifirstScale() const
+    {
+        return ROSEN_GNE(uifirstScale_, 0.0f) && ROSEN_LNE(uifirstScale_, 1.0f);
+    }
+
+    float GetUiFirstScale() const
+    {
+        // scaleFactor must in (0,1]
+        return ROSEN_GNE(uifirstScale_, 0.0f) && ROSEN_LE(uifirstScale_, 1.0f) ? uifirstScale_ : 1.0f;
     }
 
     uint32_t GetWatermarkRowCount() const
@@ -610,6 +654,21 @@ public:
         return surfaceColorGamutMap_;
     }
 
+    void SetTunnelLayerSnapshots(TunnelLayerSnapshotMap&& snapshots)
+    {
+        tunnelLayerSnapshots_ = std::move(snapshots);
+    }
+
+    bool GetTunnelLayerSnapshot(NodeId nodeId, TunnelLayerSnapshot& snapshot) const
+    {
+        auto iter = tunnelLayerSnapshots_.find(nodeId);
+        if (iter == tunnelLayerSnapshots_.end()) {
+            return false;
+        }
+        snapshot = iter->second;
+        return true;
+    }
+
 #ifdef RS_ENABLE_TV_PQ_METADATA
     bool GetCachedNodeOnTheTree() const
     {
@@ -657,6 +716,7 @@ private:
     uint32_t defaultScreenRefreshRate_ = 0;
     // RSDirtyRectsDfx dfx
     std::vector<std::string> dfxTargetSurfaceNames_;
+    PartialRenderType partialRenderType_ = PartialRenderType::DISABLED;
     bool hasDisplayHdrOn_ = false;
     bool isMirrorScreen_ = false;
     bool isFirstVisitCrossNodeDisplay_ = false;
@@ -680,10 +740,12 @@ private:
     bool isVirtualExpandScreenDirtyEnabled_ = false;
     bool isMirrorScreenDirty_ = false;
     bool cacheEnabledForRotation_ = false;
+    float uifirstScale_ = 1.0f;
     NodeId currentVisitDisplayDrawableId_ = INVALID_NODEID;
     AdvancedDirtyRegionType advancedDirtyType_ = AdvancedDirtyRegionType::DISABLED;
     DirtyRegionDebugType dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
+    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> canvasDrawingSelfDrawables_;
     DrawablesVec hardwareEnabledTypeDrawables_;
     std::vector<std::tuple<NodeId, NodeId, DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>> hardCursorDrawableVec_;
     uint32_t forceCommitReason_ = 0;
@@ -697,6 +759,7 @@ private:
     std::unordered_map<std::string, std::pair<std::shared_ptr<Drawing::Image>, pid_t>> surfaceWatermarks_;
     std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> surfaceWatermarkGridCounts_;
     std::unordered_map<NodeId, GraphicColorGamut> surfaceColorGamutMap_;
+    TunnelLayerSnapshotMap tunnelLayerSnapshots_;
     std::shared_ptr<RSSLRScaleFunction> slrManager_ = nullptr;
     RSPowerOffRenderController powerOffRenderController_;
     bool isOverDrawEnabled_ = false;

@@ -16,8 +16,11 @@
 #include "gtest/gtest.h"
 
 #include "animation/rs_animation_timing_protocol.h"
+#include "animation/rs_render_curve_animation.h"
 #include "animation/rs_render_interactive_implict_animator.h"
 #include "animation/rs_render_interactive_implict_animator_map.h"
+#include "modifier/rs_render_property.h"
+#include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_root_render_node.h"
@@ -35,6 +38,7 @@ public:
     RSRenderAnimationMock() : RSRenderAnimationMock(ANIMATION_ID) {}
     explicit RSRenderAnimationMock(AnimationId id) : RSRenderAnimation(id) {}
     ~RSRenderAnimationMock() override = default;
+    void RebuildPropertyValue(float fraction) override {}
 
     void Pause()
     {
@@ -361,77 +365,64 @@ HWTEST_F(RSRenderAnimationOthersTest, FallbackAnimationsToRoot008, TestSize.Leve
 }
 
 /**
- * @tc.name: FallbackAnimationsToRoot_FinishInfiniteAnimation
- * @tc.desc: Test FallbackAnimationsToRoot with infinite repeat animation (repeatCount = -1).
- *           This is a new branch added in commit 974b560f: finish infinite animations instead of moving to root.
- * @tc.type: FUNC
- * @tc.require:
+ * @tc.name: DestroyAnimationInRender001
+ * @tc.desc: Verify DestroyAnimationInRender with no animationManager
+ * @tc.type:FUNC
  */
-HWTEST_F(RSRenderAnimationOthersTest, FallbackAnimationsToRoot_FinishInfiniteAnimation, TestSize.Level1)
+HWTEST_F(RSRenderAnimationOthersTest, DestroyAnimationInRender001, TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "RSRenderAnimationOthersTest FallbackAnimationsToRoot_FinishInfiniteAnimation start";
-
-    auto context = std::make_shared<RSContext>();
-    auto rootNode = std::make_shared<RSRootRenderNode>(0);
-    context->GetMutableNodeMap().RegisterRenderNode(rootNode);
-
-    RSRenderNode node(1, context);
-
-    auto animation = std::make_shared<RSRenderAnimationMock>();
-    animation->SetRepeatCount(-1);
-    animation->Start();
-    node.AddAnimation(animation);
-
-    EXPECT_TRUE(animation->IsRunning());
-    EXPECT_EQ(animation->GetRepeatCount(), -1);
-
-    node.FallbackAnimationsToRoot();
-
-    EXPECT_FALSE(animation->IsRunning());
-    EXPECT_TRUE(animation->IsFinished());
-
-    auto fallbackNode = context->GetNodeMap().GetAnimationFallbackNode();
-    ASSERT_NE(fallbackNode, nullptr);
-    auto animationManager = fallbackNode->GetAnimationManager();
-    EXPECT_EQ(animationManager, nullptr);
-
-    GTEST_LOG_(INFO) << "RSRenderAnimationOthersTest FallbackAnimationsToRoot_FinishInfiniteAnimation end";
+    GTEST_LOG_(INFO) << "RSRenderAnimationOthersTest DestroyAnimationInRender001 start";
+    RSRenderNode node(1);
+    node.DestroyAnimationInRender();
+    EXPECT_TRUE(node.GetAnimationManager() == nullptr);
+    GTEST_LOG_(INFO) << "RSRenderAnimationOthersTest DestroyAnimationInRender001 end";
 }
 
 /**
- * @tc.name: FallbackAnimationsToRoot_MoveFiniteAnimation
- * @tc.desc: Test FallbackAnimationsToRoot with finite repeat animation.
- *           Test that finite animations are moved to root (existing behavior, for contrast).
- * @tc.type: FUNC
- * @tc.require:
+ * @tc.name: DestroyAnimationInRender002
+ * @tc.desc: Verify DestroyAnimationInRender with animationManager present
+ * @tc.type:FUNC
  */
-HWTEST_F(RSRenderAnimationOthersTest, FallbackAnimationsToRoot_MoveFiniteAnimation, TestSize.Level1)
+HWTEST_F(RSRenderAnimationOthersTest, DestroyAnimationInRender002, TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "RSRenderAnimationOthersTest FallbackAnimationsToRoot_MoveFiniteAnimation start";
-
-    auto context = std::make_shared<RSContext>();
-    auto rootNode = std::make_shared<RSRootRenderNode>(0);
-    context->GetMutableNodeMap().RegisterRenderNode(rootNode);
-
-    RSRenderNode node(1, context);
-
-    auto animation = std::make_shared<RSRenderAnimationMock>();
-    animation->SetRepeatCount(1);
-    animation->Start();
-    node.AddAnimation(animation);
-
-    EXPECT_TRUE(animation->IsRunning());
-    EXPECT_EQ(animation->GetRepeatCount(), 1);
-
-    node.FallbackAnimationsToRoot();
-
-    auto fallbackNode = context->GetNodeMap().GetAnimationFallbackNode();
-    ASSERT_NE(fallbackNode, nullptr);
-    auto animationManager = fallbackNode->GetAnimationManager();
+    GTEST_LOG_(INFO) << "RSRenderAnimationOthersTest DestroyAnimationInRender002 start";
+    auto node = std::make_shared<RSCanvasRenderNode>(1);
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto animation = std::make_shared<RSRenderCurveAnimation>(1, 1, property, property1, property2);
+    node->AddAnimation(animation);
+    auto animationManager = node->GetAnimationManager();
     ASSERT_NE(animationManager, nullptr);
-    EXPECT_FALSE(animationManager->GetAnimations().empty());
+    node->DestroyAnimationInRender();
+    GTEST_LOG_(INFO) << "RSRenderAnimationOthersTest DestroyAnimationInRender002 end";
+}
 
-    GTEST_LOG_(INFO) << "RSRenderAnimationOthersTest FallbackAnimationsToRoot_MoveFiniteAnimation end";
+/**
+ * @tc.name: HasAnimation001
+ * @tc.desc: Verify HasAnimation returns false when animationManager is null
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationOthersTest, HasAnimation001, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(1);
+    EXPECT_FALSE(node->HasAnimation());
+}
+
+/**
+ * @tc.name: HasAnimation002
+ * @tc.desc: Verify HasAnimation returns true when animationManager has animations
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationOthersTest, HasAnimation002, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasRenderNode>(1);
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto animation = std::make_shared<RSRenderCurveAnimation>(1, 1, property, property1, property2);
+    node->AddAnimation(animation);
+    EXPECT_TRUE(node->HasAnimation());
 }
 
 } // namespace Rosen

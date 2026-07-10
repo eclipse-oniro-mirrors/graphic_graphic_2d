@@ -59,6 +59,7 @@ private:
     void DrawMarginBrush(Rosen::Drawing::RecordingCanvas* canvas);
     void RecordDeviceType();
     void SetFrame();
+    void SetFrameForRog();
     void SetSpecialProgressFrame(int32_t maxLength, int32_t screenId);
     void RegisterDeathRecipientInner();
     virtual std::string GetFirmwareUpdateState();
@@ -67,6 +68,8 @@ private:
 
     int32_t windowWidth_ = 0;
     int32_t windowHeight_ = 0;
+    int32_t rogWidth_ = 0;
+    int32_t rogHeight_ = 0;
     int32_t times_ = 0;
     int32_t rotateDegree_ = 0;
     int32_t progress_ = 0;
@@ -79,7 +82,7 @@ private:
     float currentRadius_ = 0.0f;
     int32_t screenStatus_ = -1;
 
-    volatile bool isUpdateOptEnd_ = false;
+    std::atomic<bool> isUpdateOptEnd_{false};
     bool isWearable_ = false;
     bool isOther_ = false;
     bool isUpdateText_ = false;

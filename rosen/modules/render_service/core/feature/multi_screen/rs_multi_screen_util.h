@@ -16,17 +16,56 @@
 #ifndef RENDER_SERVICE_CORE_FEATURE_MULTI_SCREEN_RS_MULTI_SCREEN_UTIL_H
 #define RENDER_SERVICE_CORE_FEATURE_MULTI_SCREEN_RS_MULTI_SCREEN_UTIL_H
 
+#include <bitset>
 #include <memory>
+#include <string>
 
 #include "common/rs_common_def.h"
 #include "params/rs_logical_display_render_params.h"
+#include "params/rs_render_thread_params.h"
 #include "params/rs_screen_render_params.h"
 #include "pipeline/rs_processor.h"
 
-namespace OHOS::Rosen::DrawableV2 {
+namespace OHOS::Rosen {
 
-class RSLogicalDisplayRenderNodeDrawable;
+class RSUniRenderVirtualProcessor;
+
+namespace DrawableV2 {
+
 class RSScreenRenderNodeDrawable;
+class RSLogicalDisplayRenderNodeDrawable;
+
+enum class RenderStrategy : int {
+    INVALID = -1,  // Initial state
+    DRAW_AS_MAIN_SCREEN = 0,
+    DRAW_VIRTUAL_EXTEND = 1,
+    DRAW_VIRTUAL_MIRROR_FROM_CACHE = 2,
+    DRAW_VIRTUAL_MIRROR_REBUILD = 3,
+    DRAW_PHYSICAL_MIRROR_FROM_CACHE = 4,
+    DRAW_PHYSICAL_MIRROR_REBUILD = 5
+};
+
+enum RebuildReason : size_t {
+    PROCESS_SPECIAL_LAYER = 0,  // Need to process special layer
+    MIRROR_SCREEN_HDR_PRESENT,  // Mirror screen has HDR content
+    MIRROR_SOURCE_HDR_PRESENT,  // Mirror source screen has HDR content
+    CACHE_IMAGE_NULL,           // CacheImage is not available
+    VIRTUAL_SCREEN_MUTE,        // Virtual screen is muted
+    SCREEN_OFF,                 // Screen is off
+    COLOR_FILTER_MODE,          // Color filter mode is enabled
+
+    // Add new reasons above this line
+    MAX_VALUE
+};
+
+struct MultiScreenParams {
+    std::shared_ptr<RSScreenRenderNodeDrawable> screenDrawable;
+    RSScreenRenderParams* screenParams = nullptr;
+    std::shared_ptr<RSLogicalDisplayRenderNodeDrawable> mirrorSourceDisplayDrawable;
+    RSLogicalDisplayRenderParams* mirrorSourceDisplayParams = nullptr;
+    std::shared_ptr<RSScreenRenderNodeDrawable> mirrorSourceScreenDrawable;
+    RSScreenRenderParams* mirrorSourceScreenParams = nullptr;
+};
 
 class RSMultiScreenUtil {
 public:
@@ -50,8 +89,54 @@ public:
         RSScreenRenderNodeDrawable& drawable,
         RSScreenRenderParams& params,
         const std::shared_ptr<RSProcessor>& processor);
+    
+    static void DumpRenderStrategy(
+        RSLogicalDisplayRenderNodeDrawable& drawable,
+        ScreenId screenId,
+        RenderStrategy path,
+        const std::string& reason);
+
+private:
+    static void DrawPhysicalMirrorDisplay(
+        RSLogicalDisplayRenderNodeDrawable& drawable,
+        RSLogicalDisplayRenderParams& params,
+        const std::shared_ptr<RSProcessor>& processor);
+
+    static void DrawPhysicalMirrorFromCache(
+        RSLogicalDisplayRenderNodeDrawable& drawable,
+        RSLogicalDisplayRenderParams& params);
+
+    static void DrawPhysicalMirrorRebuild(
+        RSLogicalDisplayRenderNodeDrawable& drawable,
+        RSLogicalDisplayRenderParams& params,
+        const std::shared_ptr<RSProcessor>& processor);
+
+    static void DrawVirtualMirrorDisplay(
+        RSLogicalDisplayRenderNodeDrawable& drawable,
+        RSLogicalDisplayRenderParams& params,
+        const std::shared_ptr<RSProcessor>& processor);
+
+    static void DrawVirtualMirrorFromCache(
+        RSLogicalDisplayRenderNodeDrawable& drawable,
+        RSLogicalDisplayRenderParams& params,
+        const std::shared_ptr<RSUniRenderVirtualProcessor>& processor,
+        RSRenderThreadParams& uniParam);
+
+    static void DrawVirtualMirrorRebuild(
+        RSLogicalDisplayRenderNodeDrawable& drawable,
+        RSLogicalDisplayRenderParams& params,
+        const std::shared_ptr<RSUniRenderVirtualProcessor>& processor,
+        RSRenderThreadParams& uniParam);
+
+    static void DrawVirtualExtend(
+        RSLogicalDisplayRenderNodeDrawable& drawable,
+        RSLogicalDisplayRenderParams& params,
+        const std::shared_ptr<RSUniRenderVirtualProcessor>& processor);
+
+    static std::pair<MultiScreenParams, bool> GetMultiScreenParams(RSLogicalDisplayRenderParams& params);
 };
 
 } // namespace OHOS::Rosen::DrawableV2
+} // namespace OHOS::Rosen
 
 #endif // RENDER_SERVICE_CORE_FEATURE_MULTI_SCREEN_RS_MULTI_SCREEN_UTIL_H

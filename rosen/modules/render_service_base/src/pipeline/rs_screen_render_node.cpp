@@ -63,13 +63,14 @@ void RSScreenRenderNode::CollectSurface(
     }
 }
 
-void RSScreenRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor)
+void RSScreenRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor,
+    bool isParentPrepareInReverseOrder)
 {
     if (!visitor) {
         return;
     }
     ApplyModifiers();
-    visitor->QuickPrepareScreenRenderNode(*this);
+    visitor->QuickPrepareScreenRenderNode(*this, isParentPrepareInReverseOrder);
 }
 
 void RSScreenRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
@@ -381,38 +382,50 @@ HdrStatus RSScreenRenderNode::GetDisplayHdrStatus() const
         return HdrStatus::NO_HDR;
     }
     HdrStatus currentHDRStatus = screenParams->GetScreenHDRStatus();
-    lastDisplayTotalHdrStatus_ = currentHDRStatus;
     return currentHDRStatus;
 }
 // LCOV_EXCL_STOP
 
 void RSScreenRenderNode::CollectHdrStatus(NodeId id, HdrStatus hdrStatus)
 {
+    CollectHdrStatusMap(id, hdrStatus);
     auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
     if (screenParams == nullptr) {
         RS_LOGE("%{public}s screenParams is nullptr", __func__);
         return;
     }
-    screenParams->CollectHdrStatus(id, hdrStatus);
+    HdrStatus currentHDRStatus = screenParams->GetScreenHDRStatus();
+    HdrStatus newHDRStatus = static_cast<HdrStatus>(currentHDRStatus | hdrStatus);
+    screenParams->CollectHdrStatus(newHDRStatus);
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
     }
 }
 
-const std::unordered_map<NodeId, HdrStatus>& RSScreenRenderNode::GetDisplayHdrStatusMap() const
+void RSScreenRenderNode::CollectHdrStatusMap(NodeId id, HdrStatus hdrStatus)
 {
-    auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
-    if (screenParams == nullptr) {
-        RS_LOGE("%{public}s screenParams is nullptr", __func__);
-        static const std::unordered_map<NodeId, HdrStatus> emptyMap;
-        return emptyMap;
+    if (!RSSystemProperties::GetXcomponentEdrEnabled() || hdrStatus == HdrStatus::NO_HDR) {
+        return;
     }
-    return screenParams->GetScreenHDRStatusMap();
+    auto iter = displayHDRStatusMap_.find(id);
+    if (iter == displayHDRStatusMap_.end()) {
+        displayHDRStatusMap_.emplace(id, hdrStatus);
+    } else {
+        uint32_t currentNodeHDRStatus = iter->second;
+        uint32_t newNodeHDRStatus = (currentNodeHDRStatus | hdrStatus);
+        iter->second = newNodeHDRStatus;
+    }
+}
+
+const std::unordered_map<NodeId, uint32_t>& RSScreenRenderNode::GetDisplayHdrStatusMap() const
+{
+    return displayHDRStatusMap_;
 }
 
 // LCOV_EXCL_START
 void RSScreenRenderNode::ResetDisplayHdrStatus()
 {
+    displayHDRStatusMap_.clear();
     auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
     if (screenParams == nullptr) {
         RS_LOGE("%{public}s screenParams is nullptr", __func__);
@@ -752,24 +765,50 @@ void RSScreenRenderNode::ResetVideoHeadroomInfo()
 
 void RSScreenRenderNode::SetHasForceHwcHdrSurface(bool hasForceHwcHdrSurface)
 {
-    if (hasForceHwcHdrSurface_ == hasForceHwcHdrSurface) {
-        return;
-    }
     auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
     if (screenParams == nullptr) {
         RS_LOGE("RSScreenRenderNode::SetHasForceHwcHdrSurface screenParams is null");
         return;
     }
-    hasForceHwcHdrSurface_ = hasForceHwcHdrSurface;
     screenParams->SetHasForceHwcHdrSurface(hasForceHwcHdrSurface);
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
     }
 }
 
-bool RSScreenRenderNode::GetHasForceHwcHdrSurface() const
+void RSScreenRenderNode::SetHdrForceHwcNodes(
+    const std::unordered_map<NodeId, std::weak_ptr<RSSurfaceRenderNode>>& hdrForceHwcNodes)
 {
-    return hasForceHwcHdrSurface_;
+    hdrForceHwcNodes_ = hdrForceHwcNodes;
+}
+
+const std::unordered_map<NodeId, std::weak_ptr<RSSurfaceRenderNode>>& RSScreenRenderNode::GetHdrForceHwcNodes() const
+{
+    return hdrForceHwcNodes_;
+}
+
+void RSScreenRenderNode::ClearHdrForceHwcNodes()
+{
+    hdrForceHwcNodes_.clear();
+}
+
+void RSScreenRenderNode::HandleHdrForceHwcNodes()
+{
+    if (!RSSystemProperties::GetXcomponentEdrEnabled() || hdrForceHwcNodes_.empty()) {
+        SetHasForceHwcHdrSurface(false);
+        ClearHdrForceHwcNodes();
+        return;
+    }
+    if (std::find_if(hdrForceHwcNodes_.begin(), hdrForceHwcNodes_.end(), [](const auto& iter) {
+            auto nodePtr = iter.second.lock();
+            return nodePtr && !nodePtr->IsHardwareForcedDisabled();
+        }) != hdrForceHwcNodes_.end()) {
+        RS_OPTIONAL_TRACE_FMT("RSScreenRenderNode::SetHasForceHwcHdrSurface: Node: %" PRIu64, GetId());
+        SetHasForceHwcHdrSurface(true);
+    } else {
+        SetHasForceHwcHdrSurface(false);
+    }
+    ClearHdrForceHwcNodes();
 }
 } // namespace Rosen
 } // namespace OHOS

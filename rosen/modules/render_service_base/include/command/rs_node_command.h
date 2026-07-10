@@ -70,6 +70,9 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_NG_SHAPE_BASE_PTR = 0x012B,
     UPDATE_MODIFIER_VECTOR_VECTOR4F = 0x012C,
     UPDATE_MODIFIER_HDR_DARKEN_BLENDER_PARA = 0x012D,
+    UPDATE_MODIFIER_DEPTH_CAMERA_PARA = 0x012E,
+    UPDATE_MODIFIER_DEPTH_LIGHT_PARA = 0x012F,
+    // 0x0130 deleted, do not use this value never
     UPDATE_MODIFIER_PARTICLE_FIELDS_PTR = 0x0131,
 
     SET_FREEZE = 0x0200,
@@ -141,6 +144,9 @@ public:
             }
         }
         if (auto property = node->GetProperty(id)) {
+            if (UNLIKELY(!CheckPropertyType(*property, RSRenderPropertyTypeTraits<T>::type, nodeId))) {
+                return;
+            }
             std::static_pointer_cast<RSRenderProperty<T>>(property)->Set(value, type);
         }
     }
@@ -203,6 +209,10 @@ public:
     static RSB_EXPORT void SetColorPickerCallbackProcessor(ColorPickerCallbackProcessor processor);
 
     static void ReSortChildrenByZIndex(RSContext& context, NodeId nodeId);
+private:
+    static bool CheckPropertyType(RSRenderPropertyBase& prop, RSPropertyType updateType, NodeId nodeId);
+    static void TypeErrorInfoPrint(NodeId nodeId, PropertyId propId, RSPropertyType updateType,
+        RSPropertyType propType);
 };
 
 ADD_COMMAND(RSUpdatePropertyBool,
@@ -459,6 +469,16 @@ ADD_COMMAND(RSRemoveAllModifiersNG,
 ADD_COMMAND(RSColorPickerCallback,
     ARG(PERMISSION_APP, RS_NODE, COLOR_PICKER_CALLBACK,
         RSNodeCommandHelper::ColorPickerCallback, NodeId, pid_t, uint64_t, uint32_t))
+
+ADD_COMMAND(RSUpdatePropertyDepthCameraPara,
+    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_DEPTH_CAMERA_PARA,
+        RSNodeCommandHelper::UpdateProperty<DepthCameraPara>,
+        NodeId, DepthCameraPara, PropertyId, PropertyUpdateType))
+
+ADD_COMMAND(RSUpdatePropertyDepthLightPara,
+    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_DEPTH_LIGHT_PARA,
+        RSNodeCommandHelper::UpdateProperty<DepthLightPara>,
+        NodeId, DepthLightPara, PropertyId, PropertyUpdateType))
 
 ADD_COMMAND(RSSortChildrenByZIndex,
     ARG(PERMISSION_APP, RS_NODE, SORT_CHILDREN_BY_INDEX,

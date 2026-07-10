@@ -29,6 +29,7 @@
 
 namespace OHOS {
 namespace Rosen {
+class RSSurfaceRenderNode;
 
 namespace RSLuminanceConst {
     constexpr float DEFAULT_CAPTURE_HDR_NITS = 1000.0f;
@@ -96,8 +97,11 @@ public:
     virtual float GetSdrDisplayNits(ScreenId screenId) = 0;
     virtual float GetDisplayNits(ScreenId screenId) = 0;
     virtual double GetNonlinearRatio(ScreenId screenId, uint32_t mode) = 0;
+    virtual float CalAIHDRScaler(const RSSurfaceRenderNode& surfaceNode, const float& ratio = 1.0f,
+        HdrStatus hdrStatus = HdrStatus::NO_HDR) = 0;
     virtual float CalScaler(const float& maxContentLightLevel,
         const std::vector<uint8_t>& dynamicMetadata, const float& ratio, HdrStatus hdrStatus) = 0;
+    virtual float GetSurfaceNodeMaxScaler(RSSurfaceRenderNode& surfaceNode, ScreenId screenId, HdrStatus hdrstatus) = 0;
     virtual bool IsHdrPictureOn() = 0;
     virtual bool IsForceCloseHdr() const = 0;
     virtual void ForceCloseHdr(uint32_t closeHdrSceneId, bool forceCloseHdr) = 0;
@@ -113,7 +117,7 @@ public:
         const std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler) = 0;
     virtual double GetConfigScaler(ScreenId screenId, HdrStatus type) const = 0;
     virtual void SetDualScreenStatus(ScreenId screenId, DualScreenStatus dualScreenStatus) = 0;
-    virtual float HdrDimmingProcess(ScreenId screenId, uint64_t nodeId) = 0;
+    virtual float HdrDimmingProcess(ScreenId screenId, const RSSurfaceRenderNode& surfaceNode) = 0;
     virtual void HdrDimmingPostProcess(ScreenId screenId) = 0;
 #ifndef ROSEN_CROSS_PLATFORM
     virtual int32_t UpdateMetadataBasedOnScaler(const sptr<SurfaceBuffer>& input, float scaler,
@@ -145,8 +149,11 @@ public:
     RSB_EXPORT float GetSdrDisplayNits(ScreenId screenId);
     RSB_EXPORT float GetDisplayNits(ScreenId screenId);
     RSB_EXPORT double GetHdrBrightnessRatio(ScreenId screenId, uint32_t mode);
+    RSB_EXPORT float CalAIHDRScaler(const RSSurfaceRenderNode& surfaceNode, const float& ratio = 1.0f,
+        HdrStatus hdrStatus = HdrStatus::NO_HDR);
     RSB_EXPORT float CalScaler(const float& maxContentLightLevel, const std::vector<uint8_t>& dynamicMetadata,
         const float& ratio = 1.0f, HdrStatus hdrStatus = HdrStatus::NO_HDR);
+    RSB_EXPORT float GetSurfaceNodeMaxScaler(RSSurfaceRenderNode& surfaceNode, ScreenId screenId, HdrStatus hdrstatus);
     RSB_EXPORT bool IsHdrPictureOn();
     RSB_EXPORT bool IsForceCloseHdr();
     RSB_EXPORT void ForceCloseHdr(uint32_t closeHdrSceneId, bool forceCloseHdr);
@@ -162,7 +169,7 @@ public:
         const std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler);
     RSB_EXPORT double GetConfigScaler(ScreenId screenId, HdrStatus type) const;
     RSB_EXPORT void SetDualScreenStatus(ScreenId screenId, DualScreenStatus dualScreenStatus);
-    RSB_EXPORT float HdrDimmingProcess(ScreenId screenId, uint64_t nodeId);
+    RSB_EXPORT float HdrDimmingProcess(ScreenId screenId, const RSSurfaceRenderNode& surfaceNode);
     RSB_EXPORT void HdrDimmingPostProcess(ScreenId screenId);
 #ifndef ROSEN_CROSS_PLATFORM
     RSB_EXPORT int32_t UpdateMetadataBasedOnScaler(const sptr<SurfaceBuffer>& input, float scaler, HdrStatus hdrStatus);

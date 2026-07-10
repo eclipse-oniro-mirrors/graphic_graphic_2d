@@ -73,6 +73,9 @@ void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect
 {
     std::shared_ptr<Drawing::GEVisualEffect> geVisualEffect = value ? value->GenerateGEVisualEffect() : nullptr;
     std::shared_ptr<Drawing::GEShaderShape> geShape = geVisualEffect ? geVisualEffect->GenerateShaderShape() : nullptr;
+    if (geShape) {
+        geShape->SetHash(value->CalculateHash());
+    }
     geFilter.SetParam(desc, geShape);
 }
 
@@ -260,7 +263,7 @@ void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, std::share
     if (!value) {
         return;
     }
-    uint32_t pathDistance = value->GetDistance();
+    auto pathDistance = value->GetDistance();
     hash = hashFunc_(&pathDistance, sizeof(pathDistance), hash);
 }
 

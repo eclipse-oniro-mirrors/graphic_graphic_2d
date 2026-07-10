@@ -15,8 +15,6 @@
 
 #include "platform/common/rs_system_properties.h"
 
-#include "transaction/rs_render_service_client.h"
-
 namespace OHOS {
 namespace Rosen {
 
@@ -65,6 +63,11 @@ bool RSSystemProperties::GetVkQueuePriorityEnable()
 bool RSSystemProperties::GetUniRenderEnabled()
 {
     return isUniRenderEnabled_;
+}
+
+bool RSSystemProperties::GetBackgroundRebuildEnabled()
+{
+    return false;
 }
 
 bool RSSystemProperties::GetDrawOpTraceEnabled()
@@ -275,6 +278,11 @@ bool RSSystemProperties::GetSLRScaleEnabled()
     return false;
 }
 
+bool RSSystemProperties::DvsyncSkipRsCommitDelayEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetSkipForAlphaZeroEnabled()
 {
     return {};
@@ -452,6 +460,11 @@ int RSSystemProperties::WatchSystemProperty(const char* name, OnSystemPropertyCh
     return {};
 }
 
+int RSSystemProperties::RemoveWatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context)
+{
+    return {};
+}
+
 bool RSSystemProperties::GetAFBCEnabled()
 {
     return {};
@@ -492,6 +505,16 @@ bool RSSystemProperties::GetSingleFrameComposerCanvasNodeEnabled()
     return false;
 }
 
+float RSSystemProperties::GetSplitTransactionMaxProcessTimeMs()
+{
+    return 2.0f;
+}
+ 
+size_t RSSystemProperties::GetSplitTransactionCheckInterval()
+{
+    return 200;
+}
+
 bool RSSystemProperties::GetDrawFilterWithoutSnapshotEnabled()
 {
     return false;
@@ -518,6 +541,11 @@ bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& Su
 }
 
 bool RSSystemProperties::GetUIFirstAutoClearCacheEnabled()
+{
+    return false;
+}
+
+int RSSystemProperties::GetEdrGainEnabled()
 {
     return false;
 }
@@ -658,6 +686,11 @@ bool RSSystemProperties::GetLayerPartRenderDebugEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetLayerEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetLayerDebugEnabled()
 {
     return false;
@@ -693,67 +726,13 @@ bool RSSystemProperties::GetTextureExportDFXEnabled()
     return false;
 }
 
-bool RSSystemProperties::GetHybridRenderEnabled()
-{
-    return false;
-}
-
-int32_t RSSystemProperties::GetHybridRenderCcmEnabled()
-{
-    return 0;
-}
-
-// The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
-bool RSSystemProperties::GetHybridRenderSystemEnabled()
-{
-    return false;
-}
-
 bool RSSystemProperties::GetHybridRenderDfxEnabled()
-{
-    return false;
-}
-
-uint32_t RSSystemProperties::GetHybridRenderTextBlobLenCount()
-{
-    return 0;
-}
-
-bool RSSystemProperties::GetHybridRenderParallelConvertEnabled()
 {
     return false;
 }
 
 // The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
 bool RSSystemProperties::GetHybridRenderCanvasEnabled()
-{
-    return false;
-}
-
-bool RSSystemProperties::GetHybridRenderMemeoryReleaseEnabled()
-{
-    return false;
-}
-
-// The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
-bool RSSystemProperties::GetHybridRenderTextBlobEnabled()
-{
-    return false;
-}
-
-// The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
-bool RSSystemProperties::GetHybridRenderSvgEnabled()
-{
-    return false;
-}
-
-// The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
-bool RSSystemProperties::GetHybridRenderHmsymbolEnabled()
-{
-    return false;
-}
-
-bool RSSystemProperties::GetHybridRenderSwitch(ComponentEnableSwitch bitSeq)
 {
     return false;
 }
@@ -805,15 +784,6 @@ int RSSystemProperties::GetSubThreadDropFrameInterval()
 bool RSSystemProperties::GetCompositeLayerEnabled()
 {
     return false;
-}
-
-bool RSSystemProperties::GetTypicalResidentProcess()
-{
-    return false;
-}
-
-void RSSystemProperties::SetTypicalResidentProcess(bool isTypicalResidentProcess)
-{
 }
 
 bool RSSystemProperties::GetAIBarOptEnabled()
@@ -901,6 +871,31 @@ bool RSSystemProperties::GetTransactionDataTraceEnabled()
 }
 
 bool RSSystemProperties::GetNewTunnelEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetRebuildSceneEnabled()
+{
+    return true;
+}
+ 
+bool RSSystemProperties::IsRenderNodeRebuildEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::RebuildDebugEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetXcomponentEdrEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetRsDelegateCompositeCleanCacheDfxEnable()
 {
     return false;
 }

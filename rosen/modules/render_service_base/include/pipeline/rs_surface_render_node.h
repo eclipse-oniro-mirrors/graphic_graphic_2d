@@ -30,14 +30,15 @@
 #include "common/rs_vector4.h"
 #include "display_engine/rs_luminance_control.h"
 #include "feature/uifirst/rs_uifirst_params.h"
+#include "feature/delegate_composite/rs_delegate_composite_params.h"
 #include "ipc_callbacks/buffer_available_callback.h"
 #include "ipc_callbacks/buffer_clear_callback.h"
 #include "ipc_callbacks/surface_capture_callback.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node.h"
+#include "pipeline/rs_surface_buffer_interface.h"
 #include "pipeline/rs_surface_handler.h"
-#include "pipeline/rs_tunnel_runtime_state.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_surface_ext.h"
 #include "platform/common/rs_system_properties.h"
@@ -115,7 +116,7 @@ private:
     std::unordered_set<NodeId> culledEntireSubtree_;
 };
 
-class RSB_EXPORT RSSurfaceRenderNode : public RSRenderNode {
+class RSB_EXPORT RSSurfaceRenderNode : public RSRenderNode, public RSSurfaceBufferInterface {
 public:
     using WeakPtr = std::weak_ptr<RSSurfaceRenderNode>;
     using SharedPtr = std::shared_ptr<RSSurfaceRenderNode>;
@@ -127,6 +128,11 @@ public:
     }
 
     ~RSSurfaceRenderNode() override;
+
+    NodeId GetId() const override;
+    void SetContentDirty();
+    void SetTunnelHandleChange(bool changed);
+    bool GetIsTextureExportNode() const;
 
     void PrepareRenderBeforeChildren(RSPaintFilterCanvas& canvas);
     void PrepareRenderAfterChildren(RSPaintFilterCanvas& canvas);
@@ -266,14 +272,14 @@ public:
     {
         existTransparentHardwareEnabledNode_ = exist;
     }
-    
+
     bool ExistTransparentHardwareEnabledNode() const
     {
         return existTransparentHardwareEnabledNode_;
     }
 
     // indicate if this node type can enable hardware composer
-    bool IsHardwareEnabledType() const
+    bool IsHardwareEnabledType() const override
     {
         return (nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_) ||
             IsLayerTop();
@@ -332,11 +338,22 @@ public:
         std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect,
         const sptr<SyncFence>& acquireFence, const sptr<SurfaceBuffer>& preBuffer,
         std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount);
+    void UpdateBuffer();
 #endif
 
     bool IsLastFrameHardwareEnabled() const
     {
         return isLastFrameHardwareEnabled_;
+    }
+
+    bool IsSplitSurfaceNode() const
+    {
+        return isSplitSurfaceNode_;
+    }
+
+    void SetSplitSurfaceNode(bool isSplitSurfaceNode)
+    {
+        isSplitSurfaceNode_ = isSplitSurfaceNode;
     }
 
     bool IsCurrentFrameHardwareEnabled() const
@@ -556,7 +573,7 @@ public:
 
     bool IsLeashWindowSurfaceNodeVisible();
 
-    const std::string& GetName() const
+    const std::string& GetName() const override
     {
         return name_;
     }
@@ -632,7 +649,7 @@ public:
         return false;
 #endif
     }
-    
+
     // hpae offline
     bool GetDeviceOfflineEnable() const { return deviceOfflineEnable_; }
     void SetDeviceOfflineEnable(bool enabled) { deviceOfflineEnable_ = enabled; }
@@ -660,7 +677,8 @@ public:
     void CollectSurface(const std::shared_ptr<RSBaseRenderNode>& node, std::vector<RSBaseRenderNode::SharedPtr>& vec,
         bool isUniRender, bool onlyFirstLevel) override;
     void CollectSelfDrawingChild(const std::shared_ptr<RSBaseRenderNode>& node, std::vector<NodeId>& vec) override;
-    void QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
+    void QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor,
+        bool isParentPrepareInReverseOrder = false) override;
     // keep specified nodetype preparation
     virtual bool IsSubTreeNeedPrepare(bool filterInGloba, bool isOccluded = false) override;
     void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
@@ -809,12 +827,12 @@ public:
         uifirstState_.forceUpdate = b;
     }
 
-    RSUIFirstSwitch GetUIFirstSwitch() const override
+    RSUIFirstSwitch GetUIFirstSwitch() const
     {
         return uifirstState_.switchMode;
     }
 
-    void SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch) override
+    void SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch)
     {
         uifirstState_.switchMode = uiFirstSwitch;
     }
@@ -848,8 +866,15 @@ public:
     {
         return ancoFlags_.load();
     }
+    RSSurfaceRenderNode* AsRSSurfaceRenderNode() override { return this; }
     // Set the buffer srcRect of the anco node. Only used on anco nodes.
     void SetAncoSrcCrop(const Rect& srcCrop);
+
+    bool OnBufferAvailable() override;
+    void OnTunnelHandleChange() override;
+    void OnCleanCache(std::set<uint64_t>& bufferCacheSet) override;
+    void OnSurfaceGoBackground() override;
+    void OnTransformChange() override;
 
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const
@@ -888,9 +913,11 @@ public:
         srcRect_ = rect;
     }
 
-    void NeedClearBufferCache(std::set<uint64_t>& bufferCacheSet);
+#ifndef ROSEN_CROSS_PLATFORM
+    void NeedClearBufferCache(std::set<uint64_t>& bufferCacheSet) override;
 
     void NeedClearPreBuffer(std::set<uint64_t>& bufferCacheSet);
+#endif
 
     const RectI& GetSrcRect() const
     {
@@ -1269,6 +1296,18 @@ public:
         childHardwareEnabledNodes_.clear();
     }
 
+    void SetHasDestoryRebuild(bool hasDestoryRebuild)
+    {
+        hasDestoryRebuild_ = hasDestoryRebuild;
+    }
+
+    bool HasDestoryRebuild() const
+    {
+        return hasDestoryRebuild_;
+    }
+
+    bool IsChildDestoryRebuild();
+
     void AddChildHardwareEnabledNode(WeakPtr childNode);
     const std::vector<WeakPtr>& GetChildHardwareEnabledNodes() const
     {
@@ -1577,7 +1616,6 @@ public:
         return ancestorScreenNode_;
     }
     bool QuerySubAssignable(bool isRotation);
-    bool QueryIfAllHwcChildrenForceDisabledByFilter();
     bool GetHasSharedTransitionNode() const
     {
         return hasSharedTransitionNode_;
@@ -1685,6 +1723,15 @@ public:
     {
         isContainerWindowTransparent_ = isContainerWindowTransparent;
     }
+
+    void SetIsDepthResource(bool isDepthResource);
+
+    bool GetIsDepthResource() const
+    {
+        return isDepthResource_;
+    }
+
+    void SetIsDepthBackground(bool isDepthBackground) override;
 
     bool IsContainerWindowTransparent() const
     {
@@ -1812,6 +1859,43 @@ public:
     {
         crossNodeSkipDisplayConversionMatrices_.clear();
     }
+
+    void ClearCloneCrossNode();
+    void SetCrossNodeVisitedStatus(bool hasVisited);
+    void SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn);
+    void RecordCloneCrossNode(std::shared_ptr<RSSurfaceRenderNode> node)
+    {
+        cloneCrossNodeVec_.emplace_back(node);
+    }
+
+    void SetIsCrossNode(bool isCrossNode)
+    {
+        if (!isCrossNode) {
+            ClearCloneCrossNode();
+        }
+        isCrossNode_ = isCrossNode;
+    }
+
+    bool IsCrossNode() const override
+    {
+        return isCrossNode_ || isCloneCrossNode_;
+    }
+
+    bool IsCloneCrossNode() const
+    {
+        return isCloneCrossNode_;
+    }
+
+    bool HasVisitedCrossNode() const
+    {
+        return hasVisitedCrossNode_;
+    }
+
+    std::weak_ptr<RSSurfaceRenderNode> GetSourceCrossNode() const
+    {
+        return sourceCrossNode_;
+    }
+
     HdrStatus GetVideoHdrStatus() const
     {
         return hdrVideoSurface_;
@@ -1937,28 +2021,14 @@ public:
     void SetHDRType(uint32_t hdrType);
     uint32_t GetHDRType() const;
 
-    void GetTunnelLayerInfo(uint64_t& tunnelLayerId, uint32_t& property)
-    {
-        tunnelRuntimeState_->GetLayerInfo(tunnelLayerId, property);
-    }
+    void SetDelegateDstRect(float positionX, float positionY, float positionZ, float positionW);
+    Vector4f GetDelegateDstRect();
+    void SetDelegateSrcRect(float positionX, float positionY, float positionZ, float positionW);
+    Vector4f GetDelegateSrcRect();
+    void SetDelegateMode(bool isSetDelegateMode);
+    bool IsDelegateModeNodeWithBuffer();
+    bool GetDelegateMode() override;
 
-    void SetTunnelLayerInfo(uint64_t tunnelLayerId, uint32_t property)
-    {
-        if (tunnelLayerId == 0) {
-            property = TUNNEL_PROP_INVALID;
-        }
-        tunnelRuntimeState_->SetLayerInfo(tunnelLayerId, property);
-    }
-
-    RSTunnelRuntimeState& GetTunnelRuntimeState()
-    {
-        return *tunnelRuntimeState_;
-    }
-
-    const RSTunnelRuntimeState& GetTunnelRuntimeState() const
-    {
-        return *tunnelRuntimeState_;
-    }
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1969,7 +2039,8 @@ protected:
 private:
     explicit RSSurfaceRenderNode(NodeId id, const std::weak_ptr<RSContext>& context = {},
         bool isTextureExportNode = false);
-    explicit RSSurfaceRenderNode(const RSSurfaceRenderNodeConfig& config, const std::weak_ptr<RSContext>& context = {});
+    explicit RSSurfaceRenderNode(const RSSurfaceRenderNodeConfig& config, const std::weak_ptr<RSContext>& context = {},
+        std::shared_ptr<RSSurfaceHandler> surfaceHandler = nullptr);
     void OnResetParent() override;
     void ClearChildrenCache();
     Vector4f GetWindowCornerRadius();
@@ -1983,7 +2054,7 @@ private:
     bool IsYUVBufferFormat() const;
     void InitRenderParams() override;
     void UpdateRenderParams() override;
-    void UpdateChildHardwareEnabledNode(NodeId id, bool isOnTree);
+    void UpdateChildHardwareEnabledNode();
     std::unordered_set<NodeId> GetAllSubSurfaceNodeIds() const;
 
     bool isForcedClipHole() const;
@@ -2003,9 +2074,11 @@ private:
     void CopyModifierValue(ModifierNG::RSPropertyType propertyType,
         std::shared_ptr<ModifierNG::RSRenderModifier> oldModifier,
         std::shared_ptr<ModifierNG::RSRenderModifier> newModifier);
-    
+
     void CountRelatedNode(bool isIncrement);
     void ClearRelatedSourceCache(bool value);
+
+    void UpdateDelegateRectToSurfaceParams();
 
     RSSpecialLayerManager specialLayerManager_;
     bool specialLayerChanged_ = false;
@@ -2049,6 +2122,7 @@ private:
     bool isFilterCacheStatusChanged_ = false;
     bool isTreatedAsTransparent_ = false;
     bool isContainerWindowTransparent_ = false;
+    bool isDepthResource_ = false;
     // only used in hardware enabled pointer window, when gpu -> hardware composer
     bool isNodeDirtyInLastFrame_ = true;
     bool isNodeDirty_ = true;
@@ -2059,6 +2133,7 @@ private:
     bool isInFixedRotation_ = false;
     SelfDrawingNodeType selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
     bool isCurrentFrameHardwareEnabled_ = false;
+    bool isSplitSurfaceNode_ = false;
     bool isLastFrameHardwareEnabled_ = false;
     bool isLastFrameHwcEnabled_ = false;
     bool needCollectHwcNode_ = false;
@@ -2107,6 +2182,14 @@ private:
     bool isHardwareForcedByBackgroundAlpha_ = false;
     bool arsrTag_ = true;
     bool copybitTag_ = false;
+
+    // cross node
+    bool isCrossNode_ = false;
+    bool isCloneCrossNode_ = false;
+    bool autoClearCloneNode_ = false;
+    bool hasVisitedCrossNode_ = false;
+    std::weak_ptr<RSSurfaceRenderNode> sourceCrossNode_;
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> cloneCrossNodeVec_;
 
     // hpae offline
     bool deviceOfflineEnable_ = false;
@@ -2226,7 +2309,6 @@ private:
 
     std::string name_;
     std::string bundleName_;
-    std::unique_ptr<RSTunnelRuntimeState> tunnelRuntimeState_ = nullptr;
     std::vector<NodeId> childSurfaceNodeIds_;
     std::shared_ptr<RSRenderPipelineClient> rsRenderPipelineClient_;
     friend class RSRenderThreadVisitor;
@@ -2336,6 +2418,7 @@ private:
     bool isClonedNodeOnTheTree_ = false;
     bool clonedSourceNodeNeedOffscreen_ = true;
     int relatedNodeNum_ = 0;
+    bool hasDestoryRebuild_ = false;
 
     std::optional<std::pair<ScreenId, bool>> attachedInfo_ = std::nullopt;
     std::map<NodeId, RSSurfaceRenderNode::WeakPtr> childSubSurfaceNodes_;
@@ -2357,6 +2440,9 @@ private:
     // Used for control-level occlusion culling scene info and culled nodes transmission.
     std::shared_ptr<OcclusionParams> occlusionParams_ = nullptr;
 
+    // Used for delegateComposite
+    std::shared_ptr<RsDelegateCompositeParams> delegateCompositeParams_ = nullptr;
+
     // UIExtension record, <UIExtension, hostAPP>
     inline static RS_HIDDEN std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};
     friend class SurfaceNodeCommandHelper;
@@ -2369,6 +2455,7 @@ private:
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif
+    friend class SplitSurface;
 };
 } // namespace Rosen
 } // namespace OHOS

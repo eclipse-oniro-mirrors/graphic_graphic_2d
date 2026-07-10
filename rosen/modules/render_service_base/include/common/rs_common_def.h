@@ -119,6 +119,11 @@ inline bool ROSEN_LE(float left, float right) // less or equal
     return (left - right) < epsilon;
 }
 
+inline bool ROSEN_LE(float left, float right, float epsilon)
+{
+    return (left - right) < epsilon;
+}
+
 /**
  * Bitmask enumeration for hierarchical type identification
  * Descendant types must include all ancestor bits following the rules:
@@ -132,6 +137,7 @@ enum class RSUINodeType : uint32_t {
     PROXY_NODE           = 0x0041u,
     CANVAS_NODE          = 0x0081u,
     EFFECT_NODE          = 0x0101u,
+    DEPTH_NODE           = 0x0401u,
     WINDOW_KEYFRAME_NODE = 0x0801u,
     ROOT_NODE            = 0x1081u,
     CANVAS_DRAWING_NODE  = 0x2081u,
@@ -177,8 +183,8 @@ enum class RSRenderNodeType : uint32_t {
     PROXY_NODE             = 0x0041u,
     CANVAS_NODE            = 0x0081u,
     EFFECT_NODE            = 0x0101u,
-    ROUND_CORNER_NODE      = 0x0201u,
-    LOGICAL_DISPLAY_NODE   = 0x0401u,
+    LOGICAL_DISPLAY_NODE   = 0x0201u,
+    DEPTH_NODE             = 0x0401u,
     WINDOW_KEYFRAME_NODE   = 0x0801u,
     ROOT_NODE              = 0x1081u,
     CANVAS_DRAWING_NODE    = 0x2081u,
@@ -334,6 +340,7 @@ enum class RSRenderNodeDrawableType : uint32_t {
     SURFACE_NODE_DRAWABLE,
     CANVAS_NODE_DRAWABLE,
     EFFECT_NODE_DRAWABLE,
+    DEPTH_NODE_DRAWABLE,
     ROOT_NODE_DRAWABLE,
     CANVAS_DRAWING_NODE_DRAWABLE,
     UNION_NODE_DRAWABLE,
@@ -664,6 +671,17 @@ enum class RSSurfaceNodeAbilityState : uint8_t {
     FOREGROUND,
 };
 
+// lifecycle state of UI director (client-server sync)
+enum class RSUIDirectorLifecycleState : uint8_t {
+    CREATE,
+    RESUME,
+    FOREGROUND,
+    BACKGROUND,
+    STOP,
+    DESTROYED,
+    STATE_COUNT
+};
+
 struct SubSurfaceCntUpdateInfo {
     int updateCnt_ = 0;
     NodeId preParentId_ = INVALID_NODEID;
@@ -745,6 +763,7 @@ enum DrawNodeType : uint32_t {
     GeometryPropertyType
 };
 
+// HybridDraw Start
 enum class ComponentEnableSwitch : uint8_t {
     TEXTBLOB = 0,
     SVG,
@@ -752,6 +771,8 @@ enum class ComponentEnableSwitch : uint8_t {
     CANVAS,
     MAX_VALUE,
 };
+// HybridDraw End
+
 typedef enum : uint32_t {
     SA_WATER_MARK_DEFAULT_SIZE = 0, // 512KB
     SA_WATER_MARK_MIDDLE_SIZE = 1, // 6M
@@ -790,6 +811,9 @@ enum class EnergyEvent : int32_t {
     ANIMATION_EXEC_TIME = 2,
 };
 
+enum class ApsEventType : uint32_t {
+    SPLIT_LAYER = 0,
+};
 using EnergyCommonDataMap = std::unordered_map<EnergyEvent, std::unordered_map<std::string, std::string>>;
 } // namespace Rosen
 } // namespace OHOS

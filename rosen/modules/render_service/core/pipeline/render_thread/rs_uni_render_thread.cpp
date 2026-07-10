@@ -27,6 +27,7 @@
 #include "drawable/rs_property_drawable_utils.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "engine/rs_uni_render_engine.h"
+#include "feature/hdr/rs_hdr_util.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "feature/hpae/rs_hpae_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
@@ -39,6 +40,7 @@
 #include "params/rs_screen_render_params.h"
 #include "params/rs_surface_render_params.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
+#include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_surface_handler.h"
@@ -57,19 +59,18 @@
 #include "utils/system_properties.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
 #ifdef RES_SCHED_ENABLE
+#include <sched.h>
 #include <iservice_registry.h>
 #include "concurrent_task_client.h"
 #include "if_system_ability_manager.h"
 #include "system_ability_definition.h"
+#include "res_type.h"
+#include "res_sched_client.h"
 #endif
 
 #ifdef SOC_PERF_ENABLE
 #include "socperf_client.h"
 #endif
-
-#include <sched.h>
-#include "res_sched_client.h"
-#include "res_type.h"
 
 #ifdef MHC_ENABLE
 #include "rs_mhc_manager.h"
@@ -195,9 +196,12 @@ void RSUniRenderThread::InitGrContext()
         return;
     }
     RSMainThread::Instance()->InitVulkanErrorCallback(grContext);
+    RSMainThread::Instance()->InitCreatePipelineTimeCallback(grContext);
     if (RSSystemProperties::GetDrawOpLimitEnabled()) {
         InitDrawOpOverCallback(grContext);
     }
+    Drawing::UIColor::RegisterHdrCallbackFunc(
+        std::bind(&RSHdrUtil::HDRColorHeadroomMapping, std::placeholders::_1, std::placeholders::_2));
     MemoryManager::SetGpuCacheSuppressWindowSwitch(
         grContext, RSSystemProperties::GetGpuCacheSuppressWindowEnabled());
     MemoryManager::SetGpuMemoryAsyncReclaimerSwitch(
@@ -614,6 +618,9 @@ void RSUniRenderThread::ReleaseLayerBuffers(ReleaseLayerBuffersInfo& releaseLaye
     composerClientManager_->ReleaseLayerBuffers(curScreenId, releaseLayerInfo.timestampVec,
         releaseLayerInfo.releaseBufferFenceVec);
     NotifyScreenNodeBufferReleased(curScreenId);
+#ifndef ROSEN_CROSS_PLATFORM
+    RsDelegateCompositeCallbackManager::GetInstance().NotifyCurrentSurfaceNodeBufferReleaseCallback();
+#endif
 }
 
 void RSUniRenderThread::PerfForBlurIfNeeded()
@@ -1177,7 +1184,7 @@ uint32_t RSUniRenderThread::GetDynamicRefreshRate() const
 {
     uint32_t refreshRate = GetDefaultScreenRefreshRate();
     if (refreshRate == 0) {
-        RS_LOGE("RSUniRenderThread::GetDynamicRefreshRate refreshRate is invalid");
+        RS_LOGD("RSUniRenderThread::GetDynamicRefreshRate refreshRate is invalid");
         return STANDARD_REFRESH_RATE;
     }
     return refreshRate;

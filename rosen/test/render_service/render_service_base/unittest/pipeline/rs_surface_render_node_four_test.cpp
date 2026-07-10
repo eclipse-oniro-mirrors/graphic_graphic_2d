@@ -277,38 +277,6 @@ HWTEST_F(RSSurfaceRenderNodeFourTest, UpdateDirtyIfFrameBufferConsumed, TestSize
 }
 
 /**
- * @tc.name: QueryIfAllHwcChildrenForceDisabledByFilter
- * @tc.desc: test results of QueryIfAllHwcChildrenForceDisabledByFilter
- * @tc.type:FUNC QueryIfAllHwcChildrenForceDisabledByFilter
- * @tc.require:
- */
-HWTEST_F(RSSurfaceRenderNodeFourTest, QueryIfAllHwcChildrenForceDisabledByFilter, TestSize.Level2)
-{
-    auto rsContext = std::make_shared<RSContext>();
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
-    ASSERT_TRUE(node->QueryIfAllHwcChildrenForceDisabledByFilter());
-    auto child1 = std::make_shared<RSSurfaceRenderNode>(id + 1, rsContext);
-    auto child2 = std::make_shared<RSSurfaceRenderNode>(id + 2, rsContext);
-    auto child3 = std::make_shared<RSRenderNode>(id + 3);
-    child2->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
-    std::vector<std::shared_ptr<RSRenderNode>> children;
-    children.push_back(child1);
-    children.push_back(child2);
-    children.push_back(child3);
-    node->fullChildrenList_ = std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>(children);
-    ASSERT_TRUE(node->QueryIfAllHwcChildrenForceDisabledByFilter());
-    node->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
-    ASSERT_TRUE(node->QueryIfAllHwcChildrenForceDisabledByFilter());
-    auto weakChild4 = std::make_shared<RSSurfaceRenderNode>(id + 4, rsContext);
-    auto weakChild5 = std::make_shared<RSSurfaceRenderNode>(id + 5, rsContext);
-    child2->childHardwareEnabledNodes_.emplace_back(weakChild4);
-    child2->childHardwareEnabledNodes_.emplace_back(weakChild5);
-    ASSERT_FALSE(node->QueryIfAllHwcChildrenForceDisabledByFilter());
-    weakChild4->isHardwareForcedDisabledByFilter_ = true;
-    ASSERT_FALSE(node->QueryIfAllHwcChildrenForceDisabledByFilter());
-}
-
-/**
  * @tc.name: GetWindowCornerRadius
  * @tc.desc: test results of GetWindowCornerRadius
  * @tc.type:FUNC GetWindowCornerRadius
@@ -517,6 +485,108 @@ HWTEST_F(RSSurfaceRenderNodeFourTest, SetRotationCorrectionDegree, TestSize.Leve
     EXPECT_EQ(surfaceParams->GetRotationCorrectionDegree(), 180);
     node->stagingRenderParams_ = nullptr;
     node->SetRotationCorrectionDegree(270);
+}
+
+/**
+ * @tc.name: SetIsOnTheTreeTest001
+ * @tc.desc: Test SetIsOnTheTree
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, SetIsOnTheTreeTest001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    RSSurfaceRenderNode surfaceNode(config);
+
+    // when isOnTheTree_ is false
+    surfaceNode.isOnTheTree_ = false;
+    surfaceNode.SetIsOnTheTree(false);
+
+    // when !onTree is false
+    surfaceNode.isOnTheTree_ = true;
+    surfaceNode.SetIsOnTheTree(true);
+    EXPECT_TRUE(surfaceNode.isOnTheTree_);
+}
+
+/**
+ * @tc.name: SetCrossNodeOffScreenStatusTest001
+ * @tc.desc: Test SetCrossNodeOffScreenStatus when params is nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, SetCrossNodeOffScreenStatusTest001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    RSSurfaceRenderNode surfaceNode(config);
+    surfaceNode.stagingRenderParams_ = nullptr;
+    surfaceNode.SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType::DISABLED);
+    EXPECT_EQ(surfaceNode.stagingRenderParams_, nullptr);
+}
+
+/**
+ * @tc.name: ClearCloneCrossNodeTest001
+ * @tc.desc: Test ClearCloneCrossNode
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, ClearCloneCrossNodeTest001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    RSSurfaceRenderNode surfaceNode(config);
+    auto surfaceNode1 = std::make_shared<RSSurfaceRenderNode>(config);
+    auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode.cloneCrossNodeVec_.push_back(surfaceNode1);
+    surfaceNode.cloneCrossNodeVec_.push_back(surfaceNode2);
+    EXPECT_EQ(surfaceNode.cloneCrossNodeVec_.size(), 2);
+
+    auto surfaceNode3 = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode2->parent_ = surfaceNode3;
+
+    surfaceNode.ClearCloneCrossNode();
+    EXPECT_EQ(surfaceNode.cloneCrossNodeVec_.size(), 0);
+}
+
+/**
+ * @tc.name: SetCrossNodeVisitedStatusTest001
+ * @tc.desc: Test SetCrossNodeVisitedStatus
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, SetCrossNodeVisitedStatusTest001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    RSSurfaceRenderNode surfaceNode(config);
+    auto cloneSurfaceNode1 = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode.cloneCrossNodeVec_.push_back(cloneSurfaceNode1);
+    surfaceNode.cloneCrossNodeVec_.push_back(nullptr);
+    EXPECT_EQ(surfaceNode.cloneCrossNodeVec_.size(), 2);
+
+    // set true and false
+    surfaceNode.isCrossNode_ = true;
+    surfaceNode.isCloneCrossNode_ = false;
+    surfaceNode.SetCrossNodeVisitedStatus(true);
+
+    // set false and true
+    surfaceNode.isCrossNode_ = false;
+    surfaceNode.isCloneCrossNode_ = true;
+
+    // when sourceCrossNode_ is nullptr
+    surfaceNode.sourceCrossNode_.reset();
+    surfaceNode.SetCrossNodeVisitedStatus(true);
+
+    // when sourceCrossNode_ is not nullptr
+    auto sourceSurfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode.sourceCrossNode_ = sourceSurfaceNode;
+    surfaceNode.SetCrossNodeVisitedStatus(true);
+
+    // set false and false
+    surfaceNode.isCrossNode_ = false;
+    surfaceNode.isCloneCrossNode_ = false;
+    surfaceNode.SetCrossNodeVisitedStatus(true);
+
+    // clear
+    surfaceNode.cloneCrossNodeVec_.clear();
+    EXPECT_EQ(surfaceNode.cloneCrossNodeVec_.size(), 0);
 }
 
 /**

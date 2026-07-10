@@ -510,10 +510,6 @@ ohos_unittest("RSPowerOffRenderSkipTest") {
 ohos_unittest("RSDynamicLayerSkipControllerTest") {
   module_out_path = module_output_path
   sources = [ "dynamic_layer_skip/rs_dynamic_layer_skip_controller_test.cpp" ]
-  if (defined(graphic_2d_dynamic_layer_skip_configs.vendor_root)) {
-    sources += graphic_2d_dynamic_layer_skip_configs.librender_service_ext_dynamic_layer_skip_test
-    sources -= graphic_2d_dynamic_layer_skip_configs.librender_service_ext_dynamic_layer_skip_test_del
-  }
   cflags = [
     "-Wall",
     "-Werror",

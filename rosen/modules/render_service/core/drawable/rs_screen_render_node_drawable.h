@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_DRAWABLE_RS_SCREEN_RENDER_NODE_DRAWABLE_H
 
 #include <memory>
+#include <unordered_map>
 
 #include "common/rs_common_def.h"
 #include "common/rs_occlusion_region.h"
@@ -101,14 +102,22 @@ public:
     {
         return surface_;
     }
-    void SetVirtualSurface(std::shared_ptr<RSSurface>& virtualSurface, uint64_t pSurfaceUniqueId)
+    void SetVirtualSurface(const std::shared_ptr<RSSurface>& virtualSurface, uint64_t pSurfaceUniqueId)
     {
-        virtualSurface_ = virtualSurface;
-        virtualSurfaceUniqueId_ = pSurfaceUniqueId;
+        if (virtualSurface == nullptr) {
+            virtualSurfaces_.erase(pSurfaceUniqueId);
+            return;
+        }
+        virtualSurfaces_.insert_or_assign(pSurfaceUniqueId, virtualSurface);
     }
-    std::shared_ptr<RSSurface> GetVirtualSurface(uint64_t pSurfaceUniqueId)
+    std::shared_ptr<RSSurface> GetVirtualSurface(uint64_t pSurfaceUniqueId) const
     {
-        return virtualSurfaceUniqueId_ != pSurfaceUniqueId ? nullptr : virtualSurface_;
+        auto it = virtualSurfaces_.find(pSurfaceUniqueId);
+        return it != virtualSurfaces_.end() ? it->second : nullptr;
+    }
+    void ClearVirtualSurfaces()
+    {
+        virtualSurfaces_.clear();
     }
     bool SkipFrame(uint32_t refreshRate, const RSScreenProperty& screenProperty);
     bool IsRenderSkipIfScreenOff() const
@@ -179,7 +188,7 @@ private:
     static Registrar instance_;
     std::shared_ptr<RSSurfaceHandler> surfaceHandler_ = nullptr;
     mutable std::shared_ptr<RSPaintFilterCanvas> curCanvas_ = nullptr;
-    std::unique_ptr<RSRenderFrame> wiredMirrorRenderFrame_ = nullptr;
+    std::unique_ptr<RSRenderFrame> physicalMirrorRenderFrame_ = nullptr;
     std::shared_ptr<Drawing::Surface> offscreenSurface_ = nullptr; // temporarily holds offscreen surface
     std::shared_ptr<RSPaintFilterCanvas> canvasBackup_ = nullptr; // backup current canvas before offscreen render
     std::shared_ptr<Drawing::Image> cacheImgForCapture_ = nullptr;
@@ -188,7 +197,6 @@ private:
     bool isScreenNodeSkip_ = false;
     bool isScreenNodeSkipStatusChanged_ = false;
     bool useFixedOffscreenSurfaceSize_ = false;
-    uint64_t virtualSurfaceUniqueId_ = 0;
     // dirty manager
     std::shared_ptr<RSDirtyRegionManager> syncDirtyManager_ = nullptr;
     std::vector<RectI> dirtyRects_;
@@ -197,7 +205,7 @@ private:
     static constexpr uint32_t BUFFER_SIZE = 4;
     bool surfaceCreated_ = false;
     std::shared_ptr<RSSurface> surface_ = nullptr;
-    std::shared_ptr<RSSurface> virtualSurface_ = nullptr;
+    std::unordered_map<uint64_t, std::shared_ptr<RSSurface>> virtualSurfaces_ = {};
     ScreenRotation firstBufferRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
 
     bool isMirrorSLRCopy_ = false;

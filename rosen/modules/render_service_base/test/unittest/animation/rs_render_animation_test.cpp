@@ -79,13 +79,18 @@ public:
     {
         return state_;
     }
-    bool Animate(int64_t time, int64_t& minLeftDelayTime, bool isCustom, bool isOnTree = true)
+    bool Animate(int64_t time, int64_t& minLeftDelayTime, bool isCustom) override
     {
-        return RSRenderAnimation::Animate(time, minLeftDelayTime, isCustom, isOnTree);
+        return RSRenderAnimation::Animate(time, minLeftDelayTime, isCustom);
     }
     void SetAsGroupAnimationChild()
     {
         isGroupAnimationChild_ = true;
+    }
+    float lastRebuildFraction_ = -1.0f;
+    void RebuildPropertyValue(float fraction) override
+    {
+        lastRebuildFraction_ = fraction;
     }
 
 protected:
@@ -984,7 +989,7 @@ HWTEST_F(RSRenderAnimationTest, AnimateWithGroupWaiting, TestSize.Level1)
 
     // Call Animate - should call AnimateOnGroupWaiting and return false
     int64_t minLeftDelayTime = 100;
-    bool result = renderAnimation->Animate(200, minLeftDelayTime, false, true);
+    bool result = renderAnimation->Animate(200, minLeftDelayTime, false);
 
     EXPECT_FALSE(result);
     EXPECT_TRUE(renderAnimation->IsGroupWaiting());
@@ -1140,7 +1145,101 @@ HWTEST_F(RSRenderAnimationTest, AnimateSetStartTime, TestSize.Level1)
     // Animation is running, not finished
     EXPECT_FALSE(result);
 
-    GTEST_LOG_(INFO) << "RSRenderAnimationTest Animate006 end";
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest AnimateSetStartTime end";
+}
+
+/**
+ * @tc.name: GetType001
+ * @tc.desc: Verify GetType returns UNKNOWN for base RSRenderAnimation
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationTest, GetType001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest GetType001 start";
+    auto renderAnimation = std::make_shared<RSRenderAnimationMock>();
+    EXPECT_EQ(renderAnimation->GetType(), RSRenderAnimationType::UNKNOWN);
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest GetType001 end";
+}
+
+/**
+ * @tc.name: GetCurrentFraction001
+ * @tc.desc: Verify GetCurrentFraction returns default 0.f
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationTest, GetCurrentFraction001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest GetCurrentFraction001 start";
+    auto renderAnimation = std::make_shared<RSRenderAnimationMock>();
+    EXPECT_FLOAT_EQ(renderAnimation->GetCurrentFraction(), 0.f);
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest GetCurrentFraction001 end";
+}
+
+/**
+ * @tc.name: GetCurrentIsReverseCycle001
+ * @tc.desc: Verify GetCurrentIsReverseCycle returns false by default
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationTest, GetCurrentIsReverseCycle001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest GetCurrentIsReverseCycle001 start";
+    auto renderAnimation = std::make_shared<RSRenderAnimationMock>();
+    EXPECT_FALSE(renderAnimation->GetCurrentIsReverseCycle());
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest GetCurrentIsReverseCycle001 end";
+}
+
+/**
+ * @tc.name: Rebuild001
+ * @tc.desc: Verify Rebuild with needInitialize_ true
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationTest, Rebuild001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest Rebuild001 start";
+    auto renderAnimation = std::make_shared<RSRenderAnimationMock>();
+    renderAnimation->Start();
+    constexpr float TEST_FRACTION = 0.5f;
+    constexpr int64_t TEST_TIME = 1000;
+    renderAnimation->Rebuild(TEST_FRACTION, TEST_TIME, false);
+    EXPECT_FLOAT_EQ(renderAnimation->GetCurrentFraction(), TEST_FRACTION);
+    EXPECT_FLOAT_EQ(renderAnimation->lastRebuildFraction_, TEST_FRACTION);
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest Rebuild001 end";
+}
+
+/**
+ * @tc.name: Rebuild002
+ * @tc.desc: Verify Rebuild with needInitialize_ false
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationTest, Rebuild002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest Rebuild002 start";
+    auto renderAnimation = std::make_shared<RSRenderAnimationMock>();
+    renderAnimation->Start();
+    int64_t minLeftDelayTime = 0;
+    renderAnimation->Animate(100, minLeftDelayTime, false);
+    constexpr float TEST_FRACTION = 0.3f;
+    constexpr int64_t TEST_TIME = 2000;
+    renderAnimation->Rebuild(TEST_FRACTION, TEST_TIME, true);
+    EXPECT_FLOAT_EQ(renderAnimation->GetCurrentFraction(), TEST_FRACTION);
+    EXPECT_FLOAT_EQ(renderAnimation->lastRebuildFraction_, TEST_FRACTION);
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest Rebuild002 end";
+}
+
+/**
+ * @tc.name: Rebuild003
+ * @tc.desc: Verify Rebuild with reverse cycle
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationTest, Rebuild003, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest Rebuild003 start";
+    auto renderAnimation = std::make_shared<RSRenderAnimationMock>();
+    renderAnimation->Start();
+    constexpr float TEST_FRACTION = 0.7f;
+    constexpr int64_t TEST_TIME = 3000;
+    renderAnimation->Rebuild(TEST_FRACTION, TEST_TIME, true);
+    EXPECT_FLOAT_EQ(renderAnimation->GetCurrentFraction(), TEST_FRACTION);
+    GTEST_LOG_(INFO) << "RSRenderAnimationTest Rebuild003 end";
 }
 
 } // namespace Rosen

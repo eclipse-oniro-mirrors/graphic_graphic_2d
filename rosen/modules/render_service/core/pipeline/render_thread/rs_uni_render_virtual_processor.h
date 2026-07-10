@@ -36,6 +36,14 @@ struct RoiRegions {
     RoiRegionInfo regions[ROI_REGIONS_MAX_CNT];
 };
 
+// Multi-surface frame configuration for virtual mirror/extend modes
+struct SurfaceFrameConfig {
+    sptr<Surface> surface;
+    std::unique_ptr<RSRenderFrame> frame;
+    std::shared_ptr<RSPaintFilterCanvas> canvas;
+    RectI region;  // x, y, width, height in virtual screen coordinates
+};
+
 class RSUniRenderVirtualProcessor : public RSUniRenderProcessor {
 public:
     static inline constexpr RSProcessorType Type = RSProcessorType::UNIRENDER_VIRTUAL_PROCESSOR;
@@ -108,21 +116,34 @@ public:
     void CancelCurrentFrame();
     sptr<SyncFence> GetFrameAcquireFence();
     bool SetCropRectForMetadata(const HDI::Display::Graphic::Common::V1_0::BufferHandleMetaRegion& metaRegion);
+
+    // Multi-surface support
+    bool IsMultiSurfaceExtendMode() const { return needsOffscreenRender_; }
+    const std::vector<SurfaceFrameConfig>& GetSurfaceFrames() const { return surfaceFrames_; }
+    void BlitRegionsToSurfaces(const std::shared_ptr<Drawing::Image>& offscreenImage);
+
 private:
-    void MergeMirrorFenceToHardwareEnabledDrawables();
+    void MergeMirrorFenceToHardwareEnabledDrawables(const sptr<SyncFence>& acquireFence);
     void SetVirtualScreenSize(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable);
     bool CheckIfBufferSizeNeedChange(ScreenRotation firstBufferRotation, ScreenRotation curBufferRotation);
     void OriginScreenRotation(ScreenRotation screenRotation, float width, float height);
     bool EnableSlrScale();
     GSError SetColorSpaceForMetadata(GraphicColorGamut colorSpace);
+    GSError SetMetadataForAllSurfaces(uint32_t key, const std::vector<uint8_t>& data);
+
+    // Multi-surface private methods
+    void RequestFramesForAllSurfaces(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable);
+    void CopyToSecondarySurfaces();
+    void FlushAllSurfaces();
+    void FlushGpu();
+    void FlushBuffer(std::vector<sptr<SyncFence>>& fences);
+    sptr<SyncFence> MergeAcquireFences(const std::vector<sptr<SyncFence>>& fences) const;
 
     static inline const std::map<GraphicColorGamut,
         HDI::Display::Graphic::Common::V1_0::CM_ColorSpaceType> COLORSPACE_TYPE {
             { GRAPHIC_COLOR_GAMUT_SRGB, HDI::Display::Graphic::Common::V1_0::CM_SRGB_LIMIT },
             { GRAPHIC_COLOR_GAMUT_DISPLAY_P3, HDI::Display::Graphic::Common::V1_0::CM_P3_LIMIT }
     };
-    sptr<Surface> producerSurface_;
-    std::unique_ptr<RSRenderFrame> renderFrame_;
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
     bool forceCPU_ = false;
     float originalVirtualScreenWidth_ = 0.f; // used for recording the original virtual screen width
@@ -149,6 +170,10 @@ private:
     std::shared_ptr<RSSLRScaleFunction> slrManager_ = nullptr;
     bool drawMirrorCopy_ = false;
     bool displaySkipInMirror_ = false;
+    
+    // Multi-surface support
+    std::vector<SurfaceFrameConfig> surfaceFrames_;
+    bool needsOffscreenRender_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

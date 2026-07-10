@@ -38,6 +38,11 @@ bool RSRenderServiceClient::GetUniRenderEnabled()
     return {};
 }
 
+bool RSRenderServiceClient::GetBackgroundRebuildEnabled()
+{
+    return {};
+}
+
 MemoryGraphic RSRenderServiceClient::GetMemoryGraphic(int pid)
 {
     return {};
@@ -50,6 +55,11 @@ std::vector<MemoryGraphic> RSRenderServiceClient::GetMemoryGraphics()
 
 bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
     uint32_t rowCount, uint32_t colCount)
+{
+    return false;
+}
+
+bool RSRenderServiceClient::SetUifirstScale(float scaleFactor)
 {
     return false;
 }
@@ -318,6 +328,17 @@ void RSRenderServiceClient::SetScreenBacklight(const RsScreenBrightnessData& bri
 {
 }
 
+int32_t RSRenderServiceClient::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    return {};
+}
+
+int32_t RSRenderServiceClient::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
+{
+    return {};
+}
+
 PanelPowerStatus RSRenderServiceClient::GetPanelPowerStatus(ScreenId id)
 {
     return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
@@ -578,6 +599,10 @@ void RSRenderServiceClient::NotifyPackageEvent(uint32_t listSize, const std::vec
 {
 }
 
+void RSRenderServiceClient::NotifyWindowModeTypeEvent(uint8_t windowModeType)
+{
+}
+
 void RSRenderServiceClient::NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
     const std::vector<std::pair<std::string, std::string>>& newConfig)
 {
@@ -623,6 +648,11 @@ void RSRenderServiceClient::SetCacheEnabledForRotation(bool isEnabled)
 
 void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback)
 {
+}
+
+int32_t RSRenderServiceClient::SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo)
+{
+    return {};
 }
 
 std::vector<ActiveDirtyRegionInfo> RSRenderServiceClient::GetActiveDirtyRegionInfo()
@@ -729,6 +759,12 @@ bool RSRenderServiceClient::SetBehindWindowFilterEnabled(bool enabled)
 }
 
 bool RSRenderServiceClient::GetBehindWindowFilterEnabled(bool& enabled)
+{
+    return false;
+}
+
+bool RSRenderServiceClient::SetApsConfigParams(ApsEventType event,
+    const std::unordered_map<std::string, std::string>& params)
 {
     return false;
 }

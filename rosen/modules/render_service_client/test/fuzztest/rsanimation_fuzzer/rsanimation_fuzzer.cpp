@@ -34,13 +34,33 @@
 #include "rs_steps_interpolator.h"
 #include "rs_transition.h"
 #include "rs_transition_effect.h"
+
+#include "command/rs_message_processor.h"
 #include "modifier/rs_modifier_manager_map.h"
+#include "transaction/rs_interfaces.h"
+#include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_canvas_node.h"
 #include "ui/rs_ui_context_manager.h"
 #include "ui/rs_ui_director.h"
 
 namespace OHOS {
     using namespace Rosen;
+
+class RSRenderAnimationFuzzMock : public RSRenderAnimation {
+public:
+        RSRenderAnimationFuzzMock() : RSRenderAnimation() {}
+        explicit RSRenderAnimationFuzzMock(AnimationId id) : RSRenderAnimation(id) {}
+        ~RSRenderAnimationFuzzMock() override = default;
+        void RebuildPropertyValue(float fraction) override {}
+    };
+
+    class RSAnimationFuzzMock : public RSAnimation {
+    public:
+        explicit RSAnimationFuzzMock(const std::shared_ptr<RSUIContext>& uiContext)
+            : RSAnimation(uiContext) {}
+        void RebuildInRender() override {}
+    };
+
     namespace {
         const uint8_t* g_data = nullptr;
         size_t g_size = 0;
@@ -86,11 +106,11 @@ namespace OHOS {
         return str;
     }
 
-    void RsDummyAnimationFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
+    void RSDummyAnimationFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
     {
         auto dummyAnimation = std::make_shared<RSDummyAnimation>(rsUIContext);
     }
-    void RsAnimationTimingCurveFuzzTest()
+    void RSAnimationTimingCurveFuzzTest()
     {
         float ctrlX1 = GetData<float>();
         float ctrlY1 = GetData<float>();
@@ -114,13 +134,14 @@ namespace OHOS {
         auto copyCurve = std::make_shared<RSAnimationTimingCurve>(stepCurve);
     }
 
-    void RsCurveAnimationFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
+    void RSCurveAnimationFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
     {
         float first = GetData<float>();
         float second = GetData<float>();
         float third = GetData<float>();
         float fraction = GetData<float>();
         bool isCustom = GetData<bool>();
+        bool isReverseCycle = GetData<bool>();
         auto firstProperty = std::make_shared<RSAnimatableProperty<float>>(first);
         auto secondProperty = std::make_shared<RSAnimatableProperty<float>>(second);
         auto thirdProperty = std::make_shared<RSAnimatableProperty<float>>(third);
@@ -135,6 +156,9 @@ namespace OHOS {
         secondCurve->GetTimingCurve();
         secondCurve->SetFinishCallback([]() {});
         secondCurve->SetFraction(fraction);
+        secondCurve->SetRebuildParam({fraction, isReverseCycle});
+        secondCurve->GetRebuildParam();
+        secondCurve->RebuildInRender();
         secondCurve->Start(nullptr);
         secondCurve->IsStarted();
         secondCurve->IsRunning();
@@ -146,13 +170,14 @@ namespace OHOS {
         secondCurve->IsFinished();
     }
 
-    void RsKeyframeAnimationFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
+    void RSKeyframeAnimationFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
     {
         float first = GetData<float>();
         float second = GetData<float>();
         float third = GetData<float>();
         float fraction = GetData<float>();
         bool isCustom = GetData<bool>();
+        bool isReverseCycle = GetData<bool>();
         auto firstProperty = std::make_shared<RSAnimatableProperty<float>>(first);
         auto secondProperty = std::make_shared<RSAnimatableProperty<float>>(second);
         auto thirdProperty = std::make_shared<RSAnimatableProperty<float>>(third);
@@ -165,6 +190,9 @@ namespace OHOS {
         keyframe->SetIsCustom(isCustom);
         keyframe->SetFinishCallback([]() {});
         keyframe->SetFraction(fraction);
+        keyframe->SetRebuildParam({fraction, isReverseCycle});
+        keyframe->GetRebuildParam();
+        keyframe->RebuildInRender();
         keyframe->Start(nullptr);
         keyframe->IsStarted();
         keyframe->IsRunning();
@@ -176,7 +204,7 @@ namespace OHOS {
         keyframe->IsFinished();
     }
 
-    void RsPathAnimationFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
+    void RSPathAnimationFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
     {
         float first = GetData<float>();
         float second = GetData<float>();
@@ -186,6 +214,7 @@ namespace OHOS {
         float beginFraction = GetData<float>();
         float endFraction = GetData<float>();
         bool pathNeedOrigin = GetData<bool>();
+        bool isReverseCycle = GetData<bool>();
         auto path = GetStringFromData(STR_LEN);
         auto rotationMode = RotationMode::ROTATE_NONE;
         auto firstProperty = std::make_shared<RSAnimatableProperty<float>>(first);
@@ -210,6 +239,9 @@ namespace OHOS {
         secondPathAnimation->GetTimingCurve();
         secondPathAnimation->SetFinishCallback([]() {});
         secondPathAnimation->SetFraction(fraction);
+        secondPathAnimation->SetRebuildParam({fraction, isReverseCycle});
+        secondPathAnimation->GetRebuildParam();
+        secondPathAnimation->RebuildInRender();
         secondPathAnimation->Start(nullptr);
         secondPathAnimation->IsStarted();
         secondPathAnimation->IsRunning();
@@ -221,7 +253,7 @@ namespace OHOS {
         secondPathAnimation->IsFinished();
     }
 
-    void RsMotionPathOptionFuzzTest()
+    void RSMotionPathOptionFuzzTest()
     {
         auto path = GetStringFromData(STR_LEN);
         float beginFraction = GetData<float>();
@@ -241,13 +273,14 @@ namespace OHOS {
         motionPathOption->GetPathNeedAddOrigin();
     }
 
-    void RsSpringAnimationFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
+    void RSSpringAnimationFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
     {
         float first = GetData<float>();
         float second = GetData<float>();
         float third = GetData<float>();
         float fraction = GetData<float>();
         bool isCustom = GetData<bool>();
+        bool isReverseCycle = GetData<bool>();
         auto firstProperty = std::make_shared<RSAnimatableProperty<float>>(first);
         auto secondProperty = std::make_shared<RSAnimatableProperty<float>>(second);
         auto thirdProperty = std::make_shared<RSAnimatableProperty<float>>(third);
@@ -262,6 +295,9 @@ namespace OHOS {
         secondSpringAnimation->GetTimingCurve();
         secondSpringAnimation->SetFinishCallback([]() {});
         secondSpringAnimation->SetFraction(fraction);
+        secondSpringAnimation->SetRebuildParam({fraction, isReverseCycle});
+        secondSpringAnimation->GetRebuildParam();
+        secondSpringAnimation->RebuildInRender();
         secondSpringAnimation->Start(nullptr);
         secondSpringAnimation->IsStarted();
         secondSpringAnimation->IsRunning();
@@ -273,7 +309,7 @@ namespace OHOS {
         secondSpringAnimation->IsFinished();
     }
 
-    void RsTransitionFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
+    void RSTransitionFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
     {
         float first = GetData<float>();
         float second = GetData<float>();
@@ -301,7 +337,7 @@ namespace OHOS {
         secondTransition->IsFinished();
     }
 
-    void RsTransitionEffectFuzzTest()
+    void RSTransitionEffectFuzzTest()
     {
         float x1 = GetData<float>();
         float x2 = GetData<float>();
@@ -319,7 +355,7 @@ namespace OHOS {
         animation->Rotate(axisAngle);
     }
 
-    void RsImplicitAnimatorFuzzTest()
+    void RSImplicitAnimatorFuzzTest(std::shared_ptr<RSCanvasNode> canvasNode)
     {
         float fraction = GetData<float>();
         auto isTransitionIn = GetData<bool>();
@@ -328,7 +364,6 @@ namespace OHOS {
         float third = GetData<float>();
         float multiplier = GetData<float>();
         auto path = GetStringFromData(STR_LEN);
-        auto canvasNode = RSCanvasNode::Create();
         auto firstProperty = std::make_shared<RSAnimatableProperty<float>>(first);
         auto secondProperty = std::make_shared<RSAnimatableProperty<float>>(second);
         auto thirdProperty = std::make_shared<RSAnimatableProperty<float>>(third);
@@ -350,7 +385,7 @@ namespace OHOS {
         implicitAnimator->ApplyAnimationSpeedMultiplier(multiplier);
     }
 
-    void RsImplicitAnimatorParamFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
+    void RSImplicitAnimatorParamFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
     {
         float fraction = GetData<float>();
         float first = GetData<float>();
@@ -395,14 +430,14 @@ namespace OHOS {
         repeatCallback->Execute();
     }
 
-    void RSInteractiveImplictAnimatorFuzzTest()
+    void RSInteractiveImplictAnimatorFuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
     {
         auto position = GetData<RSInteractiveAnimationPosition>();
         auto fraction = GetData<float>();
         const RSAnimationTimingProtocol timingProtocol = {};
 
         auto interactiveAnimator = RSInteractiveImplictAnimator::Create(
-            nullptr, timingProtocol, RSAnimationTimingCurve::DEFAULT);
+            rsUIContext, timingProtocol, RSAnimationTimingCurve::DEFAULT);
         interactiveAnimator->AddImplictAnimation([]() {});
         interactiveAnimator->AddAnimation([]() {});
         interactiveAnimator->StartAnimation();
@@ -422,6 +457,8 @@ namespace OHOS {
         float second = GetData<float>();
         float third = GetData<float>();
         float zeroThreshold = GetData<float>();
+        float fraction = GetData<float>();
+        bool isReverseCycle = GetData<bool>();
         auto firstProperty = std::make_shared<RSAnimatableProperty<float>>(first);
         auto secondProperty = std::make_shared<RSAnimatableProperty<float>>(second);
         auto thirdProperty = std::make_shared<RSAnimatableProperty<float>>(third);
@@ -434,16 +471,20 @@ namespace OHOS {
             rsUIContext, firstProperty, secondProperty, thirdProperty);
         secondAnimation->SetZeroThreshold(zeroThreshold);
         secondAnimation->IsSupportInteractiveAnimator();
+        secondAnimation->SetRebuildParam({fraction, isReverseCycle});
+        secondAnimation->GetRebuildParam();
+        secondAnimation->RebuildInRender();
     }
 
 
-    void RSAnimation1FuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
+    void RSAnimation1FuzzTest(std::shared_ptr<RSUIDirector> rsUIDirector, std::shared_ptr<RSCanvasNode> canvasNode)
     {
         // get data
         auto isFirstStart = GetData<bool>();
         auto animationId = GetData<AnimationId>();
 
-        auto animation = std::make_shared<RSAnimation>(rsUIContext);
+        auto rsUIContext = rsUIDirector->GetRSUIContext();
+        auto animation = std::make_shared<RSAnimationFuzzMock>(rsUIContext);
         std::function<void()> func = nullptr;
         animation->SetFinishCallback(func);
         auto interactiveCallback = std::make_shared<InteractiveAnimatorFinishCallback>([]() {});
@@ -466,7 +507,6 @@ namespace OHOS {
         animation->DumpAnimation();
 
         // have target
-        auto canvasNode = RSCanvasNode::Create();
         animation->Start(canvasNode);
         animation->StartInner(canvasNode);
         animation->SetFinishCallback([]() {});
@@ -474,22 +514,22 @@ namespace OHOS {
         animation->CallLogicallyFinishCallback();
 
         //have uianimation
-        auto renderAnimation = std::make_shared<RSRenderAnimation>(animationId);
+        auto renderAnimation = std::make_shared<RSRenderAnimationFuzzMock>(animationId);
         animation->UpdateParamToRenderAnimation(renderAnimation);
         animation->StartCustomAnimation(renderAnimation);
         animation->UpdateParamToRenderAnimation(renderAnimation);
-        auto rsUiDirector = RSUIDirector::Create(nullptr, nullptr);
-        rsUiDirector->SendMessages();
+        rsUIDirector->SendMessages();
     }
 
-    void RSAnimation2FuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
+    void RSAnimation2FuzzTest(std::shared_ptr<RSUIDirector> rsUIDirector, std::shared_ptr<RSCanvasNode> canvasNode)
     {
         // get data
         auto fraction = GetData<float>();
         auto pos = GetData<RSInteractiveAnimationPosition>();
 
         // do status error
-        auto animation1 = std::make_shared<RSAnimation>(rsUIContext);
+        auto rsUIContext = rsUIDirector->GetRSUIContext();
+        auto animation1 = std::make_shared<RSAnimationFuzzMock>(rsUIContext);
         animation1->Start(nullptr);
         animation1->StartInner(nullptr);
         animation1->Pause();
@@ -509,8 +549,7 @@ namespace OHOS {
         animation1->InteractiveSetFraction(fraction);
 
         // have target
-        auto animation2 = std::make_shared<RSAnimation>(rsUIContext);
-        auto canvasNode = RSCanvasNode::Create();
+        auto animation2 = std::make_shared<RSAnimationFuzzMock>(rsUIContext);
         animation2->Start(canvasNode);
         animation2->StartInner(canvasNode);
         animation2->Start(canvasNode);
@@ -529,15 +568,14 @@ namespace OHOS {
         animation2->Finish();
         animation2->OnFinish();
 
-        auto animation3 = std::make_shared<RSAnimation>(rsUIContext);
+        auto animation3 = std::make_shared<RSAnimationFuzzMock>(rsUIContext);
         animation3->Start(canvasNode);
         animation3->StartInner(canvasNode);
         animation3->InteractiveFinish(pos);
-        auto rsUiDirector = RSUIDirector::Create(nullptr, nullptr);
-        rsUiDirector->SendMessages();
+        rsUIDirector->SendMessages();
     }
 
-    void RSAnimation3FuzzTest(std::shared_ptr<RSUIContext> rsUIContext)
+    void RSAnimation3FuzzTest(std::shared_ptr<RSUIDirector> rsUIDirector, std::shared_ptr<RSCanvasNode> canvasNode)
     {
         // get data
         auto animationId = GetData<AnimationId>();
@@ -558,9 +596,9 @@ namespace OHOS {
         timingProtocol.SetAutoReverse(autoReverse);
 
         // have uianiamtion
-        auto animation1 = std::make_shared<RSAnimation>(rsUIContext);
-        auto canvasNode = RSCanvasNode::Create();
-        auto renderAnimation = std::make_shared<RSRenderAnimation>(animationId);
+        auto rsUIContext = rsUIDirector->GetRSUIContext();
+        auto animation1 = std::make_shared<RSAnimationFuzzMock>(rsUIContext);
+        auto renderAnimation = std::make_shared<RSRenderAnimationFuzzMock>(animationId);
         animation1->Start(canvasNode);
         animation1->StartInner(canvasNode);
         animation1->StartCustomAnimation(renderAnimation);
@@ -579,14 +617,13 @@ namespace OHOS {
         animation1->Finish();
         animation1->OnFinish();
 
-        auto animation2 = std::make_shared<RSAnimation>(rsUIContext);
+        auto animation2 = std::make_shared<RSAnimationFuzzMock>(rsUIContext);
         animation2->Start(canvasNode);
         animation2->StartInner(canvasNode);
         animation2->StartCustomAnimation(renderAnimation);
         animation2->InteractiveFinish(pos);
         animation2->InvertStagingValue(isGroupAnimator, timingProtocol);
-        auto rsUiDirector = RSUIDirector::Create(nullptr, nullptr);
-        rsUiDirector->SendMessages();
+        rsUIDirector->SendMessages();
     }
 
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
@@ -598,26 +635,40 @@ namespace OHOS {
         g_data = data;
         g_size = size;
         g_pos = 0;
-        OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-        auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRenderRemote);
+        static auto screenId = RSInterfaces::GetInstance().GetDefaultScreenId();
+        static sptr<IRemoteObject> connectToRender = RSInterfaces::GetInstance().GetConnectToRenderToken(screenId);
+        static auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRender);
+        static std::shared_ptr<RSUIDirector> rsUIDirector =
+            OHOS::Rosen::RSUIDirector::Create(connectToRender, rsUIContext);
+        static auto canvasNode = RSCanvasNode::Create();
         // get data
         RSModifierManagerMap::Instance()->GetModifierManager();
-        RsAnimationTimingCurveFuzzTest();
-        RsCurveAnimationFuzzTest(rsUIContext);
-        RsKeyframeAnimationFuzzTest(rsUIContext);
-        RsPathAnimationFuzzTest(rsUIContext);
-        RsMotionPathOptionFuzzTest();
-        RsSpringAnimationFuzzTest(rsUIContext);
-        RsTransitionFuzzTest(rsUIContext);
-        RsTransitionEffectFuzzTest();
-        RsImplicitAnimatorFuzzTest();
-        RsImplicitAnimatorParamFuzzTest(rsUIContext);
+        RSAnimationTimingCurveFuzzTest();
+        RSCurveAnimationFuzzTest(rsUIContext);
+        RSKeyframeAnimationFuzzTest(rsUIContext);
+        RSPathAnimationFuzzTest(rsUIContext);
+        RSMotionPathOptionFuzzTest();
+        RSSpringAnimationFuzzTest(rsUIContext);
+        RSTransitionFuzzTest(rsUIContext);
+        RSTransitionEffectFuzzTest();
+        RSImplicitAnimatorFuzzTest(canvasNode);
+        RSImplicitAnimatorParamFuzzTest(rsUIContext);
         AnimationCallbackFuzzTest();
-        RSInteractiveImplictAnimatorFuzzTest();
+        RSInteractiveImplictAnimatorFuzzTest(rsUIContext);
         RSInterpolatingSpringAnimationFuzzTest(rsUIContext);
-        RSAnimation1FuzzTest(rsUIContext);
-        RSAnimation2FuzzTest(rsUIContext);
-        RSAnimation3FuzzTest(rsUIContext);
+        RSAnimation1FuzzTest(rsUIDirector, canvasNode);
+        RSAnimation2FuzzTest(rsUIDirector, canvasNode);
+        RSAnimation3FuzzTest(rsUIDirector, canvasNode);
+
+        // Clear memory
+        canvasNode->animations_.clear();
+        canvasNode->animatingPropertyNum_.clear();
+        RSMessageProcessor::Instance().GetAllTransactions();
+        auto transactionProxy = RSTransactionProxy::GetInstance();
+        if (transactionProxy != nullptr) {
+            transactionProxy->implicitCommonTransactionData_ = std::make_unique<RSTransactionData>();
+            transactionProxy->implicitRemoteTransactionData_ = std::make_unique<RSTransactionData>();
+        }
         return true;
     }
 } // namespace OHOS

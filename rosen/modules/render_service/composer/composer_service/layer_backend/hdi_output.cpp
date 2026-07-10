@@ -166,18 +166,20 @@ RosenError HdiOutput::Init()
         return ROSEN_ERROR_NOT_INIT;
     }
 
-    if (device_ != nullptr) {
-        return ROSEN_ERROR_OK;
-    }
+    {
+        std::lock_guard<std::mutex> lock(backlightDeviceMutex_);
+        if (device_ != nullptr) {
+            return ROSEN_ERROR_OK;
+        }
+        device_ = HdiDevice::GetInstance();
+        CHECK_DEVICE_NULL(device_);
 
-    device_ = HdiDevice::GetInstance();
-    CHECK_DEVICE_NULL(device_);
-
-    bufferCacheCountMax_ = fbSurface_->GetBufferQueueSize();
-    int32_t ret = device_->SetScreenClientBufferCacheCount(screenId_, bufferCacheCountMax_);
-    if (ret != GRAPHIC_DISPLAY_SUCCESS) {
-        HLOGE("Set screen client buffer cache count failed, ret is %{public}d", ret);
-        return ROSEN_ERROR_INVALID_OPERATING;
+        bufferCacheCountMax_ = fbSurface_->GetBufferQueueSize();
+        int32_t ret = device_->SetScreenClientBufferCacheCount(screenId_, bufferCacheCountMax_);
+        if (ret != GRAPHIC_DISPLAY_SUCCESS) {
+            HLOGE("Set screen client buffer cache count failed, ret is %{public}d", ret);
+            return ROSEN_ERROR_INVALID_OPERATING;
+        }
     }
     ClearBufferCache();
     bufferCache_.reserve(bufferCacheCountMax_);
@@ -193,6 +195,7 @@ RosenError HdiOutput::SetHdiOutputDevice(HdiDevice* device)
         return ROSEN_ERROR_INVALID_ARGUMENTS;
     }
 
+    std::lock_guard<std::mutex> lock(backlightDeviceMutex_);
     if (device_ != nullptr) {
         HLOGW("HdiDevice has been changed");
         return ROSEN_ERROR_OK;
@@ -225,7 +228,7 @@ void HdiOutput::DestroyLayerBySurfaceIdLocked(uint64_t surfaceId)
     if (hdiLayer != nullptr) {
         layerIdMap_.erase(hdiLayer->GetLayerId());
         layersTobeRelease_.remove(hdiLayer);
-        AppendDeferredDestroyLayerLocked(surfaceId, hdiLayer);
+        UnregisterTunnelHdiLayer(screenId_, hdiLayer);
     }
 }
 
@@ -330,9 +333,6 @@ void HdiOutput::UnregisterGlobalTunnelLayersLocked() const
     for (const auto& [_, hdiLayer] : surfaceIdMap_) {
         UnregisterTunnelHdiLayer(screenId_, hdiLayer);
     }
-    for (const auto& layerInfo : deferredDestroyLayers_) {
-        UnregisterTunnelHdiLayer(screenId_, layerInfo.hdiLayer);
-    }
 }
 
 void HdiOutput::MarkTunnelSurfaceInvalid(uint64_t surfaceId)
@@ -363,10 +363,6 @@ uint64_t HdiOutput::GetNodeIdBySurfaceId(uint64_t surfaceId) const
     auto iter = surfaceIdMap_.find(surfaceId);
     std::shared_ptr<HdiLayer> hdiLayer = iter == surfaceIdMap_.end() ? nullptr : iter->second;
     if (hdiLayer == nullptr) {
-        auto deferredIter = latestDeferredDestroyLayers_.find(surfaceId);
-        hdiLayer = deferredIter == latestDeferredDestroyLayers_.end() ? nullptr : deferredIter->second;
-    }
-    if (hdiLayer == nullptr) {
         return 0;
     }
     auto rsLayer = hdiLayer->GetRSLayer();
@@ -385,10 +381,6 @@ uint64_t HdiOutput::GetTunnelLayerGenerationBySurfaceId(uint64_t surfaceId) cons
     std::unique_lock<std::mutex> lock(mutex_);
     auto iter = surfaceIdMap_.find(surfaceId);
     std::shared_ptr<HdiLayer> hdiLayer = iter == surfaceIdMap_.end() ? nullptr : iter->second;
-    if (hdiLayer == nullptr) {
-        auto deferredIter = latestDeferredDestroyLayers_.find(surfaceId);
-        hdiLayer = deferredIter == latestDeferredDestroyLayers_.end() ? nullptr : deferredIter->second;
-    }
     if (hdiLayer == nullptr) {
         return 0;
     }
@@ -426,9 +418,6 @@ int32_t HdiOutput::CommitTunnelLayerBySurfaceId(uint64_t surfaceId, uint64_t tun
         auto iter = surfaceIdMap_.find(surfaceId);
         if (iter != surfaceIdMap_.end()) {
             hdiLayer = iter->second;
-        } else {
-            auto deferredIter = latestDeferredDestroyLayers_.find(surfaceId);
-            hdiLayer = deferredIter == latestDeferredDestroyLayers_.end() ? nullptr : deferredIter->second;
         }
         if (hdiLayer == nullptr) {
             HLOGE("%{public}s can not find hdiLayer, surfaceId:%{public}" PRIu64, __func__, surfaceId);
@@ -488,7 +477,7 @@ void HdiOutput::DeletePrevLayersLocked()
     while (surfaceIter != surfaceIdMap_.end()) {
         const std::shared_ptr<HdiLayer>& hdiLayer = surfaceIter->second;
         if (!hdiLayer->GetLayerStatus()) {
-            AppendDeferredDestroyLayerLocked(surfaceIter->first, hdiLayer);
+            UnregisterTunnelHdiLayer(screenId_, hdiLayer);
             ClearTunnelDeclinedLocked(surfaceIter->first);
             surfaceIdMap_.erase(surfaceIter++);
         } else {
@@ -540,26 +529,6 @@ void HdiOutput::ResetLayerStatusLocked()
             rsLayer->SetIsNeedComposition(false);
         }
     }
-}
-
-void HdiOutput::AppendDeferredDestroyLayerLocked(uint64_t surfaceId, const std::shared_ptr<HdiLayer>& hdiLayer)
-{
-    if (!IsTunnelHdiLayer(hdiLayer)) {
-        return;
-    }
-    DeferredDestroyLayerInfo layerInfo;
-    layerInfo.surfaceId = surfaceId;
-    layerInfo.hdiLayer = hdiLayer;
-    deferredDestroyLayers_.push_back(layerInfo);
-    latestDeferredDestroyLayers_[surfaceId] = hdiLayer;
-}
-
-std::list<DeferredDestroyLayerInfo> HdiOutput::CollectDeferredDestroyLayersLocked()
-{
-    std::list<DeferredDestroyLayerInfo> deferredDestroyLayers;
-    deferredDestroyLayers.swap(deferredDestroyLayers_);
-    latestDeferredDestroyLayers_.clear();
-    return deferredDestroyLayers;
 }
 
 bool HdiOutput::CheckSupportArsrPreMetadata()
@@ -986,6 +955,7 @@ void HdiOutput::UpdateThirdFrameAheadPresentFence(sptr<SyncFence>& fbFence)
         historicalPresentfences_[presentFenceIndex_] = fbFence;
         presentFenceIndex_ = (presentFenceIndex_ + 1) % NUMBER_OF_HISTORICAL_FRAMES;
     } else {
+        RS_TRACE_NAME("historicalPresentfences_ push_back");
         historicalPresentfences_.push_back(fbFence);
     }
 }
@@ -1048,20 +1018,15 @@ int32_t HdiOutput::UpdateInfosAfterCommit(sptr<SyncFence> fbFence)
 void HdiOutput::FinalizePostCommit(bool commitSucceeded)
 {
     std::vector<LayerCreatedInfo> createdInfos;
-    std::list<DeferredDestroyLayerInfo> destroyLayers;
     {
         std::unique_lock<std::mutex> lock(mutex_);
         if (commitSucceeded) {
             ClearRecoveredInvalidTunnelSurfaceIdsLocked();
             createdInfos = CollectPendingLayerCreatedInfosLocked();
         }
-        destroyLayers = CollectDeferredDestroyLayersLocked();
     }
     for (const auto& info : createdInfos) {
         OnLayerCreated(info.nodeId, true, info.tunnelLayerGeneration);
-    }
-    for (const auto& layerInfo : destroyLayers) {
-        UnregisterTunnelHdiLayer(screenId_, layerInfo.hdiLayer);
     }
 }
 
@@ -1074,12 +1039,7 @@ void HdiOutput::ClearRecoveredInvalidTunnelSurfaceIdsLocked()
             ++iter;
             continue;
         }
-        auto rsLayer = layerIter->second->GetRSLayer();
-        if (rsLayer != nullptr && !IsTunnelLayerRequestedLocked(rsLayer)) {
-            iter = invalidTunnelSurfaceIds_.erase(iter);
-            continue;
-        }
-        ++iter;
+        iter = invalidTunnelSurfaceIds_.erase(iter);
     }
 }
 
@@ -1094,6 +1054,9 @@ std::vector<LayerCreatedInfo> HdiOutput::CollectPendingLayerCreatedInfosLocked()
         }
         auto rsLayer = hdiLayer->GetRSLayer();
         if (rsLayer == nullptr || !IsTunnelLayerRequestedLocked(rsLayer)) {
+            continue;
+        }
+        if (rsLayer->GetHdiCompositionType() != GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE) {
             continue;
         }
         invalidTunnelSurfaceIds_.erase(rsLayer->GetSurfaceUniqueId());
@@ -1664,8 +1627,14 @@ void HdiOutput::Repaint()
 
 void HdiOutput::SetScreenBacklight(uint32_t level)
 {
-    if (device_ != nullptr) {
-        device_->SetScreenBacklight(screenId_, level);
+    std::lock_guard<std::mutex> lock(backlightDeviceMutex_);
+    if (device_ == nullptr) {
+        HLOGW("%{public}s: device_ is nullptr, screenId:%{public}u", __func__, screenId_);
+        return;
+    }
+    int32_t ret = device_->SetScreenBacklight(screenId_, level);
+    if (ret != GRAPHIC_DISPLAY_SUCCESS) {
+        HLOGW("%{public}s failed, screenId:%{public}u, ret:%{public}d", __func__, screenId_, ret);
     }
 }
 

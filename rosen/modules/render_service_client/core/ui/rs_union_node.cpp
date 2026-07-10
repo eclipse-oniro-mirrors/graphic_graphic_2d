@@ -17,7 +17,7 @@
 
 #include "command/rs_union_node_command.h"
 #include "command/rs_node_command.h"
-#include "modifier_ng/geometry/rs_bounds_modifier.h"
+#include "modifier_ng/appearance/rs_use_union_modifier.h"
 #include "platform/common/rs_log.h"
 #include "pipeline/rs_node_map.h"
 #include "transaction/rs_transaction_proxy.h"
@@ -28,7 +28,6 @@ namespace Rosen {
 RSUnionNode::SharedPtr RSUnionNode::Create(
     bool isRenderServiceNode, bool isTextureExportNode, std::shared_ptr<RSUIContext> rsUIContext)
 {
-#ifndef ROSEN_ARKUI_X
     SharedPtr node(new RSUnionNode(isRenderServiceNode, isTextureExportNode, rsUIContext));
     if (rsUIContext != nullptr) {
         rsUIContext->GetMutableNodeMap().RegisterNode(node);
@@ -48,19 +47,22 @@ RSUnionNode::SharedPtr RSUnionNode::Create(
     transaction->AddCommand(command, node->IsRenderServiceNode());
     node->SetUIContextToken();
     return node;
-#else
-    return nullptr;
-#endif
+}
+
+void RSUnionNode::CreateRenderNode()
+{
+    std::unique_ptr<RSCommand> command = std::make_unique<RSUnionNodeCreate>(GetId(), isTextureExportNode_);
+    AddCommand(command, IsRenderServiceNode());
 }
 
 void RSUnionNode::SetUnionSpacing(float spacing)
 {
-    SetPropertyNG<ModifierNG::RSBoundsModifier, &ModifierNG::RSBoundsModifier::SetUnionSpacing>(spacing);
+    SetPropertyNG<ModifierNG::RSUseUnionModifier, &ModifierNG::RSUseUnionModifier::SetUnionSpacing>(spacing);
 }
 
 void RSUnionNode::SetUnionMode(int uniModeUC)
 {
-    SetPropertyNG<ModifierNG::RSBoundsModifier, &ModifierNG::RSBoundsModifier::SetUnionMode>(uniModeUC);
+    SetPropertyNG<ModifierNG::RSUseUnionModifier, &ModifierNG::RSUseUnionModifier::SetSDFUnionMode>(uniModeUC);
 }
 
 void RSUnionNode::RegisterNodeMap()

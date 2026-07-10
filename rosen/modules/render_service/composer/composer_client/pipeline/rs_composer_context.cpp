@@ -69,6 +69,21 @@ std::shared_ptr<RSLayer> RSComposerContext::GetRSLayer(RSLayerId rsLayerId) cons
     return nullptr;
 }
 
+std::shared_ptr<RSLayer> RSComposerContext::GetUniRsLayer() const
+{
+    std::unique_lock<std::mutex> lock(rsLayerMutex_);
+    for (const auto& [layerId, layerWpt] : rsLayers_) {
+        auto layer = layerWpt.lock();
+        if (layer == nullptr) {
+            continue;
+        }
+        if (layer->GetUniRenderFlag()) {
+            return layer;
+        }
+    }
+    return nullptr;
+}
+
 void RSComposerContext::DumpLayersInfo(std::string& dumpString)
 {
     std::unique_lock<std::mutex> lock(rsLayerMutex_);
@@ -190,6 +205,16 @@ void RSComposerContext::CleanLayerBufferBySurfaceId(uint64_t surfaceId)
         return;
     }
     rsComposerConnection_->CleanLayerBufferBySurfaceId(surfaceId);
+}
+
+void RSComposerContext::MarkTunnelSurfaceInvalid(uint64_t surfaceId)
+{
+    std::unique_lock<std::recursive_mutex> lock(rsLayerTransMutex_);
+    if (rsComposerConnection_ == nullptr) {
+        RS_LOGE("%{public}s rsComposerConnection_ is nullptr", __func__);
+        return;
+    }
+    rsComposerConnection_->MarkTunnelSurfaceInvalid(surfaceId);
 }
 
 int32_t RSComposerContext::CommitTunnelLayerBySurfaceId(uint64_t surfaceId, uint64_t tunnelLayerId,

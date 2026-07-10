@@ -24,6 +24,7 @@
 
 #include "utils/matrix.h"
 #include "utils/rect.h"
+#include "ipc_callbacks/buffer_available_callback.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -72,7 +73,7 @@ enum RSSurfaceNodeCommandType : uint16_t {
     SURFACE_NODE_SET_HARDWARE_ENABLE_HINT = 37,
     SURFACE_NODE_ATTACH_TO_WINDOW_CONTAINER = 38,
     SURFACE_NODE_DETACH_FROM_WINDOW_CONTAINER = 39,
-    SURFACE_NODE_SET_SOURCE_VIRTUAL_DISPLAY_ID = 40,
+    SURFACE_NODE_SET_SOURCE_VIRTUAL_SCREEN_ID = 40,
     SURFACE_NODE_CREATE_SURFACE_EXT = 41,
     SURFACE_NODE_SET_FRAME_GRAVITY_NEW_VERSION_ENABLED = 42,
     SURFACE_NODE_SET_REGION_TO_BE_MAGNIFIED = 43,
@@ -83,6 +84,13 @@ enum RSSurfaceNodeCommandType : uint16_t {
     SURFACE_NODE_SET_HDR_TYPE = 48,
     SURFACE_NODE_SET_DARK_COLOR_MODE = 49,
     SURFACE_NODE_SET_SURFACE_CAPTURE_CALLBACK = 50,
+    SURFACE_NODE_UPDATE_COMPOSITE_LAYER_TO_RENDER = 51,
+    SURFACE_NODE_SET_STATIC_CACHED_TO_RENDER = 52,
+    SURFACE_NODE_REGISTER_BUFFER_AVAILAbLELISTENER = 53,
+    SURFACE_NODE_SET_HARDWARE_ENABLED = 54,
+    SURFACE_NODE_SET_HIDE_PRIVACY_CONTENT = 55,
+    SURFACE_NODE_RECREATE_NODE_AND_SURFACE = 56,
+    SURFACE_NODE_SET_DELEGATE_MODE = 57,
 };
 
 class RSB_EXPORT SurfaceNodeCommandHelper {
@@ -92,7 +100,8 @@ public:
     static void CreateWithConfig(
         RSContext& context, NodeId nodeId, std::string name, uint8_t type, enum SurfaceWindowType surfaceWindowType);
     static std::shared_ptr<RSSurfaceRenderNode> CreateWithConfigInRS(
-        const RSSurfaceRenderNodeConfig& config, RSContext& context, bool unobscured = false);
+        const RSSurfaceRenderNodeConfig& config, RSContext& context, bool unobscured = false,
+        std::shared_ptr<RSSurfaceHandler> surfaceHandler = nullptr);
     static void SetContextMatrix(RSContext& context, NodeId nodeId, const std::optional<Drawing::Matrix>& matrix);
     static void SetContextAlpha(RSContext& context, NodeId nodeId, float alpha);
     static void SetContextClipRegion(RSContext& context, NodeId nodeId, const std::optional<Drawing::Rect>& clipRect);
@@ -144,6 +153,18 @@ public:
     static void SetAppRotationCorrection(RSContext& context, NodeId nodeId, ScreenRotation appRotationCorrection);
     static void SetHDRType(RSContext& context, NodeId nodeId, uint32_t hdrType);
     static void SetDarkColorMode(RSContext& context, NodeId nodeId, bool isDarkColorMode);
+    static void UpdateCompositeLayerdToRender(RSContext& context, NodeId nodeId, bool isTop, uint32_t topLayerZOrder);
+    static void SetStaticCachedToRender(RSContext& context, NodeId nodeId, bool isStaticCached);
+    static void RegisterBufferAvailableListener(
+        RSContext &context, NodeId nodeId, sptr<RSIBufferAvailableCallback> callback, bool isFromRenderThread);
+    static void SetHardwareEnabled(RSContext &context, NodeId nodeId, bool isHardwareEnabled,
+        SelfDrawingNodeType isSelfDrawingNodeType, bool isDynamicHardwareEnable);
+    static void SetHidePrivacyContent(RSContext& context, NodeId nodeId, bool needHidePrivacyContent);
+#ifndef ROSEN_CROSS_PLATFORM
+    static void RecreateNodeAndSurface(RSContext& context, const RSSurfaceRenderNodeConfig& config,
+        SurfaceId surfaceId, bool unobscured);
+#endif
+    static void SetDelegateMode(RSContext& context, NodeId nodeId, bool isDelegateMode);
 };
 
 ADD_COMMAND(RSSurfaceNodeCreate,
@@ -276,7 +297,7 @@ ADD_COMMAND(RSSurfaceNodeDetachFromWindowContainer,
     ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_DETACH_FROM_WINDOW_CONTAINER,
         SurfaceNodeCommandHelper::DetachFromWindowContainer, NodeId, ScreenId))
 ADD_COMMAND(RSSurfaceNodeSetSourceVirtualScreenId,
-    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_SOURCE_VIRTUAL_DISPLAY_ID,
+    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_SOURCE_VIRTUAL_SCREEN_ID,
         SurfaceNodeCommandHelper::SetSourceVirtualScreenId, NodeId, ScreenId))
 ADD_COMMAND(RSSurfaceNodeSetFrameGravityNewVersionEnabled,
     ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_FRAME_GRAVITY_NEW_VERSION_ENABLED,
@@ -296,6 +317,29 @@ ADD_COMMAND(RSSurfaceNodeSetAppRotationCorrection,
 ADD_COMMAND(RSSurfaceNodeSetHDRType,
     ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_HDR_TYPE,
         SurfaceNodeCommandHelper::SetHDRType, NodeId, uint32_t))
+ADD_COMMAND(RSSurfaceNodeUpdateCompositeLayerdToRender,
+    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_UPDATE_COMPOSITE_LAYER_TO_RENDER,
+        SurfaceNodeCommandHelper::UpdateCompositeLayerdToRender, NodeId, bool, uint32_t))
+ADD_COMMAND(RSSurfaceNodeSetStaticCachedToRender,
+    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_STATIC_CACHED_TO_RENDER,
+        SurfaceNodeCommandHelper::SetStaticCachedToRender, NodeId, bool))
+ADD_COMMAND(RSurfaceNodeRegisterBufferAvailableListener,
+    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_REGISTER_BUFFER_AVAILAbLELISTENER,
+        SurfaceNodeCommandHelper::RegisterBufferAvailableListener, NodeId, sptr<RSIBufferAvailableCallback>, bool))
+ADD_COMMAND(RSSurfaceNodeSetHardwareEnable,
+    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_HARDWARE_ENABLED,
+        SurfaceNodeCommandHelper::SetHardwareEnabled, NodeId, bool, SelfDrawingNodeType, bool))
+ADD_COMMAND(RSSurfaceNodeSetHidePrivacyContent,
+    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_HIDE_PRIVACY_CONTENT,
+        SurfaceNodeCommandHelper::SetHidePrivacyContent, NodeId, bool))
+#ifndef ROSEN_CROSS_PLATFORM
+ADD_COMMAND(RSSurfaceNodeRecreateNodeAndSurface,
+    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_RECREATE_NODE_AND_SURFACE,
+        SurfaceNodeCommandHelper::RecreateNodeAndSurface, RSSurfaceRenderNodeConfig, SurfaceId, bool))
+#endif
+ADD_COMMAND(RSSurfaceNodeSetDelegateMode,
+    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_DELEGATE_MODE,
+        SurfaceNodeCommandHelper::SetDelegateMode, NodeId, bool))
 } // namespace Rosen
 } // namespace OHOS
 #endif // ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_SURFACE_NODE_COMMAND_H

@@ -38,6 +38,7 @@
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 #include "colorspace_converter_display.h"
 #include "render/rs_colorspace_convert.h"
+#include "render/rs_effect_luminance_manager.h"
 #endif
 
 using namespace testing;
@@ -405,6 +406,29 @@ HWTEST_F(RSHdrUtilTest, UpdateSurfaceNodeNitTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: HDRColorHeadroomMapping
+ * @tc.desc: Test HDRColorHeadroomMapping
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSHdrUtilTest, HDRColorHeadroomMapping, TestSize.Level1)
+{
+    Drawing::UIColor srcColor = Drawing::UIColor(0.5f, 0.5f, 0.5f, 1.0f);
+    Drawing::UIColor dstColor;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    RSEffectLuminanceManager::GetInstance().SetCurrentScreenId(0);
+    RSEffectLuminanceManager::GetInstance().SetHdrPipelineStatus(true);
+    bool ret = RSHdrUtil::HDRColorHeadroomMapping(srcColor, dstColor);
+    ASSERT_EQ(ret, true);
+    EXPECT_FLOAT_EQ(dstColor.GetRed(), 0.5f);
+    EXPECT_FLOAT_EQ(dstColor.GetGreen(), 0.5f);
+    EXPECT_FLOAT_EQ(dstColor.GetBlue(), 0.5f);
+#else
+    bool ret = RSHdrUtil::HDRColorHeadroomMapping(srcColor, dstColor);
+    ASSERT_EQ(ret, false);
+#endif
+}
+
+/**
  * @tc.name: UpdateSelfDrawingNodesNit
  * @tc.desc: Test UpdateSelfDrawingNodesNit
  * @tc.type: FUNC
@@ -481,8 +505,8 @@ HWTEST_F(RSHdrUtilTest, GetRGBA1010108EnabledTest, TestSize.Level1)
     bool result = isDDGR && rgba1010108 && debugSwitch;
     EXPECT_EQ(RSBaseHdrUtil::GetRGBA1010108Enabled(), result);
     system::SetParameter("persist.sys.graphic.rgba_1010108.enabled", "false");
-    EXPECT_EQ(RSBaseHdrUtil::GetRGBA1010108Enabled(), false);
     system::SetParameter("persist.sys.graphic.rgba_1010108.enabled", debugSwitch ? "true" : "false");
+    EXPECT_EQ(RSBaseHdrUtil::GetRGBA1010108Enabled(), result);
 }
 
 /**
@@ -1233,6 +1257,56 @@ HWTEST_F(RSHdrUtilTest, CheckPixelFormatForHdrEffect002, TestSize.Level2)
     surfaceNode->hdrColorNum_ = 1;
     RSHdrUtil::CheckPixelFormatForHdrEffect(*surfaceNode, screenNode);
     EXPECT_EQ(static_cast<int>(screenNode->GetDisplayHdrStatus()), static_cast<int>(HdrStatus::HDR_COLOR));
+}
+
+/**
+ * @tc.name: NeedBackToFP16Test001
+ * @tc.desc: Test NeedBackToFP16 covers all branches
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSHdrUtilTest, NeedBackToFP16Test001, TestSize.Level1)
+{
+    auto screenParams = std::make_shared<RSScreenRenderParams>(NODE_ID);
+    ASSERT_NE(screenParams, nullptr);
+    EXPECT_EQ(RSHdrUtil::NeedBackToFP16(NODE_ID, screenParams.get()), true);
+
+    std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
+    NodeId displayNodeId = 100;
+    RSDisplayNodeConfig config;
+    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(displayNodeId, config);
+    ASSERT_NE(displayNode, nullptr);
+    bool res = context->GetMutableNodeMap().RegisterRenderNode(displayNode);
+    ASSERT_EQ(res, true);
+
+    screenParams = std::make_shared<RSScreenRenderParams>(displayNodeId);
+    screenParams->SetNewColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    EXPECT_EQ(RSHdrUtil::NeedBackToFP16(displayNodeId, screenParams.get()), true);
+
+    screenParams->SetNewColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    screenParams->SetHasForceHwcHdrSurface(true);
+    EXPECT_EQ(RSHdrUtil::NeedBackToFP16(displayNodeId, screenParams.get()), true);
+
+    screenParams->SetHasForceHwcHdrSurface(false);
+    screenParams->SetExistHWCNode(true);
+    EXPECT_EQ(RSHdrUtil::NeedBackToFP16(displayNodeId, screenParams.get()), true);
+
+    screenParams->SetExistHWCNode(false);
+    displayNode->IncreaseBlendModeNode(1);
+    EXPECT_GT(displayNode->GetDstAlphaBlendModeNodeCount(), 0);
+    bool resultA = RSHdrUtil::NeedBackToFP16(displayNodeId, screenParams.get());
+    EXPECT_EQ(resultA, true);
+
+    NodeId displayNodeId2 = 200;
+    auto displayNode2 = std::make_shared<RSLogicalDisplayRenderNode>(displayNodeId2, config);
+    ASSERT_NE(displayNode2, nullptr);
+    context->GetMutableNodeMap().RegisterRenderNode(displayNode2);
+    EXPECT_EQ(displayNode2->GetDstAlphaBlendModeNodeCount(), 0);
+    auto params2 = std::make_shared<RSScreenRenderParams>(displayNodeId2);
+    params2->SetNewColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    params2->SetHasForceHwcHdrSurface(false);
+    params2->SetExistHWCNode(false);
+    bool resultB = RSHdrUtil::NeedBackToFP16(displayNodeId2, params2.get());
 }
 #endif
 } // namespace OHOS::Rosen

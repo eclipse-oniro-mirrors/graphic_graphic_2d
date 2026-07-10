@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <charconv>
+
 #include "rs_profiler.h"
 #include "rs_client_to_service_connection.h"
 
@@ -47,6 +49,7 @@
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
 #include "gfx/first_frame_notifier/rs_first_frame_notifier.h"
+#include "pipeline/rs_background_rebuild_param.h"
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 #include "feature/overlay_display/rs_overlay_display_manager.h"
 #endif
@@ -95,6 +98,9 @@
 #include "app_mgr_client.h"
 #include "surface_utils.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
+
+#include "rs_frame_rate_vote.h"
+#include "singleton.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -308,6 +314,12 @@ ErrCode RSClientToServiceConnection::GetUniRenderEnabled(bool& res)
     return ERR_OK;
 }
 
+ErrCode RSClientToServiceConnection::GetBackgroundRebuildEnabled(bool& res)
+{
+    res = RSBackgroundRebuildParam::Instance().IsBackgroundRebuildEnabled();
+    return ERR_OK;
+}
+
 void RSClientToServiceConnection::GetSurfaceRootNodeId(NodeId& windowNodeId)
 {
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
@@ -443,7 +455,8 @@ ErrCode RSClientToServiceConnection::SetWatermark(
     }
     auto callingPid = GetCallingPid();
     if (auto ipcPersistenceManager = renderProcessManagerAgent_->GetIpcPersistenceManager()) {
-        auto data = std::make_shared<SetWatermarkPersistenceData>(callingPid, name, watermark, success);
+        auto data =
+            std::make_shared<SetWatermarkPersistenceData>(callingPid, name, watermark, success, rowCount, colCount);
         ipcPersistenceManager->RegisterWithCallingPid(data);
     }
     for (auto conn : serviceToRenderConns) {
@@ -455,6 +468,26 @@ ErrCode RSClientToServiceConnection::SetWatermark(
             return ERR_INVALID_VALUE;
         }
         success &= successTmp;
+    }
+    return ERR_OK;
+}
+
+ErrCode RSClientToServiceConnection::SetUifirstScale(float scaleFactor)
+{
+    RS_LOGD("RSClientToServiceConnection::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
+    if (renderProcessManagerAgent_ == nullptr) {
+        RS_LOGE("%{public}s renderProcessManagerAgent_ is nullptr", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
+    if (serviceToRenderConns.size() == 0) {
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    for (auto conn : serviceToRenderConns) {
+        if (conn != nullptr) {
+            conn->SetUifirstScale(scaleFactor);
+        }
     }
     return ERR_OK;
 }
@@ -508,17 +541,14 @@ ScreenId RSClientToServiceConnection::CreateVirtualScreen(
         RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
         return INVALID_SCREEN_ID;
     }
-    auto res = screenManagerAgent_->CreateVirtualScreen(
+    auto screenId = screenManagerAgent_->CreateVirtualScreen(
         name, width, height, surface, associatedScreenId, flags, whiteList);
-    if (res == INVALID_SCREEN_ID) {
-        return res;
+    if (screenId != INVALID_SCREEN_ID && surface != nullptr) {
+            EventInfo event = { "VOTER_VIRTUALDISPLAY", ADD_VOTE, OLED_60_HZ, OLED_60_HZ, name };
+            NotifyRefreshRateEvent(event);
+            ROSEN_LOGI("%{public}s vote 60hz", __func__);
     }
-    if (surface != nullptr) {
-        EventInfo event = { "VOTER_VIRTUALDISPLAY", ADD_VOTE, OLED_60_HZ, OLED_60_HZ, name };
-        NotifyRefreshRateEvent(event);
-        ROSEN_LOGI("%{public}s vote 60hz", __func__);
-    }
-    return res;
+    return screenId;
 }
 
 int32_t RSClientToServiceConnection::SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blacklist)
@@ -625,6 +655,25 @@ int32_t RSClientToServiceConnection::SetCastScreenEnableSkipWindow(ScreenId id, 
         return StatusCode::SCREEN_NOT_FOUND;
     }
     return screenManagerAgent_->SetCastScreenEnableSkipWindow(id, enable);
+}
+
+int32_t RSClientToServiceConnection::AddVirtualScreenSurface(
+    ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
+{
+    if (!screenManagerAgent_) {
+        RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManagerAgent_->AddVirtualScreenSurface(id, surfaceConfigs);
+}
+
+int32_t RSClientToServiceConnection::RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces)
+{
+    if (!screenManagerAgent_) {
+        RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManagerAgent_->RemoveVirtualScreenSurface(id, surfaces);
 }
 
 int32_t RSClientToServiceConnection::SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface)
@@ -1173,6 +1222,27 @@ void RSClientToServiceConnection::SetScreenBacklight(const RsScreenBrightnessDat
     screenManagerAgent_->SetScreenBacklight(brightnessData);
 }
 
+ErrCode RSClientToServiceConnection::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    if (!screenManagerAgent_) {
+        RS_LOGE("%{public}s screenManagerAgent_ is nullptr.", __func__);
+        return ERR_INVALID_OPERATION;
+    }
+    return screenManagerAgent_->GetScreenVCPFeature(id, vcpCode,
+        currentValue, maximumValue, errorCode);
+}
+
+ErrCode RSClientToServiceConnection::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t currentValue)
+{
+    if (!screenManagerAgent_) {
+        RS_LOGE("%{public}s screenManagerAgent_ is nullptr.", __func__);
+        return ERR_INVALID_OPERATION;
+    }
+    return screenManagerAgent_->SetScreenVCPFeature(id, vcpCode, currentValue);
+}
+
 ErrCode RSClientToServiceConnection::GetPanelPowerStatus(ScreenId screenId, PanelPowerStatus& status)
 {
     if (!screenManagerAgent_) {
@@ -1485,7 +1555,7 @@ bool RSClientToServiceConnection::UnRegisterTypeface(uint64_t globalUniqueId)
     };
     RSUniRenderThread::Instance().PostTask(task);
 
-    RSTypefaceCache::Instance().RemoveDrawingTypefaceByGlobalUniqueId(globalUniqueId);
+    RSTypefaceCache::Instance().AddDelayDestroyQueue(globalUniqueId);
     return ForwardToRenderServers([&](sptr<RSIServiceToRenderConnection>& conn) -> bool {
         return conn->UnRegisterTypeface(globalUniqueId);
     });
@@ -1679,6 +1749,15 @@ void RSClientToServiceConnection::NotifyPackageEvent(uint32_t listSize, const st
 
     if (hgmContext_ != nullptr) {
         hgmContext_->NotifyPackageEvent(remotePid_, packageList);
+    }
+}
+
+void RSClientToServiceConnection::NotifyWindowModeTypeEvent(uint8_t windowModeType)
+{
+    auto activeScreenId = HgmCore::Instance().GetActiveScreenId();
+    auto serviceToRenderConn = renderProcessManagerAgent_->GetServiceToRenderConn(activeScreenId);
+    if (serviceToRenderConn) {
+        serviceToRenderConn->NotifyWindowModeTypeEvent(windowModeType);
     }
 }
 
@@ -2423,6 +2502,37 @@ ErrCode RSClientToServiceConnection::SetOverlayDisplayMode(int32_t mode)
 }
 #endif
 
+ErrCode RSClientToServiceConnection::SendVideoRateInfo(
+    const std::unordered_map<std::string, std::string>& videoRateInfo)
+{
+#ifdef RS_ENABLE_TV_PQ_METADATA
+    if (renderProcessManagerAgent_ == nullptr) {
+        RS_LOGE("%{public}s renderProcessManagerAgent_ is nullptr", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
+    if (serviceToRenderConns.empty()) {
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    for (auto conn : serviceToRenderConns) {
+        auto ret = conn->SendVideoRateInfo(videoRateInfo);
+        if (ret != ERR_OK) {
+            return ret;
+        }
+    }
+#else
+    if (auto pidIt = videoRateInfo.find("pid"); pidIt != videoRateInfo.end()) {
+        pid_t pid = 0;
+        auto resultPid = std::from_chars(pidIt->second.data(), pidIt->second.data() + pidIt->second.size(), pid);
+        if (resultPid.ec == std::errc() && pid > 0) {
+            DelayedSingleton<RSFrameRateVote>::GetInstance()->SetVideoRateInfo(videoRateInfo);
+        }
+    }
+#endif
+    return ERR_OK;
+}
+
 ErrCode RSClientToServiceConnection::SetBehindWindowFilterEnabled(bool enabled)
 {
     if (renderProcessManagerAgent_ == nullptr) {
@@ -2463,6 +2573,21 @@ ErrCode RSClientToServiceConnection::GetBehindWindowFilterEnabled(bool& enabled)
     return ERR_OK;
 }
 
+ErrCode RSClientToServiceConnection::SetApsConfigParams(
+    ApsEventType event, const std::unordered_map<std::string, std::string>& params)
+{
+    if (renderProcessManagerAgent_ == nullptr) {
+        RS_LOGE("%{public}s renderProcessManagerAgent_ is nullptr", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    auto activeScreenId = HgmCore::Instance().GetActiveScreenId();
+    auto serviceToRenderConn = renderProcessManagerAgent_->GetServiceToRenderConn(activeScreenId);
+    if (serviceToRenderConn) {
+        serviceToRenderConn->SetApsConfigParams(event, params);
+    }
+    return ERR_OK;
+}
+
 int32_t RSClientToServiceConnection::GetPidGpuMemoryInMB(pid_t pid, float& gpuMemInMB)
 {
     if (renderProcessManagerAgent_ == nullptr) {
@@ -2496,7 +2621,7 @@ RetCodeHrpService RSClientToServiceConnection::ProfilerServiceOpenFile(const Hrp
         return RET_HRP_SERVICE_ERR_INVALID_PARAM;
     }
 
-    return RSProfiler::HrpServiceOpenFile(dirInfo, fileName, flags, outFd);
+    return RSProfiler::HrpServiceOpenFile(dirInfo, fileName, static_cast<uint32_t>(flags), outFd);
 #else
     outFd = -1;
     return RET_HRP_SERVICE_ERR_UNSUPPORTED;

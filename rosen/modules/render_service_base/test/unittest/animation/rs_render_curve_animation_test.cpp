@@ -18,6 +18,8 @@
 #include "animation/rs_render_curve_animation.h"
 #include "animation/rs_steps_interpolator.h"
 #include "pipeline/rs_canvas_render_node.h"
+#include "modifier/rs_render_property.h"
+#include "recording/draw_cmd_list.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -42,6 +44,22 @@ void RSRenderCurveAnimationTest::SetUpTestCase() {}
 void RSRenderCurveAnimationTest::TearDownTestCase() {}
 void RSRenderCurveAnimationTest::SetUp() {}
 void RSRenderCurveAnimationTest::TearDown() {}
+
+class MockCmdListProperty : public RSRenderAnimatableProperty<float> {
+public:
+    explicit MockCmdListProperty(const float& value, const PropertyId& id)
+        : RSRenderAnimatableProperty<float>(value, id)
+    {}
+    ~MockCmdListProperty() = default;
+
+    RSPropertyType typeTest_ = RSPropertyType::DRAW_CMD_LIST;
+
+protected:
+    RSPropertyType GetPropertyType() const override
+    {
+        return typeTest_;
+    }
+};
 
 /**
  * @tc.name: Marshalling001
@@ -273,7 +291,7 @@ HWTEST_F(RSRenderCurveAnimationTest, InitValueEstimatorTest001, TestSize.Level1)
 
     RSRenderCurveAnimation renderCurveAnimation;
     auto property = std::make_shared<RSRenderProperty<bool>>();
-    renderCurveAnimation.property_ = property;
+    renderCurveAnimation.AttachRenderProperty(property);
     renderCurveAnimation.InitValueEstimator();
     EXPECT_TRUE(renderCurveAnimation.valueEstimator_ == nullptr);
 
@@ -305,7 +323,7 @@ HWTEST_F(RSRenderCurveAnimationTest, DumpAnimationInfo001, TestSize.Level1)
 {
     RSRenderCurveAnimation animation;
     auto property = std::make_shared<RSRenderProperty<bool>>();
-    animation.property_ = property;
+    animation.AttachRenderProperty(property);
     std::string out;
     animation.DumpAnimationInfo(out);
     EXPECT_EQ(out, "Type:RSRenderCurveAnimation, ModifierType: INVALID, StartValue: , EndValue: ");
@@ -319,7 +337,7 @@ HWTEST_F(RSRenderCurveAnimationTest, DumpAnimationInfo001, TestSize.Level1)
 HWTEST_F(RSRenderCurveAnimationTest, DumpAnimationInfo002, TestSize.Level1)
 {
     RSRenderCurveAnimation animation;
-    animation.property_ = nullptr;
+    animation.AttachRenderProperty(nullptr);
     std::string out;
     animation.DumpAnimationInfo(out);
     EXPECT_EQ(out, "Type:RSRenderCurveAnimation, ModifierType: INVALID, StartValue: , EndValue: ");
@@ -353,6 +371,8 @@ HWTEST_F(RSRenderCurveAnimationTest, ParseParam001, TestSize.Level1)
     auto renderCurveAnimation1 = std::make_shared<RSRenderCurveAnimation>();
     result = renderCurveAnimation1->ParseParam(parcel);
     EXPECT_TRUE(result);
+    EXPECT_EQ(renderCurveAnimation1->GetAnimationId(), ANIMATION_ID);
+    EXPECT_EQ(renderCurveAnimation1->GetPropertyId(), PROPERTY_ID);
 }
 
 /**
@@ -383,6 +403,8 @@ HWTEST_F(RSRenderCurveAnimationTest, ParseParam002, TestSize.Level1)
     auto renderCurveAnimation1 = std::make_shared<RSRenderCurveAnimation>();
     result = renderCurveAnimation1->ParseParam(parcel);
     EXPECT_TRUE(result);
+    EXPECT_EQ(renderCurveAnimation1->GetAnimationId(), ANIMATION_ID);
+    EXPECT_EQ(renderCurveAnimation1->GetPropertyId(), PROPERTY_ID);
 }
 
 /**
@@ -695,22 +717,6 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAnimateInner003, TestSize.Level1)
     EXPECT_NE(renderCurveAnimation->lastValueFraction_, 0.1f);
 }
 
-class MockCmdListProperty : public RSRenderAnimatableProperty<float> {
-public:
-    explicit MockCmdListProperty(const float& value, const PropertyId& id)
-        : RSRenderAnimatableProperty<float>(value, id)
-    {}
-    ~MockCmdListProperty() = default;
-
-    RSPropertyType typeTest_ = RSPropertyType::DRAW_CMD_LIST;
-
-protected:
-    RSPropertyType GetPropertyType() const override
-    {
-        return typeTest_;
-    }
-};
-
 /**
  * @tc.name: RSRenderCurveAnimationTest_OnAttach
  * @tc.desc: Verify the OnAttach function.
@@ -783,6 +789,7 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach003, TestSize.Level1)
     EXPECT_NE(target, nullptr);
     // test property type is DRAW_CMD_LIST
     // test preDrawCmdListAnimationId_ is 0
+    target->animationManager_ = std::make_shared<RSAnimationManager>();
     auto animationManager = target->GetAnimationManager();
     ASSERT_NE(animationManager, nullptr);
     animationManager->preDrawCmdListAnimationId_ = 0;
@@ -820,6 +827,7 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach004, TestSize.Level1)
     EXPECT_NE(target, nullptr);
     // test property type is DRAW_CMD_LIST
     // test preDrawCmdListAnimationId_ > 0
+    target->animationManager_ = std::make_shared<RSAnimationManager>();
     auto animationManager = target->GetAnimationManager();
     ASSERT_NE(animationManager, nullptr);
     animationManager->preDrawCmdListAnimationId_ = ANIMATION_ID_2;
@@ -855,6 +863,7 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach005, TestSize.Level1)
     EXPECT_NE(target, nullptr);
     // test property type is DRAW_CMD_LIST
     // test preAnimaton is not nullptr
+    target->animationManager_ = std::make_shared<RSAnimationManager>();
     auto animationManager = target->GetAnimationManager();
     ASSERT_NE(animationManager, nullptr);
     animationManager->preDrawCmdListAnimationId_ = ANIMATION_ID;
@@ -979,6 +988,237 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach009, TestSize.Level1)
     // preAnimation has same propertyId, should call FinishOnCurrentPosition
     EXPECT_EQ(preAnimation->GetPropertyId(), renderCurveAnimation->property_->GetId());
     renderCurveAnimation->OnAttach();
+}
+
+/**
+ * @tc.name: ParseParamDrawCmdList001
+ * @tc.desc: Verify ParseParam with DRAW_CMD_LIST property type for startValue
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, ParseParamDrawCmdList001, TestSize.Level1)
+{
+    auto property = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property1 = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property2 = std::make_shared<MockCmdListProperty>(1.0f, PROPERTY_ID);
+    property->typeTest_ = RSPropertyType::DRAW_CMD_LIST;
+    property1->typeTest_ = RSPropertyType::DRAW_CMD_LIST;
+    property2->typeTest_ = RSPropertyType::DRAW_CMD_LIST;
+
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    auto interpolator = std::make_shared<LinearInterpolator>();
+    renderCurveAnimation->SetInterpolator(interpolator);
+
+    Parcel parcel;
+    auto result = renderCurveAnimation->Marshalling(parcel);
+    EXPECT_TRUE(result);
+    auto renderCurveAnimation1 = std::make_shared<RSRenderCurveAnimation>();
+    result = renderCurveAnimation1->ParseParam(parcel);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(renderCurveAnimation1->GetAnimationId(), ANIMATION_ID);
+    EXPECT_EQ(renderCurveAnimation1->GetPropertyId(), PROPERTY_ID);
+}
+
+/**
+ * @tc.name: ParseParamDrawCmdList002
+ * @tc.desc: Verify ParseParam with DRAW_CMD_LIST property type for endValue
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, ParseParamDrawCmdList002, TestSize.Level1)
+{
+    auto property = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property1 = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property2 = std::make_shared<MockCmdListProperty>(1.0f, PROPERTY_ID);
+    property1->typeTest_ = RSPropertyType::FLOAT;
+    property2->typeTest_ = RSPropertyType::FLOAT;
+
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    auto interpolator = std::make_shared<LinearInterpolator>();
+    renderCurveAnimation->SetInterpolator(interpolator);
+
+    Parcel parcel;
+    auto result = renderCurveAnimation->Marshalling(parcel);
+    EXPECT_TRUE(result);
+    auto renderCurveAnimation1 = std::make_shared<RSRenderCurveAnimation>();
+    result = renderCurveAnimation1->ParseParam(parcel);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(renderCurveAnimation1->GetAnimationId(), ANIMATION_ID);
+    EXPECT_EQ(renderCurveAnimation1->GetPropertyId(), PROPERTY_ID);
+}
+
+/**
+ * @tc.name: ParseParamDrawCmdList003
+ * @tc.desc: Verify ParseParam with DRAW_CMD_LIST property type for startValue and endValue
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, ParseParamDrawCmdList003, TestSize.Level1)
+{
+    auto property = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property1 = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property2 = std::make_shared<MockCmdListProperty>(1.0f, PROPERTY_ID);
+    // Both start and end values have DRAW_CMD_LIST type to trigger both conversions
+    property->typeTest_ = RSPropertyType::DRAW_CMD_LIST;
+    property1->typeTest_ = RSPropertyType::DRAW_CMD_LIST;
+    property2->typeTest_ = RSPropertyType::DRAW_CMD_LIST;
+
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    auto interpolator = std::make_shared<LinearInterpolator>();
+    renderCurveAnimation->SetInterpolator(interpolator);
+
+    Parcel parcel;
+    auto result = renderCurveAnimation->Marshalling(parcel);
+    EXPECT_TRUE(result);
+    auto renderCurveAnimation1 = std::make_shared<RSRenderCurveAnimation>();
+    result = renderCurveAnimation1->ParseParam(parcel);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(renderCurveAnimation1->GetAnimationId(), ANIMATION_ID);
+    EXPECT_EQ(renderCurveAnimation1->GetPropertyId(), PROPERTY_ID);
+}
+
+/**
+ * @tc.name: ParseParamDrawCmdList004
+ * @tc.desc: Verify ParseParam with non-DRAW_CMD_LIST property type (conversion not triggered)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, ParseParamDrawCmdList004, TestSize.Level1)
+{
+    auto property = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property1 = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property2 = std::make_shared<MockCmdListProperty>(1.0f, PROPERTY_ID);
+    // No DRAW_CMD_LIST type - conversion should not be triggered
+    property->typeTest_ = RSPropertyType::FLOAT;
+    property1->typeTest_ = RSPropertyType::FLOAT;
+    property2->typeTest_ = RSPropertyType::FLOAT;
+
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    auto interpolator = std::make_shared<LinearInterpolator>();
+    renderCurveAnimation->SetInterpolator(interpolator);
+
+    Parcel parcel;
+    auto result = renderCurveAnimation->Marshalling(parcel);
+    EXPECT_TRUE(result);
+    auto renderCurveAnimation1 = std::make_shared<RSRenderCurveAnimation>();
+    result = renderCurveAnimation1->ParseParam(parcel);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: ParseParamDrawCmdListRealTypeTest
+ * @desc: Verify ParseParam with real RSRenderAnimatableProperty<Drawing::DrawCmdListPtr>
+ *        to trigger DRAW_CMD_LIST conversion branch in ParseParam
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, ParseParamDrawCmdListRealTypeTest, TestSize.Level1)
+{
+    // Create real DrawCmdListPtr property
+    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(100, 200, Drawing::DrawCmdList::UnmarshalMode::IMMEDIATE);
+    auto property = std::make_shared<RSRenderAnimatableProperty<Drawing::DrawCmdListPtr>>(drawCmdList, PROPERTY_ID);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<Drawing::DrawCmdListPtr>>(nullptr, PROPERTY_ID);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<Drawing::DrawCmdListPtr>>(drawCmdList, PROPERTY_ID);
+
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    auto interpolator = std::make_shared<LinearInterpolator>();
+    renderCurveAnimation->SetInterpolator(interpolator);
+
+    Parcel parcel;
+    auto result = renderCurveAnimation->Marshalling(parcel);
+    EXPECT_TRUE(result);
+
+    auto renderCurveAnimation1 = std::make_shared<RSRenderCurveAnimation>();
+    result = renderCurveAnimation1->ParseParam(parcel);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(renderCurveAnimation1->GetAnimationId(), ANIMATION_ID);
+    EXPECT_EQ(renderCurveAnimation1->GetPropertyId(), PROPERTY_ID);
+}
+
+/**
+ * @tc.name: ParseParamDrawCmdListBothValuesTest
+ * @desc: Verify ParseParam when both startValue and endValue are non-null DRAW_CMD_LIST
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, ParseParamDrawCmdListBothValuesTest, TestSize.Level1)
+{
+    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(100, 200, Drawing::DrawCmdList::UnmarshalMode::IMMEDIATE);
+    auto property = std::make_shared<RSRenderAnimatableProperty<Drawing::DrawCmdListPtr>>(drawCmdList, PROPERTY_ID);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<Drawing::DrawCmdListPtr>>(drawCmdList, PROPERTY_ID);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<Drawing::DrawCmdListPtr>>(drawCmdList, PROPERTY_ID);
+
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    auto interpolator = std::make_shared<LinearInterpolator>();
+    renderCurveAnimation->SetInterpolator(interpolator);
+
+    Parcel parcel;
+    auto result = renderCurveAnimation->Marshalling(parcel);
+    EXPECT_TRUE(result);
+
+    auto animation = std::make_shared<RSRenderCurveAnimation>();
+    result = animation->ParseParam(parcel);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(animation->GetAnimationId(), ANIMATION_ID);
+    EXPECT_EQ(animation->GetPropertyId(), PROPERTY_ID);
+}
+
+/**
+ * @tc.name: RebuildPropertyValue001
+ * @tc.desc: Verify RebuildPropertyValue with null interpolator
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, RebuildPropertyValue001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue001 start";
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    renderCurveAnimation->interpolator_ = nullptr;
+    renderCurveAnimation->RebuildPropertyValue(0.5f);
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue001 end";
+}
+
+/**
+ * @tc.name: RebuildPropertyValue002
+ * @tc.desc: Verify RebuildPropertyValue with null valueEstimator
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, RebuildPropertyValue002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue002 start";
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    renderCurveAnimation->valueEstimator_ = nullptr;
+    renderCurveAnimation->RebuildPropertyValue(0.5f);
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue002 end";
+}
+
+/**
+ * @tc.name: RebuildPropertyValue003
+ * @tc.desc: Verify RebuildPropertyValue with valid interpolator and estimator
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, RebuildPropertyValue003, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue003 start";
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    auto interpolator = std::make_shared<LinearInterpolator>();
+    renderCurveAnimation->SetInterpolator(interpolator);
+    renderCurveAnimation->property_ = property;
+    renderCurveAnimation->InitValueEstimator();
+    renderCurveAnimation->RebuildPropertyValue(0.5f);
+    EXPECT_NE(renderCurveAnimation->GetPropertyId(), 0);
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue003 end";
 }
 
 } // namespace Rosen

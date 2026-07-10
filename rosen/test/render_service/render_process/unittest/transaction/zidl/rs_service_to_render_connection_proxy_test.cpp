@@ -1888,6 +1888,82 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, NotifyPackageEvent_SendRequestFai
     mockProxy->NotifyPackageEvent(listSize, packageList);
 }
 
+// ==================== NotifyWindowModeTypeEvent Tests ====================
+ 
+/**
+ * @tc.name: NotifyWindowModeTypeEvent_ValidValue
+ * @tc.desc: Test NotifyWindowModeTypeEvent with valid windowModeType
+ * @tc.type: FUNC
+ *
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, NotifyWindowModeTypeEvent_ValidValue, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+ 
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(NO_ERROR));
+ 
+    uint8_t windowModeType = 1;
+    mockProxy->NotifyWindowModeTypeEvent(windowModeType);
+}
+ 
+/**
+ * @tc.name: NotifyWindowModeTypeEvent_MaxValue
+ * @tc.desc: Test NotifyWindowModeTypeEvent with maximum windowModeType value
+ * @tc.type: FUNC
+ *
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, NotifyWindowModeTypeEvent_MaxValue, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+ 
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(NO_ERROR));
+ 
+    uint8_t windowModeType = 255;
+    mockProxy->NotifyWindowModeTypeEvent(windowModeType);
+}
+ 
+/**
+ * @tc.name: NotifyWindowModeTypeEvent_SendRequestFail
+ * @tc.desc: Test NotifyWindowModeTypeEvent when SendRequest fails
+ * @tc.type: FUNC
+ *
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, NotifyWindowModeTypeEvent_SendRequestFail, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+ 
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+ 
+    uint8_t windowModeType = 1;
+    mockProxy->NotifyWindowModeTypeEvent(windowModeType);
+}
+ 
+/**
+ * @tc.name: NotifyWindowModeTypeEvent_MultipleCalls
+ * @tc.desc: Test NotifyWindowModeTypeEvent with multiple successive calls
+ * @tc.type: FUNC
+ *
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, NotifyWindowModeTypeEvent_MultipleCalls, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+ 
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(NO_ERROR));
+ 
+    mockProxy->NotifyWindowModeTypeEvent(0);
+    mockProxy->NotifyWindowModeTypeEvent(1);
+    mockProxy->NotifyWindowModeTypeEvent(2);
+    mockProxy->NotifyWindowModeTypeEvent(3);
+}
+
 // ==================== ReportGameStateData Tests ====================
 
 /**
@@ -3541,5 +3617,64 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, RegisterSharedTypeface_ReadResult
     sharedTypeface.hasFontArgs_ = false;
     bool ret = mockProxy->RegisterTypeface(sharedTypeface, false);
     EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name: SetApsConfigParams_ParamsSizeExceed
+ * @tc.desc: Test SetApsConfigParams when paramsSize exceeds MAX_APS_PARAMS_SIZE (129 > 128)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, SetApsConfigParams_ParamsSizeExceed, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+
+    std::unordered_map<std::string, std::string> params;
+    for (uint32_t i = 0; i < 129; i++) {
+        params["key" + std::to_string(i)] = "value" + std::to_string(i);
+    }
+
+    ErrCode ret = mockProxy->SetApsConfigParams(ApsEventType::SPLIT_LAYER, params);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+
+/**
+ * @tc.name: SetApsConfigParams_SendRequestFailed
+ * @tc.desc: Test SetApsConfigParams when SendRequest returns non-NO_ERROR
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, SetApsConfigParams_SendRequestFailed, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Return(-1));
+
+    std::unordered_map<std::string, std::string> params = {{"key1", "value1"}};
+    ErrCode ret = mockProxy->SetApsConfigParams(ApsEventType::SPLIT_LAYER, params);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetApsConfigParams_Success
+ * @tc.desc: Test SetApsConfigParams with valid params (success case)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, SetApsConfigParams_Success, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Return(NO_ERROR));
+
+    std::unordered_map<std::string, std::string> params = {{"key1", "value1"}};
+    ErrCode ret = mockProxy->SetApsConfigParams(ApsEventType::SPLIT_LAYER, params);
+    EXPECT_EQ(ret, ERR_OK);
 }
 } // namespace OHOS::Rosen

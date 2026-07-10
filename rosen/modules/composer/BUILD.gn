@@ -47,6 +47,8 @@ ohos_shared_library("libcomposer") {
     boundary_sanitize = true
     integer_overflow = true
     ubsan = true
+    cfi = true
+    cfi_cross_dso = true
   }
   sources = [
     "hdi_backend/src/hdi_device.cpp",
@@ -86,11 +88,13 @@ ohos_shared_library("libcomposer") {
     "drivers_interface_display:libdisplay_composer_hdi_impl_1.2",
     "drivers_interface_display:libdisplay_composer_hdi_impl_1.3",
     "drivers_interface_display:libdisplay_composer_hdi_impl_1.4",
+    "drivers_interface_display:libdisplay_composer_hdi_impl_1.5",
     "drivers_interface_display:libdisplay_composer_proxy_1.0",
     "drivers_interface_display:libdisplay_composer_proxy_1.1",
     "drivers_interface_display:libdisplay_composer_proxy_1.2",
     "drivers_interface_display:libdisplay_composer_proxy_1.3",
     "drivers_interface_display:libdisplay_composer_proxy_1.4",
+    "drivers_interface_display:libdisplay_composer_proxy_1.5",
     "eventhandler:libeventhandler",
     "graphic_surface:surface",
     "hilog:libhilog",
@@ -100,9 +104,15 @@ ohos_shared_library("libcomposer") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
-
+  if (!build_ohos_sdk) {
+    external_deps += [
+      "hdf_core:libhdf_utils",
+      "hdf_core:libhdi",
+    ]
+  }
   part_name = "graphic_2d"
   subsystem_name = "graphic"
+  branch_protector_ret = "pac_ret"
 }
 
 ## Build libcomposer.so

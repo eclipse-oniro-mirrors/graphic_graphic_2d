@@ -712,6 +712,28 @@ HWTEST_F(RSRenderNodeTest2, UpdateDrawRectAndDirtyRegion002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: UpdateDrawRectAndDirtyRegion003
+ * @tc.desc: test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest2, UpdateDrawRectAndDirtyRegion003, TestSize.Level1)
+{
+    RSRenderNode node(id, context);
+    std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
+    RectI clipRect{0, 0, 1000, 1000};
+    Drawing::Matrix matrix;
+    auto& properties = node.GetMutableRenderProperties();
+    properties.clipToBounds_ = true;
+    properties.clipToFrame_ = true;
+    properties.geoDirty_ = true;
+    node.srcOrClipedAbsDrawRectChangeFlag_ = true;
+    node.shouldPaint_ = true;
+    node.isLastVisible_ = true;
+    ASSERT_EQ(node.UpdateDrawRectAndDirtyRegion(*rsDirtyManager, false, clipRect, matrix), true);
+}
+
+/**
  * @tc.name: UpdateDrawRect001
  * @tc.desc: test
  * @tc.type: FUNC
@@ -724,7 +746,11 @@ HWTEST_F(RSRenderNodeTest2, UpdateDrawRect001, TestSize.Level1)
     Drawing::Matrix matrix;
     RSRenderNode parentNode(id + 1, context);
     bool accumGeoDirty = true;
-    node.UpdateDrawRect(accumGeoDirty, clipRect, matrix);
+    auto parent = node.GetCurCloneNodeParent().lock();
+    if (parent == nullptr) {
+        parent = node.GetParent().lock();
+    }
+    node.UpdateDrawRect(accumGeoDirty, clipRect, matrix, parent);
     ASSERT_TRUE(true);
 }
 
@@ -742,7 +768,11 @@ HWTEST_F(RSRenderNodeTest2, UpdateDrawRect002, TestSize.Level1)
     auto& properties = node.GetMutableRenderProperties();
     properties.sandbox_ = std::make_unique<Sandbox>();
     bool accumGeoDirty = true;
-    node.UpdateDrawRect(accumGeoDirty, clipRect, matrix);
+    auto parent = node.GetCurCloneNodeParent().lock();
+    if (parent == nullptr) {
+        parent = node.GetParent().lock();
+    }
+    node.UpdateDrawRect(accumGeoDirty, clipRect, matrix, parent);
     ASSERT_TRUE(true);
 }
 
@@ -3078,41 +3108,6 @@ HWTEST_F(RSRenderNodeTest2, UpdateDrawableAfterPostPrepareTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetUIFirstSwitchTest001
- * @tc.desc: SetUIFirstSwitch with Node does not have firstLevelNoode
- * @tc.type: FUNC
- * @tc.require: issueIBH5UD
- */
-HWTEST_F(RSRenderNodeTest2, SetUIFirstSwitchTest001, TestSize.Level1)
-{
-    auto node = std::make_shared<RSRenderNode>(id);
-    ASSERT_NE(node, nullptr);
-    node->SetUIFirstSwitch(RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
-    ASSERT_EQ(node->GetUIFirstSwitch(), RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
-}
-
-/**
- * @tc.name: SetUIFirstSwitchTest002
- * @tc.desc: SetUIFirstSwitch with Node has firstLevelNoode
- * @tc.type: FUNC
- * @tc.require: issueIBH5UD
- */
-HWTEST_F(RSRenderNodeTest2, SetUIFirstSwitchTest002, TestSize.Level1)
-{
-    auto rsContext = std::make_shared<RSContext>();
-    ASSERT_NE(rsContext, nullptr);
-    auto node = std::make_shared<RSRenderNode>(id, rsContext);
-    ASSERT_NE(node, nullptr);
-    auto firstNode = std::make_shared<RSSurfaceRenderNode>(id + 1, rsContext);
-    ASSERT_NE(firstNode, nullptr);
-    node->firstLevelNodeId_ = id + 1;
-    rsContext->nodeMap.RegisterRenderNode(node);
-    rsContext->nodeMap.RegisterRenderNode(firstNode);
-    node->SetUIFirstSwitch(RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
-    ASSERT_EQ(firstNode->GetUIFirstSwitch(), RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
-}
-
-/**
  * @tc.name: DumpModifiersTest
  * @tc.desc: DumpModifiersTest test
  * @tc.type: FUNC
@@ -3579,9 +3574,12 @@ HWTEST_F(RSRenderNodeTest2, ApplyModifiersProcessUnionInfoAfterApplyModifiers001
     node->dirtyStatus_ = RSRenderNode::NodeDirty::DIRTY;
     node->dirtyTypesNG_.set(static_cast<size_t>(ModifierNG::RSModifierType::BOUNDS), true);
     node->stagingRenderParams_ = std::make_unique<RSRenderParams>(0);
+    auto logFlag = RSLogManager::GetInstance().logFlag_;
+    RSLogManager::GetInstance().logFlag_ = FLAG_DEBUG_NODE;
 
     node->ApplyModifiers();
     ASSERT_FALSE(node->renderProperties_.GetUseUnion());
+    RSLogManager::GetInstance().logFlag_ = logFlag;
 }
 
 /**
@@ -3594,6 +3592,23 @@ HWTEST_F(RSRenderNodeTest2, ApplyModifiersProcessUnionInfoAfterApplyModifiers002
     auto rsContext = std::make_shared<RSContext>();
     auto node = std::make_shared<RSRenderNode>(0, rsContext);
     node->dirtyStatus_ = RSRenderNode::NodeDirty::DIRTY;
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(0);
+
+    node->ApplyModifiers();
+    ASSERT_FALSE(node->renderProperties_.GetUseUnion());
+}
+
+/**
+ * @tc.name: ApplyModifiersProcessUnionInfoAfterApplyModifiers003
+ * @tc.desc: test ApplyModifiers with USE_UNION dirty type set (true branch coverage)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderNodeTest2, ApplyModifiersProcessUnionInfoAfterApplyModifiers003, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    node->dirtyStatus_ = RSRenderNode::NodeDirty::DIRTY;
+    node->dirtyTypesNG_.set(static_cast<size_t>(ModifierNG::RSModifierType::USE_UNION), true);
     node->stagingRenderParams_ = std::make_unique<RSRenderParams>(0);
 
     node->ApplyModifiers();

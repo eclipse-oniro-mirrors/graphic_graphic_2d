@@ -150,6 +150,29 @@ public:
     {
         return isCrossNode_;
     }
+    bool IsFirstLevelCrossNode() const {
+        return isFirstLevelCrossNode_;
+    }
+    void SetCloneSourceDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)
+    {
+        cloneSourceDrawable_ = drawable;
+    }
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetCloneSourceDrawable() const
+    {
+        return cloneSourceDrawable_;
+    }
+    void SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffScreenOn)
+    {
+        isCrossNodeOffscreenOn_ = isCrossNodeOffScreenOn;
+    }
+    CrossNodeOffScreenRenderDebugType GetCrossNodeOffScreenStatus() const
+    {
+        return isCrossNodeOffscreenOn_;
+    }
+    bool IsSnapshotSkipLayer() const
+    {
+        return isSnapshotSkipLayer_;
+    }
     bool IsSpherizeValid() const
     {
         return isSpherizeValid_;
@@ -394,12 +417,6 @@ public:
     // source crop tuning
     void SetLayerSourceTuning(int32_t needSourceTuning);
     int32_t GetLayerSourceTuning() const;
-    void SetTunnelLayerId(const uint64_t& tunnelLayerId);
-    uint64_t GetTunnelLayerId() const;
-    void SetTunnelLayerInfo(uint64_t tunnelLayerId, uint32_t property);
-    uint32_t GetTunnelLayerProperty() const;
-    void SetTunnelLayerGeneration(uint64_t tunnelLayerGeneration);
-    uint64_t GetTunnelLayerGeneration() const;
     void SetGpuOverDrawBufferOptimizeNode(bool overDrawNode);
     bool IsGpuOverDrawBufferOptimizeNode() const;
     void SetOverDrawBufferNodeCornerRadius(const Vector4f& radius);
@@ -429,9 +446,6 @@ public:
     void SetLayerTop(bool isTop);
     bool IsLayerTop() const;
 
-    void SetHdrForceHwcEnabled(bool isHdrForceHwcEnabled);
-    bool isHdrForceHwcEnabled() const;
-
     void SetForceRefresh(bool isForceRefresh);
     bool IsForceRefresh() const;
 
@@ -453,6 +467,8 @@ public:
 #ifndef ROSEN_CROSS_PLATFORM
     void SetBuffer(const sptr<SurfaceBuffer>& buffer,
         std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect) override;
+    void UpdateBuffer(const sptr<SurfaceBuffer>& buffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect);
     sptr<SurfaceBuffer> GetBuffer() const override;
     void SetPreBuffer(const sptr<SurfaceBuffer>& preBuffer,
         std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount) override;
@@ -864,6 +880,11 @@ public:
         return captureCallback_;
     }
 
+    bool IsDepthSrc() const
+    {
+        return isDepthSrc_;
+    }
+
     void SetAppRotationCorrection(ScreenRotation appRotationCorrection);
     ScreenRotation GetAppRotationCorrection() const;
 
@@ -874,18 +895,38 @@ public:
     bool GetIsParticipateInOcclusion() const;
 
     void SwapRelatedRenderParams(RSSurfaceRenderParams& relatedRenderParams);
+
+    void SetSplitLayerTag(bool splitLayerTag)
+    {
+        splitLayerTag_ = splitLayerTag;
+    }
+    bool GetSplitLayerTag() const
+    {
+        return splitLayerTag_;
+    }
+
+    void SetDelegateMode(bool flag);
+    bool GetDelegateMode() const;
+    void SetDelegateDstRect(const RectI& rect);
+    const RectI& GetDelegateDstRect() const;
+    void SetDelegateSrcRect(const RectI& rect);
+    const RectI& GetDelegateSrcRect() const;
 private:
     RSSurfaceNodeType rsSurfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
     SelfDrawingNodeType selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
+    CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_ = CrossNodeOffScreenRenderDebugType::ENABLE;
     RSRenderNode::WeakPtr ancestorScreenNode_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr ancestorScreenDrawable_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr clonedNodeRenderDrawable_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr sourceDisplayRenderNodeDrawable_;
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr cloneSourceDrawable_;
 
     float alpha_ = 0;
     bool isClonedNodeOnTheTree_ = false;
     bool isCrossNode_ = false;
     bool isCloneNode_ = false;
+    bool isFirstLevelCrossNode_ = false;
+    bool isSnapshotSkipLayer_ = false;
     bool isRelated_ = false;
     bool clonedSourceNode_ = false;
     bool isRelatedSourceNode_ = false;
@@ -963,15 +1004,11 @@ private:
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSkipDraw_ = false;
     bool isLayerTop_ = false;
-    bool isHdrForceHwcEnabled_ = false;
     bool isForceRefresh_ = false;
     bool needHidePrivacyContent_ = false;
     bool needOffscreen_ = false;
     bool layerCreated_ = false;
     int32_t layerSource_ = 0;
-    uint64_t tunnelLayerId_ = 0;
-    uint32_t tunnelLayerProperty_ = TUNNEL_PROP_INVALID;
-    uint64_t tunnelLayerGeneration_ = 0;
     int64_t stencilVal_ = -1;
     std::unordered_map<std::string, bool> systemWatermarkHandles_ = {};
     std::unordered_map<std::string, bool> customWatermarkHandles_ = {};
@@ -1007,6 +1044,8 @@ private:
     std::unordered_set<NodeId> culledNodes_;
     std::unordered_set<NodeId> culledEntireSubtree_;
 
+    bool isDepthSrc_ = false;
+
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;
     friend class RSUniRenderThread;
@@ -1023,7 +1062,13 @@ private:
     ScreenRotation appRotationCorrection_ = ScreenRotation::ROTATION_0;
     int32_t rotationCorrectionDegree_ = 0;
 
+    RectI delegateDstRect_;
+    RectI delegateSrcRect_;
+    bool isWebProxyComposerNode_ = false;
+
     ScreenId screenId_ = INVALID_SCREEN_ID;
+    // for layer splitter
+    bool splitLayerTag_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_SURFACE_RENDER_PARAMS_H

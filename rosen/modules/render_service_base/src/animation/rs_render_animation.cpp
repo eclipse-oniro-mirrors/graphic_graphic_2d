@@ -25,7 +25,10 @@
 
 namespace OHOS {
 namespace Rosen {
-RSRenderAnimation::RSRenderAnimation(AnimationId id) : id_(id) {}
+RSRenderAnimation::RSRenderAnimation(AnimationId id) : id_(id)
+{
+    animationFraction_.SetAnimationId(id);
+}
 
 void RSRenderAnimation::DumpAnimation(std::string& out) const
 {
@@ -288,6 +291,20 @@ void RSRenderAnimation::Restart()
     state_ = AnimationState::RUNNING;
 }
 
+void RSRenderAnimation::Rebuild(float fraction, int64_t time, bool isReverseCycle)
+{
+    // Initialize animation before RebuildPropertyValue, especially for spring animations
+    // that need to calculate correct duration through spring model (not default 300ms)
+    if (needInitialize_) {
+        OnInitialize(time, false);
+    }
+    RebuildPropertyValue(fraction);
+    RS_TRACE_NAME_FMT("Rebuild animate[%llu] fraction[%f]", id_, fraction);
+    animationFraction_.SetRebuildFraction(fraction, time, isReverseCycle);
+    currentFraction_ = fraction;
+    needUpdateStartTime_ = true;
+}
+
 void RSRenderAnimation::ProcessFillModeOnStart(float startFraction)
 {
     auto fillMode = GetFillMode();
@@ -327,7 +344,7 @@ void RSRenderAnimation::AnimateOnGroupWaiting(int64_t time, bool isCustom)
     }
 }
 
-bool RSRenderAnimation::Animate(int64_t time, int64_t& minLeftDelayTime, bool isCustom, bool isOnTree)
+bool RSRenderAnimation::Animate(int64_t time, int64_t& minLeftDelayTime, bool isCustom)
 {
     // calculateAnimationValue_ is embedded modify for stat animate frame drop
     calculateAnimationValue_ = true;
@@ -366,8 +383,8 @@ bool RSRenderAnimation::Animate(int64_t time, int64_t& minLeftDelayTime, bool is
 
     // convert time to fraction
     auto [fraction, isInStartDelay, isFinished, isRepeatFinished] =
-        animationFraction_.GetAnimationFraction(time, minLeftDelayTime, isCustom, isOnTree);
-
+        animationFraction_.GetAnimationFraction(time, minLeftDelayTime, isCustom);
+    currentFraction_ = fraction;
     if (isInStartDelay) {
         calculateAnimationValue_ = false;
         ProcessFillModeOnStart(fraction);

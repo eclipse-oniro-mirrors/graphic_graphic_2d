@@ -20,6 +20,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "common/rs_optional_trace.h"
+#include "feature/layer/rs_layer_cache_manager_base.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -144,7 +145,7 @@ void RSNodeCommandHelper::ForceUifirstNode(RSContext& context, NodeId nodeId, bo
 void RSNodeCommandHelper::SetUIFirstSwitch(RSContext& context, NodeId nodeId, RSUIFirstSwitch uiFirstSwitch)
 {
     auto& nodeMap = context.GetNodeMap();
-    if (auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId)) {
+    if (auto node = nodeMap.GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetUIFirstSwitch(uiFirstSwitch);
     }
 }
@@ -398,21 +399,36 @@ void RSNodeCommandHelper::SetColorPickerCallbackProcessor(ColorPickerCallbackPro
 
 void RSNodeCommandHelper::MarkLayer(RSContext& context, NodeId nodeId, bool isLayer)
 {
+    if (!RSSystemProperties::GetLayerEnabled()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("Layer Disabled.");
+        return;
+    }
+
     auto& nodeMap = context.GetNodeMap();
     auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    if (node == nullptr) {
+        RS_TRACE_NAME_FMT("MarkLayer fail node not found isLayer:%d id:%llu", isLayer, nodeId);
+        return;
+    }
     // only support canvas node mark
-    bool isCanvasNode = (node != nullptr) && (node->GetType() == RSRenderNodeType::CANVAS_NODE);
-    if (isCanvasNode) {
-        RS_OPTIONAL_TRACE_NAME_FMT("MarkLayer isLayer:%d id:%llu", isLayer, node->GetId());
+    bool isCanvasNode = node->GetType() == RSRenderNodeType::CANVAS_NODE;
+    bool isSupportLayer = isLayer && isCanvasNode && !RSLayerCacheManagerBase::IsNodeUnSupportLayer(node);
+    if (isSupportLayer) {
+        RS_TRACE_NAME_FMT("MarkLayer isLayer:%d, isSupportLayer:%d, id:%llu", isLayer, isSupportLayer, node->GetId());
         RS_LOGI_IF(
             DEBUG_NODE, "RSRenderNode::MarkLayer isLayer:%{public}d id:%{public}" PRIu64 "", isLayer, node->GetId());
-        node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_LAYER, isLayer, false);
+
+        node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_LAYER, true, false);
 
         if (RSSystemProperties::GetLayerDebugEnabled()) {
             std::vector<NodeId> nodeIds;
             node->CollectAllChildren(node, nodeIds);
             RS_OPTIONAL_TRACE_NAME_FMT("Layer node childs number:%zu id:%llu", nodeIds.size(), node->GetId());
         }
+    }
+
+    if (!isLayer) {
+        node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_LAYER, false, false);
     }
 }
 
@@ -423,6 +439,23 @@ void RSNodeCommandHelper::ReSortChildrenByZIndex(RSContext& context, NodeId node
     if (node) {
         node->ReSortChildrenByZIndex();
     }
+}
+
+bool RSNodeCommandHelper::CheckPropertyType(RSRenderPropertyBase& prop,
+    RSPropertyType updateType, NodeId nodeId)
+{
+    if (prop.GetPropertyType() != updateType) {
+        TypeErrorInfoPrint(nodeId, prop.GetId(), updateType, prop.GetPropertyType());
+        return false;
+    }
+    return true;
+}
+
+__attribute__((noinline)) void RSNodeCommandHelper::TypeErrorInfoPrint(NodeId nodeId,
+    PropertyId propId, RSPropertyType updateType, RSPropertyType propType)
+{
+    ROSEN_LOGE("UpdateProperty type mismatch, nodeId=%{public}" PRIu64 ", propertyId=%{public}" PRIu64
+        " update type:%{public}hhu, property type:%{public}hhu", nodeId, propId, updateType, propType);
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -56,6 +56,12 @@ using RequestCompositionType = enum class RequestComposition : int32_t {
     OFFLINE_VCLD_OFF = 6,
 };
 
+using OfflineDeviceType = enum class OfflineDevice : int32_t {
+    INVALID = 0,
+    HPAE_OFFLINE_DEVICE = 3,
+    GPU_OFFLINE_DEVICE = 7,
+};
+
 using PreValidateFunc = int32_t (*)(uint32_t,
     const std::vector<RequestLayerInfo> &, std::map<uint64_t, RequestCompositionType> &);
 using HandleEventFunc = int32_t (*)(uint32_t, uint32_t, const std::vector<int32_t>& eventData);
@@ -67,7 +73,8 @@ public:
     bool PreValidate(
         ScreenId id, std::vector<RequestLayerInfo> infos, std::map<uint64_t, RequestCompositionType> &strategy);
     bool CreateSurfaceNodeLayerInfo(uint32_t zorder,
-        RSSurfaceRenderNode::SharedPtr node, GraphicTransformType transform, uint32_t fps, RequestLayerInfo &info);
+        RSSurfaceRenderNode::SharedPtr node, GraphicTransformType transform, uint32_t fps,
+        const RSScreenProperty& screenProperty, RequestLayerInfo &info);
     bool CreateScreenNodeLayerInfo(uint32_t zorder, RSScreenRenderNode::SharedPtr node,
         const RSScreenProperty& screenProperty, uint32_t fps, RequestLayerInfo &info);
     bool CreateRCDLayerInfo(RSRcdSurfaceRenderNode::SharedPtr node, const RSScreenProperty& screenProperty,
@@ -75,7 +82,8 @@ public:
     void HandleHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData);
     bool IsPrevalidateEnable();
     void CollectSurfaceNodeLayerInfo(std::vector<RequestLayerInfo>& prevalidLayers,
-        std::vector<RSBaseRenderNode::SharedPtr>& surfaceNodes, uint32_t curFps, uint32_t& zOrder);
+        const RSScreenRenderNode::SharedPtr screenRenderNode, uint32_t curFps, uint32_t& zOrder,
+        const RSScreenProperty& screenProperty);
     void UpdateVcldEnabledInfo();
     bool IsVcldEnabled();
 private:
@@ -94,7 +102,8 @@ private:
     static bool CheckHwcNode(const RSSurfaceRenderNode::SharedPtr& node);
     static bool IsPointerWindow(const RSSurfaceRenderNode::SharedPtr& node);
     static void EmplaceSurfaceNodeLayer(std::vector<RequestLayerInfo>& prevalidLayers,
-        RSSurfaceRenderNode::SharedPtr node, uint32_t curFps, uint32_t& zOrder);
+        RSSurfaceRenderNode::SharedPtr node, uint32_t curFps, uint32_t& zOrder,
+        const RSScreenProperty& screenProperty);
 
     void *preValidateHandle_ = nullptr;
     PreValidateFunc preValidateFunc_ = nullptr;

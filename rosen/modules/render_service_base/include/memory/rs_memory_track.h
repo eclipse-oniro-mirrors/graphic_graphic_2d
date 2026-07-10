@@ -97,7 +97,7 @@ public:
     MemoryGraphic CountRSMemory(const pid_t pid);
     void RemovePidRecord(const pid_t pid);
     float GetAppMemorySizeInMB();
-    const std::unordered_map<NodeId, MemoryInfo>& GetMemNodeMap() { return memNodeMap_; }
+    std::unordered_map<NodeId, MemoryInfo> GetMemNodeMap();
 #ifdef RS_MEMORY_INFO_MANAGER
     void SetGlobalRootNodeStatusChangeFlag(bool flag);
     bool GetGlobalRootNodeStatusChangeFlag();

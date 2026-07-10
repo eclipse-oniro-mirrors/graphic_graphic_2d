@@ -65,7 +65,7 @@ struct SharedTypeface;
 class DRAWING_API Typeface {
 public:
     explicit Typeface(std::shared_ptr<TypefaceImpl> typefaceImpl) noexcept;
-    virtual ~Typeface() = default;
+    virtual ~Typeface();
 
     static std::shared_ptr<Typeface> MakeDefault();
     static std::shared_ptr<Typeface> MakeFromFile(const char path[], int index = 0);

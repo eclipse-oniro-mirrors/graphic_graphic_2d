@@ -71,7 +71,8 @@ public:
     ~TestRSCanvasDrawingRenderNode() override = default;
 
     void ApplyModifiers() override {}
-    void QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor) override {}
+    void QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor,
+        bool isParentPrepareInReverseOrder = false) override {}
     void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor) override {}
     void Process(const std::shared_ptr<RSNodeVisitor>& visitor) override {}
     void ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas) override {}
@@ -83,6 +84,7 @@ public:
     void OnTreeStateChanged() override {}
     void UpdateNodeColorSpace() override {}
     void MarkNodeColorSpace(int8_t colorSpace) override {}
+    void SetIsDepthBackground(bool isDepthBackground) override {}
 };
 
 class RSProfilerTest : public testing::Test {
@@ -205,6 +207,35 @@ HWTEST_F(RSProfilerTest, RSTreeTest, testing::ext::TestSize.Level1)
 }
 
 /*
+ * @tc.name: IfNeedToSkipDuringReplay
+ * @tc.desc: Test IfNeedToSkipDuringReplay method
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSProfilerTest, IfNeedToSkipDuringReplay, Function | Reliability | LargeTest | Level2)
+{
+    RSProfiler::testing_ = true;
+
+    RSProfiler::SetSubMode(SubMode::READ_EMUL);
+
+    auto data = std::make_shared<Drawing::Data>();
+    constexpr size_t length = 40'000;
+
+    void* allocated = malloc(length);
+    EXPECT_TRUE(data->BuildFromMalloc(allocated, length));
+
+    auto* buffer = new (std::nothrow) uint8_t[sizeof(MessageParcel) + 1];
+    MessageParcel* messageParcel = new (buffer + 1) MessageParcel;
+
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(*messageParcel, data));
+
+    messageParcel->RewindRead(0);
+    size_t position = messageParcel->GetReadableBytes() - 1;
+    EXPECT_TRUE(RSProfiler::IfNeedToSkipDuringReplay(*messageParcel, position));
+    EXPECT_EQ(messageParcel->GetReadPosition(), position);
+}
+
+/*
  * @tc.name: MarshalSelfDrawingBuffersTest
  * @tc.desc: Test MarshalSelfDrawingBuffers method
  * @tc.type: FUNC
@@ -221,8 +252,7 @@ HWTEST_F(RSProfilerTest, MarshalSelfDrawingBuffersTest, Level1)
     auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config);
     auto& nodeMap = context->GetMutableNodeMap();
     nodeMap.RegisterRenderNode(rsSurfaceRenderNode);
-    std::stringstream stream;
-    RSProfiler::MarshalSelfDrawingBuffers(stream, false);
+    RSProfiler::MarshalSelfDrawingNodes(false);
     ASSERT_TRUE(rsSurfaceRenderNode->IsSelfDrawingType());
     ASSERT_TRUE(rsSurfaceRenderNode->GetAbsRect().IsEmpty());
 }
@@ -244,7 +274,7 @@ HWTEST_F(RSProfilerTest, UnmarshalSelfDrawingBuffersTest, Level1)
     auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config);
     auto& nodeMap = context->GetMutableNodeMap();
     nodeMap.RegisterRenderNode(rsSurfaceRenderNode);
-    RSProfiler::UnmarshalSelfDrawingBuffers();
+    RSProfiler::UnmarshalSelfDrawingNodes();
     ASSERT_TRUE(Utils::IsNodeIdPatched(rsSurfaceRenderNode->GetId()));
     ASSERT_TRUE(rsSurfaceRenderNode->IsSelfDrawingType());
     ASSERT_TRUE(rsSurfaceRenderNode->GetAbsRect().IsEmpty());
@@ -503,7 +533,7 @@ HWTEST_F(RSProfilerFileTest, ReadAnimationStartTimeTest, TestSize.Level1)
 
     std::string error;
     ASSERT_TRUE(rsFile.Open(fileName, error)) << "Reason: " << error;
-    EXPECT_TRUE(rsFile.ReadAnimationStartTime());
+    EXPECT_FALSE(rsFile.ReadAnimationStartTime());
     rsFile.Close();
 }
 

@@ -180,6 +180,10 @@ HWTEST_F(RSRenderComposerClientRemoteTest, CommitLayers001, TestSize.Level0)
     std::vector<float> drmCornerRadiusInfo;
     drmCornerRadiusInfo.push_back(1.0);
     rsLayer->SetCornerRadiusInfoForDRM(drmCornerRadiusInfo);
+    RSVcldParam vcldInfo;
+    vcldInfo.enable = true;
+    vcldInfo.radius = 1;
+    rsLayer->SetVcldInfo(vcldInfo);
     std::vector<float> matrixVec;
     matrixVec.push_back(1.0);
     rsLayer->SetColorTransform(matrixVec);

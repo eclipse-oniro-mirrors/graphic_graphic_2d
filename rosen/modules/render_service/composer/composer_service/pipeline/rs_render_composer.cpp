@@ -22,6 +22,7 @@
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
 #include "concurrent_task_client.h"
+#include "display_engine/rs_backlight_thread.h"
 #include "engine/rs_base_render_util.h"
 #include "engine/rs_uni_render_engine.h"
 #ifdef RS_ENABLE_EGLIMAGE
@@ -613,6 +614,10 @@ int64_t RSRenderComposer::CalculateDelayTime(HgmCore& hgmCore, uint32_t currentR
     // we use (pipelineParam.frameTimestamp - preTime) to get this frame real vsync timestamp
     expectCommitTime = pipelineParam.frameTimestamp - preTime + frameOffset - compositionTime - RESERVE_TIME;
     int64_t diffTime = expectCommitTime - currTime;
+    if (pipelineParam.dvsyncNeedSkipRsCommitDelay) {
+        RS_TRACE_NAME_FMT("%s Skip commit delay, diffTime:%" PRId64 ", period:%" PRId64 "", __func__, diffTime, period);
+        diffTime = 0;
+    }
     if (diffTime > 0 && period > 0) {
         delayTime = std::round(diffTime * 1.0f / NS_MS_UNIT_CONVERSION);
     }
@@ -1292,7 +1297,6 @@ void RSRenderComposer::HandleTunnelCommitFailure(uint64_t surfaceId)
     uint64_t nodeId = hdiOutput_->GetNodeIdBySurfaceId(surfaceId);
     uint64_t tunnelLayerGeneration = hdiOutput_->GetTunnelLayerGenerationBySurfaceId(surfaceId);
     hdiOutput_->MarkTunnelSurfaceInvalid(surfaceId);
-    hdiOutput_->DestroyLayerBySurfaceId(surfaceId);
     if (nodeId == 0) {
         RS_LOGW("%{public}s can not find nodeId, surfaceId:%{public}" PRIu64, __func__, surfaceId);
         return;
@@ -1445,6 +1449,14 @@ void RSRenderComposer::CleanLayerBufferBySurfaceId(uint64_t surfaceId)
     hdiOutput_->CleanLayerBufferBySurfaceId(surfaceId);
 }
 
+void RSRenderComposer::MarkTunnelSurfaceInvalid(uint64_t surfaceId)
+{
+    if (hdiOutput_ == nullptr || surfaceId == 0) {
+        return;
+    }
+    hdiOutput_->MarkTunnelSurfaceInvalid(surfaceId);
+}
+
 int32_t RSRenderComposer::CommitTunnelLayerBySurfaceId(uint64_t surfaceId, uint64_t tunnelLayerId,
     const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence, sptr<SyncFence>& releaseFence)
 {
@@ -1503,11 +1515,14 @@ void RSRenderComposer::HitchsDump(std::string& dumpString, std::string& layerArg
 
 void RSRenderComposer::SetScreenBacklight(uint32_t level)
 {
-    if (hdiOutput_ == nullptr) {
+    auto hdiOutput = hdiOutput_;
+    if (hdiOutput == nullptr) {
         RS_LOGW("%{public}s: hdiOutput_ is nullptr.", __func__);
         return;
     }
-    hdiOutput_->SetScreenBacklight(level);
+    RSBacklightThread::Instance().PostTask([hdiOutput, level]() {
+        hdiOutput->SetScreenBacklight(level);
+    });
 }
 
 void RSRenderComposer::SetScreenLinearMatrix(const std::vector<float>& matrix)

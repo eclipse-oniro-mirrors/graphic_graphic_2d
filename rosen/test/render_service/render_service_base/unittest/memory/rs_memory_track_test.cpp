@@ -1362,4 +1362,32 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryPicStatisticsForReportTest005, testing::ex
 
     MemoryTrack::Instance().RemovePictureRecord(addr);
 }
+
+/**
+ * @tc.name: GetMemNodeMapTest001
+ * @tc.desc: Test GetMemNodeMap with single node.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryTrackTest, GetMemNodeMapTest001, testing::ext::TestSize.Level1)
+{
+    NodeId testId = 6001;
+    pid_t testPid = 60001;
+    size_t testSize = 1024;
+    MemoryInfo testInfo = {testSize, testPid, testId, 0, MEMORY_TYPE::MEM_RENDER_NODE};
+
+    MemoryTrack::Instance().AddNodeRecord(testId, testInfo);
+
+    auto memNodeMap = MemoryTrack::Instance().GetMemNodeMap();
+
+    EXPECT_FALSE(memNodeMap.empty());
+    EXPECT_TRUE(memNodeMap.find(testId) != memNodeMap.end());
+
+    const auto& info = memNodeMap.at(testId);
+    EXPECT_EQ(info.size, testSize);
+    EXPECT_EQ(info.pid, testPid);
+    EXPECT_EQ(info.nid, testId);
+
+    MemoryTrack::Instance().RemoveNodeRecord(testId);
+}
 } // namespace OHOS::Rosen

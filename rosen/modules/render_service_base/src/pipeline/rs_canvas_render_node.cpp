@@ -31,6 +31,7 @@
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "property/rs_properties_painter.h"
+#include "property/rs_spatial_effect_manager.h"
 #include "render/rs_blur_filter.h"
 #include "render/rs_light_up_effect_filter.h"
 #include "platform/common/rs_log.h"
@@ -83,7 +84,8 @@ void RSCanvasRenderNode::ClearRecording()
     RemoveModifierNG(ANONYMOUS_MODIFIER_NG_ID);
 }
 
-void RSCanvasRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor)
+void RSCanvasRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor,
+    bool isParentPrepareInReverseOrder)
 {
     if (!visitor) {
         return;
@@ -92,7 +94,7 @@ void RSCanvasRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visi
 #if defined(ROSEN_OHOS)
     visitor->RegisterHpaeCallback(*this);
 #endif
-    visitor->QuickPrepareCanvasRenderNode(*this);
+    visitor->QuickPrepareCanvasRenderNode(*this, isParentPrepareInReverseOrder);
 }
 
 void RSCanvasRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
@@ -131,7 +133,9 @@ void RSCanvasRenderNode::UpdateHDRNodeOnTreeState(NodeId displayNodeId)
     bool isOnTheTree = IsOnTheTree();
     NodeId instanceRootNodeId = GetInstanceRootNodeId();
     NodeId screenNodeId = GetScreenNodeId();
-
+#ifdef ROSEN_OHOS
+    UpdateDisplayBlendModeMap(isOnTheTree, displayNodeId);
+#endif
     if (!isOnTheTree) {
         screenNodeId = preScreenNodeId_;
     }
@@ -148,6 +152,45 @@ void RSCanvasRenderNode::UpdateHDRNodeOnTreeState(NodeId displayNodeId)
         UpdateDisplayHDRNodeMap(isOnTheTree, displayNodeId);
     }
     preScreenNodeId_ = GetScreenNodeId();
+}
+
+void RSCanvasRenderNode::UpdateDisplayBlendModeMap(bool isIncrease, NodeId displayNodeId)
+{
+#ifdef ROSEN_OHOS
+    if (!RSSystemProperties::GetEdrGainEnabled() || RSLuminanceControl::Get().IsHardwareHdrDisabled()) {
+        return;
+    }
+
+    auto context = GetContext().lock();
+    if (!context) {
+        return;
+    }
+    auto displayNode = context->GetNodeMap().GetRenderNode<RSLogicalDisplayRenderNode>(displayNodeId);
+    if (!displayNode) {
+        return;
+    }
+
+    auto blendMode = GetRenderProperties().GetColorBlendMode();
+    if (isIncrease) {
+        currentBlendMode_ = blendMode;
+        isNonlinearBlendMode_ = displayNode->HasNonlinearBlendMode(blendMode);
+        if (isNonlinearBlendMode_) {
+            displayNode->IncreaseBlendModeNode(GetId());
+            return;
+        }
+        auto parentNode = RSRenderNode::ReinterpretCast<RSCanvasRenderNode>(GetParent().lock());
+        if (parentNode) {
+            bool needIncrease = displayNode->CheckAncestorChildBlendMode(
+                blendMode, parentNode->currentBlendMode_, parentNode->isEmptyBlendMode_,
+                parentNode->isParentBlendMode_);
+            if (needIncrease) {
+                displayNode->IncreaseBlendModeNode(GetId());
+            }
+        }
+    } else {
+        displayNode->RemoveBlendModeNode(GetId());
+    }
+#endif
 }
 
 void RSCanvasRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
@@ -369,6 +412,17 @@ void RSCanvasRenderNode::OnSetPixelmap(const std::shared_ptr<Media::PixelMap>& p
 #endif
 }
 
+void RSCanvasRenderNode::SetIsDepthBackground(bool isDepthBackground)
+{
+    isDepthBackground_ = isDepthBackground;
+
+    if (isDepthBackground) {
+        RSSpatialEffectManager::Instance()->RegisterDepthBackground(shared_from_this());
+    } else {
+        RSSpatialEffectManager::Instance()->UnregisterDepthBackground(shared_from_this());
+    }
+}
+
 void RSCanvasRenderNode::SetColorGamut(uint32_t gamut)
 {
     GraphicColorGamut newGamut =
@@ -421,6 +475,5 @@ void RSCanvasRenderNode::MarkNodeColorSpace(int8_t colorSpace)
         SetColorGamut(OHOS::ColorManager::ColorSpaceName::DISPLAY_P3);
     }
 }
-
 } // namespace Rosen
 } // namespace OHOS

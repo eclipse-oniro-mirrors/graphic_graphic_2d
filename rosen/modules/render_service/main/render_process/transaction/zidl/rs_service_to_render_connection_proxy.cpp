@@ -33,6 +33,12 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+#ifdef RS_ENABLE_TV_PQ_METADATA
+static constexpr uint32_t MAX_VIDEO_INFO_SIZE = 32; // video rate info max map size
+#endif
+static constexpr uint32_t MAX_APS_PARAMS_SIZE = 128;
+}
 RSServiceToRenderConnectionProxy::RSServiceToRenderConnectionProxy(const sptr<IRemoteObject>& impl)
     : IRemoteProxy<RSIServiceToRenderConnection>(impl) {}
 
@@ -762,7 +768,7 @@ int32_t RSServiceToRenderConnectionProxy::SetBrightnessInfoChangeCallback(pid_t 
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    option.SetFlags(MessageOption::TF_ASYNC);
+    option.SetFlags(MessageOption::TF_SYNC);
     if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
         ROSEN_LOGE("%{public}s WriteInterfaceToken GetDescriptor err.", __func__);
         return RS_CONNECTION_ERROR;
@@ -771,9 +777,16 @@ int32_t RSServiceToRenderConnectionProxy::SetBrightnessInfoChangeCallback(pid_t 
         ROSEN_LOGE("%{public}s WriteInt32 failed.", __func__);
         return INVALID_ARGUMENTS;
     }
-    if (!data.WriteRemoteObject(callback->AsObject())) {
-        ROSEN_LOGE("%{public}s WriteRemoteObject callback->AsObject() err.", __func__);
-        return WRITE_PARCEL_ERR;
+    if (callback) {
+        if (!data.WriteBool(true) || !data.WriteRemoteObject(callback->AsObject())) {
+            ROSEN_LOGE("%{public}s: WriteBool or WriteObject failed.", __func__);
+            return WRITE_PARCEL_ERR;
+        }
+    } else {
+        if (!data.WriteBool(false)) {
+            ROSEN_LOGE("%{public}s: WriteBool failed.", __func__);
+            return WRITE_PARCEL_ERR;
+        }
     }
     uint32_t code = static_cast<uint32_t>(
         RSIServiceToRenderConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK);
@@ -781,7 +794,12 @@ int32_t RSServiceToRenderConnectionProxy::SetBrightnessInfoChangeCallback(pid_t 
     if (err != NO_ERROR) {
         return RS_CONNECTION_ERROR;
     }
-    return SUCCESS;
+    int32_t result = 0;
+    if (!reply.ReadInt32(result)) {
+        ROSEN_LOGE("%{public}s Read result failed", __func__);
+        return RS_CONNECTION_ERROR;
+    }
+    return result;
 }
 
 ErrCode RSServiceToRenderConnectionProxy::GetPixelMapByProcessId(
@@ -944,6 +962,30 @@ ErrCode RSServiceToRenderConnectionProxy::SetWatermark(pid_t callingPid, const s
     return ERR_OK;
 }
 
+ErrCode RSServiceToRenderConnectionProxy::SetUifirstScale(float scaleFactor)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("SetUifirstScale: WriteInterfaceToken GetDescriptor err.");
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteFloat(scaleFactor)) {
+        ROSEN_LOGE("SetUifirstScale: WriteFloat scaleFactor err.");
+        return WRITE_PARCEL_ERR;
+    }
+    RS_LOGD("RSServiceToRenderConnectionProxy::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_UIFIRST_SCALE);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        RS_LOGE("RSServiceToRenderConnectionProxy::SetUifirstScale: send request err.");
+        return RS_CONNECTION_ERROR;
+    }
+    return ERR_OK;
+}
+
 void RSServiceToRenderConnectionProxy::DoDump(std::unordered_set<std::u16string>& argSets,
     sptr<RSIDumpCallback> callback)
 {
@@ -1004,6 +1046,28 @@ void RSServiceToRenderConnectionProxy::NotifyPackageEvent(uint32_t listSize,
     }
 }
 
+void RSServiceToRenderConnectionProxy::NotifyWindowModeTypeEvent(uint8_t windowModeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("%{public}s: WriteInterfaceToken GetDescriptor err.", __func__);
+        return;
+    }
+    if (!data.WriteUint8(windowModeType)) {
+        ROSEN_LOGE("%{public}s: WriteUint8 windowModeType err.", __func__);
+        return;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::NOTIFY_WINDOW_MODE_TYPE_EVENT);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSserviceToRenderConnectionProxy::NotifyWindowModeTypeEvent: Send Request err.");
+        return;
+    }
+}
+
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 ErrCode RSServiceToRenderConnectionProxy::SetOverlayDisplayMode(int32_t mode)
 {
@@ -1026,6 +1090,45 @@ ErrCode RSServiceToRenderConnectionProxy::SetOverlayDisplayMode(int32_t mode)
         return ERR_INVALID_VALUE;
     }
     ROSEN_LOGI("%{public}s: mode:%{public}d", __func__, mode);
+    return ERR_OK;
+}
+#endif
+
+#ifdef RS_ENABLE_TV_PQ_METADATA
+ErrCode RSServiceToRenderConnectionProxy::SendVideoRateInfo(
+    const std::unordered_map<std::string, std::string>& videoRateInfo)
+{
+    auto mapSize = videoRateInfo.size();
+    if (mapSize <= 0 || mapSize > MAX_VIDEO_INFO_SIZE) {
+        ROSEN_LOGE("SendVideoRateInfo: map size err.");
+        return ERR_INVALID_VALUE;
+    }
+ 
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("%{public}s: Write InterfaceToken val err.", __func__);
+        return ERR_INVALID_VALUE;
+    }
+ 
+    if (!data.WriteUint32(mapSize)) {
+        ROSEN_LOGE("%{public}s: Write UInt32 val err.", __func__);
+        return ERR_INVALID_VALUE;
+    }
+ 
+    for (auto const &it : videoRateInfo) {
+        if (!data.WriteString(it.first) || !data.WriteString(it.second)) {
+            ROSEN_LOGE("%{public}s: write key value failed!", __func__);
+            return ERR_INVALID_VALUE;
+        }
+    }
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_VIDEO_RATE_INFO);
+    int ret = Remote()->SendRequest(code, data, reply, option);
+    if (ret != ERR_OK) {
+        ROSEN_LOGE("%{public}s: SendRequest failed. err:%{public}d.", __func__, ret);
+        return ERR_INVALID_VALUE;
+    }
     return ERR_OK;
 }
 #endif
@@ -1112,6 +1215,46 @@ ErrCode RSServiceToRenderConnectionProxy::GetBehindWindowFilterEnabled(bool& ena
     }
     if (!reply.ReadBool(enabled)) {
         ROSEN_LOGE("RSServiceToRenderConnectionProxy::GetBehindWindowFilterEnabled ReadBool err.");
+        return ERR_INVALID_VALUE;
+    }
+    return ERR_OK;
+}
+
+ErrCode RSServiceToRenderConnectionProxy::SetApsConfigParams(ApsEventType event,
+    const std::unordered_map<std::string, std::string>& params)
+{
+    uint32_t paramsSize = static_cast<uint32_t>(params.size());
+    if (paramsSize > MAX_APS_PARAMS_SIZE) {
+        ROSEN_LOGE("%{public}s: params verify failed.", __func__);
+        return ERR_INVALID_VALUE;
+    }
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("%{public}s: WriteInterfaceToken GetDescriptor err.", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteUint32(static_cast<uint32_t>(event))) {
+        ROSEN_LOGE("%{public}s: WriteUint32 event err.", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteUint32(paramsSize)) {
+        ROSEN_LOGE("%{public}s: WriteUint32 params size err.", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    for (const auto& [key, value] : params) {
+        if (!data.WriteString(key) || !data.WriteString(value)) {
+            ROSEN_LOGE("%{public}s: WriteString params err.", __func__);
+            return ERR_INVALID_VALUE;
+        }
+    }
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_APS_CONFIG_PARAMS);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("%{public}s: Send Request err, error = %{public}d", __func__, err);
         return ERR_INVALID_VALUE;
     }
     return ERR_OK;

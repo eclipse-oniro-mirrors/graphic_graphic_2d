@@ -19,6 +19,7 @@
 
 #include "rs_buffer_manager.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
+#include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -52,7 +53,7 @@ static inline sptr<SyncFence> TryMergeFence(sptr<SyncFence> fence1, sptr<SyncFen
     // caller use fence2 not nullptr
     if (fence1 && fence1->Get() != -1 && fence1->Wait(0) != 0) {
         fenceRet = SyncFence::MergeFence("bufferFence", fence1, fence2);
-        RS_OPTIONAL_TRACE_NAME_FMT("TryMergeFence %d fence %d success", fence1 ? fence1->Get() : -1, fence2->Get());
+        RS_OPTIONAL_TRACE_NAME_FMT("TryMergeFence %d fence %d", fence1 ? fence1->Get() : -1, fence2->Get());
     }
     return fenceRet;
 }
@@ -233,7 +234,7 @@ void RSBufferManager::AddPendingReleaseBuffer(sptr<IConsumerSurface> consumer,
     }
     auto bufferId = buffer->GetBufferId();
     RS_OPTIONAL_TRACE_NAME_FMT("RSBufferManager::AddPendingReleaseBuffer(with consumer) bufferId %" PRIu64
-        " seq %u fence %d", bufferId, uint32_t(buffer->GetSeqNum()), fence->Get());
+        " seq %u fence %d", bufferId, uint32_t(buffer->GetSeqNum()), fence ? fence->Get() : -1);
     std::lock_guard<std::mutex> lock(screenNodeBufferReleasedMutex_);
     auto iter = pendingReleaseBuffers_.find(bufferId);
     if (iter == pendingReleaseBuffers_.end()) {
@@ -371,7 +372,6 @@ void RSBufferManager::ReleaseUniOnDrawBuffers(std::shared_ptr<RSSurfaceHandler::
             RS_LOGE("RSBufferManager::ReleaseUniOnDrawBuffers layer: %{public}" PRIu64 " has been released", layerId);
             continue;
         }
-
         for (const auto bufferId : bufferIdSet) {
             if (decedSet.find(bufferId) != decedSet.end()) {
                 continue;
@@ -385,7 +385,7 @@ void RSBufferManager::ReleaseUniOnDrawBuffers(std::shared_ptr<RSSurfaceHandler::
             }
 
             RS_OPTIONAL_TRACE_NAME_FMT("RSBufferManager::ReleaseUniOnDrawBuffers bufferId %" PRIu64
-                " in layer:%" PRIu64, bufferId, layerId);
+                " in layer:%" PRIu64 " inTransition:%d", bufferId, layerId, bufferOwnerCount->GetTransitionFlag());
             if (bufferOwnerCount->CheckLastUniBufferOwner(uniBufferCount->bufferId_, screenId)) {
                 AddPendingReleaseBuffer(bufferOwnerCount->bufferId_, uniFence, bufferOwnerCount);
             } else {
@@ -394,6 +394,7 @@ void RSBufferManager::ReleaseUniOnDrawBuffers(std::shared_ptr<RSSurfaceHandler::
             bufferOwnerCount->OnBufferReleased();
         }
     }
+
     uniBufferCount->uniOnDrawBuffersMap_.clear();
 }
 
@@ -417,7 +418,14 @@ void RSBufferManager::ReleaseBufferById(uint64_t bufferId)
     auto mergedFence = TryMergeFence(info.mergedFences_);
     RS_OPTIONAL_TRACE_NAME_FMT("RSBufferManager::ReleaseBufferById bufferId %" PRIu64 " Fence %d",
         buffer->GetBufferId(), mergedFence ? mergedFence->Get() : -1);
-    consumer->ReleaseBuffer(buffer, mergedFence);
+    auto ret = consumer->ReleaseBuffer(buffer, mergedFence);
+    if (ret != OHOS::SURFACE_ERROR_OK) {
+        RS_LOGD("RSBufferManager::ReleaseBufferById ReleaseBuffer failed(bufferId:%{public}" PRIu64
+            ", ret:%{public}d)", bufferId, ret);
+#ifndef ROSEN_CROSS_PLATFORM
+        RsDelegateCompositeCallbackManager::GetInstance().AddBufferReleaseInfo(buffer, mergedFence, consumer);
+#endif
+    }
     pendingReleaseBuffers_.erase(iter);
 }
 } // OHOS

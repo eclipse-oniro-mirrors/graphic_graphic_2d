@@ -43,11 +43,6 @@ struct LayerDumpInfo {
     std::shared_ptr<HdiLayer> hdiLayer;
 };
 
-struct DeferredDestroyLayerInfo {
-    uint64_t surfaceId = 0;
-    std::shared_ptr<HdiLayer> hdiLayer;
-};
-
 struct PrepareCompleteParam {
     bool needFlushFramebuffer = false;
     std::vector<std::shared_ptr<RSLayer>> layers;
@@ -77,6 +72,7 @@ public:
     // only used when composer_host dead
     void ResetDevice()
     {
+        std::lock_guard<std::mutex> lock(backlightDeviceMutex_);
         device_ = nullptr;
     }
     bool IsDeviceValid() const
@@ -158,6 +154,8 @@ public:
 
 private:
     HdiDevice *device_ = nullptr;
+    // Synchronizes device_ updates with asynchronous backlight tasks.
+    mutable std::mutex backlightDeviceMutex_;
     sptr<VSyncSampler> sampler_ = nullptr;
 
     std::vector<sptr<SyncFence>> historicalPresentfences_;
@@ -184,8 +182,6 @@ private:
     uint32_t screenId_;
     std::vector<GraphicIRect> outputDamages_;
     bool directClientCompositionEnabled_ = true;
-    std::list<DeferredDestroyLayerInfo> deferredDestroyLayers_;
-    std::unordered_map<uint64_t, std::shared_ptr<HdiLayer>> latestDeferredDestroyLayers_;
 
     std::vector<sptr<SurfaceBuffer>> bufferCache_;
     uint32_t bufferCacheCountMax_ = 0;
@@ -232,8 +228,6 @@ private:
     void OnLayerCreated(uint64_t nodeId, bool success, uint64_t tunnelLayerGeneration);
     std::vector<LayerCreatedInfo> CollectPendingLayerCreatedInfosLocked();
     void ClearRecoveredInvalidTunnelSurfaceIdsLocked();
-    void AppendDeferredDestroyLayerLocked(uint64_t surfaceId, const std::shared_ptr<HdiLayer>& hdiLayer);
-    std::list<DeferredDestroyLayerInfo> CollectDeferredDestroyLayersLocked();
     bool IsTunnelLayerRequestedLocked(const std::shared_ptr<RSLayer>& rsLayer) const;
     bool FallbackTunnelLayerToGraphicLocked(const std::shared_ptr<HdiLayer>& hdiLayer,
         const std::shared_ptr<RSLayer>& rsLayer) const;

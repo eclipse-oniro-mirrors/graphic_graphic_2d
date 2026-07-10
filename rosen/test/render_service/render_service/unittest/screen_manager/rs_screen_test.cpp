@@ -475,19 +475,6 @@ HWTEST_F(RSScreenTest, GetPowerStatus_002, testing::ext::TestSize.Level1)
 }
 
 /*
- * @tc.name: GetProducerSurfaceTest001
- * @tc.desc: Test GetProducerSurface
- * @tc.type: FUNC
- */
-HWTEST_F(RSScreenTest, GetProducerSurfaceTest001, testing::ext::TestSize.Level1)
-{
-    auto rsScreen = std::make_shared<RSScreen>(100);
-    ASSERT_NE(rsScreen, nullptr);
-
-    rsScreen->GetProducerSurface();
-}
-
-/*
  * @tc.name: GetScreenSupportedMetaDataKeys_001
  * @tc.desc: GetScreenSupportedMetaDataKeys Test
  * @tc.type: FUNC
@@ -1466,6 +1453,92 @@ HWTEST_F(RSScreenTest, GetScreenBacklight_002, testing::ext::TestSize.Level1)
     rsScreen->backlightLevel_ = INVALID_BACKLIGHT_VALUE;
     rsScreen->hdiScreen_ = nullptr;
     ASSERT_EQ(INVALID_BACKLIGHT_VALUE, rsScreen->GetScreenBacklight());
+}
+
+/*
+ * @tc.name: GetScreenVCPFeature_001
+ * @tc.desc: GetScreenVCPFeature Test, hdiScreen_->GetScreenVCPFeature fails
+ * @tc.type: FUNC
+ * @tc.require: issueIAIRAN
+ */
+HWTEST_F(RSScreenTest, GetScreenVCPFeature_001, testing::ext::TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(0);
+    ASSERT_NE(nullptr, rsScreen);
+
+    rsScreen->hdiScreen_ = std::make_unique<HdiScreen>(0);
+
+    uint16_t currentValue = 0;
+    uint16_t maximumValue = 0;
+    int32_t errorCode = 0;
+    EXPECT_CALL(*hdiDeviceMock_, GetScreenVCPFeature).Times(1).WillOnce(testing::Return(0));
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+
+    auto result = rsScreen->GetScreenVCPFeature(0x10, currentValue, maximumValue, errorCode);
+    ASSERT_EQ(result, 0);
+}
+
+/*
+ * @tc.name: GetScreenVCPFeature_002
+ * @tc.desc: Test GetScreenVCPFeature with null hdiScreen
+ * @tc.type: FUNC
+ * @tc.require: issueIAIRAN
+ */
+HWTEST_F(RSScreenTest, GetScreenVCPFeature_002, testing::ext::TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(0);
+    ASSERT_NE(nullptr, rsScreen);
+    rsScreen->hdiScreen_ = nullptr;
+    VirtualScreenConfigs config;
+    auto virtualScreen = std::make_shared<RSScreen>(config);
+    ASSERT_NE(nullptr, virtualScreen);
+
+    uint16_t currentValue = 0;
+    uint16_t maximumValue = 0;
+    int32_t errorCode = 0;
+    ASSERT_NE(rsScreen->GetScreenVCPFeature(0x10, currentValue, maximumValue, errorCode), 0);
+    ASSERT_NE(virtualScreen->GetScreenVCPFeature(0x10, currentValue, maximumValue, errorCode), 0);
+}
+
+/*
+ * @tc.name: SetScreenVCPFeature_001
+ * @tc.desc: SetScreenVCPFeature Test, hdiScreen_->SetScreenVCPFeature success
+ * @tc.type: FUNC
+ * @tc.require: issueIAIRAN
+ */
+HWTEST_F(RSScreenTest, SetScreenVCPFeature_001, testing::ext::TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(0);
+    ASSERT_NE(nullptr, rsScreen);
+
+    rsScreen->hdiScreen_ = std::make_unique<HdiScreen>(0);
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+
+    uint16_t currentValue = 50;
+    EXPECT_CALL(*hdiDeviceMock_, SetScreenVCPFeature).Times(1).WillOnce(testing::Return(0));
+
+    auto result = rsScreen->SetScreenVCPFeature(0x10, currentValue);
+    ASSERT_EQ(result, 0);
+}
+
+/*
+ * @tc.name: SetScreenVCPFeature_002
+ * @tc.desc: Test SetScreenVCPFeature with null hdiScreen and virtualScreen
+ * @tc.type: FUNC
+ * @tc.require: issueIAIRAN
+ */
+HWTEST_F(RSScreenTest, SetScreenVCPFeature_002, testing::ext::TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(0);
+    ASSERT_NE(nullptr, rsScreen);
+    rsScreen->hdiScreen_ = nullptr;
+    VirtualScreenConfigs config;
+    auto virtualScreen = std::make_shared<RSScreen>(config);
+    ASSERT_NE(nullptr, virtualScreen);
+
+    uint16_t currentValue = 0;
+    ASSERT_NE(rsScreen->SetScreenVCPFeature(0x10, currentValue), 0);
+    ASSERT_NE(virtualScreen->SetScreenVCPFeature(0x10, currentValue), 0);
 }
 
 /*
@@ -2506,7 +2579,7 @@ HWTEST_F(RSScreenTest, GetVirtualSecLayerOption001, testing::ext::TestSize.Level
     configs.name = "virtualScreen02";
     configs.width = 480;
     configs.height = 320;
-    configs.surface = psurface;
+    configs.surfaceConfigs = { SurfaceRegionConfig{ psurface, RectI(0, 0, 480, 320) } };
     configs.flags = 1;
     auto rsScreen = std::make_shared<RSScreen>(configs);
     ASSERT_NE(nullptr, rsScreen);
@@ -2687,38 +2760,6 @@ HWTEST_F(RSScreenTest, SetScreenOffset, TestSize.Level1)
     auto rsScreen = std::make_shared<RSScreen>(0);
     rsScreen->SetScreenOffset(0, 0);
     EXPECT_NE(rsScreen, nullptr);
-}
-
-/*
- * @tc.name: SetProducerSurfaceTest001
- * @tc.desc: Test SetProducerSurface
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSScreenTest, SetProducerSurfaceTest001, TestSize.Level1)
-{
-    auto rsScreen = std::make_shared<RSScreen>(0);
-    rsScreen->property_.SetId(INVALID_SCREEN_ID);
-
-    auto csurface = IConsumerSurface::Create();
-    ASSERT_NE(csurface, nullptr);
-    auto producer = csurface->GetProducer();
-    auto psurface = Surface::CreateSurfaceAsProducer(producer);
-    ASSERT_NE(psurface, nullptr);
-    rsScreen->SetProducerSurface(psurface);
-}
-
-/*
- * @tc.name: SetProducerSurfaceTest002
- * @tc.desc: Test SetProducerSurface
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSScreenTest, SetProducerSurfaceTest002, TestSize.Level1)
-{
-    auto rsScreen = std::make_shared<RSScreen>(0);
-    ASSERT_NE(rsScreen, nullptr);
-    rsScreen->SetProducerSurface(nullptr);
 }
 
 /*
@@ -2996,29 +3037,6 @@ HWTEST_F(RSScreenTest, GetCapability_001, TestSize.Level1)
     rsScreen->capability_.name = "TestCapability";
     const auto& capability = rsScreen->GetCapability();
     EXPECT_EQ(capability.name, "TestCapability");
-}
-
-/*
- * @tc.name: GetProducerSurface_001
- * @tc.desc: Test GetProducerSurface getter
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSScreenTest, GetProducerSurface_001, TestSize.Level1)
-{
-    VirtualScreenConfigs config;
-    auto rsScreen = std::make_shared<RSScreen>(config);
-    ASSERT_NE(rsScreen, nullptr);
-
-    auto csurface = IConsumerSurface::Create();
-    ASSERT_NE(csurface, nullptr);
-    auto producer = csurface->GetProducer();
-    auto psurface = Surface::CreateSurfaceAsProducer(producer);
-    ASSERT_NE(psurface, nullptr);
-
-    rsScreen->SetProducerSurface(psurface);
-    auto surface = rsScreen->GetProducerSurface();
-    EXPECT_NE(surface, nullptr);
 }
 
 /*
@@ -3406,5 +3424,191 @@ HWTEST_F(RSScreenTest, GetHDRCapability_001, TestSize.Level1)
 
     const auto& hdrCapability = rsScreen->GetHDRCapability();
     EXPECT_EQ(hdrCapability.maxLum, 1000);
+}
+
+/**
+ * @tc.name: SetMultiSurfaceConfigs_Test001
+ * @tc.desc: Test SetMultiSurfaceConfigs with empty configs sets DISABLED state
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenTest, SetMultiSurfaceConfigs_Test001, TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(0);
+    ASSERT_NE(rsScreen, nullptr);
+    RSScreen::MultiSurfaceConfigs emptyConfigs;
+    rsScreen->SetMultiSurfaceConfigs(emptyConfigs);
+    EXPECT_EQ(rsScreen->property_.GetState(), ScreenState::DISABLED);
+}
+
+/**
+ * @tc.name: SetMultiSurfaceConfigs_Test002
+ * @tc.desc: Test SetMultiSurfaceConfigs with non-empty configs sets PRODUCER_SURFACE_ENABLE
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenTest, SetMultiSurfaceConfigs_Test002, TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(0);
+    ASSERT_NE(rsScreen, nullptr);
+    auto csurf = IConsumerSurface::Create("SetMultiSurfCfg_SF");
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    SurfaceRegionConfig src;
+    src.surface = pSurface;
+    src.region = RectI(0, 0, 100, 100);
+    RSScreen::MultiSurfaceConfigs configs = {src};
+    rsScreen->SetMultiSurfaceConfigs(configs);
+    EXPECT_EQ(rsScreen->property_.GetState(), ScreenState::PRODUCER_SURFACE_ENABLE);
+}
+
+/**
+ * @tc.name: AddSurfaceConfigs_Test001
+ * @tc.desc: Test AddSurfaceConfigs with empty configs sets DISABLED state
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenTest, AddSurfaceConfigs_Test001, TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(0);
+    ASSERT_NE(rsScreen, nullptr);
+    RSScreen::MultiSurfaceConfigs emptyConfigs;
+    rsScreen->AddSurfaceConfigs(emptyConfigs);
+    EXPECT_EQ(rsScreen->property_.GetState(), ScreenState::DISABLED);
+}
+
+/**
+ * @tc.name: AddSurfaceConfigs_Test002
+ * @tc.desc: Test AddSurfaceConfigs with non-empty configs sets PRODUCER_SURFACE_ENABLE
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenTest, AddSurfaceConfigs_Test002, TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(0);
+    ASSERT_NE(rsScreen, nullptr);
+    auto csurf = IConsumerSurface::Create("AddSurfCfg_SF");
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    SurfaceRegionConfig src;
+    src.surface = pSurface;
+    src.region = RectI(0, 0, 100, 100);
+    RSScreen::MultiSurfaceConfigs configs = {src};
+    rsScreen->AddSurfaceConfigs(configs);
+    EXPECT_EQ(rsScreen->property_.GetState(), ScreenState::PRODUCER_SURFACE_ENABLE);
+}
+
+/**
+ * @tc.name: RemoveSurfaceConfigs_Test001
+ * @tc.desc: Test RemoveSurfaceConfigs with empty remaining sets DISABLED state
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenTest, RemoveSurfaceConfigs_Test001, TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(0);
+    ASSERT_NE(rsScreen, nullptr);
+    std::unordered_set<uint64_t> surfaceIds;
+    rsScreen->RemoveSurfaceConfigs(surfaceIds);
+    EXPECT_EQ(rsScreen->property_.GetState(), ScreenState::DISABLED);
+}
+
+/**
+ * @tc.name: RemoveSurfaceConfigs_Test002
+ * @tc.desc: Test RemoveSurfaceConfigs with surfaces remaining keeps state unchanged
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenTest, RemoveSurfaceConfigs_Test002, TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(0);
+    ASSERT_NE(rsScreen, nullptr);
+    auto csurf = IConsumerSurface::Create("RemSurfCfg_SF");
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    SurfaceRegionConfig src;
+    src.surface = pSurface;
+    src.region = RectI(0, 0, 100, 100);
+    RSScreen::MultiSurfaceConfigs configs = {src};
+    rsScreen->SetMultiSurfaceConfigs(configs);
+    EXPECT_EQ(rsScreen->property_.GetState(), ScreenState::PRODUCER_SURFACE_ENABLE);
+    std::unordered_set<uint64_t> emptyIds;
+    rsScreen->RemoveSurfaceConfigs(emptyIds);
+    EXPECT_EQ(rsScreen->property_.GetState(), ScreenState::PRODUCER_SURFACE_ENABLE);
+}
+
+/*
+ * @tc.name: SetRogResolution001
+ * @tc.desc: Test SetRogResolution when dimensions >= physical, HdiRogEnable should be false
+ * @tc.type: FUNC
+ * @tc.require: issues/24560
+ */
+HWTEST_F(RSScreenTest, SetRogResolution001, testing::ext::TestSize.Level1)
+{
+    auto rsScreen = std::make_unique<RSScreen>(0);
+    ASSERT_NE(nullptr, rsScreen);
+
+    rsScreen->property_.SetPhysicalModeParams(10, 10, 0);
+    rsScreen->SetRogResolution(20, 20);
+    EXPECT_EQ(rsScreen->property_.GetHdiRogEnable(), false);
+    EXPECT_EQ(rsScreen->isRogResolution_, true);
+}
+
+/*
+ * @tc.name: SetRogResolution002
+ * @tc.desc: Test SetRogResolution when HDI call succeeds, HdiRogEnable and RogResolution should be true
+ * @tc.type: FUNC
+ * @tc.require: issues/24560
+ */
+HWTEST_F(RSScreenTest, SetRogResolution002, testing::ext::TestSize.Level1)
+{
+    auto rsScreen = std::make_unique<RSScreen>(0);
+    ASSERT_NE(nullptr, rsScreen);
+
+    rsScreen->property_.SetPhysicalModeParams(100, 100, 0);
+    EXPECT_CALL(*hdiDeviceMock_, SetScreenOverlayResolution(_, _, _))
+        .WillOnce(testing::Return(0));
+    rsScreen->SetRogResolution(50, 50);
+    EXPECT_EQ(rsScreen->property_.GetHdiRogEnable(), true);
+    EXPECT_EQ(rsScreen->property_.IsRogResolution(), true);
+    EXPECT_EQ(rsScreen->isRogResolution_, true);
+}
+
+/*
+ * @tc.name: SetRogResolution003
+ * @tc.desc: Test SetRogResolution when HDI call fails, HdiRogEnable should be false
+ * @tc.type: FUNC
+ * @tc.require: issues/24560
+ */
+HWTEST_F(RSScreenTest, SetRogResolution003, testing::ext::TestSize.Level1)
+{
+    auto rsScreen = std::make_unique<RSScreen>(0);
+    ASSERT_NE(nullptr, rsScreen);
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    rsScreen->property_.SetPhysicalModeParams(100, 100, 0);
+    EXPECT_CALL(*hdiDeviceMock_, SetScreenOverlayResolution(_, _, _))
+        .WillOnce(testing::Return(-1));
+    rsScreen->SetRogResolution(50, 50);
+    EXPECT_EQ(rsScreen->property_.GetHdiRogEnable(), false);
+    EXPECT_EQ(rsScreen->isRogResolution_, false);
+}
+
+/*
+ * @tc.name: SetIsRogResolution006
+ * @tc.desc: Test SetIsRogResolution resets ROG properties (HdiRogEnable and IsRogResolution become false)
+ * @tc.type: FUNC
+ * @tc.require: issues/24560
+ */
+HWTEST_F(RSScreenTest, SetIsRogResolution006, testing::ext::TestSize.Level1)
+{
+    auto rsScreen = std::make_unique<RSScreen>(0);
+    ASSERT_NE(nullptr, rsScreen);
+
+    rsScreen->property_.SetPhysicalModeParams(3, 4, 0);
+    rsScreen->isRogResolution_ = true;
+    rsScreen->property_.SetHdiRogEnable(true);
+    rsScreen->property_.SetIsRogResolution(true);
+
+    rsScreen->SetResolution(3, 4);
+    EXPECT_EQ(rsScreen->isRogResolution_, false);
+    EXPECT_EQ(rsScreen->property_.GetHdiRogEnable(), false);
+    EXPECT_EQ(rsScreen->property_.IsRogResolution(), false);
 }
 } // namespace OHOS::Rosen

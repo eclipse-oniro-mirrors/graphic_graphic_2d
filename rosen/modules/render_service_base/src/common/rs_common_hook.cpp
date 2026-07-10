@@ -152,6 +152,7 @@ RSImageDetailEnhanceAlgoParams RsCommonHook::GetImageEnhanceAlgoParams(const std
 
 bool RsCommonHook::IsImageEnhanceParamsValid()
 {
+    std::lock_guard<std::mutex> setMutex(mutexLock_);
     if (imageEnhanceAlgoParams_.find("SLR") == imageEnhanceAlgoParams_.end() ||
         imageEnhanceAlgoParams_.find("ESR") == imageEnhanceAlgoParams_.end()) {
         return false;
@@ -193,19 +194,6 @@ void RsCommonHook::SetHwcSolidColorLayerConfigFromHgm(
 bool RsCommonHook::IsHwcSolidColorLayerConfig(const std::string& bundleName)
 {
     return hwcSolidLayerConfigFromHgm_.find(bundleName) != hwcSolidLayerConfigFromHgm_.end();
-}
-
-void RsCommonHook::SetFilterUnderHwcConfigByApp(const std::string& appName, const std::string& val)
-{
-    filterUnderHwcConfig_[appName] = val;
-}
-
-std::string_view RsCommonHook::GetFilterUnderHwcConfigByApp(const std::string& appName)
-{
-    if (auto it = filterUnderHwcConfig_.find(appName); it != filterUnderHwcConfig_.end()) {
-        return it->second;
-    }
-    return "";
 }
 
 void RsCommonHook::SetOverlappedHwcNodeInAppEnabledConfig(const std::string& appName, const std::string& val)

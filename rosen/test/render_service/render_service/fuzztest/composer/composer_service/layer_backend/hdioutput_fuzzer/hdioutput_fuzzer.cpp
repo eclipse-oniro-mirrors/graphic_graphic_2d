@@ -128,9 +128,6 @@ namespace OHOS {
         auto hdiLayer = std::make_shared<HdiLayer>(screenId);
         hdiLayer->UpdateRSLayer(rsLayer);
         hdiLayer->layerType_ = GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL;
-        hdiOutput->AppendDeferredDestroyLayerLocked(surfaceId, hdiLayer);
-        auto deferredDestroyLayers = hdiOutput->CollectDeferredDestroyLayersLocked();
-        deferredDestroyLayers.clear();
 
         sptr<SyncFence> releaseFence = SyncFence::InvalidFence();
         hdiOutput->CommitTunnelLayerBySurfaceId(surfaceId, tunnelLayerId, nullptr, nullptr, releaseFence);
@@ -165,7 +162,6 @@ namespace OHOS {
         sptr<SyncFence> syncFence = SyncFence::INVALID_FENCE;
         hdiOutput->ReleaseFramebuffer(syncFence);
         hdiOutput->ClearFrameBuffer();
-        hdiOutput->Dump(result);
         hdiOutput->DumpFps(result, arg);
         hdiOutput->DumpHitchs(result, arg);
         hdiOutput->ClearFpsDump(result, arg);

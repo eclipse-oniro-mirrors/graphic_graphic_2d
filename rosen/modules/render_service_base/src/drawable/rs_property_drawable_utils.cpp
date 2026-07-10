@@ -20,12 +20,14 @@
 #include "effect/rs_render_property_tag.h"
 #include "effect/rs_render_shape_base.h"
 #include "ge_render.h"
+#include "ge_shader_filter_params.h"
 #include "ge_visual_effect.h"
 #include "ge_visual_effect_container.h"
 #include "modifier/rs_render_property.h"
 #include "platform/common/rs_log.h"
 #include "property/rs_color_picker_def.h"
 #include "property/rs_properties_painter.h"
+#include "property/rs_spatial_effect_manager.h"
 #include "render/rs_blur_filter.h"
 #include "render/rs_color_picker.h"
 #include "render/rs_drawing_filter.h"
@@ -1021,14 +1023,12 @@ std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeShadowBlender(con
 std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeHdrDarkenBlender(const RSHdrDarkenBlenderPara& params)
 {
     static constexpr char prog[] = R"(
-
         uniform float hdrBrightnessRatio;
         uniform float grayscaleFactors_r;
         uniform float grayscaleFactors_g;
         uniform float grayscaleFactors_b;
 
         half4 main(half4 srcColor, half4 dstColor) {
-
             // 1. calc darken result (a=1), original Darken algorithm
             float3 darkenRGB = srcColor.rgb + dstColor.rgb - max(srcColor.rgb * dstColor.a, dstColor.rgb * srcColor.a);
             // 2. calc hdr_extra, extracting colors from HDR layers
@@ -1411,6 +1411,41 @@ void RSPropertyDrawableUtils::DrawColorUsingSDFWithDRM(Drawing::Canvas* canvas, 
     geContainer->AddToChainedFilter(sdfColorVisualEffect);
     auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
     geRender->DrawShaderEffect(*canvas, *geContainer, *rect);
+}
+
+std::shared_ptr<Drawing::Image> RSPropertyDrawableUtils::DrawDepthOcclusion(Drawing::Canvas* canvas,
+    const std::shared_ptr<Drawing::Image>& snapshot, const std::shared_ptr<Drawing::Image>& depthMap,
+    const Vector4f& depthPlane, const Vector2f& nearFar, float occlusionWeight, const Drawing::Matrix& invMatrix)
+{
+    if (!canvas || !snapshot) {
+        ROSEN_LOGE("RSPropertyDrawableUtils::DrawDepthOcclusion canvas or snapshot is null");
+        return nullptr;
+    }
+
+    auto imageInfo = snapshot->GetImageInfo();
+    Drawing::Rect src(0, 0, imageInfo.GetWidth(), imageInfo.GetHeight());
+    Drawing::Rect dst = src;
+
+    auto geVisualEffect = std::make_shared<Drawing::GEVisualEffect>(Drawing::GE_FILTER_DEPTH_OCCLUSION,
+        Drawing::DrawingPaintType::BRUSH);
+
+    geVisualEffect->SetParam(Drawing::GE_FILTER_DEPTH_OCCLUSION_DEPTH_MAP, depthMap);
+    geVisualEffect->SetParam(Drawing::GE_FILTER_DEPTH_OCCLUSION_MATRIX, invMatrix);
+    geVisualEffect->SetParam(Drawing::GE_FILTER_DEPTH_OCCLUSION_DEPTH_PLANE, depthPlane);
+    geVisualEffect->SetParam(Drawing::GE_FILTER_DEPTH_OCCLUSION_WEIGHT, occlusionWeight);
+    geVisualEffect->SetParam(Drawing::GE_FILTER_DEPTH_OCCLUSION_NEAR, nearFar.x_);
+    geVisualEffect->SetParam(Drawing::GE_FILTER_DEPTH_OCCLUSION_FAR, nearFar.y_);
+
+    auto geContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
+    geContainer->AddToChainedFilter(geVisualEffect);
+
+    auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
+    GraphicsEffectEngine::GERender::ShaderFilterEffectContext context;
+    context.image = snapshot;
+    context.src = src;
+    context.dst = dst;
+
+    return geRender->ApplyImageEffect(*canvas, *geContainer, context, Drawing::SamplingOptions());
 }
 
 void RSPropertyDrawableUtils::EndBlender(RSPaintFilterCanvas& canvas, int blendModeApplyType)
@@ -1808,7 +1843,6 @@ void RSPropertyDrawableUtils::ApplySDFShapeToFilter(const RSProperties& properti
     if (renderFilter->GetType() != RSNGEffectType::FROSTED_GLASS) {
         return;
     }
-#ifndef ROSEN_ARKUI_X
     const auto& filter = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(renderFilter);
     auto sdfShape = properties.GetSDFShape();
     if (sdfShape) {
@@ -1826,7 +1860,6 @@ void RSPropertyDrawableUtils::ApplySDFShapeToFilter(const RSProperties& properti
     sdfRRectShape->Setter<SDFRRectShapeRRectRenderTag>(sdfRRect);
     filter->Setter<FrostedGlassShapeRenderTag>(sdfRRectShape, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
     drawingFilter->SetNGRenderFilter(filter);
-#endif
 }
 
 std::shared_ptr<RSNGRenderShapeBase> RSPropertyDrawableUtils::CreateDefaultRRectShape(const RRect& sdfRRect,

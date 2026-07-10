@@ -22,10 +22,13 @@ namespace {
 constexpr int64_t UNI_RENDER_VSYNC_OFFSET = 5000000; // ns
 constexpr int64_t UNI_RENDER_VSYNC_OFFSET_DELAY_MODE = -3300000; // ns
 }
+RSVsyncManager::RSVsyncManager()
+{
+}
 
-RSVsyncManager::RSVsyncManager() {}
-
-RSVsyncManager::~RSVsyncManager() {}
+RSVsyncManager::~RSVsyncManager()
+{
+}
 
 void RSVsyncManager::SetScreenManager(sptr<RSScreenManager> screenManager)
 {
@@ -80,7 +83,7 @@ bool RSVsyncManager::VsyncComponentInit(bool isMultiProcessMode)
         return this->screenManager_->GetScreenVsyncEnableById(vsyncEnabledScreenId);
     });
 
-    auto dvsyncParam = InitDVSyncParams(isMultiProcessMode);
+    DVSyncFeatureParam dvsyncParam = InitDVSyncParams(isMultiProcessMode);
     rsVSyncDistributor_ = new VSyncDistributor(rsVSyncController_, "rs", dvsyncParam);
     rsVSyncDistributor_->InitDVSync(dvsyncParam);
     appVSyncDistributor_ = new VSyncDistributor(appVSyncController_, "app", dvsyncParam);
@@ -115,7 +118,7 @@ void RSVsyncManager::OnScreenDisconnected(ScreenId screenId, std::shared_ptr<App
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = physicalScreens_.find(screenId);
         if (it != physicalScreens_.end()) {
-            physicalScreens_.erase(screenId);
+            physicalScreens_.erase(it);
         }
         if (rsVSyncDistributor_ != nullptr) {
             rsVSyncDistributor_->SetPhysicalScreenNum(physicalScreens_.size());
@@ -131,6 +134,24 @@ void RSVsyncManager::OnScreenPropertyChanged(ScreenId id, ScreenPropertyType typ
         auto status = static_cast<ScreenPowerStatus>(prop->Get());
         if (vsyncSampler_ != nullptr) {
             vsyncSampler_->ProcessVSyncScreenIdWhilePowerStatusChanged(id, status, handler, isFoldScreen);
+        }
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            if (rsVSyncDistributor_ == nullptr) {
+                return;
+            }
+            auto it = physicalScreens_.find(id);
+            if (status == ScreenPowerStatus::POWER_STATUS_ON) {
+                if (it == physicalScreens_.end()) {
+                    physicalScreens_.insert(id);
+                    rsVSyncDistributor_->SetPhysicalScreenNum(physicalScreens_.size());
+                }
+            } else if (status == ScreenPowerStatus::POWER_STATUS_OFF) {
+                if (it != physicalScreens_.end()) {
+                    physicalScreens_.erase(it);
+                    rsVSyncDistributor_->SetPhysicalScreenNum(physicalScreens_.size());
+                }
+            }
         }
     }
 }
@@ -170,34 +191,32 @@ sptr<RSVsyncManagerAgent> RSVsyncManager::GetVsyncManagerAgent()
     return rsVsyncManagerAgent_;
 }
 
-
-sptr<VSyncDistributor> RSVsyncManager::GetVSyncAppDistributor()
+sptr<VSyncDistributor> RSVsyncManager::GetVsyncAppDistributor()
 {
     return appVSyncDistributor_;
 }
 
-
-sptr<VSyncDistributor> RSVsyncManager::GetVSyncRSDistributor()
+sptr<VSyncDistributor> RSVsyncManager::GetVsyncRSDistributor()
 {
     return rsVSyncDistributor_;
 }
 
-sptr<VSyncGenerator> RSVsyncManager::GetVSyncGenerator()
+sptr<VSyncGenerator> RSVsyncManager::GetVsyncGenerator()
 {
     return vsyncGenerator_;
 }
 
-sptr<VSyncController> RSVsyncManager::GetVSyncRSController()
+sptr<VSyncController> RSVsyncManager::GetVsyncRSController()
 {
     return rsVSyncController_;
 }
 
-sptr<VSyncController> RSVsyncManager::GetVSyncAppController()
+sptr<VSyncController> RSVsyncManager::GetVsyncAppController()
 {
     return appVSyncController_;
 }
 
-sptr<VSyncSampler> RSVsyncManager::GetVSyncSampler()
+sptr<VSyncSampler> RSVsyncManager::GetVsyncSampler()
 {
     return vsyncSampler_;
 }
@@ -224,7 +243,6 @@ DVSyncFeatureParam RSVsyncManager::InitDVSyncParams(bool isMultiProcessMode)
     };
     return dvsyncParam;
 }
-
 } // namespace Rosen
 } // namespace OHOS
 

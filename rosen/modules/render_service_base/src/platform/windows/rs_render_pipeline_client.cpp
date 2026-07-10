@@ -28,6 +28,10 @@ RSRenderPipelineClient::RSRenderPipelineClient(sptr<IRemoteObject>& connectToRen
 {
 }
 
+void RSRenderPipelineClient::SetOnRenderProcessDiedCallback(const std::function<void()>& callback)
+{
+}
+
 void RSRenderPipelineClient::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
 {
 }
@@ -303,6 +307,33 @@ int32_t RSRenderPipelineClient::UpdateFrameStabilityDetection(
 
 void RSRenderPipelineClient::SetFreeMultiWindowStatus(bool enable)
 {
+}
+
+bool RSRenderPipelineClient::SetDelegateMode(NodeId id, bool isSetDelegateMode, pid_t pid)
+{
+    return false;
+}
+
+bool RSRenderPipelineClient::RegisterSurfaceTransactionListener(
+    sptr<RSISurfaceTransactionListener> listener, uint64_t listenerId)
+{
+    return false;
+}
+
+bool RSRenderPipelineClient::UnRegisterSurfaceTransactionListener(uint64_t listenerId)
+{
+    return false;
+}
+
+bool RSRenderPipelineClient::RegisterSurfaceNodeBufferReleaseListener(
+    sptr<RSISurfaceNodeBufferReleaseCallback> listener)
+{
+    return false;
+}
+
+bool RSRenderPipelineClient::UnRegisterSurfaceNodeBufferReleaseListener()
+{
+    return false;
 }
 } // namespace Rosen
 } // namespace OHOS

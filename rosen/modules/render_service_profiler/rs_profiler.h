@@ -19,8 +19,6 @@
 #include <memory>
 #include <unordered_map>
 
-#include "rs_profiler_test_tree.h"
-
 #include "common/rs_macros.h"
 #include "transaction/rs_hrp_service.h"
 
@@ -577,7 +575,7 @@ public:
     RSB_EXPORT static void AddAnimationFinish(AnimationId id, int64_t timestamp_ns);
 
     RSB_EXPORT static RetCodeHrpService HrpServiceOpenFile(const HrpServiceDirInfo& dirInfo,
-        const std::string& fileName, int32_t flags, int& outFd);
+        const std::string& fileName, uint32_t flags, int& outFd);
     RSB_EXPORT static RetCodeHrpService HrpServicePopulateFiles(const HrpServiceDirInfo& dirInfo,
         uint32_t firstFileIndex, std::vector<HrpServiceFileInfo>& outFiles);
 
@@ -928,10 +926,8 @@ private:
     static void TestLoadSubTree(const ArgList& args);
     static void TestClearSubTree(const ArgList& args);
 
-    static void MarshalSelfDrawingBuffers(std::stringstream& data, bool isBetaRecording);
-    static void UnmarshalSelfDrawingBuffers();
-    static void RenderToReadableBuffer(std::shared_ptr<RSSurfaceRenderNode> node, sptr<SurfaceBuffer> toSurfaceBuffer);
-    static void SurfaceNodeUpdateBuffer(std::shared_ptr<RSRenderNode> node, sptr<SurfaceBuffer> buffer);
+    static void MarshalSelfDrawingNodes(bool isBetaRecording);
+    static void UnmarshalSelfDrawingNodes();
 
     static void InitTrace3D(const ArgList& args);
     static void StopTrace3D();

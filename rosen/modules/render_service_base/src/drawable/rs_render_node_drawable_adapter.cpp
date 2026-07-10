@@ -26,6 +26,7 @@
 #include "drawable/rs_misc_drawable.h"
 #include "drawable/rs_render_node_shadow_drawable.h"
 #include "params/rs_canvas_drawing_render_params.h"
+#include "params/rs_depth_render_params.h"
 #include "params/rs_effect_render_params.h"
 #include "params/rs_logical_display_render_params.h"
 #include "params/rs_screen_render_params.h"
@@ -169,6 +170,9 @@ void RSRenderNodeDrawableAdapter::InitRenderParams(const std::shared_ptr<const R
             break;
         case RSRenderNodeType::LOGICAL_DISPLAY_NODE:
             sharedPtr->renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(sharedPtr->nodeId_);
+            break;
+        case RSRenderNodeType::DEPTH_NODE:
+            sharedPtr->renderParams_ = std::make_unique<RSDepthRenderParams>(sharedPtr->nodeId_);
             break;
         default:
             sharedPtr->renderParams_ = std::make_unique<RSRenderParams>(sharedPtr->nodeId_);
@@ -360,10 +364,12 @@ void RSRenderNodeDrawableAdapter::DrawContent(Drawing::Canvas& canvas, const Dra
 void RSRenderNodeDrawableAdapter::DrawChildren(Drawing::Canvas& canvas, const Drawing::Rect& rect) const
 {
 #ifdef USE_PRIMITIVE
-    auto& paintFilterCanvas = static_cast<RSPaintFilterCanvas &>(canvas);
-    auto primListAdapter = paintFilterCanvas.primListAdapter_;
-    if (primListAdapter) {
-        primListAdapter->SetChildrenSkipped(false);
+    auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
+    if (paintFilterCanvas) {
+        auto primListAdapter = paintFilterCanvas->primListAdapter_;
+        if (primListAdapter) {
+            primListAdapter->SetChildrenSkipped(false);
+        }
     }
 #endif
     if (drawCmdList_.empty()) {
@@ -539,11 +545,15 @@ void RSRenderNodeDrawableAdapter::SkipDrawSubtreeAndClipHole(
         RS_LOGD("RSRenderNodeDrawableAdapter::SkipDrawSubtreeAndClipHole curCanvas is null");
         return;
     }
+    auto realShadowRect = params.GetRealShadowRect();
     auto shadowRect = params.GetShadowRect();
     auto filterRect = GetFilterRelativeRect(params.GetBounds());
+    filterRect.Join(realShadowRect);
     filterRect.Join(shadowRect);
     RS_OPTIONAL_TRACE_NAME_FMT(
-        "ClipHoleForBlurOrExcludedSubtree Rect:[%.2f, %.2f]", filterRect.GetWidth(), filterRect.GetHeight());
+        "ClipHoleForBlurOrExcludedSubtree Rect:[%.2f, %.2f], ShadowRect:[%.2f, %.2f], RealShadowRect:[%.2f, %.2f]",
+        filterRect.GetWidth(), filterRect.GetHeight(), shadowRect.GetWidth(), shadowRect.GetHeight(),
+        realShadowRect.GetWidth(), realShadowRect.GetHeight());
     Drawing::AutoCanvasRestore arc(*curCanvas, true);
     auto matrix = canvas.GetTotalMatrix();
     matrix.Set(Drawing::Matrix::TRANS_X, std::floor(matrix.Get(Drawing::Matrix::TRANS_X)));

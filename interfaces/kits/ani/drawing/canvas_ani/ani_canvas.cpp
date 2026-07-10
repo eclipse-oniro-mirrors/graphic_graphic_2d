@@ -173,12 +173,31 @@ bool ExtracetDrawingBitmap(std::shared_ptr<Media::PixelMap> pixelMap, Drawing::B
     return true;
 }
 
+bool CheckDrawingPixelMapMeshParams(int column, int row, int& vertCounts, int& indexCount)
+{
+    int64_t tempVertCounts = (static_cast<int64_t>(column) + 1) * (static_cast<int64_t>(row) + 1);
+    if (tempVertCounts > INT_MAX) {
+        ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh vertCounts overflow");
+        return false;
+    }
+    vertCounts = static_cast<int>(tempVertCounts);
+    int64_t tempIndexCount = static_cast<int64_t>(column) * static_cast<int64_t>(row) * 6;
+    if (tempIndexCount > INT_MAX) {
+        ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh indexCount overflow");
+        return false;
+    }
+    indexCount = static_cast<int>(tempIndexCount);
+    return true;
+}
+
 void DrawingPixelMapMesh(std::shared_ptr<Media::PixelMap> pixelMap, int column, int row,
     float* vertices, uint32_t* colors, Drawing::Canvas* m_canvas)
 {
-    const int vertCounts = (column + 1) * (row + 1);
-    int32_t size = 6; // triangle * 2
-    const int indexCount = column * row * size;
+    int vertCounts = 0;
+    int indexCount = 0;
+    if (!CheckDrawingPixelMapMeshParams(column, row, vertCounts, indexCount)) {
+        return;
+    }
     uint32_t flags = Drawing::BuilderFlags::HAS_TEXCOORDS_BUILDER_FLAG;
     if (colors) {
         flags |= Drawing::BuilderFlags::HAS_COLORS_BUILDER_FLAG;
@@ -204,10 +223,6 @@ void DrawingPixelMapMesh(std::shared_ptr<Media::PixelMap> pixelMap, int column, 
     const float height = static_cast<float>(pixelMap->GetHeight());
     const float width = static_cast<float>(pixelMap->GetWidth());
 
-    if (column == 0 || row == 0) {
-        ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh column or row is invalid");
-        return;
-    }
     const float dy = height / row;
     const float dx = width / column;
 
@@ -931,7 +946,7 @@ void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t col
     DrawPixelMapMeshArgs& args, AniCanvas* aniCanvas)
 {
     uint32_t colorsSize = 0;
-    float* verticesMesh = args.verticesSize ? (args.vertices + args.vertOffset * 2) : nullptr;
+    float* verticesMesh = args.verticesSize ? (args.vertices + static_cast<int64_t>(args.vertOffset) * 2) : nullptr;
     if (!IsNull(env, colorsObj)) {
         ani_size aniLength = 0;
         if (env->Array_GetLength(reinterpret_cast<ani_array>(colorsObj), &aniLength) != ANI_OK) {
@@ -940,7 +955,9 @@ void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t col
             return;
         }
         colorsSize = static_cast<uint32_t>(aniLength);
-        int64_t tempColorsSize = (args.column + 1) * (args.row + 1) + colorOffset;
+        int64_t tempColorsSize =
+            (static_cast<int64_t>(args.column) + 1) * (static_cast<int64_t>(args.row) + 1);
+        tempColorsSize += static_cast<int64_t>(colorOffset);
         if (colorsSize != 0 && colorsSize != tempColorsSize) {
             ROSEN_LOGE("AniCanvas::GetColorsAndDraw colors are invalid");
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter5 type");
@@ -1000,9 +1017,16 @@ void AniCanvas::DrawPixelMapMesh(ani_env* env, ani_object obj,
     int32_t column = aniMeshWidth;
     int32_t row = aniMeshHeight;
     int32_t vertOffset = aniVertOffset;
-    if (column == 0 || row == 0) {
+    int32_t colorOffset = aniColorOffset;
+    if (column <= 0 || row <= 0) {
         ROSEN_LOGE("AniCanvas::DrawPixelMapMesh column or row is invalid");
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid column or row params.");
+        return;
+    }
+
+    if (vertOffset < 0 || colorOffset < 0) {
+        ROSEN_LOGE("AniCanvas::DrawPixelMapMesh vertOffset or colorOffset is invalid");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid vertOffset or colorOffset params.");
         return;
     }
 
@@ -1013,7 +1037,10 @@ void AniCanvas::DrawPixelMapMesh(ani_env* env, ani_object obj,
     }
 
     uint32_t verticesSize = static_cast<uint32_t>(aniLength);
-    int64_t tempVerticesSize = ((column + 1) * (row + 1) + vertOffset) * 2; // x and y two coordinates
+    int64_t tempVerticesSize =
+        (static_cast<int64_t>(column) + 1) * (static_cast<int64_t>(row) + 1) + static_cast<int64_t>(vertOffset);
+    constexpr int32_t coordinateDim = 2;
+    tempVerticesSize *= coordinateDim;
     if (verticesSize != tempVerticesSize) {
         ROSEN_LOGE("AniCanvas::DrawPixelMapMesh vertices are invalid");
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter3 type.");
@@ -1031,7 +1058,7 @@ void AniCanvas::DrawPixelMapMesh(ani_env* env, ani_object obj,
         return;
     }
     DrawPixelMapMeshArgs args {pixelMap, vertices, verticesSize, vertOffset, column, row};
-    GetColorsAndDraw(env, colorsObj, static_cast<int32_t>(aniColorOffset), args, aniCanvas);
+    GetColorsAndDraw(env, colorsObj, colorOffset, args, aniCanvas);
 #endif
 }
 
@@ -2046,10 +2073,9 @@ ani_object AniCanvas::GetTotalMatrix(ani_env* env, ani_object obj)
     std::shared_ptr<Drawing::Matrix> matrixPtr = std::make_shared<Drawing::Matrix>(matrix);
     AniMatrix* aniMatrix = new AniMatrix(matrixPtr);
     aniObj = CreateAniObject(env, AniGlobalClass::GetInstance().matrix,
-        AniGlobalMethod::GetInstance().matrixCtor);
-    if (ANI_OK != env->Object_SetField_Long(aniObj,
-        AniGlobalField::GetInstance().matrixNativeObj, reinterpret_cast<ani_long>(aniMatrix))) {
-        ROSEN_LOGE("AniCanvas::GetTotalMatrix failed cause by Object_SetField_Long");
+        AniGlobalMethod::GetInstance().matrixCtorWithPtr, reinterpret_cast<ani_long>(aniMatrix));
+    if (IsUndefined(env, aniObj)) {
+        ROSEN_LOGE("AniCanvas::GetTotalMatrix failed create aniMatrix");
         delete aniMatrix;
         return CreateAniUndefined(env);
     }
@@ -2484,30 +2510,20 @@ ani_object AniCanvas::CreateAniCanvas(ani_env* env, Canvas* canvas)
         ROSEN_LOGE("CreateAniCanvas failed, canvas is nullptr!");
         return CreateAniUndefined(env);
     }
-
-    ani_ref aniRef;
-    if (env->GetUndefined(&aniRef) != ANI_OK) {
-        ROSEN_LOGE("CreateAniCanvas GetUndefined failed");
-        return CreateAniUndefined(env);
-    }
     ani_class aniClass;
     if (env->FindClass(ANI_CLASS_CANVAS_NAME, &aniClass) != ANI_OK) {
         ROSEN_LOGE("CreateAniCanvas FindClass failed");
         return CreateAniUndefined(env);
     }
     ani_method aniConstructor;
-    if (env->Class_FindMethod(aniClass, "<ctor>", nullptr, &aniConstructor) != ANI_OK) {
+    if (env->Class_FindMethod(aniClass, "<ctor>", "l:", &aniConstructor) != ANI_OK) {
         ROSEN_LOGE("CreateAniCanvas Class_FindMethod failed");
         return CreateAniUndefined(env);
     }
-    ani_object aniObj;
-    if (env->Object_New(aniClass, aniConstructor, &aniObj, aniRef) != ANI_OK) {
-        ROSEN_LOGE("CreateAniCanvas Object_New failed");
-        return CreateAniUndefined(env);
-    }
     auto aniCanvas = new AniCanvas(canvas);
-    if (ANI_OK != env->Object_SetFieldByName_Long(aniObj, NATIVE_OBJ, reinterpret_cast<ani_long>(aniCanvas))) {
-        ROSEN_LOGE("aniCanvas failed cause by Object_SetFieldByName_Long");
+    ani_object aniObj;
+    if (env->Object_New(aniClass, aniConstructor, &aniObj, reinterpret_cast<ani_long>(aniCanvas)) != ANI_OK) {
+        ROSEN_LOGE("CreateAniCanvas Object_New failed");
         delete aniCanvas;
         return CreateAniUndefined(env);
     }
@@ -2542,17 +2558,10 @@ ani_object AniCanvas::CanvasTransferStatic(ani_env* env, [[maybe_unused]]ani_obj
 #ifdef ROSEN_OHOS
     aniCanvas->mPixelMap_ = jsCanvas->GetPixelMap();
 #endif
-    ani_ref aniRef;
-    if (env->GetUndefined(&aniRef) != ANI_OK) {
-        ROSEN_LOGE("AniCanvas::CanvasTransferStatic GetUndefined failed");
-        delete aniCanvas;
-        return CreateAniUndefined(env);
-    }
     ani_object aniCanvasObj = CreateAniObject(env, AniGlobalClass::GetInstance().canvas,
-        AniGlobalMethod::GetInstance().canvasCtor, aniRef);
-    if (ANI_OK != env->Object_SetField_Long(
-        aniCanvasObj, AniGlobalField::GetInstance().canvasNativeObj, reinterpret_cast<ani_long>(aniCanvas))) {
-        ROSEN_LOGE("AniCanvas::CanvasTransferStatic failed create aniBrush");
+        AniGlobalMethod::GetInstance().canvasCtorWithPtr, reinterpret_cast<ani_long>(aniCanvas));
+    if (IsUndefined(env, aniCanvasObj)) {
+        ROSEN_LOGE("AniCanvas::CanvasTransferStatic failed create aniCanvas");
         delete aniCanvas;
         return CreateAniUndefined(env);
     }

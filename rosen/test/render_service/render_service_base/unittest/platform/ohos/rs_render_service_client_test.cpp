@@ -22,6 +22,8 @@
 #include "ui/rs_surface_node.h"
 #include "surface_utils.h"
 #include <iostream>
+#include <string>
+#include <unordered_map>
 
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
@@ -194,7 +196,8 @@ HWTEST_F(RSServiceClientTest, CreatePixelMapFromSurfaceId001, TestSize.Level1)
     ASSERT_NE(psurface, nullptr);
     SurfaceUtils::GetInstance()->Add(psurface->GetUniqueId(), psurface);
     Rect srcRect = {0, 0, 100, 100};
-    rsClient->CreatePixelMapFromSurfaceId(psurface->GetUniqueId(), srcRect);
+    rsClient->CreatePixelMapFromSurfaceId(psurface->GetUniqueId(), srcRect, false);
+    rsClient->CreatePixelMapFromSurfaceId(psurface->GetUniqueId(), srcRect, true);
 }
 
 /**
@@ -1369,5 +1372,138 @@ HWTEST_F(RSServiceClientTest, SetDualScreenState001, TestSize.Level1)
     rsClient->SetDualScreenState(screenId, DualScreenStatus::DUAL_SCREEN_ENTER);
 }
 
+/**
+ * @tc.name: AddVirtualScreenSurface001
+ * @tc.desc: Test AddVirtualScreenSurface with empty surfaceConfigs
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSServiceClientTest, AddVirtualScreenSurface001, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    std::vector<SurfaceRegionConfig> emptyConfigs;
+    EXPECT_EQ(rsClient->AddVirtualScreenSurface(INVALID_SCREEN_ID, emptyConfigs),
+        StatusCode::INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface002
+ * @tc.desc: Test AddVirtualScreenSurface with null connection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSServiceClientTest, AddVirtualScreenSurface002, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    auto csurf = IConsumerSurface::Create("AddVirtSurf_SF");
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    SurfaceRegionConfig src;
+    src.surface = pSurface;
+    src.region = RectI(0, 0, 100, 100);
+    std::vector<SurfaceRegionConfig> configs = {src};
+    RSRenderServiceConnectHub::Destroy();
+    EXPECT_EQ(rsClient->AddVirtualScreenSurface(INVALID_SCREEN_ID, configs),
+        StatusCode::RENDER_SERVICE_NULL);
+    RSRenderServiceConnectHub::Init();
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface003
+ * @tc.desc: Test AddVirtualScreenSurface with valid connection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSServiceClientTest, AddVirtualScreenSurface003, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    auto csurf = IConsumerSurface::Create("AddVirtSurf_SF2");
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    SurfaceRegionConfig src;
+    src.surface = pSurface;
+    src.region = RectI(0, 0, 100, 100);
+    std::vector<SurfaceRegionConfig> configs = {src};
+    EXPECT_NE(rsClient->AddVirtualScreenSurface(INVALID_SCREEN_ID, configs),
+        StatusCode::RENDER_SERVICE_NULL);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenSurface001
+ * @tc.desc: Test RemoveVirtualScreenSurface with null connection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSServiceClientTest, RemoveVirtualScreenSurface001, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    std::vector<sptr<Surface>> surfaces;
+    RSRenderServiceConnectHub::Destroy();
+    EXPECT_EQ(rsClient->RemoveVirtualScreenSurface(INVALID_SCREEN_ID, surfaces),
+        StatusCode::RENDER_SERVICE_NULL);
+    RSRenderServiceConnectHub::Init();
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenSurface002
+ * @tc.desc: Test RemoveVirtualScreenSurface with valid connection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSServiceClientTest, RemoveVirtualScreenSurface002, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    std::vector<sptr<Surface>> surfaces;
+    EXPECT_NE(rsClient->RemoveVirtualScreenSurface(INVALID_SCREEN_ID, surfaces),
+        StatusCode::RENDER_SERVICE_NULL);
+}
+
+/**
+ * @tc.name: NotifyWindowModeTypeEvent001
+ * @tc.desc: Test NotifyWindowModeTypeEvent with valid connection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSServiceClientTest, NotifyWindowModeTypeEvent001, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    rsClient->NotifyWindowModeTypeEvent(1);
+    rsClient->NotifyWindowModeTypeEvent(2);
+    rsClient->NotifyWindowModeTypeEvent(3);
+}
+
+/**
+ * @tc.name: SetApsConfigParams_RetNotOK
+ * @tc.desc: Test SetApsConfigParams when params size exceeds limit (129 elements > 128)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceClientTest, SetApsConfigParams_RetNotOK, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+
+    std::unordered_map<std::string, std::string> params;
+    for (uint32_t i = 0; i < 129; i++) {
+        params["key" + std::to_string(i)] = "value" + std::to_string(i);
+    }
+
+    bool result = rsClient->SetApsConfigParams(ApsEventType::SPLIT_LAYER, params);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: SetApsConfigParams_Success
+ * @tc.desc: Test SetApsConfigParams with valid params
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceClientTest, SetApsConfigParams_Success, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+
+    std::unordered_map<std::string, std::string> params = {
+        {"key1", "value1"},
+        {"key2", "value2"}
+    };
+
+    bool result = rsClient->SetApsConfigParams(ApsEventType::SPLIT_LAYER, params);
+    EXPECT_EQ(result, true);
+}
 } // namespace Rosen
 } // namespace OHOS

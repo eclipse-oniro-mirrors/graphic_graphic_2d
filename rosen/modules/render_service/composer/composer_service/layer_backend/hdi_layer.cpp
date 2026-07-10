@@ -351,6 +351,19 @@ int32_t HdiLayer::SetLayerBlendType()
     return ret;
 }
 
+int32_t HdiLayer::SetDelegateModeLayerCrop()
+{
+    if (doLayerInfoCompare_ && Compare(rsLayer_->GetDelegateModeCropRect(), prevRSLayer_->GetDelegateModeCropRect())) {
+        return GRAPHIC_DISPLAY_SUCCESS;
+    }
+
+    GraphicIRect rect = rsLayer_->GetDelegateModeCropRect();
+    RS_TRACE_NAME_FMT("HdiLayer::SetDelegateModeLayerCrop, layerId=%u, rect={%d, %d, %d, %d}",
+        layerId_, rect.x, rect.y, rect.w, rect.h);
+    int32_t ret = device_->SetLayerCrop(screenId_, layerId_, rect);
+    return ret;
+}
+
 int32_t HdiLayer::SetLayerCrop()
 {
     if (doLayerInfoCompare_ && Compare(rsLayer_->GetCropRect(), prevRSLayer_->GetCropRect())) {
@@ -523,13 +536,17 @@ int32_t HdiLayer::SetTunnelLayerId()
 
 int32_t HdiLayer::SetTunnelLayerProperty()
 {
-    if (prevRSLayer_ != nullptr) {
-        if (rsLayer_->GetTunnelLayerProperty() == prevRSLayer_->GetTunnelLayerProperty()) {
-            return GRAPHIC_DISPLAY_SUCCESS;
-        }
+    if (layerType_ != GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL) {
+        return GRAPHIC_DISPLAY_NOT_SUPPORT;
     }
+    uint32_t property = hasSetTunnel_ ? rsLayer_->GetTunnelLayerProperty() : 0;
+    if (hasSetTunnel_ && tunnelLayerProperty_ == property) {
+        return GRAPHIC_DISPLAY_SUCCESS;
+    }
+    tunnelLayerProperty_ = property;
+    hasSetTunnel_ = true;
 
-    int32_t ret = device_->SetTunnelLayerProperty(screenId_, layerId_, rsLayer_->GetTunnelLayerProperty());
+    int32_t ret = device_->SetTunnelLayerProperty(screenId_, layerId_, property);
     if (ret != GRAPHIC_DISPLAY_SUCCESS) {
         return ret;
     }
@@ -588,8 +605,8 @@ int32_t HdiLayer::SetHdiLayerInfo(bool isActiveRectSwitching)
     ret = SetLayerVisibleRegion();
     CheckRet(ret, "SetLayerVisibleRegion");
     // The crop needs to be set in the first order
-    ret = SetLayerCrop();
-    CheckRet(ret, "SetLayerCrop");
+    ret = (rsLayer_->GetDelegateMode() ? SetDelegateModeLayerCrop() : SetLayerCrop());
+    CheckRet(ret, rsLayer_->GetDelegateMode() ? "SetDelegateModeLayerCrop" : "SetLayerCrop");
     // The data space contained in the layerbuffer needs to be set in the second order
     ret = SetLayerBuffer();
     CheckRet(ret, "SetLayerBuffer");

@@ -60,6 +60,8 @@ group("test") {
     "render_service/fuzztest/rsscreenmanager05_fuzzer:fuzztest",
     "render_service/fuzztest/rsscreenmanager06_fuzzer:fuzztest",
     "render_service/fuzztest/rsscreenmanager07_fuzzer:fuzztest",
+    "render_service/fuzztest/rsscreenmanager08_fuzzer:fuzztest",
+    "render_service/fuzztest/rsscreenmanager09_fuzzer:fuzztest",
     "render_service/fuzztest/rstransaction_fuzzer:fuzztest",
     "render_service/fuzztest/rsserviceconnectionstub_transaction/bufferAvailableListenerstub_fuzzer:fuzztest",
     "render_service/fuzztest/rsserviceconnectionstub_transaction/bufferClearListenerstub_fuzzer:fuzztest",
@@ -137,7 +139,6 @@ group("test") {
     "render_service_base/fuzztest/rsframeratelinkercommand_fuzzer:fuzztest",
     "render_service_base/fuzztest/rsmessageprocessor_fuzzer:fuzztest",
     "render_service_base/fuzztest/rsnodecommand_fuzzer:fuzztest",
-    "render_service_base/fuzztest/rsproxynodecommand_fuzzer:fuzztest",
     "render_service_base/fuzztest/rsrootnodecommand_fuzzer:fuzztest",
     "render_service_base/fuzztest/rsunionnodecommand_fuzzer:fuzztest",
     "render_service_base/fuzztest/rsdisplayrendernode_fuzzer:fuzztest",
@@ -251,6 +252,7 @@ group("test") {
     "render_service_client/fuzztest/rsinterfaces_extern/clearUifirstCache_fuzzer:fuzztest",
     "render_service_client/fuzztest/rsinterfaces_extern/setVmaCacheStatus_fuzzer:fuzztest",
     "render_service_client/fuzztest/rsinterfaces_extern/setAncoForceDoDirect_fuzzer:fuzztest",
+    "render_service_client/fuzztest/rsinterfaces_extern/setApsConfigParams_fuzzer:fuzztest",
     "render_service_client/fuzztest/rsinterfaces_extern/setOverlayDisplayMode_fuzzer:fuzztest",
     "render_service_client/fuzztest/rsinterfaces_extern/setGlobalDarkColorMode_fuzzer:fuzztest",
     "render_service_client/fuzztest/rsinterfaces_extern/dropFrameByPid_fuzzer:fuzztest",
@@ -293,6 +295,7 @@ group("test") {
     "render_service_client/fuzztest/ui/rsuisurface_fuzzer:fuzztest",
     "render_service_client/fuzztest/ui/rswindowkeyframenode_fuzzer:fuzztest",
     "render_service_client/unittest/animation:unittest",
+    "render_service_client/unittest/command_modifier:unittest",
     "render_service_client/unittest/feature:unittest",
     "render_service_client/unittest/modifier:unittest",
     "render_service_client/unittest/pipeline:unittest",
@@ -343,7 +346,6 @@ group("test") {
       "render_service_base/fuzztest/nativebufferutils_fuzzer:fuzztest",
       "render_service_base/fuzztest/rssurfaceohosvulkan_fuzzer:fuzztest",
       "render_service_base/fuzztest/rsvulkancontext_fuzzer:fuzztest",
-      "render_service_client/unittest/modifier_render_thread:unittest",
     ]
   }
 

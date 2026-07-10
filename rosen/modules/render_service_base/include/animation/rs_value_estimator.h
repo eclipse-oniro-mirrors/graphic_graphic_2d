@@ -72,6 +72,8 @@ public:
         std::shared_ptr<RSInterpolator>>>& keyframes,
         const std::shared_ptr<RSRenderPropertyBase>& lastValue) {}
 
+    virtual void RebuildValue(float interpolatedFraction) {}
+
     virtual void UpdateAnimationValue(const float fraction, const bool isAdditive) = 0;
 };
 
@@ -145,6 +147,15 @@ public:
         }
         return FRACTION_MIN;
     }
+
+    void RebuildValue(float interpolatedFraction) override
+    {
+        lastValue_ = RSValueEstimator::Estimate(interpolatedFraction, startValue_, endValue_);
+        T baseValue = property_->Get() - static_cast<T>(endValue_ - startValue_);
+        auto interpolationValue = RSValueEstimator::Estimate(interpolatedFraction, baseValue, property_->Get());
+        property_->Set(interpolationValue);
+    }
+
 private:
     T startValue_ {};
     T endValue_ {};
@@ -474,7 +485,7 @@ public:
 
     std::shared_ptr<RSRenderPropertyBase> GetPropertyVelocity(float time) const override
     {
-        if (!springModel_) {
+        if (!springModel_ || ROSEN_LE(springModel_->dampingRatio_, 0.0f, SPRING_MIN_DAMPING_RATIO)) {
             return nullptr;
         }
         constexpr float TIME_INTERVAL = 1e-6f; // 1 microsecond

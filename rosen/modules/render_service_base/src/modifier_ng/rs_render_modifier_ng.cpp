@@ -22,21 +22,25 @@
 #include "modifier_ng/appearance/rs_background_filter_render_modifier.h"
 #include "modifier_ng/appearance/rs_behind_window_filter_render_modifier.h"
 #include "modifier_ng/appearance/rs_color_picker_render_modifier.h"
+#include "modifier_ng/appearance/rs_coverage_ng_shader_render_modifier.h"
 #include "modifier_ng/appearance/rs_blend_render_modifier.h"
 #include "modifier_ng/appearance/rs_border_render_modifier.h"
 #include "modifier_ng/appearance/rs_compositing_filter_render_modifier.h"
 #include "modifier_ng/appearance/rs_dynamic_light_up_render_modifier.h"
 #include "modifier_ng/appearance/rs_foreground_filter_render_modifier.h"
+#include "modifier_ng/appearance/rs_depth_space_render_modifier.h"
 #include "modifier_ng/appearance/rs_hdr_brightness_render_modifier.h"
 #include "modifier_ng/appearance/rs_mask_render_modifier.h"
 #include "modifier_ng/appearance/rs_material_filter_render_modifier.h"
 #include "modifier_ng/appearance/rs_material_shader_render_modifier.h"
 #include "modifier_ng/appearance/rs_outline_render_modifier.h"
+#include "modifier_ng/appearance/rs_overlay_ng_shader_render_modifier.h"
 #include "modifier_ng/appearance/rs_particle_effect_render_modifier.h"
 #include "modifier_ng/appearance/rs_pixel_stretch_render_modifier.h"
-#include "modifier_ng/appearance/rs_overlay_ng_shader_render_modifier.h"
 #include "modifier_ng/appearance/rs_shadow_render_modifier.h"
+#include "modifier_ng/appearance/rs_spatial_effect_render_modifier.h"
 #include "modifier_ng/appearance/rs_use_effect_render_modifier.h"
+#include "modifier_ng/appearance/rs_use_union_render_modifier.h"
 #include "modifier_ng/appearance/rs_visibility_render_modifier.h"
 #include "modifier_ng/background/rs_background_color_render_modifier.h"
 #include "modifier_ng/background/rs_background_image_render_modifier.h"
@@ -75,8 +79,9 @@ static const std::unordered_map<RSModifierType, RSRenderModifier::ResetFunc> g_r
     { RSModifierType::MASK,                     RSMaskRenderModifier::ResetProperties },
     { RSModifierType::PIXEL_STRETCH,            RSPixelStretchRenderModifier::ResetProperties },
     { RSModifierType::USE_EFFECT,               RSUseEffectRenderModifier::ResetProperties },
+    { RSModifierType::USE_UNION,                RSUseUnionRenderModifier::ResetProperties },
     { RSModifierType::BLENDER,                  RSBlendRenderModifier::ResetProperties },
-    { RSModifierType::OVERLAY_NG_SHADER,        RSOverlayNGShaderRenderModifier::ResetProperties },
+    { RSModifierType::COVERAGE_NG_SHADER,       RSCoverageNGShaderRenderModifier::ResetProperties },
     { RSModifierType::PARTICLE_EFFECT,          RSParticleEffectRenderModifier::ResetProperties },
     { RSModifierType::COMPOSITING_FILTER,       RSCompositingFilterRenderModifier::ResetProperties },
     { RSModifierType::BACKGROUND_FILTER,        RSBackgroundFilterRenderModifier::ResetProperties },
@@ -84,9 +89,12 @@ static const std::unordered_map<RSModifierType, RSRenderModifier::ResetFunc> g_r
     { RSModifierType::BACKGROUND_NG_SHADER,     RSBackgroundNGShaderRenderModifier::ResetProperties },
     { RSModifierType::FOREGROUND_SHADER,        RSForegroundShaderRenderModifier::ResetProperties },
     { RSModifierType::COLOR_PICKER,             RSColorPickerRenderModifier::ResetProperties },
+    { RSModifierType::DEPTH_SPACE,              RSDepthSpaceRenderModifier::ResetProperties },
+    { RSModifierType::SPATIAL_EFFECT,           RSSpatialEffectRenderModifier::ResetProperties },
     { RSModifierType::BOUNDS,                   RSBoundsRenderModifier::ResetProperties },
     { RSModifierType::MATERIAL_FILTER,          RSMaterialFilterRenderModifier::ResetProperties },
     { RSModifierType::MATERIAL_SHADER,          RSMaterialShaderRenderModifier::ResetProperties },
+    { RSModifierType::OVERLAY_NG_SHADER,        RSOverlayNGShaderRenderModifier::ResetProperties },
 };
 
 std::array<RSRenderModifier::Constructor, MODIFIER_TYPE_COUNT> RSRenderModifier::ConstructorLUT_ = {
@@ -110,7 +118,7 @@ std::array<RSRenderModifier::Constructor, MODIFIER_TYPE_COUNT> RSRenderModifier:
     [] { return std::make_shared<RSPixelStretchRenderModifier>(); },                             // PIXEL_STRETCH
     [] { return std::make_shared<RSUseEffectRenderModifier>(); },                                // USE_EFFECT
     [] { return std::make_shared<RSBlendRenderModifier>(); },                                    // BLENDER
-    [] { return std::make_shared<RSOverlayNGShaderRenderModifier>(); },                          // OVERLAY_NG_SHADER
+    [] { return std::make_shared<RSCoverageNGShaderRenderModifier>(); },                         // COVERAGE_NG_SHADER
     [] { return std::make_shared<RSParticleEffectRenderModifier>(); },                           // PARTICLE_EFFECT
     [] { return std::make_shared<RSCompositingFilterRenderModifier>(); },                        // COMPOSITING_FILTER
     [] { return std::make_shared<RSBackgroundFilterRenderModifier>(); },                         // BACKGROUND_FILTER
@@ -128,7 +136,11 @@ std::array<RSRenderModifier::Constructor, MODIFIER_TYPE_COUNT> RSRenderModifier:
     [] { return std::make_shared<RSForegroundShaderRenderModifier>(); },                         // FOREGROUND_SHADER
     [] { return std::make_shared<RSMaterialFilterRenderModifier>(); },                           // MATERIAL_FILTER
     [] { return std::make_shared<RSColorPickerRenderModifier>(); },                              // COLOR_PICKER
+    [] { return std::make_shared<RSDepthSpaceRenderModifier>(); },                               // DEPTH_SPACE
+    [] { return std::make_shared<RSSpatialEffectRenderModifier>(); },                            // SPATIAL_EFFECT
     [] { return std::make_shared<RSMaterialShaderRenderModifier>(); },                           // MATERIAL_SHADER
+    [] { return std::make_shared<RSUseUnionRenderModifier>(); },                                 // USE_UNION
+    [] { return std::make_shared<RSOverlayNGShaderRenderModifier>(); },                          // OVERLAY_NG_SHADER
     nullptr,                                                                                     // CHILDREN
 };
 

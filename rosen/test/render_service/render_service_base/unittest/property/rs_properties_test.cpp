@@ -3058,7 +3058,7 @@ HWTEST_F(RSPropertiesTest, SetPixelStretch002, TestSize.Level1)
     Vector4f size = { 0.f, 0.f, 0.f, 0.f };
     stretchSize = size;
     properties.SetPixelStretch(stretchSize);
-    EXPECT_FALSE(properties.GetPixelStretch().IsZero());
+    EXPECT_TRUE(properties.GetPixelStretch().IsZero());
 }
 
 /**
@@ -4002,6 +4002,46 @@ HWTEST_F(RSPropertiesTest, SetAndGetCompositingNGFilter, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetCoverageNGShader001
+ * @tc.desc: test results of SetCoverageNGShader with nullptr
+ * @tc.type:FUNC
+ * @tc.require: issueNumber
+ */
+HWTEST_F(RSPropertiesTest, SetCoverageNGShader001, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetCoverageNGShader(nullptr);
+    EXPECT_EQ(properties.GetCoverageNGShader(), nullptr);
+}
+
+/**
+ * @tc.name: SetCoverageNGShader002
+ * @tc.desc: test results of SetCoverageNGShader with multiple shader types
+ * @tc.type:FUNC
+ * @tc.require: issueNumber
+ */
+HWTEST_F(RSPropertiesTest, SetCoverageNGShader002, TestSize.Level1)
+{
+    RSProperties properties;
+    
+    auto coverageShader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_LIGHT);
+    properties.SetCoverageNGShader(coverageShader);
+    EXPECT_EQ(properties.GetCoverageNGShader(), coverageShader);
+    
+    coverageShader = RSNGRenderShaderBase::Create(RSNGEffectType::HARMONIUM_EFFECT);
+    properties.SetCoverageNGShader(coverageShader);
+    EXPECT_EQ(properties.GetCoverageNGShader(), coverageShader);
+    
+    coverageShader = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    properties.SetCoverageNGShader(coverageShader);
+    EXPECT_EQ(properties.GetCoverageNGShader(), coverageShader);
+    
+    coverageShader = RSNGRenderShaderBase::Create(RSNGEffectType::FROSTED_GLASS_EFFECT);
+    properties.SetCoverageNGShader(coverageShader);
+    EXPECT_EQ(properties.GetCoverageNGShader(), coverageShader);
+}
+
+/**
  * @tc.name: SetOverlayNGShader001
  * @tc.desc: test results of SetOverlayNGShader with nullptr
  * @tc.type:FUNC
@@ -4027,15 +4067,15 @@ HWTEST_F(RSPropertiesTest, SetOverlayNGShader002, TestSize.Level1)
     auto overlayShader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_LIGHT);
     properties.SetOverlayNGShader(overlayShader);
     EXPECT_EQ(properties.GetOverlayNGShader(), overlayShader);
-    
+
     overlayShader = RSNGRenderShaderBase::Create(RSNGEffectType::HARMONIUM_EFFECT);
     properties.SetOverlayNGShader(overlayShader);
     EXPECT_EQ(properties.GetOverlayNGShader(), overlayShader);
-    
+
     overlayShader = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
     properties.SetOverlayNGShader(overlayShader);
     EXPECT_EQ(properties.GetOverlayNGShader(), overlayShader);
-    
+
     overlayShader = RSNGRenderShaderBase::Create(RSNGEffectType::FROSTED_GLASS_EFFECT);
     properties.SetOverlayNGShader(overlayShader);
     EXPECT_EQ(properties.GetOverlayNGShader(), overlayShader);
@@ -4704,16 +4744,13 @@ HWTEST_F(RSPropertiesTest, IsDistortionKValidBoundary001, TestSize.Level1)
 HWTEST_F(RSPropertiesTest, SetPixelStretchNullopt001, TestSize.Level1)
 {
     RSProperties properties;
-    // First set a valid value
     Vector4f stretch(1.f, 2.f, 3.f, 4.f);
     properties.SetPixelStretch(stretch);
     EXPECT_FALSE(properties.GetPixelStretch().IsZero());
 
-    // Set nullopt: should not clear existing para_ (new code only allocates on has_value && !IsZero)
     std::optional<Vector4f> nulloptStretch = std::nullopt;
     properties.SetPixelStretch(nulloptStretch);
-    // para_ still holds the previously set value
-    EXPECT_FALSE(properties.GetPixelStretch().IsZero());
+    EXPECT_TRUE(properties.GetPixelStretch().IsZero());
 }
 
 /**
@@ -4744,7 +4781,7 @@ HWTEST_F(RSPropertiesTest, GetPixelStretchNullPara001, TestSize.Level1)
 HWTEST_F(RSPropertiesTest, SetPixelStretchTileModeNullopt001, TestSize.Level1)
 {
     RSProperties properties;
-    properties.SetPixelStretchTileMode(std::nullopt);
+    properties.SetPixelStretchTileMode(0);
     EXPECT_EQ(properties.pixelStretchNeedUpdate_, true);
     EXPECT_EQ(properties.contentDirty_, true);
     // No para_ allocated since nullopt was passed
@@ -4910,8 +4947,7 @@ HWTEST_F(RSPropertiesTest, SetPixelStretchPercentNullopt001, TestSize.Level1)
 
     std::optional<Vector4f> nulloptPercent = std::nullopt;
     properties.SetPixelStretchPercent(nulloptPercent);
-    // para_ still holds the previously set value
-    EXPECT_FALSE(properties.GetPixelStretchPercent().IsZero());
+    EXPECT_TRUE(properties.GetPixelStretchPercent().IsZero());
 }
 
 /**

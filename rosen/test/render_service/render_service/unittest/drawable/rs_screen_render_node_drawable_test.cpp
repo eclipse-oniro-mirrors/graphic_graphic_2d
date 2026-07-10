@@ -368,6 +368,31 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, CheckScreenNodeSkipTest002, TestSize.Le
 }
 
 /**
+* @tc.name: CheckScreenNodeSkipTest003
+* @tc.desc: Test CheckScreenNodeSkip
+* @tc.type: FUNC
+* @tc.require: #24063
+*/
+HWTEST_F(RSScreenRenderNodeDrawableTest, CheckScreenNodeSkipTest003, TestSize.Level1)
+    {
+        ASSERT_NE(renderNode_, nullptr);
+        ASSERT_NE(screenDrawable_, nullptr);
+        ASSERT_NE(screenDrawable_->renderParams_, nullptr);
+        auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+        ASSERT_NE(params, nullptr);
+        RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+        auto processor = RSProcessorFactory::CreateProcessor(params->GetCompositeType(), params->GetScreenId());
+        auto uniProcessor = std::static_pointer_cast<RSUniRenderProcessor>(processor);
+        RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+        
+        params->SetMainAndLeashSurfaceDirty(false);
+        RSUifirstManager::Instance().hasForceUpdateNode_ = false;
+        ASSERT_TRUE(screenDrawable_->CheckScreenNodeSkip(*params, uniProcessor));
+        RSUifirstManager::Instance().hasForceUpdateNode_ = true;
+        ASSERT_FALSE(screenDrawable_->CheckScreenNodeSkip(*params, uniProcessor));
+    }
+
+/**
  * @tc.name: CheckFilterCacheFullyCovered
  * @tc.desc: Test CheckFilterCacheFullyCovered
  * @tc.type: FUNC
@@ -881,13 +906,13 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest015, TestSize.Level1)
 HWTEST_F(RSScreenRenderNodeDrawableTest, SetDamageRegionTest001, TestSize.Level1)
 {
     ASSERT_NE(screenDrawable_, nullptr);
-    EXPECT_EQ(screenDrawable_->wiredMirrorRenderFrame_, nullptr);
+    EXPECT_EQ(screenDrawable_->physicalMirrorRenderFrame_, nullptr);
     std::vector<RectI> rects;
     screenDrawable_->SetDamageRegion(rects);
 
     auto wiredMirrorRenderFrame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
-    screenDrawable_->wiredMirrorRenderFrame_ = std::move(wiredMirrorRenderFrame);
-    EXPECT_NE(screenDrawable_->wiredMirrorRenderFrame_, nullptr);
+    screenDrawable_->physicalMirrorRenderFrame_ = std::move(wiredMirrorRenderFrame);
+    EXPECT_NE(screenDrawable_->physicalMirrorRenderFrame_, nullptr);
     screenDrawable_->SetDamageRegion(rects);
     ASSERT_NE(screenDrawable_, nullptr);
 }
@@ -2037,5 +2062,58 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest_DirtyAlignSingleDirtyRegion,
     screenDrawable_->OnDraw(canvas);
 
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
+}
+
+/**
+ * @tc.name: OnDrawTest_MultiSurfaceExpandNoSkip
+ * @tc.desc: Test OnDraw when isMultiSurfaceExpand is true (configs.size > 1), should NOT skip
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest_MultiSurfaceExpandNoSkip, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    Drawing::Canvas canvas;
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    params->compositeType_ = CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
+    // Set multi-surface configs with 2 entries so isMultiSurfaceExpand = true
+    SurfaceRegionConfig config1;
+    SurfaceRegionConfig config2;
+    std::vector<SurfaceRegionConfig> configs = {config1, config2};
+    params->screenProperty_.Set<ScreenPropertyType::MULTI_SURFACE_CONFIGS>(configs);
+    screenDrawable_->OnDraw(canvas);
+}
+
+/**
+ * @tc.name: OnDrawTest_SingleSurfaceExpandSkip
+ * @tc.desc: Test OnDraw when isMultiSurfaceExpand is false and skip check returns true, should skip
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest_SingleSurfaceExpandSkip, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    Drawing::Canvas canvas;
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    params->compositeType_ = CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
+    // Default: configs empty (size=0), isAccumulatedDirty_=false, isAccumulatedHdrStatusChanged_=false
+    // CheckVirtualExpandScreenSkip returns true -> early return (skip)
+    params->isAccumulatedDirty_ = false;
+    params->isAccumulatedHdrStatusChanged_ = false;
+    screenDrawable_->OnDraw(canvas);
+}
+
+/**
+ * @tc.name: OnDrawTest_SingleSurfaceExpandNoSkip
+ * @tc.desc: Test OnDraw when isMultiSurfaceExpand is false and skip check returns false, should NOT skip
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest_SingleSurfaceExpandNoSkip, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    Drawing::Canvas canvas;
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    params->compositeType_ = CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
+    // Set isAccumulatedDirty_=true so CheckVirtualExpandScreenSkip returns false -> no skip
+    params->isAccumulatedDirty_ = true;
+    screenDrawable_->OnDraw(canvas);
 }
 } // namespace OHOS::Rosen

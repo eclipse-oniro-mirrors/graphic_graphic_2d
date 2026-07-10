@@ -19,6 +19,7 @@
 #include <bitset>
 
 #include "common/rs_common_def.h"
+#include "common/rs_rect.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -47,10 +48,8 @@ public:
         positionZ_ = positionZ;
     }
 
-    void SetZOrderForHwcEnableByFilter(uint32_t zOrderForHwcEnableByFilter) {
-        zOrderForHwcEnableByFilter_ = zOrderForHwcEnableByFilter;
-    }
-    uint32_t GetZOrderForHwcEnableByFilter() const { return zOrderForHwcEnableByFilter_; }
+    void SetGlobalHwcFilterRect(const RectI& rect) { globalHwcFilterRect_ = rect; }
+    const RectI& GetGlobalHwcFilterRect() const { return globalHwcFilterRect_; }
 
 private:
     // Bit flags for memory optimization
@@ -61,8 +60,8 @@ private:
     };
 
     std::bitset<3> flags_;  // Compresses 3 bools into ~4 bytes instead of ~3 bytes + padding
-    uint32_t zOrderForHwcEnableByFilter_ = 0;
     float positionZ_ = 0.0f;
+    RectI globalHwcFilterRect_;
 };
 
 struct RSHwcSurfaceRecorder {

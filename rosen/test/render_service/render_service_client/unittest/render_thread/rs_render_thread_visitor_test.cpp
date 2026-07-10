@@ -44,7 +44,7 @@
 #include "ui/rs_ui_director.h"
 using namespace testing;
 using namespace testing::ext;
-
+#if defined(RS_ENABLE_UNI_RENDER)
 namespace OHOS::Rosen {
 class RSRenderThreadVisitorTest : public testing::Test {
 public:
@@ -150,7 +150,7 @@ HWTEST_F(RSRenderThreadVisitorTest, PrepareCanvasRenderNode004, TestSize.Level1)
     constexpr NodeId nodeId = TestSrc::limitNumber::Uint64[3];
     auto node = std::make_shared<RSCanvasRenderNode>(nodeId);
     auto rsRenderThreadVisitor = std::make_shared<RSRenderThreadVisitor>();
-    rsRenderThreadVisitor->SetPartialRenderStatus(PartialRenderType::SET_DAMAGE_AND_DROP_OP, false);
+    rsRenderThreadVisitor->SetPartialRenderStatus(PartialRenderType::SET_DAMAGE_AND_CLIP_AND_DROP_OP, false);
     rsRenderThreadVisitor->PrepareCanvasRenderNode(*node);
     EXPECT_TRUE(rsRenderThreadVisitor != nullptr);
 }
@@ -666,6 +666,7 @@ HWTEST_F(RSRenderThreadVisitorTest, ProcessRootRenderNode004, TestSize.Level1)
     EXPECT_TRUE(rsRenderThreadVisitor != nullptr);
 }
 
+#ifdef RS_ENABLE_UNI_RENDER
 /**
  * @tc.name: ProcessRootRenderNode005
  * @tc.desc: test results of ProcessRootRenderNode
@@ -876,7 +877,7 @@ HWTEST_F(RSRenderThreadVisitorTest, SetPartialRenderStatus001, TestSize.Level1)
 {
     RSRenderThreadVisitor rsRenderThreadVisitor;
     rsRenderThreadVisitor.SetPartialRenderStatus(RSSystemProperties::GetPartialRenderEnabled(), false);
-    EXPECT_EQ(rsRenderThreadVisitor.partialRenderStatus_, PartialRenderType::SET_DAMAGE_AND_DROP_OP);
+    EXPECT_EQ(rsRenderThreadVisitor.partialRenderStatus_, PartialRenderType::SET_DAMAGE_AND_CLIP_AND_DROP_OP);
 }
 
 /**
@@ -889,7 +890,7 @@ HWTEST_F(RSRenderThreadVisitorTest, SetPartialRenderStatus002, TestSize.Level1)
 {
     RSRenderThreadVisitor rsRenderThreadVisitor;
     rsRenderThreadVisitor.SetPartialRenderStatus(RSSystemProperties::GetPartialRenderEnabled(), true);
-    EXPECT_EQ(rsRenderThreadVisitor.partialRenderStatus_, PartialRenderType::SET_DAMAGE_AND_DROP_OP);
+    EXPECT_EQ(rsRenderThreadVisitor.partialRenderStatus_, PartialRenderType::SET_DAMAGE_AND_CLIP_AND_DROP_OP);
 }
 
 /**
@@ -941,8 +942,8 @@ HWTEST_F(RSRenderThreadVisitorTest, SetPartialRenderStatus006, TestSize.Level1)
 {
     RSRenderThreadVisitor rsRenderThreadVisitor;
     rsRenderThreadVisitor.SetPartialRenderStatus(PartialRenderType::DISABLED, true);
-    rsRenderThreadVisitor.SetPartialRenderStatus(PartialRenderType::SET_DAMAGE_AND_DROP_OP, true);
-    EXPECT_EQ(rsRenderThreadVisitor.partialRenderStatus_, PartialRenderType::SET_DAMAGE_AND_DROP_OP);
+    rsRenderThreadVisitor.SetPartialRenderStatus(PartialRenderType::SET_DAMAGE_AND_CLIP_AND_DROP_OP, true);
+    EXPECT_EQ(rsRenderThreadVisitor.partialRenderStatus_, PartialRenderType::SET_DAMAGE_AND_CLIP_AND_DROP_OP);
 }
 
 /**
@@ -1335,4 +1336,6 @@ HWTEST_F(RSRenderThreadVisitorTest, FlipMatrix001, TestSize.Level1)
     auto res = visitor.GetFlipTransform(transform);
     EXPECT_TRUE(res == GraphicTransformType::GRAPHIC_ROTATE_NONE);
 }
+#endif
 } // namespace OHOS::Rosen
+#endif

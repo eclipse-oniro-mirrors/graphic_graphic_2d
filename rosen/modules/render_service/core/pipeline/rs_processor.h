@@ -27,7 +27,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "rs_composer_client_manager.h"
 // hpae offline
-#include "feature/hwc/hpae_offline/rs_hpae_offline_result.h"
+#include "feature/hwc/hpae_offline/rs_offline_result.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -115,6 +115,7 @@ protected:
 #endif
 
     ScreenInfo screenInfo_;
+    ScreenInfo screenInfoForDelegateMode_;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
     ScreenInfo mirroredScreenInfo_;

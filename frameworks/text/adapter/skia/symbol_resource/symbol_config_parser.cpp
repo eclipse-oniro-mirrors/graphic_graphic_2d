@@ -21,12 +21,43 @@
 #include <functional>
 #include <utility>
 
+#include "utils/text_log.h"
 #include "utils/text_trace.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Symbol {
 namespace {
+bool GetUint16FromCJSON(const cJSON* item, uint16_t& out)
+{
+    if (!cJSON_IsNumber(item) || item->valueint < 0 || item->valueint > UINT16_MAX) {
+        TEXT_LOGE("Invalid uint16 value from cJSON");
+        return false;
+    }
+    out = static_cast<uint16_t>(item->valueint);
+    return true;
+}
+
+bool GetUint32FromCJSON(const cJSON* item, uint32_t& out)
+{
+    if (!cJSON_IsNumber(item) || item->valuedouble < 0 || item->valuedouble > UINT32_MAX) {
+        TEXT_LOGE("Invalid uint32 value from cJSON");
+        return false;
+    }
+    out = static_cast<uint32_t>(item->valuedouble);
+    return true;
+}
+
+bool GetIntFromCJSON(const cJSON* item, int& out)
+{
+    if (!cJSON_IsNumber(item) || item->valuedouble < INT_MIN || item->valuedouble > INT_MAX) {
+        TEXT_LOGE("Invalid int value from cJSON");
+        return false;
+    }
+    out = static_cast<int>(item->valuedouble);
+    return true;
+}
+
 
 constexpr char SPECIAL_ANIMATIONS[] = "special_animations";
 constexpr char COMMON_ANIMATIONS[] = "common_animations";
@@ -141,9 +172,8 @@ bool SymbolConfigParser::ParseSymbolLayersGrouping(const cJSON* root,
     if (root == nullptr || !cJSON_IsArray(root)) {
         return false;
     }
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item == nullptr || !cJSON_IsObject(item)) {
             continue;
         }
@@ -155,18 +185,13 @@ bool SymbolConfigParser::ParseSymbolLayersGrouping(const cJSON* root,
 bool SymbolConfigParser::ParseOneSymbolNativeCase(const char* key, const cJSON* root, uint16_t& nativeGlyphId)
 {
     cJSON* item = cJSON_GetObjectItem(root, key);
-    if (item == nullptr || !cJSON_IsNumber(item)) {
-        return false;
-    }
-    nativeGlyphId = static_cast<uint16_t>(item->valueint);
-    return true;
+    return GetUint16FromCJSON(item, nativeGlyphId);
 }
 
 void SymbolConfigParser::ParseComponets(const cJSON* root, std::vector<size_t>& components)
 {
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item != nullptr && cJSON_IsNumber(item)) {
             components.push_back(static_cast<size_t>(item->valueint));
         }
@@ -177,16 +202,13 @@ void SymbolConfigParser::SymbolGlyphCase(const char* key, const cJSON* root,
     RSSymbolLayersGroups& symbolLayersGroups)
 {
     cJSON* item = cJSON_GetObjectItem(root, key);
-    if (item != nullptr && cJSON_IsNumber(item)) {
-        symbolLayersGroups.symbolGlyphId = static_cast<uint16_t>(item->valueint);
-    }
+    GetUint16FromCJSON(item, symbolLayersGroups.symbolGlyphId);
 }
 
 void SymbolConfigParser::ParseLayers(const cJSON* root, std::vector<std::vector<size_t>>& layers)
 {
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* layerItem = cJSON_GetArrayItem(root, i);
+    cJSON* layerItem = nullptr;
+    cJSON_ArrayForEach(layerItem, root) {
         if (layerItem == nullptr || !cJSON_IsObject(layerItem)) {
             continue;
         }
@@ -222,9 +244,8 @@ void SymbolConfigParser::ParseOneSymbolRenderCase(const char* key, const cJSON* 
 void SymbolConfigParser::ParseRenderModes(const cJSON* root,
     std::map<RSSymbolRenderingStrategy, std::vector<RSRenderGroup>>& renderModesGroups)
 {
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item == nullptr || !cJSON_IsObject(item)) {
             continue;
         }
@@ -252,9 +273,8 @@ void SymbolConfigParser::ParseRenderModes(const cJSON* root,
 
 void SymbolConfigParser::ParseRenderGroups(const cJSON* root, std::vector<RSRenderGroup>& renderGroups)
 {
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item == nullptr || !cJSON_IsObject(item)) {
             continue;
         }
@@ -301,9 +321,8 @@ void SymbolConfigParser::ParseDefaultColor(const char* defaultColorStr, RSRender
 
 void SymbolConfigParser::ParseGroupIndexes(const cJSON* root, std::vector<RSGroupInfo>& groupInfos)
 {
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item == nullptr || !cJSON_IsObject(item)) {
             continue;
         }
@@ -323,9 +342,8 @@ void SymbolConfigParser::ParseGroupIndexes(const cJSON* root, std::vector<RSGrou
 
 void SymbolConfigParser::ParseLayerOrMaskIndexes(const cJSON* root, std::vector<size_t>& indexes)
 {
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item != nullptr && cJSON_IsNumber(item)) {
             indexes.push_back(static_cast<size_t>(item->valueint));
         }
@@ -341,12 +359,10 @@ void SymbolConfigParser::ParseOneSymbolAnimateCase(const char* key, const cJSON*
     }
 }
 
-void SymbolConfigParser::ParseAnimationSettings(const cJSON* root,
-    std::vector<RSAnimationSetting>& animationSettings)
+void SymbolConfigParser::ParseAnimationSettings(const cJSON* root, std::vector<RSAnimationSetting>& animationSettings)
 {
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item == nullptr || !cJSON_IsObject(item)) {
             continue;
         }
@@ -382,9 +398,8 @@ void SymbolConfigParser::ParseAnimationSetting(const cJSON* root, RSAnimationSet
 
 void SymbolConfigParser::ParseAnimationTypes(const cJSON* root, std::vector<RSAnimationType>& animationTypes)
 {
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item == nullptr || !cJSON_IsString(item)) {
             continue;
         }
@@ -405,9 +420,8 @@ void SymbolConfigParser::ParseAnimationType(const std::string& animationTypeStr,
 
 void SymbolConfigParser::ParseGroupSettings(const cJSON* root, std::vector<RSGroupSetting>& groupSettings)
 {
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item == nullptr || !cJSON_IsObject(item)) {
             continue;
         }
@@ -490,9 +504,8 @@ bool SymbolConfigParser::ParseSymbolAnimations(const cJSON* root,
     if (root == nullptr || !cJSON_IsArray(root)) {
         return false;
     }
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item == nullptr || !cJSON_IsObject(item)) {
             continue;
         }
@@ -522,9 +535,8 @@ bool SymbolConfigParser::ParseSymbolAnimations(const cJSON* root,
 void SymbolConfigParser::ParseSymbolAnimationParas(const cJSON* root,
     std::map<uint32_t, RSAnimationPara>& animationParas)
 {
-    int size = cJSON_GetArraySize(root);
-    for (int i = 0; i < size; i++) {
-        cJSON* item = cJSON_GetArrayItem(root, i);
+    cJSON* item = nullptr;
+    cJSON_ArrayForEach(item, root) {
         if (item == nullptr || !cJSON_IsObject(item)) {
             continue;
         }
@@ -547,9 +559,7 @@ void SymbolConfigParser::ParseSymbolAnimationPara(const cJSON* root, RSAnimation
         }
 
         if (strcmp(key, ANIMATION_MODE) == 0) {
-            if (cJSON_IsNumber(item)) {
-                animationPara.animationMode = static_cast<uint16_t>(item->valueint);
-            }
+            GetUint16FromCJSON(item, animationPara.animationMode);
         } else if (strcmp(key, COMMON_SUB_TYPE) == 0 && cJSON_IsString(item)) {
             ParseSymbolCommonSubType(item, animationPara);
         } else if (strcmp(key, GROUP_PARAMETERS) == 0 && cJSON_IsArray(item)) {
@@ -566,17 +576,15 @@ void SymbolConfigParser::ParseSymbolCommonSubType(const cJSON* item, RSAnimation
 
 void SymbolConfigParser::ParseSymbolGroupParas(const cJSON* item, RSAnimationPara& animationPara)
 {
-    int size = cJSON_GetArraySize(item);
-    for (int i = 0; i < size; i++) {
-        cJSON* groupItem = cJSON_GetArrayItem(item, i);
+    cJSON* groupItem = nullptr;
+    cJSON_ArrayForEach(groupItem, item) {
         if (groupItem == nullptr || !cJSON_IsArray(groupItem)) {
             continue;
         }
 
         std::vector<RSPiecewiseParameter> piecewiseParameters;
-        int innerSize = cJSON_GetArraySize(groupItem);
-        for (int j = 0; j < innerSize; j++) {
-            cJSON* paraItem = cJSON_GetArrayItem(groupItem, j);
+        cJSON* paraItem = nullptr;
+        cJSON_ArrayForEach(paraItem, groupItem) {
             if (paraItem == nullptr || !cJSON_IsObject(paraItem)) {
                 continue;
             }
@@ -627,18 +635,12 @@ void SymbolConfigParser::PiecewiseParaCurveCase(const cJSON* item, RSPiecewisePa
 
 void SymbolConfigParser::PiecewiseParaDurationCase(const cJSON* item, RSPiecewiseParameter& piecewiseParameter)
 {
-    if (item == nullptr || !cJSON_IsNumber(item)) {
-        return;
-    }
-    piecewiseParameter.duration = static_cast<uint32_t>(item->valuedouble);
+    GetUint32FromCJSON(item, piecewiseParameter.duration);
 }
 
 void SymbolConfigParser::PiecewiseParaDelayCase(const cJSON* item, RSPiecewiseParameter& piecewiseParameter)
 {
-    if (item == nullptr || !cJSON_IsNumber(item)) {
-        return;
-    }
-    piecewiseParameter.delay = static_cast<int>(item->valuedouble);
+    GetIntFromCJSON(item, piecewiseParameter.delay);
 }
 
 void SymbolConfigParser::ParseSymbolCurveArgs(const cJSON* obj, RSPiecewiseParameter& piecewiseParameter)
@@ -661,9 +663,8 @@ void SymbolConfigParser::ParseSymbolProperties(const cJSON* obj, RSPiecewisePara
             continue;
         }
         std::vector<float> propertyValues;
-        int size = cJSON_GetArraySize(item);
-        for (int i = 0; i < size; i++) {
-            cJSON* valueItem = cJSON_GetArrayItem(item, i);
+        cJSON* valueItem = nullptr;
+        cJSON_ArrayForEach(valueItem, item) {
             if (valueItem != nullptr && cJSON_IsNumber(valueItem)) {
                 propertyValues.push_back(static_cast<float>(valueItem->valuedouble));
             }

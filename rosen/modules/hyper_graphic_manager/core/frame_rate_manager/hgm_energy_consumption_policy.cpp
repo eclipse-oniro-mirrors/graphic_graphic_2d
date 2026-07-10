@@ -400,7 +400,7 @@ void HgmEnergyConsumptionPolicy::SetCurrentPkgName(const std::vector<std::string
     std::lock_guard<std::mutex> lock(videoCallLock_);
     for (const auto& pkg : pkgs) {
         std::string pkgName = pkg.substr(0, pkg.find(":"));
-        if (videoCallLayerName_.empty()) {
+        if (videoCallLayerNameStr.empty()) {
             if (const auto& iter = videoCallLayerConfig.find(pkgName);
                 iter != videoCallLayerConfig.end()) {
                 videoCallLayerNameStr = iter->second;
@@ -459,7 +459,7 @@ void HgmEnergyConsumptionPolicy::VoterVideoFrameRate(const std::unordered_map<st
     bool eventStatus = eventStatusIter->second == "true";
     uint32_t refreshRate = 0;
     if (refreshRateIter != commonData.end() && XMLParser::IsNumber(refreshRateIter->second)) {
-        refreshRate = std::stoi(refreshRateIter->second.c_str());
+        refreshRate = static_cast<uint32_t>(std::stoi(refreshRateIter->second.c_str()));
     }
     EventInfo eventInfo = {
         .eventName = std::move(eventName),

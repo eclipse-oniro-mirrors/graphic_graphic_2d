@@ -30,7 +30,7 @@ public:
     static RSAnimationTraceUtils& GetInstance();
     void AddAnimationNameTrace(const std::string& str) const;
     void AddAnimationFinishTrace(
-        const std::string info, const uint64_t nodeId, const uint64_t animationId, bool isAddLogInfo) const;
+        const char* info, const uint64_t nodeId, const uint64_t animationId, bool isAddLogInfo) const;
 
     void AddAnimationCallFinishTrace(const uint64_t nodeId, const uint64_t animationId,
         ModifierNG::RSPropertyType propertyType, bool isAddLogInfo) const;
@@ -60,7 +60,7 @@ public:
 
 private:
     RSAnimationTraceUtils();
-    ~RSAnimationTraceUtils() = default;
+    ~RSAnimationTraceUtils();
     RSAnimationTraceUtils(const RSAnimationTraceUtils&) = delete;
     RSAnimationTraceUtils& operator=(const RSAnimationTraceUtils&) = delete;
 
@@ -69,6 +69,7 @@ private:
     std::string GetColorString(const Color& value) const;
 
     static void OnAnimationTraceEnabledChangedCallback(const char* key, const char* value, void* context);
+    static void RemoveSystemPropertyWatchers();
     std::string GetAnimationTypeString(ImplicitAnimationParamType type) const;
     std::string GetNodeTypeString(RSUINodeType type) const;
 

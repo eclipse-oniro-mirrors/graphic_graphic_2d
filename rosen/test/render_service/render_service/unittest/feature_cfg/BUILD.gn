@@ -77,6 +77,8 @@ ohos_unittest("feature_cfg_test") {
     "buffer_reclaim_param_parse_test.cpp",
     "behind_window_filter_param_test.cpp",
     "behind_window_filter_param_parse_test.cpp",
+    "background_rebuild_param_test.cpp",
+    "background_rebuild_param_parse_test.cpp",
   ]
 
   include_dirs = [

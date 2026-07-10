@@ -17,6 +17,7 @@
 
 #include "pipeline/rs_render_node.h"
 #include "platform/common/rs_log.h"
+#include "pipeline/rs_ui_render_director.h"
 
 namespace OHOS::Rosen {
 void RSContext::RegisterAnimatingRenderNode(const std::shared_ptr<RSRenderNode>& nodePtr)
@@ -90,13 +91,57 @@ void RSContext::AddPendingSyncNode(const std::shared_ptr<RSRenderNode> node)
     if (node == nullptr || node->GetId() == INVALID_NODEID) {
         return;
     }
-    pendingSyncNodes_.emplace(node->GetId(), node);
+    pendingSyncNodes_[node->GetId()] = node;
 }
 
 void RSContext::MarkNeedPurge(ClearMemoryMoment moment, PurgeType purgeType)
 {
     clearMoment_ = moment;
     purgeType_ = purgeType;
+}
+
+std::shared_ptr<RSUIRenderDirector> RSContext::GetUIRenderDirector(pid_t pid, uint64_t token)
+{
+    std::lock_guard<std::mutex> lock(uiRenderDirectorsMutex_);
+    auto pidIt = uiRenderDirectors_.find(pid);
+    if (pidIt == uiRenderDirectors_.end()) {
+        return nullptr;
+    }
+    auto tokenIt = pidIt->second.find(token);
+    if (tokenIt != pidIt->second.end()) {
+        return tokenIt->second;
+    }
+    return nullptr;
+}
+
+void RSContext::CreateUIRenderDirector(pid_t pid, uint64_t token)
+{
+    std::lock_guard<std::mutex> lock(uiRenderDirectorsMutex_);
+    auto pidIt = uiRenderDirectors_.find(pid);
+    if (pidIt == uiRenderDirectors_.end()) {
+        uiRenderDirectors_.emplace(pid, std::unordered_map<uint64_t, std::shared_ptr<RSUIRenderDirector>>());
+        pidIt = uiRenderDirectors_.find(pid);
+    }
+    if (pidIt->second.find(token) == pidIt->second.end()) {
+        pidIt->second.emplace(token, std::make_shared<RSUIRenderDirector>(token));
+    }
+}
+
+void RSContext::DestroyUIRenderDirector(pid_t pid, uint64_t token)
+{
+    std::lock_guard<std::mutex> lock(uiRenderDirectorsMutex_);
+    auto pidIt = uiRenderDirectors_.find(pid);
+    if (pidIt == uiRenderDirectors_.end()) {
+        return;
+    }
+    auto tokenIt = pidIt->second.find(token);
+    if (tokenIt == pidIt->second.end()) {
+        return;
+    }
+    pidIt->second.erase(token);
+    if (pidIt->second.empty()) {
+        uiRenderDirectors_.erase(pid);
+    }
 }
 
 void RSContext::SetClearMoment(ClearMemoryMoment moment)
@@ -123,6 +168,12 @@ void RSContext::AddSyncFinishAnimationList(NodeId nodeId, AnimationId animationI
 bool RSContext::UpdateGroupAnimators(int64_t timestamp, int64_t& minLeftDelayTime)
 {
     return interactiveImplictAnimatorMap_.UpdateGroupAnimators(timestamp, minLeftDelayTime);
+}
+
+void RSContext::DestoryUIRenderDirectorByPid(pid_t pid)
+{
+    std::lock_guard<std::mutex> lock(uiRenderDirectorsMutex_);
+    uiRenderDirectors_.erase(pid);
 }
 
 std::unordered_map<std::string, pid_t> RSContext::GetUIFrameworkDirtyNodeNameMap()

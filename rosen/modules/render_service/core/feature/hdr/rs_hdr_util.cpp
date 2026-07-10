@@ -30,6 +30,7 @@
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 #include "aihdr_enhancer.h"
 #include "render/rs_colorspace_convert.h"
+#include "render/rs_effect_luminance_manager.h"
 #endif
 
 namespace OHOS {
@@ -138,14 +139,14 @@ bool RSHdrUtil::UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId 
     }
     float targetScaler = 1.0f;
     auto hdrStatus = HdrStatus::NO_HDR;
-    float hdrDimmingFactor = rsLuminance.HdrDimmingProcess(screenId, surfaceNode.GetId());
+    float hdrDimmingFactor = rsLuminance.HdrDimmingProcess(screenId, surfaceNode);
     if (hdrStaticMetadataVec.size() != sizeof(HdrStaticMetadata) || hdrStaticMetadataVec.data() == nullptr) {
         RS_LOGD("hdrStaticMetadataVec is invalid");
         hdrStatus = RSBaseHdrUtil::CheckIsHdrSurfaceBuffer(surfaceBuffer);
         if (RSBaseHdrUtil::CheckAIHDRStatus(hdrStatus)) {
             float hdrBrightness = static_cast<HDRType>(surfaceNode.GetHDRType()) == HDRType::DEFAULT?
                 hdrDimmingFactor : surfaceNode.GetHDRBrightness();
-            scaler = rsLuminance.CalScaler(1.0f, std::vector<uint8_t>{}, hdrBrightness * brightnessFactor, hdrStatus);
+            scaler = rsLuminance.CalAIHDRScaler(surfaceNode, hdrBrightness * brightnessFactor, hdrStatus);
         } else {
             scaler = surfaceNode.GetHDRBrightness() * brightnessFactor * (scaler - 1.0f) + 1.0f;
         }
@@ -165,6 +166,7 @@ bool RSHdrUtil::UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId 
 
     float sdrNits = rsLuminance.GetSdrDisplayNits(screenId);
     float displayNits = rsLuminance.GetDisplayNits(screenId);
+    scaler = std::min(scaler, rsLuminance.GetSurfaceNodeMaxScaler(surfaceNode, screenId, hdrStatus));
 #ifndef ROSEN_CROSS_PLATFORM
     if (ROSEN_GNE(sdrNits, 0.0f)) {
         scaler = std::clamp(scaler, 1.0f, displayNits / sdrNits);
@@ -469,6 +471,47 @@ bool RSHdrUtil::NeedUseF16Capture(const std::shared_ptr<RSSurfaceRenderNode>& su
     return (isHDROn || isScRGBEnable) && colorGamut != GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
 }
 
+bool RSHdrUtil::HDRColorHeadroomMapping(const Drawing::UIColor& srcColor, Drawing::UIColor& dstColor)
+{
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+     auto aiHDREnhancer = OHOS::Media::VideoProcessingEngine::AihdrEnhancer::Create();
+    if (aiHDREnhancer == nullptr) {
+        RS_LOGE("RSHdrUtil::HDRColorHeadroomMapping aiHDREnhancer is null");
+        return false;
+    }
+    float displayHeadroom = 1.0f;
+    bool isHdrPipelineOn = RSEffectLuminanceManager::GetInstance().GetHdrPipelineStatus();
+    RSPaintFilterCanvas::ScreenshotType type = RSEffectLuminanceManager::GetInstance().GetCurrentScreenshotType();
+    if (isHdrPipelineOn &&
+        type != RSPaintFilterCanvas::ScreenshotType::SDR_SCREENSHOT &&
+        type != RSPaintFilterCanvas::ScreenshotType::SDR_WINDOWSHOT &&
+        type != RSPaintFilterCanvas::ScreenshotType::SDR_UICAPTURE) {
+        ScreenId screenId = RSEffectLuminanceManager::GetInstance().GetCurrentScreenId();
+        displayHeadroom =
+            RSLuminanceControl::Get().GetDisplayNits(screenId) / RSLuminanceControl::Get().GetSdrDisplayNits(screenId);
+    }
+    Media::VideoProcessingEngine::NonLinearRGB inputRgb = {
+        srcColor.GetRed(), srcColor.GetGreen(), srcColor.GetBlue() };
+    Media::VideoProcessingEngine::NonLinearRGB outputRgb = { 0.0f, 0.0f, 0.0f };
+    Media::Format aihdrParameter {};
+    aihdrParameter.PutFloatValue("expectedHeadroom", srcColor.GetHeadroom());
+    aihdrParameter.PutFloatValue("actualHeadroom", displayHeadroom);
+    aiHDREnhancer->SetParameter(aihdrParameter);
+    if (aiHDREnhancer->ProcessHDRColor(inputRgb, outputRgb) != Media::VideoProcessingEngine::VPE_ALGO_ERR_OK) {
+        RS_LOGE("RSHdrUtil::HDRColorHeadroomMapping aiHDREnhancer ProcessHDRColor failed");
+        return false;
+    }
+    dstColor.SetRgba(outputRgb.r, outputRgb.g, outputRgb.b, srcColor.GetAlpha());
+    RS_LOGD("RSHdrUtil::HDRColorHeadroomMapping isHdrOn:%{public}d ScreenshotType:%{public}d actHeadroom:%{public}f "
+        "expHeadroom:%{public}f inRgb:(%{public}f,%{public}f,%{public}f) outRgb:(%{public}f,%{public}f,%{public}f)",
+        isHdrPipelineOn, type, displayHeadroom, srcColor.GetHeadroom(),
+        inputRgb.r, inputRgb.g, inputRgb.b, outputRgb.r, outputRgb.g, outputRgb.b);
+    return true;
+#else
+    return false;
+#endif
+}
+
 void RSHdrUtil::HandleVirtualScreenHDRStatus(RSScreenRenderNode& node)
 {
     ScreenColorGamut screenColorGamut = node.GetScreenProperty().GetScreenColorGamut();
@@ -526,6 +569,24 @@ bool RSHdrUtil::IsHDRCast(RSScreenRenderParams* screenParams, BufferRequestConfi
         }
     }
     return false;
+}
+
+bool RSHdrUtil::NeedBackToFP16(NodeId id, RSScreenRenderParams* screenParams)
+{
+    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+    auto displayNode = nodeMap.GetRenderNode<const RSLogicalDisplayRenderNode>(id);
+    if (!displayNode) {
+        RS_LOGE("RSHdrUtil::NeedBackToFP16 displayNode is nullptr");
+        return true;
+    }
+    bool hasHwcHdr = screenParams->GetHasForceHwcHdrSurface() || screenParams->GetExistHWCNode();
+    auto colorSpace = screenParams->GetNewColorSpace();
+    if (!RSSystemProperties::GetEdrGainEnabled() || RSLuminanceControl::Get().IsHardwareHdrDisabled() ||
+        hasHwcHdr || colorSpace != GRAPHIC_COLOR_GAMUT_SRGB) {
+        return true;
+    }
+    int dstAlphaCount = displayNode->GetDstAlphaBlendModeNodeCount();
+    return dstAlphaCount > 0;
 }
 
 #ifdef USE_VIDEO_PROCESSING_ENGINE
