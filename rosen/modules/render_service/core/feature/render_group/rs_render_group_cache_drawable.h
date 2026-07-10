@@ -52,7 +52,7 @@ public:
     static void SetContinuousUpdateInfo(NodeId nodeId, int32_t count, uint64_t vsyncId);
     static void ClearContinuousUpdateCount(NodeId nodeId);
     static void UpdateContinuousUpdateCount(NodeId nodeId, uint64_t vsyncId);
-    static int32_t GetAndMaybeClearContinuousUpdateCount(
+    static int32_t GetOrClearContinuousUpdateCount(
         NodeId nodeId, uint64_t currentVsyncId, bool needUpdateCache);
 
     void SetLastFrameCacheRootHasExcludedChild(bool hasFilter);
