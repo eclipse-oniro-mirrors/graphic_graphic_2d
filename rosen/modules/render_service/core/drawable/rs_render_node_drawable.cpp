@@ -246,7 +246,7 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
     bool needUpdateCache = CheckIfNeedUpdateCache(params, updateTimes);
     params.SetNeedUpdateCache(needUpdateCache);
     uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
-    int32_t continuousUpdateTimes = GetAndMaybeClearContinuousUpdateCount(currentVsyncId, needUpdateCache);
+    int32_t continuousUpdateTimes = GetOrClearContinuousUpdateCount(currentVsyncId, needUpdateCache);
     if (needUpdateCache && params.GetDrawingCacheType() == RSDrawingCacheType::TARGETED_CACHE &&
         continuousUpdateTimes > DRAWING_CACHE_MAX_UPDATE_TIME) {
         RS_LOGD("RSRenderNodeDrawable::GenerateCacheCondition totalUpdateTimes:%{public}d "
@@ -622,10 +622,10 @@ void RSRenderNodeDrawable::ClearDrawingCacheContinuousUpdateTimeMap()
     RSRenderGroupCacheDrawable::ClearContinuousUpdateCount(nodeId_);
 }
 
-int32_t RSRenderNodeDrawable::GetAndMaybeClearContinuousUpdateCount(
+int32_t RSRenderNodeDrawable::GetOrClearContinuousUpdateCount(
     uint64_t currentVsyncId, bool needUpdateCache)
 {
-    return RSRenderGroupCacheDrawable::GetAndMaybeClearContinuousUpdateCount(nodeId_, currentVsyncId, needUpdateCache);
+    return RSRenderGroupCacheDrawable::GetOrClearContinuousUpdateCount(nodeId_, currentVsyncId, needUpdateCache);
 }
 
 void RSRenderNodeDrawable::UpdateContinuousUpdateCount(uint64_t vsyncId)
