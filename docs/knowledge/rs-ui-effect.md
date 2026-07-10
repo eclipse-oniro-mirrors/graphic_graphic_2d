@@ -89,13 +89,14 @@
 
 ```
 RSFilter (rs_filter.h)
-  ├── FilterType 枚举（32 种：BLUR / MATERIAL / AIBAR / …）
+  ├── FilterType 枚举（30 个值：NONE / BLUR / MATERIAL / AIBAR / … / FROSTED_GLASS_BLUR）
   ├── Hash() — 基于类型+参数的缓存键
   └── RSDrawingFilter (rs_drawing_filter.h)
         ├── 包装 Drawing::ImageFilter
         ├── 可选携带 RSRenderFilterParaBase（NG 滤镜参数）
         │     └── RSUIFilterType 枚举：AIBAR / GREY / MATERIAL / MESA / MASK_COLOR /
-        │       KAWASE / LIGHT_BLUR / PIXEL_STRETCH / WATER_RIPPLE / FLY_OUT / DISTORTION / ALWAYS_SNAPSHOT
+        │       KAWASE / LIGHT_BLUR / PIXEL_STRETCH / WATER_RIPPLE / LINEAR_GRADIENT_BLUR /
+        │       FLY_OUT / DISTORTION / ALWAYS_SNAPSHOT
         └── DrawImageRect() — 在指定 Canvas 区域绘制滤镜结果
 ```
 

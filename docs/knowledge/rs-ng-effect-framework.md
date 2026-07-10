@@ -34,7 +34,7 @@
 | 属性挂载入口 | `rosen/modules/render_service_base/include/property/rs_properties.h` | `SetBackgroundNGFilter` 等 setter |
 | 渲染桥接 | `rosen/modules/render_service_base/src/render/rs_drawing_filter.cpp` | `GenerateAndUpdateGEVisualEffect` → `GERender` |
 | IPC 序列化 | `rosen/modules/render_service_base/src/platform/ohos/rs_marshalling_helper.cpp` | NG Filter / Mask / Shape / Shader 的 Marshalling |
-| 单测 | `rosen/test/render_service/render_service_base/unittest/effect/` | 6 个测试文件 |
+| 单测 | `rosen/test/render_service/render_service_base/unittest/effect/` | 4 个测试文件 |
 
 ### 客户端（render_service_client/ui_effect）
 
@@ -103,8 +103,8 @@ RSNGRenderEffectTemplate<Base, Type, Tags...>   ← 属性绑定层
 | --- | --- |
 | `rs_render_filter_base.cpp` creatorLUT | 25 Filter |
 | `rs_render_shader_base.cpp` creatorLUT | 21 Shader |
-| `rs_render_mask_base.cpp` creatorLUT | ~11 Mask |
-| `rs_render_shape_base.cpp` creatorLUT | ~12 Shape |
+| `rs_render_mask_base.cpp` creatorLUT | 11 Mask |
+| `rs_render_shape_base.cpp` creatorLUT | 12 Shape |
 
 `Create(RSNGEffectType)` 查表构造，未注册类型返回 `nullptr`。
 
@@ -127,8 +127,8 @@ node.SetBackgroundNGFilter(effect)
   → effect.Attach(node, modifier)             RSNGRenderFilterTemplate（服务端镜像）
   → IPC Marshalling                         ← IPC Unmarshalling（creatorLUT 重建）
                                               → RSProperties::SetBackgroundNGFilter()
-                                               → ComposeNGRenderFilter()
-                                                 → RSDrawingFilter::SetNGRenderFilter()
+                                                → ComposeNGRenderFilter()
+                                                  → RSDrawingFilter::SetNGRenderFilter()
                                                 → GenerateAndUpdateGEVisualEffect()
                                                   → RSNGRenderFilterHelper::GenerateGEVisualEffect()
                                                     → CreateGEVisualEffect(type) + SetParam(name, value)
