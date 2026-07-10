@@ -26,7 +26,8 @@
 | 主线程集成 | `rosen/modules/render_service/core/pipeline/main_thread/rs_main_thread.cpp` | 回调注册、InitRenderContext、SendColorPickerCallback |
 | Visitor 集成 | `rosen/modules/render_service/core/pipeline/main_thread/rs_uni_render_visitor.cpp` | PrepareColorPickers、PostColorPickerStateTask |
 | HWC 集成 | `rosen/modules/render_service/core/pipeline/hwc/rs_uni_hwc_visitor.cpp` | UpdateHwcNodeEnableByColorPicker |
-| 单测 | `rosen/test/render_service/render_service_base/unittest/feature/color_picker/` | 全部 5 个测试文件 |
+| 单测 | `rosen/test/render_service/render_service_base/unittest/feature/color_picker/` | 4 个测试文件（manager/thread/utils/hetero） |
+| 源码内流程图 | `rosen/modules/render_service_base/src/feature/color_picker/README.md` | 架构图、状态机图、执行流程图 |
 
 ## 核心模型
 
@@ -40,11 +41,12 @@
 | 提取算法 | GPU readback + 算术平均；或 MHC/HPS 硬件路径 | 直方图/量化：最大占比色、平均色、最高饱和度色、莫兰迪色等 |
 | 输出 | 单个 `ColorQuad`（对比黑/白动画，或亮度区间） | 丰富的颜色分析 API |
 | 用途 | 自适应 UI 主题（对比文字/图标色）；通知应用背景亮度变化 | 图片颜色提取，用于图片编辑/沉浸式场景 |
-| 复用关系 | 仅复用 effect 模块的 `RSColorPicker::GetAverageColorDirect` 做像素平均 | 独立完整 |
+| 复用关系 | 调用 `render_service_base/include/render/rs_color_picker.h` 的 `RSColorPicker::GetAverageColorDirect` 做像素平均 | 独立完整 |
 
 应用进程 ColorPicker 位于 `rosen/modules/effect/color_picker/include/color_picker.h`，
 继承 `ColorExtract`，提供 `GetLargestProportionColor`、`GetAverageColor` 等同步 API。
-RS ColorPicker 仅调用其中的 `GetAverageColorDirect` 做最终的像素均值计算。
+RS ColorPicker 使用的是 `render_service_base` 内部的 `RSColorPicker`（`render/rs_color_picker.h`，
+继承 `RSColorExtract`），调用其静态方法 `GetAverageColorDirect` 做最终的像素均值计算。
 
 ### 策略模式
 
@@ -96,14 +98,16 @@ COLOR_PICK_THIS_FRAME ──OnPrepare─────>  PREPARING
 - `PostColorPickerStateTask`（在 visitor 中）：投递延迟任务到主线程，设置状态并标记 dirty；
   进入 COLOR_PICK_THIS_FRAME 时请求 vsync。
 - `SetState`：校验状态转换合法性（如不能从 PREPARING 直接跳到 COLOR_PICK_THIS_FRAME）。
-- `OnPrepare`：若状态为 COLOR_PICK_THIS_FRAME，调度提取后重置为 PREPARING。
+- `OnPrepare`：仅计算 `stagingNeedColorPick_`（状态是否为 COLOR_PICK_THIS_FRAME）
+  和暗色模式变化；状态转换 COLOR_PICK_THIS_FRAME → PREPARING 由 visitor 的
+  `PrepareColorPickers` 在 `PrepareColorPicker()` 返回 true 后执行。
 
 ### 完整生命周期
 
 | 阶段 | 方法 | 线程 | 说明 |
 | --- | --- | --- | --- |
 | 生成 | `OnGenerate` | UI | 读 `GetColorPicker()` 参数，按策略创建 manager |
-| 预备 | `OnPrepare` | 主线程 | 状态机驱动，计算 `stagingNeedColorPick_`；检测 dirty 区决定是否提前调度 |
+| 预备 | `OnPrepare` | 主线程 | 计算 `stagingNeedColorPick_`（状态是否为 COLOR_PICK_THIS_FRAME）和暗色模式变化 |
 | 同步 | `OnSync` | UI→RT | `stagingNeedColorPick_`→`needColorPick_`，传播暗色模式 |
 | 绘制 | `OnDraw` | RT | `GetColorPick()` 取插值色设到 canvas；若 `needColorPick_` 调用 `ScheduleColorPick` |
 | 异步提取 | `ExecColorPick` | ColorPickerThread | 等 fence（30ms）→ 重建纹理 → ReadPixels → 均值计算 → `HandleColorUpdate` |
@@ -121,7 +125,7 @@ COLOR_PICK_THIS_FRAME ──OnPrepare─────>  PREPARING
 5. `ExecColorPick`（仅 Vulkan）：
    - `WaitFence`（30ms 超时）。
    - `image->BuildFromTexture`（共享 GPU 上下文）。
-   - `RSPropertyDrawableUtils::PickHeart` → GPU 缩放 + `ReadPixels` + `GetAverageColorDirect`。
+    - `RSPropertyDrawableUtils::PickColor` → GPU 缩放 + `ReadPixels` + `GetAverageColorDirect`。
    - 调用 `manager->HandleColorUpdate(colorPicked)`。
 
 ### 结果投递
@@ -164,7 +168,7 @@ COLOR_PICK_THIS_FRAME ──OnPrepare─────>  PREPARING
 | 状态机冷却 | `params.interval` + PREPARING/SCHEDULED 状态 | 避免每帧都做颜色提取，降低功耗 |
 | 滞后阈值 | THRESHOLD_HIGH=220, THRESHOLD_LOW=150 | 对比色在边界值附近抖动时不会频繁翻转 |
 | HWC 联动 | `SetHardwareNeedMakeImage` | HWC 直接合成的内容不在 GPU 可读纹理中，需要强制 GPU 合成 |
-| MHC/HPS 硬件路径优先 | `RSHeteroColorPicker::GetColor` | 硬件加速路径避免 GPU readback，功耗更低 |
+| MHC/HPS 硬件路径优先 | `RSHeteroColorPicker::GetColor` | HPS 将统计缩小到 1×1 纹理后仍需 `BuildFromTexture` + `ReadPixels` 读取结果，减少大图 readback，功耗更低 |
 | Placeholder 映射表 | `rs_color_placeholder_mapping_def.in` | 语义化占位符到具体颜色的映射支持暗色模式 |
 
 ## 待补充背景
