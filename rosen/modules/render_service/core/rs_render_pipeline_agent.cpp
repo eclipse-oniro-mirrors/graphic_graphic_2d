@@ -2133,6 +2133,9 @@ void RSRenderPipelineAgent::AdjustBootAnimationBounds(RSRenderNodeMap& nodeMap, 
 void RSRenderPipelineAgent::SetBootAnimationBounds(
     const std::shared_ptr<RSSurfaceRenderNode>& node, uint32_t width, uint32_t height)
 {
+    if (!node) {
+        return;
+    }
     for (auto modifier : node->GetModifiersNG(ModifierNG::RSModifierType::BOUNDS)) {
         if (modifier) {
             modifier->Setter<Vector4f>(ModifierNG::RSPropertyType::BOUNDS, {0, 0, width, height});
