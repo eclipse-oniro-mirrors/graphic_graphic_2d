@@ -848,7 +848,7 @@ int32_t HdiDeviceImpl::SetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode, u
 
 int32_t HdiDeviceImpl::GetLayerSolidFilledColor(uint32_t screenId, uint32_t layerId, uint32_t& solidFilledColor)
 {
-    CHECK_FUNC(g_composer);
+    CHECK_FUNC(g_composer_v5);
     solidFilledColor = 0;
     LayerColor layerColor;
     auto ret = g_composer_v5->GetLayerColor(screenId, layerId, layerColor);
