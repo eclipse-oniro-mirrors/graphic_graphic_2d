@@ -105,7 +105,7 @@ void RSRenderNodeDrawable::Draw(Drawing::Canvas& canvas)
 #ifdef USE_PRIMITIVE
         auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
         auto primListAdapter = paintFilterCanvas->primListAdapter_;
-        AutoDirtyTypesRestore autoDirtyTypesRestore(primListAdapter, *this);
+        AutoDirtyTypesRestore autoDirtyTypesRestore(primListAdapter.get(), *this);
 #ifdef PRIMITIVE_PROFILER
         if (selfPrimDirtyBitmap_.none()) {
             RS_TRACE_NAME_FMT("[PrimitiveProfiler] this node is clean");
