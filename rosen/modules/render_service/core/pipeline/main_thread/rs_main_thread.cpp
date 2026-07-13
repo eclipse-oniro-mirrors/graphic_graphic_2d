@@ -64,6 +64,7 @@
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/layer/rs_layer_cache_manager_base.h"
 #include "feature/pointer_window_manager/rs_pointer_window_manager.h"
+#include "feature/protective_solid/rs_protective_solid_render_node.h"
 #include "feature/power_off_render_skip/rs_power_off_render_controller.h"
 #include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/tunnel_layer/rs_tunnel_layer_helper.h"
@@ -2322,6 +2323,18 @@ void RSMainThread::CollectInfoForHardwareComposer()
                 isHardwareEnabledBufferUpdated_ = true;
             }
         });
+    nodeMap.TraverseProtectiveSolidNodes([this](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) {
+        if (!surfaceNode) {
+            return;
+        }
+        auto node = std::static_pointer_cast<RSProtectiveSolidRenderNode>(surfaceNode);
+        if (!node) {
+            return;
+        }
+        protectiveSolidNodes_.emplace_back(node);
+        protectiveSolidDrawables_.emplace_back(std::make_tuple(node->GetScreenNodeId(),
+            node->GetLogicalDisplayNodeId(), node->GetRenderDrawable()));
+    });
     prevHdrSwitchStatus_ = RSLuminanceControl::Get().IsHdrPictureOn();
 #endif
 }
@@ -2889,6 +2902,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
             renderThreadParams_->selfDrawables_ = std::move(selfDrawables_);
             renderThreadParams_->canvasDrawingSelfDrawables_ = std::move(canvasDrawingSelfDrawables_);
             renderThreadParams_->hardwareEnabledTypeDrawables_ = std::move(hardwareEnabledDrwawables_);
+            renderThreadParams_->protectiveSolidDrawables_ = std::move(protectiveSolidDrawables_);
             renderThreadParams_->hardCursorDrawableVec_ = RSPointerWindowManager::Instance().GetHardCursorDrawableVec();
             RsFrameReport::DirectRenderEnd();
             return;
@@ -2960,6 +2974,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         renderThreadParams_->canvasDrawingSelfDrawables_ = std::move(canvasDrawingSelfDrawables_);
         renderThreadParams_->hardCursorDrawableVec_ = RSPointerWindowManager::Instance().GetHardCursorDrawableVec();
         renderThreadParams_->hardwareEnabledTypeDrawables_ = std::move(hardwareEnabledDrwawables_);
+        renderThreadParams_->protectiveSolidDrawables_ = std::move(protectiveSolidDrawables_);
         renderThreadParams_->isOverDrawEnabled_ = isOverDrawEnabledOfCurFrame_;
         renderThreadParams_->isDrawingCacheDfxEnabled_ = isDrawingCacheDfxEnabledOfCurFrame_;
         renderThreadParams_->powerOffRenderController_.SyncFrom(GetContext().GetPowerOffRenderController());
@@ -3211,6 +3226,13 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
             screenNode->GetScreenProperty().GetWidth() * screenNode->GetScreenProperty().GetHeight());
         processor->ProcessScreenSurface(*screenNode);
         composerClientManager_->UpdatePipelineParam(screenId, pipelineParam_);
+        for (auto& node : protectiveSolidNodes_) {
+            auto surfaceParams = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
+            if (!surfaceParams) {
+                continue;
+            }
+            processor->CreateProtectiveSolidLayer(*node, *surfaceParams);
+        }
         processor->PostProcess();
     });
 #endif
@@ -5194,6 +5216,8 @@ void RSMainThread::ResetHardwareEnabledState(bool isUniRender)
         hasSurfaceLockLayer_ = false;
         hardwareEnabledNodes_.clear();
         hardwareEnabledDrwawables_.clear();
+        protectiveSolidNodes_.clear();
+        protectiveSolidDrawables_.clear();
         ClearSelfDrawingNodes();
         selfDrawables_.clear();
         canvasDrawingSelfDrawables_.clear();
