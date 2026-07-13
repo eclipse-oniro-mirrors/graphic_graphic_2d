@@ -872,7 +872,8 @@ HWTEST_F(RSNodeCommandTest, ColorPickerDestroyInRenderTest001, TestSize.Level1)
 {
     RSContext context;
     RSNodeCommandHelper::SetColorPickerDestroyInRenderProcessor(nullptr);
-    RSNodeCommandHelper::ColorPickerDestroyInRender(context, 1, 0, 100, static_cast<uint8_t>(ContrastColorScheme::LIGHT));
+    RSNodeCommandHelper::ColorPickerDestroyInRender(
+        context, 1, 0, 100, static_cast<uint8_t>(ContrastColorScheme::LIGHT));
     EXPECT_TRUE(true);
 }
 

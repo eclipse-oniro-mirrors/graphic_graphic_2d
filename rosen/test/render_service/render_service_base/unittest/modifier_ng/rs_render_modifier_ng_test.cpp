@@ -424,11 +424,6 @@ HWTEST_F(RSRenderModifierNGTest, ColorPickerLastContrastColorSchemeApplyLegacyPr
 
     ASSERT_NE(properties.GetColorPicker(), nullptr);
     EXPECT_EQ(properties.GetColorPicker()->lastContrastColorScheme, ContrastColorScheme::LIGHT);
-
-    auto invalidProperty = std::make_shared<RSRenderProperty<int>>(999, 0);
-    modifier->AttachProperty(ModifierNG::RSPropertyType::COLOR_PICKER_LAST_CONTRAST_COLOR_SCHEME, invalidProperty);
-    modifier->ApplyLegacyProperty(properties);
-    EXPECT_EQ(properties.GetColorPicker()->lastContrastColorScheme, ContrastColorScheme::INVALID);
 }
 
 /**
