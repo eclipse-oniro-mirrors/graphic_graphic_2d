@@ -22,7 +22,7 @@ std::vector<std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter>> RSLayerCac
 
 bool RSLayerCacheManagerBase::IsNodeUnSupportLayer(std::shared_ptr<RSRenderNode> node)
 {
-    auto renderParams = node.GetStagingRenderParams();
+    auto& renderParams = node->GetStagingRenderParams();
     if (!renderParams) {
         return false;
     }
@@ -35,7 +35,7 @@ bool RSLayerCacheManagerBase::IsNodeUnSupportLayer(std::shared_ptr<RSRenderNode>
 
 bool RSLayerCacheManagerBase::IsNodeUnSupportLayer(RSRenderNode& node)
 {
-    auto renderParams = node.GetStagingRenderParams();
+    auto& renderParams = node.GetStagingRenderParams();
     if (!renderParams) {
         return false;
     }
@@ -48,7 +48,7 @@ bool RSLayerCacheManagerBase::IsNodeUnSupportLayer(RSRenderNode& node)
 
 void RSLayerCacheManagerBase::SetLayerParamsIsUnSupportLayer(RSRenderNode& node, bool isUnSupportLayer)
 {
-    auto renderParams = node.GetStagingRenderParams();
+    auto& renderParams = node.GetStagingRenderParams();
     if (renderParams) {
         renderParams->SetLayerParamsIsUnSupportLayer(isUnSupportLayer);
     }
