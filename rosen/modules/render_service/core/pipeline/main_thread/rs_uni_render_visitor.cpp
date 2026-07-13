@@ -1918,7 +1918,7 @@ void RSUniRenderVisitor::AddRenderGroupCacheRoot(RSCanvasRenderNode& node)
                          node.GetNodeGroupType() != RSRenderNode::NodeGroupType::GROUPED_BY_LAYER) ||
                      (node.GetNodeGroupType() == RSRenderNode::NodeGroupType::GROUPED_BY_LAYER &&
                          RSLayerCacheManagerBase::IsNodeUnSupportLayer(node) != true);
-    if (node.GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
+    if (isNeedAdd) {
         renderGroupCacheRoots_[node.GetId()] = node.shared_from_this()->ReinterpretCastTo<RSCanvasRenderNode>();
         hasMarkedRenderGroupSubTreeDirty_ = false;
         RS_OPTIONAL_TRACE_NAME_FMT("AddRenderGroupCacheRoot id:%llu", node.GetId());
