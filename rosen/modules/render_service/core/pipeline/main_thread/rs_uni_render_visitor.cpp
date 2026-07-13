@@ -2031,7 +2031,11 @@ void RSUniRenderVisitor::TraverseRenderGroupCacheRoots(
 
 void RSUniRenderVisitor::AddRenderGroupCacheRoot(RSCanvasRenderNode& node)
 {
-    if (node.GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
+    auto isNeedAdd = (node.GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE &&
+                         node.GetNodeGroupType() != RSRenderNode::NodeGroupType::GROUPED_BY_LAYER) ||
+                     (node.GetNodeGroupType() == RSRenderNode::NodeGroupType::GROUPED_BY_LAYER &&
+                         RSLayerCacheManagerBase::IsNodeUnSupportLayer(node) != true);
+    if (isNeedAdd) {
         renderGroupCacheRoots_[node.GetId()] = node.shared_from_this()->ReinterpretCastTo<RSCanvasRenderNode>();
         hasMarkedRenderGroupSubTreeDirty_ = false;
         RS_OPTIONAL_TRACE_NAME_FMT("AddRenderGroupCacheRoot id:%llu", node.GetId());
