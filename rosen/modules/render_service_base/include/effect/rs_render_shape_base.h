@@ -85,6 +85,12 @@ private:
     friend class RSNGRenderShapeHelper;
 };
 
+// Opt-in: RSNGRenderShapeBase allows self-type-as-property (SHAPE_PTR) because all recursion
+// paths are guarded by RSShapeRecursionGuard (MAX_DEPTH=128). The static_assert in
+// RSNGRenderEffectTemplate bans this pattern for all other effect types (filter/mask/shader).
+template <>
+struct allow_self_type_property<RSNGRenderShapeBase> : std::true_type {};
+
 template<RSNGEffectType Type, typename... PropertyTags>
 class RSNGRenderShapeTemplate : public RSNGRenderEffectTemplate<RSNGRenderShapeBase, Type, PropertyTags...> {
 public:
