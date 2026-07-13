@@ -283,12 +283,6 @@ bool RSSystemProperties::GetRSImagePurgeEnabled()
     return isPurgeable;
 }
 
-bool RSSystemProperties::GetClosePixelMapFdEnabled()
-{
-    static bool isClosePixelMapFd = system::GetParameter("persist.rosen.rsimage.close.fd", "0") != "0";
-    return isClosePixelMapFd;
-}
-
 DirtyRegionDebugType RSSystemProperties::GetDirtyRegionDebugType()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.dirtyregiondebug.enabled", "0");
