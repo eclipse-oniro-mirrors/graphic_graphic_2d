@@ -304,18 +304,22 @@ bool RSUIContext::WaitForRebuildNormal(uint32_t timeoutMs)
 void RSUIContext::DestroyModifiersDraw()
 {
 #ifdef RS_MODIFIERS_DRAW_ENABLE
-    if (!RSSystemProperties::GetHybridRenderCanvasEnabled() || modifiersDrawThread_ == nullptr) {
+    if (!RSSystemProperties::GetHybridRenderCanvasEnabled()) {
         return;
     }
     if (auto transaction = GetRSTransaction()) {
         transaction->SetCommitTransactionCallback(nullptr);
     }
-    canvasModifiersDrawAgent_->WaitAllTasksFinish();
-    canvasModifiersDrawAgent_->Destroy();
-    modifiersDrawThread_->WaitAllTasksFinish();
-    modifiersDrawThread_->Destroy();
-    canvasModifiersDrawAgent_ = nullptr;
-    modifiersDrawThread_ = nullptr;
+    if (canvasModifiersDrawAgent_ != nullptr) {
+        canvasModifiersDrawAgent_->WaitAllTasksFinish();
+        canvasModifiersDrawAgent_->Destroy();
+        canvasModifiersDrawAgent_ = nullptr;
+    }
+    if (modifiersDrawThread_ != nullptr) {
+        modifiersDrawThread_->WaitAllTasksFinish();
+        modifiersDrawThread_->Destroy();
+        modifiersDrawThread_ = nullptr;
+    }
 #endif
 }
 
