@@ -39,6 +39,7 @@ void RSColorPickerRenderModifier::ResetProperties(RSProperties& properties)
     properties.SetColorPickerPlaceholder(static_cast<int>(ColorPlaceholder::NONE));
     properties.SetColorPickerStrategy(static_cast<int>(ColorPickStrategyType::NONE));
     properties.SetColorPickerInterval(0);
+    properties.SetLastContrastColorScheme(ContrastColorScheme::INVALID);
     properties.SetColorPickerNotifyThreshold(0); // packed value: both dark and light thresholds = 0
 }
 
