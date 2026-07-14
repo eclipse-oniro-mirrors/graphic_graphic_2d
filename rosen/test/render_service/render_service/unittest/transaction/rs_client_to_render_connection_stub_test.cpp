@@ -1660,7 +1660,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, GetPixelmapTest002, TestSize.Level1
     MessageOption option;
     uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_PIXELMAP);
 
-    // Test case: write nodeId, but NOT PixelMap 
+    // Test case: write nodeId, but NOT PixelMap
     // This should fail when reading PixelMap or subsequent data
     data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     NodeId nodeId = 10003;
