@@ -598,11 +598,13 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::SharedTypeface&
 
     uint32_t coordsCount = 0;
     success &= Unmarshalling(parcel, coordsCount);
-    if (success) { coords.resize(coordsCount); }
-    constexpr uint32_t MAX_COORDS_COUNT = 1024;
-    if (success && coordsCount > MAX_COORDS_COUNT) {
+    constexpr uint32_t MAX_COORDS_COUNT = 128;
+    if (coordsCount > MAX_COORDS_COUNT) {
+        ROSEN_LOGE("RSMarshallingHelper::Unmarshalling coords count %{public}u exceeds max limit %{public}u",
+            coordsCount, MAX_COORDS_COUNT);
         return false;
     }
+    if (success) { coords.resize(coordsCount); }
 
     for (uint32_t i = 0; i < coordsCount; ++i) {
         uint32_t axis = 0;
