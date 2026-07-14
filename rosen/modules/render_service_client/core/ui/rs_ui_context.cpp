@@ -314,6 +314,7 @@ void RSUIContext::DestroyModifiersDraw()
     canvasModifiersDrawAgent_->Destroy();
     modifiersDrawThread_->WaitAllTasksFinish();
     modifiersDrawThread_->Destroy();
+    canvasModifiersDrawAgent_ = nullptr;
     modifiersDrawThread_ = nullptr;
 #endif
 }
