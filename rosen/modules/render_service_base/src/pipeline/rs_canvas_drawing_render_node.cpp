@@ -875,6 +875,7 @@ void RSCanvasDrawingRenderNode::OnDestoryTokenNode()
     if (auto context = GetContext().lock()) {
         context->GetMutableNodeMap().RegisterSurfaceHandler(GetId(), surfaceHandler_);
     }
+    surfaceHandler_->CleanCache();
     surfaceHandler_ = nullptr;
 }
  
