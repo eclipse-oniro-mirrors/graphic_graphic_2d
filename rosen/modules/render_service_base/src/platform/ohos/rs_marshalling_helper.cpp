@@ -599,6 +599,10 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::SharedTypeface&
     uint32_t coordsCount = 0;
     success &= Unmarshalling(parcel, coordsCount);
     if (success) { coords.resize(coordsCount); }
+    constexpr uint32_t MAX_COORDS_COUNT = 1024;
+    if (success && coordsCount > MAX_COORDS_COUNT) {
+        return false;
+    }
 
     for (uint32_t i = 0; i < coordsCount; ++i) {
         uint32_t axis = 0;
