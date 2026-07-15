@@ -56,6 +56,8 @@ public:
 
     virtual std::shared_ptr<RSIpcPersistenceManager> GetIpcPersistenceManager() const { return nullptr; };
 
+    virtual bool IsValidRenderProcessPid(pid_t pid) const = 0;
+
 protected:
     RSRenderService& renderService_;
 };

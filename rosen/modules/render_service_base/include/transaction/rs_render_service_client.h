@@ -112,6 +112,7 @@ public:
 #endif
 #ifndef ENABLE_RS_PROXY
     bool GetUniRenderEnabled();
+    bool GetBackgroundRebuildEnabled();
 
     sptr<IRemoteObject> GetConnectToRenderToken(ScreenId screenId);
 

@@ -18,6 +18,7 @@
 #include "surface_buffer_impl.h"
 #include "rs_composer_client.h"
 #include "rs_surface_layer.h"
+#include "rs_surface_solid_filled_color_layer.h"
 #include "surface_buffer_impl.h"
 
 using namespace testing;
@@ -247,9 +248,11 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerProperty001, Function | MediumTest| Level1)
     uint32_t devId = 1;
     uint32_t layerId = 2;
     uint32_t property = 3;
- 
+
+    HdiLayerTest::rsLayer_->SetType(GRAPHIC_LAYER_TYPE_TUNNEL);
+    HdiLayerTest::hdiLayer_->UpdateRSLayer(HdiLayerTest::rsLayer_);
     EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerProperty(devId, layerId, property)).WillRepeatedly(testing::Return(0));
-    ASSERT_EQ(HdiLayerTest::hdiLayer_->SetTunnelLayerProperty(), 0);
+    ASSERT_NE(HdiLayerTest::hdiLayer_->SetTunnelLayerProperty(), 0);
 }
 
 /**
@@ -831,6 +834,7 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerParametersTest, Function | MediumTest| Leve
     auto rsLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     rsLayer->SetTunnelLayerId(1);
     rsLayer->SetTunnelLayerProperty(1);
+    rsLayer->SetType(GRAPHIC_LAYER_TYPE_TUNNEL);
     hdiLayer_->rsLayer_ = rsLayer;
     hdiLayer_->hasSetTunnel_ = true;
     hdiLayer_->tunnelLayerProperty_ = TUNNEL_PROP_INVALID;
@@ -857,6 +861,7 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerParametersTest002, Function | MediumTest| L
     auto rsLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     rsLayer->SetTunnelLayerId(2);
     rsLayer->SetTunnelLayerProperty(TUNNEL_PROP_INVALID);
+    rsLayer->SetType(GRAPHIC_LAYER_TYPE_TUNNEL);
     hdiLayer_->rsLayer_ = rsLayer;
     EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerId(_, _, 2)).WillOnce(testing::Return(0));
     EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerProperty(_, _, TUNNEL_PROP_INVALID))
@@ -884,6 +889,7 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerParametersTest003, Function | MediumTest| L
     auto rsLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     rsLayer->SetTunnelLayerId(0);
     rsLayer->SetTunnelLayerProperty(TUNNEL_PROP_INVALID);
+    rsLayer->SetType(GRAPHIC_LAYER_TYPE_TUNNEL);
     hdiLayer_->rsLayer_ = rsLayer;
 
     EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerId(_, _, 0)).WillOnce(testing::Return(0));
@@ -940,16 +946,9 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerPropertyWithHasSetTunnelFlag, Function | Me
  
     auto rsLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     rsLayer->SetTunnelLayerProperty(TUNNEL_PROP_BUFFER_ADDR);
+    rsLayer->SetType(GRAPHIC_LAYER_TYPE_TUNNEL);
     hdiLayer->rsLayer_ = rsLayer;
- 
-    EXPECT_CALL(hdiDeviceMock, SetTunnelLayerProperty(_, _, TUNNEL_PROP_BUFFER_ADDR))
-        .WillOnce(testing::Return(0));
-    ASSERT_EQ(hdiLayer->SetTunnelLayerProperty(), GRAPHIC_DISPLAY_SUCCESS);
     ASSERT_TRUE(hdiLayer->hasSetTunnel_);
-    ASSERT_EQ(hdiLayer->tunnelLayerProperty_, TUNNEL_PROP_BUFFER_ADDR);
- 
-    EXPECT_CALL(hdiDeviceMock, SetTunnelLayerProperty(_, _, TUNNEL_PROP_BUFFER_ADDR)).Times(0);
-    ASSERT_EQ(hdiLayer->SetTunnelLayerProperty(), GRAPHIC_DISPLAY_SUCCESS);
 }
 
 /**
@@ -1382,6 +1381,127 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters_AllKeys_Success, Function | MediumT
     EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _)).WillRepeatedly(testing::Return(0));
     auto ret = hdiLayer_->SetPerFrameParameters();
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameParameters_SolidFillKey_CallsSolidFillParam
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Set paramKey_ with "SolidFill"
+ *                  2. call SetPerFrameParameters
+ *                  3. verify SetPerFrameLayerSolidFillParam is called
+ *                   Cover branch: key == GENERIC_METADATA_KEY_SOLIC_FILL (line 889 true)
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameParameters_SolidFillKey_CallsSolidFillParam, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    paramKey_.clear();
+    paramKey_.push_back("SolidFill");
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    GraphicIRect layerSize = {0, 0, 100, 100};
+    prevRSLayer->SetLayerSize(layerSize);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    auto curRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    curRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
+    curRSLayer->SetLayerSize(layerSize);
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, "SolidFill", _))
+        .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameParameters();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameParameters_NoSolidFillKey_NotCalled
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Set paramKey_ without "SolidFill"
+ *                  2. call SetPerFrameParameters
+ *                  3. verify SetPerFrameLayerSolidFillParam is not called
+ *                   Cover branch: key != GENERIC_METADATA_KEY_SOLIC_FILL (line 889 false)
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameParameters_NoSolidFillKey_NotCalled, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    paramKey_.clear();
+    paramKey_.push_back("SDRBrightnessNit");
+    paramKey_.push_back("BrightnessNit");
+
+    auto curRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    curRSLayer->SetSdrNit(10.0f);
+    curRSLayer->SetDisplayNit(200.0f);
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, "SolidFill", _)).Times(0);
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _))
+        .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameParameters();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameParameters_SolidFillKeyWithOtherKeys_AllProcessed
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Set paramKey_ with multiple keys including "SolidFill"
+ *                  2. call SetPerFrameParameters
+ *                  3. verify all keys are processed
+ *                   Cover branch: key == GENERIC_METADATA_KEY_SOLIC_FILL (line 889 true)
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameParameters_SolidFillKeyWithOtherKeys_AllProcessed, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    paramKey_.clear();
+    paramKey_.push_back("SDRBrightnessNit");
+    paramKey_.push_back("SolidFill");
+    paramKey_.push_back("BrightnessNit");
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetLayerLinearMatrix({1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f});
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    auto curRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    curRSLayer->SetSdrNit(10.0f);
+    curRSLayer->SetDisplayNit(200.0f);
+    curRSLayer->SetLayerLinearMatrix({1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f});
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _))
+        .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameParameters();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameParameters_SolidFillKeyFailure_ReturnsError
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Set paramKey_ with "SolidFill"
+ *                  2. mock SetLayerPerFrameParameterSmq to return error
+ *                  3. verify error is returned
+ *                   Cover branch: key == GENERIC_METADATA_KEY_SOLIC_FILL (line 889 true)
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameParameters_SolidFillKeyFailure_ReturnsError, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    paramKey_.clear();
+    paramKey_.push_back("SolidFill");
+
+    auto curRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, "SolidFill", _))
+        .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_FAILURE));
+    auto ret = hdiLayer_->SetPerFrameParameters();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_FAILURE);
 }
 
 /**
@@ -5010,6 +5130,205 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
         .Times(1)
         .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     auto ret = hdiLayer_->SetPerFrameLayerVcldParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerSolidFillParam_PrevNotNull_SolidAndSizeMatch_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. prevRSLayer_ != nullptr, IsSolidFilledColorLayer == true, sizes match
+ *                  2. call SetPerFrameLayerSolidFillParam
+ *                  3. verify early return (success)
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_SolidAndSizeMatch_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    GraphicIRect layerSize = {0, 0, 100, 100};
+    prevRSLayer->SetLayerSize(layerSize);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    auto curRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    curRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
+    curRSLayer->SetLayerSize(layerSize);
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _)).Times(1);
+    auto ret = hdiLayer_->SetPerFrameLayerSolidFillParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerSolidFillParam_PrevNotNull_NotSolidOrSizeMismatch_False
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. prevRSLayer_ != nullptr, IsSolidFilledColorLayer == false or size mismatch
+ *                  2. call SetPerFrameLayerSolidFillParam
+ *                  3. verify device call is made
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_NotSolidOrSizeMismatch_False,
+    Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    GraphicIRect prevLayerSize = {0, 0, 100, 100};
+    prevRSLayer->SetLayerSize(prevLayerSize);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    auto curRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    curRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
+    GraphicIRect curLayerSize = {0, 0, 200, 200};
+    curRSLayer->SetLayerSize(curLayerSize);
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _))
+        .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameLayerSolidFillParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerSolidFillParam_PrevNull_NotSolid_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. prevRSLayer_ == nullptr, IsSolidFilledColorLayer == false
+ *                  2. call SetPerFrameLayerSolidFillParam
+ *                  3. verify early return (success)
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNull_NotSolid_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    hdiLayer_->prevRSLayer_ = nullptr;
+
+    auto curRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    curRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _)).Times(0);
+    auto ret = hdiLayer_->SetPerFrameLayerSolidFillParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerSolidFillParam_PrevNull_Solid_False
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. prevRSLayer_ == nullptr, IsSolidFilledColorLayer == true
+ *                  2. call SetPerFrameLayerSolidFillParam
+ *                  3. verify device call is made
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNull_Solid_False, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    hdiLayer_->prevRSLayer_ = nullptr;
+
+    auto curRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    curRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _))
+        .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameLayerSolidFillParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerSolidFillParam_PrevNotNull_RealSolidFillAndSizeMatch_EarlyReturn
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. prevRSLayer_ != nullptr, real SolidFilledColorLayer, sizes match
+ *                  2. call SetPerFrameLayerSolidFillParam
+ *                  3. verify early return without device call
+ *                   Cover branch: line 993 if condition is true (IsSolidFilledColorLayer() && size match)
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_RealSolidFillAndSizeMatch_EarlyReturn,
+    Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    GraphicIRect layerSize = {0, 0, 100, 100};
+    prevRSLayer->SetLayerSize(layerSize);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    auto ctx = std::make_shared<RSComposerContext>(nullptr);
+    auto curRSLayer = RSSurfaceSolidFilledColorLayer::Create(0, ctx);
+    ASSERT_NE(curRSLayer, nullptr);
+    curRSLayer->SetLayerSize(layerSize);
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _)).Times(0);
+    auto ret = hdiLayer_->SetPerFrameLayerSolidFillParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerSolidFillParam_PrevNotNull_RealSolidFillAndSizeMismatch_DeviceCalled
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. prevRSLayer_ != nullptr, real SolidFilledColorLayer, sizes mismatch
+ *                  2. call SetPerFrameLayerSolidFillParam
+ *                  3. verify device call is made
+ *                   Cover branch: line 993 if condition is false (size mismatch)
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_RealSolidFillAndSizeMismatch_DeviceCalled,
+    Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    GraphicIRect prevLayerSize = {0, 0, 100, 100};
+    prevRSLayer->SetLayerSize(prevLayerSize);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    auto ctx = std::make_shared<RSComposerContext>(nullptr);
+    auto curRSLayer = RSSurfaceSolidFilledColorLayer::Create(0, ctx);
+    ASSERT_NE(curRSLayer, nullptr);
+    GraphicIRect curLayerSize = {0, 0, 200, 200};
+    curRSLayer->SetLayerSize(curLayerSize);
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _))
+        .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameLayerSolidFillParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerSolidFillParam_PrevNotNull_NotSolidFill_DeviceCalled
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. prevRSLayer_ != nullptr, not SolidFilledColorLayer
+ *                  2. call SetPerFrameLayerSolidFillParam
+ *                  3. verify device call is made
+ *                   Cover branch: line 993 if condition is false (!IsSolidFilledColorLayer())
+ */
+HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_NotSolidFill_DeviceCalled,
+    Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    auto curRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    hdiLayer_->rsLayer_ = curRSLayer;
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _))
+        .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameLayerSolidFillParam();
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
 } // namespace

@@ -137,6 +137,27 @@ void RSUifirstManager::AddProcessSkippedNode(NodeId id)
     subthreadProcessSkippedNode_.insert(id);
 }
 
+void RSUifirstManager::AddFirstFrameCacheGeneratedNode(NodeId id)
+{
+    if (id == INVALID_NODEID) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(firstFrameCacheMutex_);
+    firstFrameCacheGeneratedNodes_.insert(id);
+}
+
+bool RSUifirstManager::IsFirstFrameCacheGeneratedNode(NodeId id)
+{
+    std::lock_guard<std::mutex> lock(firstFrameCacheMutex_);
+    return firstFrameCacheGeneratedNodes_.count(id) > 0;
+}
+
+void RSUifirstManager::RemoveFirstFrameCacheGeneratedNode(NodeId id)
+{
+    std::lock_guard<std::mutex> lock(firstFrameCacheMutex_);
+    firstFrameCacheGeneratedNodes_.erase(id);
+}
+
 void RSUifirstManager::AddPurgedNode(NodeId id)
 {
     if (id == INVALID_NODEID) {
@@ -171,7 +192,10 @@ void RSUifirstManager::ResetUifirstNode(std::shared_ptr<RSSurfaceRenderNode>& no
     if (SetUifirstNodeEnableParam(*nodePtr, MultiThreadCacheType::NONE)) {
         // enable ->disable
         SetNodeNeedForceUpdateFlag(true);
-        hasForceUpdateScreen_.insert(nodePtr->GetScreenId());
+        auto screenId = GetScreenId(nodePtr->GetAncestorScreenNode());
+        if (screenId != INVALID_SCREEN_ID) {
+            hasForceUpdateScreen_.insert(screenId);
+        }
         pendingForceUpdateNode_.push_back(nodePtr->GetId());
     }
     RSMainThread::Instance()->GetContext().AddPendingSyncNode(nodePtr);
@@ -378,7 +402,10 @@ void RSUifirstManager::ProcessDoneNodeInner()
             SetNodeNeedForceUpdateFlag(true);
             auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
             if (surfaceParams) {
-                hasForceUpdateScreen_.insert(surfaceParams->GetScreenId());
+                auto screenId = GetScreenId(surfaceParams->GetAncestorScreenNode());
+                if (screenId != INVALID_SCREEN_ID) {
+                    hasForceUpdateScreen_.insert(screenId);
+                }
             }
             pendingForceUpdateNode_.push_back(id);
         }
@@ -1374,9 +1401,8 @@ NodeId RSUifirstManager::LeashWindowContainMainWindowAndStarting(RSSurfaceRender
             continue;
         }
         auto surfaceChild = child->ReinterpretCastTo<RSSurfaceRenderNode>();
-        if (surfaceChild && surfaceChild->IsMainWindowType() &&
-            surfaceChild->ShouldPaint() && canvasNodeNum == 0 &&
-            !surfaceChild->IsNotifyUIBufferAvailable()) {
+        if (surfaceChild && surfaceChild->IsMainWindowType() && surfaceChild->ShouldPaint() &&
+            canvasNodeNum == 0 && !surfaceChild->IsNotifyUIBufferAvailable()) {
             mainwindowNum++;
             if (IsContentAppWindow(surfaceChild)) {
                 hasContentAppWindow = true;
@@ -1727,8 +1753,9 @@ void RSUifirstManager::ProcessFirstFrameCache(RSSurfaceRenderNode& node, MultiTh
 {
     // purpose: to avoid that RT waits uifirst cache long time when switching to uifirst first frame,
     // draw and cache win in RT on first frame, then use RT thread cache to draw until uifirst cache ready.
+    bool firstFrameCacheGenerated = IsFirstFrameCacheGeneratedNode(node.GetId());
     if (node.GetLastFrameUifirstCacheType() == MultiThreadCacheType::NONE &&
-        !node.GetSubThreadAssignable()) {
+        (!node.GetSubThreadAssignable() || !firstFrameCacheGenerated)) {
         RS_TRACE_NAME_FMT("AssignMainThread selfAndParentShouldPaint: %d, skipDraw: %d",
             node.GetSelfAndParentShouldPaint(), node.GetSkipDraw());
         UifirstStateChange(node, MultiThreadCacheType::NONE); // mark as draw win in RT thread
@@ -1743,6 +1770,9 @@ void RSUifirstManager::ProcessFirstFrameCache(RSSurfaceRenderNode& node, MultiTh
             node.RegisterTreeStateChangeCallback(func);
         }
     } else {
+        if (firstFrameCacheGenerated) {
+            RemoveFirstFrameCacheGeneratedNode(node.GetId());
+        }
         UifirstStateChange(node, cacheType);
     }
 }
@@ -2178,6 +2208,7 @@ void RSUifirstManager::ProcessTreeStateChange(RSSurfaceRenderNode& node)
     RSUifirstManager::Instance().DisableUifirstNode(node);
     RSUifirstManager::Instance().ForceClearSubthreadRes();
     RSUifirstManager::Instance().RemoveCardNodes(node.GetId());
+    RSUifirstManager::Instance().RemoveFirstFrameCacheGeneratedNode(node.GetId());
 }
 
 void RSUifirstManager::DisableUifirstNode(RSSurfaceRenderNode& node)
@@ -2530,8 +2561,8 @@ void RSUifirstManager::SetUIFirstLeashAllEnable(RSSurfaceRenderNode& surfaceNode
     const auto& cachedSize = stagingSurfaceParams->GetCacheSize();
     const auto& lastCachedSize = stagingSurfaceParams->GetLastCacheSize();
     bool cacheSizeChanged = ROSEN_NE(cachedSize.x_, lastCachedSize.x_) || ROSEN_NE(cachedSize.y_, lastCachedSize.y_);
-    bool enable = isUIFirstLeashAllEnable_ && !stagingSurfaceParams->IsAttractionValid() &&
-        !cacheSizeChanged && !surfaceNode.GetCurFrameHasAnimation();
+    bool enable = isUIFirstLeashAllEnable_ && stagingSurfaceParams->IsLeashWindow() &&
+        !stagingSurfaceParams->IsAttractionValid() && !cacheSizeChanged && !surfaceNode.GetCurFrameHasAnimation();
     RS_TRACE_NAME_FMT("RSUifirstManager::SetUIFirstLeashAllEnable name[%s], isUIFirstLeashAllEnable[%d],"
         "isAttractionValid[%d], cacheSizeChanged[%d], hasAnimation[%d]",
         surfaceNode.GetName().c_str(), isUIFirstLeashAllEnable_, stagingSurfaceParams->IsAttractionValid(),
@@ -2565,6 +2596,16 @@ bool RSUifirstManager::IsOcclusionEnabled() const
 {
     return GetUiFirstMode() == UiFirstModeType::MULTI_WINDOW_MODE && UIFirstParam::IsOcclusionEnabled() &&
         RSSystemParameters::GetUIFirstOcclusionEnabled();
+}
+
+ScreenId RSUifirstManager::GetScreenId(const RSBaseRenderNode::WeakPtr& ancestorScreenNode)
+{
+    auto screenNode = ancestorScreenNode.lock();
+    if (!screenNode) {
+        return INVALID_SCREEN_ID;
+    }
+    auto screenRenderNode = screenNode->ReinterpretCastTo<RSScreenRenderNode>();
+    return screenRenderNode ? screenRenderNode->GetScreenId() : INVALID_SCREEN_ID;
 }
 } // namespace Rosen
 } // namespace OHOS

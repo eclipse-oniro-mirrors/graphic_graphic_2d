@@ -143,6 +143,7 @@ enum class DrawSkipType : uint8_t {
     SCREEN_STATE_INVALID = 35,
     SCREEN_FREEZE = 36,
     BACKFACE_SKIP = 37,
+    MEMORYOVER_SKIP = 38,
 };
 
 class RSB_EXPORT RSRenderNodeDrawableAdapter : public std::enable_shared_from_this<RSRenderNodeDrawableAdapter> {
@@ -161,6 +162,9 @@ public:
     using WeakPtr = std::weak_ptr<RSRenderNodeDrawableAdapter>;
 
     virtual void Draw(Drawing::Canvas& canvas) = 0;
+#ifdef USE_PRIMITIVE
+    virtual void DrawPrim(Drawing::Canvas& canvas);
+#endif
     virtual void DumpDrawableTree(int32_t depth, std::string& out, const RSContext& context) const;
 
 #ifdef SUBTREE_PARALLEL_ENABLE

@@ -18,6 +18,7 @@
 
 #include <parcel.h>
 #include <refbase.h>
+#include <vector>
 
 #include "common/rs_common_def.h"
 #include "pipeline/rs_context.h"
@@ -50,8 +51,10 @@ enum RSCommandType : uint16_t {
     FRAME_RATE_LINKER = 12,
     UNION_NODE = 13,
     WINDOW_KEYFRAME_NODE = 14,
-    DELEGATE_COMPOSITE = 15,
-    UI_DIRECTOR = 16,
+    DEPTH_NODE = 15,
+    SPATIAL_EFFECT = 16,
+    DELEGATE_COMPOSITE = 17,
+    UI_DIRECTOR = 18,
 };
 
 enum RSCommandPermissionType : uint16_t {
@@ -111,6 +114,11 @@ public:
     virtual NodeId GetTargetNodeId() const
     {
         return GetNodeId();
+    }
+
+    virtual std::vector<NodeId> GetAllNodeIds() const
+    {
+        return {GetNodeId()};
     }
 
     virtual uint64_t GetToken() const

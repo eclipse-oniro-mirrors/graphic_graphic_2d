@@ -220,6 +220,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::PROFILER_SERVICE_POPULATE_FILES),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::PROFILER_IS_SECURE_SCREEN),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_UNI_RENDER_ENABLED),
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_BACKGROUND_REBUILD_ENABLED),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CREATE_VSYNC_CONNECTION),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_PIXELMAP_BY_PROCESSID),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_APS_CONFIG_PARAMS),
@@ -393,6 +394,14 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             bool enable;
             if (GetUniRenderEnabled(enable) != ERR_OK || !reply.WriteBool(enable)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_UNI_RENDER_ENABLED read enable failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_BACKGROUND_REBUILD_ENABLED): {
+            bool enable;
+            if (GetBackgroundRebuildEnabled(enable) != ERR_OK || !reply.WriteBool(enable)) {
+                RS_LOGE("RSClientToServiceConnectionStub::GET_BACKGROUND_REBUILD_ENABLED read enable failed!");
                 ret = ERR_INVALID_REPLY;
             }
             break;
@@ -1197,7 +1206,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             int32_t result = GetDisplayIdentificationData(id, outPort, edidData);
-            if (!reply.WriteUint8(result)) {
+            if (!reply.WriteInt32(result)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_DISPLAY_IDENTIFICATION_DATA Write result failed!");
                 ret = IPC_STUB_WRITE_PARCEL_ERR;
                 break;

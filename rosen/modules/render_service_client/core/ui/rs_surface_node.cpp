@@ -21,6 +21,7 @@
 
 #include "command/rs_base_node_command.h"
 #include "command/rs_node_command.h"
+#include "command/rs_spatial_effect_command.h"
 #include "command/rs_surface_node_command.h"
 #include "command_modifier/rs_node_command_modifier.h"
 #include "command_modifier/rs_surface_node_command_modifier.h"
@@ -1222,6 +1223,31 @@ void RSSurfaceNode::SetApiCompatibleVersion(uint32_t version)
     });
 }
 
+void RSSurfaceNode::SetSurfaceNodeType(RSSurfaceNodeType nodeType)
+{
+    if (surfaceNodeType_ == RSSurfaceNodeType::ABILITY_COMPONENT_NODE ||
+        surfaceNodeType_ == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE ||
+        surfaceNodeType_ == RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE) {
+        return;
+    }
+    if (nodeType == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE ||
+        nodeType == RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE) {
+        RS_LOGE("RSSurfaceNode::SetSurfaceNodeType prohibition of converting surfaceNodeType to uiExtension");
+        return;
+    }
+    surfaceNodeType_ = nodeType;
+}
+
+RSSurfaceNodeType RSSurfaceNode::GetSurfaceNodeType() const
+{
+    return surfaceNodeType_;
+}
+
+bool RSSurfaceNode::IsAppWindow() const
+{
+    return surfaceNodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
+}
+
 void RSSurfaceNode::SetSourceVirtualDisplayId(ScreenId screenId)
 {
     SetRSCmdProperty<VirtualDisplayIdCmdModifier>(VirtualDisplayIdCmdParam{
@@ -1435,6 +1461,13 @@ void RSSurfaceNode::SetHDRBrightnessWithType(const float& hdrBrightness, uint32_
 #endif
 }
 
+void RSSurfaceNode::SetIsDepthResource(bool isDepthResource)
+{
+    SetRSCmdProperty<IsDepthResourceCmdModifier>(IsDepthResourceCmdParam{
+        isDepthResource
+    });
+}
+
 void RSSurfaceNode::DumpSubClass(std::string& out) const
 {
     if (isShadowNode_) {
@@ -1445,8 +1478,6 @@ void RSSurfaceNode::DumpSubClass(std::string& out) const
         out += "], existsDuplicateModifier[true";
     }
 }
-
-void RSSurfaceNode::SetIsDepthResource(bool isDepthResource) {}
 
 void RSSurfaceNode::CreateRenderThreadNode(RSSurfaceNodeType type, bool isWindow)
 {

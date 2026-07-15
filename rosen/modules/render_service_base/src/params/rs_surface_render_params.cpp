@@ -545,6 +545,11 @@ const std::unordered_map<std::string, bool>& RSSurfaceRenderParams::GetSurfaceWa
     return (watermarkType == CUSTOM_WATER_MARK) ? customWatermarkHandles_ : systemWatermarkHandles_;
 }
 
+const std::unordered_map<std::string, bool>& RSSurfaceRenderParams::GetWatermarksEnabledMap() const
+{
+    return systemWatermarkHandles_;
+}
+
 bool RSSurfaceRenderParams::IsSystemWatermarkEmpty() const
 {
     return systemWatermarkHandles_.empty();
@@ -722,6 +727,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
         targetSurfaceParams->captureConfig_ = std::move(captureConfig_);
         targetSurfaceParams->captureCallback_ = std::move(captureCallback_);
     }
+    targetSurfaceParams->isDepthSrc_ = isDepthSrc_;
     targetSurfaceParams->appRotationCorrection_ = appRotationCorrection_;
     targetSurfaceParams->rotationCorrectionDegree_ = rotationCorrectionDegree_;
     targetSurfaceParams->vcldInfo_ = vcldInfo_;

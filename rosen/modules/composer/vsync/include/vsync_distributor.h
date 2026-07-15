@@ -180,6 +180,7 @@ public:
     void SetBufferInfo(const BufferInfo& bufferInfo);
     // forcefully enable DVsync in RS
     void ForceRsDVsync(const std::string& sceneId);
+    bool DvsyncNeedSkipRsCommitDelay() const;
 
     // used by VRate
     std::vector<uint64_t> GetSurfaceNodeLinkerIds(uint64_t windowNodeId);
@@ -204,6 +205,8 @@ private:
     void DisableVSync();
     void OnVSyncEvent(int64_t now, int64_t period,
         uint32_t refreshRate, VSyncMode vsyncMode, uint32_t vsyncMaxRefreshRate);
+    void ComputeActualPeriod(sptr<VSyncConnection> &con, int64_t period, int64_t &actualPeriod,
+        bool isDvsyncController);
     void CollectConnections(bool &waitForVSync, int64_t timestamp,
                             std::vector<sptr<VSyncConnection>> &conns, int64_t vsyncCount, bool isDvsyncThread = false);
     VsyncError QosGetPidByName(const std::string& name, uint32_t& pid);

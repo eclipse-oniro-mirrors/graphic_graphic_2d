@@ -102,7 +102,7 @@ const std::unordered_set<RSDrawableSlot> edrDrawableSlots = {
     RSDrawableSlot::BACKGROUND_NG_SHADER,
     RSDrawableSlot::COMPOSITING_FILTER,
     RSDrawableSlot::BLENDER,
-    RSDrawableSlot::OVERLAY_NG_SHADER,
+    RSDrawableSlot::COVERAGE_NG_SHADER,
 };
 
 // ensure the corresponding drawable type inherits from RSFilterDrawable.
@@ -786,6 +786,7 @@ void RSRenderNode::ResetChildRelevantFlags()
     childHasVisibleFilter_ = false;
     childHasVisibleEffect_ = false;
     childHasSharedTransition_ = false;
+    childHasSpatialEffect_ = false;
     visibleFilterChild_.clear();
     visibleEffectChild_.clear();
     childrenRect_.Clear();
@@ -1133,7 +1134,6 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         out += ", VsyncId: " + std::to_string(curFrameInfoDetail_.curFrameVsyncId);
         out += ", IsSubTreeSkipped: " + std::to_string(curFrameInfoDetail_.curFrameSubTreeSkipped);
         out += ", ReverseChildren: " + std::to_string(curFrameInfoDetail_.curFrameReverseChildren);
-        out += ", zOrder: " + std::to_string(hwcRecorder_.GetZOrderForHwcEnableByFilter());
         out += ", hasDrawContent: " + std::to_string(layerContentBits_[LayerDrawContent::SELF]);
         out += ", hasChildrenDrawContent: " + std::to_string(layerContentBits_[LayerDrawContent::SUBTREE]);
         out += ", allHwcAndFilterNode: {";
@@ -1337,6 +1337,10 @@ void RSRenderNode::DumpNodeType(RSRenderNodeType nodeType, std::string& out)
         }
         case RSRenderNodeType::LOGICAL_DISPLAY_NODE: {
             out += "LOGICAL_DISPLAY_NODE";
+            break;
+        }
+        case RSRenderNodeType::DEPTH_NODE: {
+            out += "DEPTH_NODE";
             break;
         }
         case RSRenderNodeType::UNION_NODE: {
@@ -1564,6 +1568,10 @@ bool RSRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOccluded)
         SetSubTreeDirty(false);
         SetTreeStateChangeDirty(false);
         UpdateChildrenOutOfRectFlag(false); // collect again
+        return true;
+    }
+    if (childHasSpatialEffect_ &&
+        (GetRenderProperties().IsParentGeoDirty() || GetRenderProperties().IsCurGeoDirty())) {
         return true;
     }
     if (childHasSharedTransition_ || isAccumulatedClipFlagChanged_ || GetSubSurfaceCnt() > 0) {
@@ -3248,6 +3256,16 @@ bool RSRenderNode::ChildHasSharedTransition() const
     return childHasSharedTransition_;
 }
 
+void RSRenderNode::SetChildHasSpatialEffect(bool val)
+{
+    childHasSpatialEffect_ = val;
+}
+
+bool RSRenderNode::ChildHasSpatialEffect() const
+{
+    return childHasSpatialEffect_;
+}
+
 void RSRenderNode::MarkForegroundFilterCache()
 {
     if (GetRenderProperties().GetForegroundFilterCache() != nullptr) {
@@ -4915,6 +4933,8 @@ void RSRenderNode::MarkBlurIntersectWithDRM(bool intersectWithDRM, bool isDark)
 bool RSRenderNode::GetUifirstSupportFlag()
 {
     if (sharedTransitionParam_ && !sharedTransitionParam_->IsInAppTranSition()) {
+        RS_TRACE_NAME_FMT("SharedTransition inNodeId:%" PRIu64, " outNodeId:%" PRIu64,
+            sharedTransitionParam_->inNodeId_, sharedTransitionParam_->outNodeId_);
         return false;
     }
     return isChildSupportUifirst_ && isUifirstNode_;
@@ -4937,12 +4957,12 @@ void RSRenderNode::UpdateDrawableEnableEDR()
 void RSRenderNode::UpdatePointLightDirtySlot()
 {
     auto& drawablePtr =
-        findMapValueRef(GetDrawableVec(__func__), static_cast<int8_t>(RSDrawableSlot::OVERLAY_NG_SHADER));
+        findMapValueRef(GetDrawableVec(__func__), static_cast<int8_t>(RSDrawableSlot::COVERAGE_NG_SHADER));
     if (!drawablePtr) {
         return;
     }
     drawablePtr->OnUpdate(*shared_from_this());
-    UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::OVERLAY_NG_SHADER);
+    UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::COVERAGE_NG_SHADER);
     // The illuminated node has no attribute changes, so it does not call applymodifier, and consequently does not
     // call SetEnableHdrEffect. Therefore, here we need call SetEnableHdrEffect.
     SetEnableHdrEffect(drawablePtr->GetEnableEDR());
@@ -5009,7 +5029,12 @@ SharedTransitionParam::SharedTransitionParam(RSRenderNode::SharedPtr inNode, RSR
     bool isInSameWindow)
     : inNode_(inNode), outNode_(outNode), inNodeId_(inNode->GetId()), outNodeId_(outNode->GetId()),
       crossApplication_(!isInSameWindow)
-{}
+{
+    RS_LOGI("SharedTransitionParam inNodeId_: %{public}" PRIu64 " outNodeId_: %{public}" PRIu64
+        " crossApplication_: %{public}d", inNodeId_, outNodeId_, crossApplication_);
+    RS_TRACE_NAME_FMT("SharedTransitionParam inNodeId_: %" PRIu64 " outNodeId_: %" PRIu64 " crossApplication_: %d",
+        inNodeId_, outNodeId_, crossApplication_);
+}
 
 RSRenderNode::SharedPtr SharedTransitionParam::GetPairedNode(const NodeId nodeId) const
 {

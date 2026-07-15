@@ -18,11 +18,11 @@
 #include <memory>
 #include <unistd.h>
 
-#include "common/rs_backlight_thread.h"
 #include "common/rs_exception_check.h"
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
 #include "concurrent_task_client.h"
+#include "display_engine/rs_backlight_thread.h"
 #include "engine/rs_base_render_util.h"
 #include "engine/rs_uni_render_engine.h"
 #ifdef RS_ENABLE_EGLIMAGE
@@ -152,8 +152,9 @@ void RSRenderComposer::CreateAndInitComposer(const std::shared_ptr<HdiOutput>& o
     runner_ = AppExecFwk::EventRunner::Create(threadName);
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
     rsRenderComposerContext_ = std::make_shared<RSRenderComposerContext>();
-    redrawCb_ = [this](const sptr<Surface>& surface, const std::vector<std::shared_ptr<RSLayer>>& layers) {
-        return this->Redraw(surface, layers);
+    redrawCb_ = [this](const sptr<Surface>& surface, const std::vector<std::shared_ptr<RSLayer>>& layers,
+        const std::shared_ptr<HdiOutput>& output) {
+        return this->Redraw(surface, layers, output);
     };
     hgmHardwareUtils_ = std::make_shared<HgmHardwareUtils>();
 
@@ -614,6 +615,10 @@ int64_t RSRenderComposer::CalculateDelayTime(HgmCore& hgmCore, uint32_t currentR
     // we use (pipelineParam.frameTimestamp - preTime) to get this frame real vsync timestamp
     expectCommitTime = pipelineParam.frameTimestamp - preTime + frameOffset - compositionTime - RESERVE_TIME;
     int64_t diffTime = expectCommitTime - currTime;
+    if (pipelineParam.dvsyncNeedSkipRsCommitDelay) {
+        RS_TRACE_NAME_FMT("%s Skip commit delay, diffTime:%" PRId64 ", period:%" PRId64 "", __func__, diffTime, period);
+        diffTime = 0;
+    }
     if (diffTime > 0 && period > 0) {
         delayTime = std::round(diffTime * 1.0f / NS_MS_UNIT_CONVERSION);
     }
@@ -793,7 +798,7 @@ void RSRenderComposer::OnPrepareComplete(sptr<Surface>& surface,
     }
 
     if (redrawCb_ != nullptr) {
-        redrawCb_(surface, param.layers);
+        redrawCb_(surface, param.layers, hdiOutput_);
     }
 }
 
@@ -839,7 +844,7 @@ GSError RSRenderComposer::ClearFrameBuffersInner(bool isNeedResetContext)
 GSError RSRenderComposer::ClearFrameBuffers(bool isNeedResetContext)
 {
     if (hdiOutput_ == nullptr || hdiOutput_->GetBufferCacheSize() <= 0) {
-        RS_LOGE("%{public}s buffer cache size less 0", __func__);
+        RS_LOGD("%{public}s buffer cache size less 0", __func__);
         return COMPOSITOR_ERROR_NULLPTR;
     }
     return ClearFrameBuffersInner(isNeedResetContext);
@@ -904,7 +909,8 @@ void RSRenderComposer::ResetScreenRCDRedrawState(std::vector<std::shared_ptr<RSL
     }
 }
 
-void RSRenderComposer::Redraw(const sptr<Surface>& surface, const std::vector<std::shared_ptr<RSLayer>>& layers)
+void RSRenderComposer::Redraw(const sptr<Surface>& surface, const std::vector<std::shared_ptr<RSLayer>>& layers,
+    const std::shared_ptr<HdiOutput>& output)
 {
     RS_TRACE_NAME_FMT("%s screenId : %" PRIu64, __func__, screenId_);
     std::unique_lock<std::mutex> lock(preAllocMutex_, std::try_to_lock);
@@ -987,9 +993,9 @@ void RSRenderComposer::Redraw(const sptr<Surface>& surface, const std::vector<st
 #endif
 
 #ifdef USE_VIDEO_PROCESSING_ENGINE
-    uniRenderEngine_->DrawLayers(*canvas, layers, false, composerScreenInfo_, colorGamut);
+    uniRenderEngine_->DrawLayers(*canvas, layers, false, composerScreenInfo_, colorGamut, output);
 #else
-    uniRenderEngine_->DrawLayers(*canvas, layers, false, composerScreenInfo_);
+    uniRenderEngine_->DrawLayers(*canvas, layers, false, composerScreenInfo_, output);
 #endif
     RedrawScreenRCD(*canvas, layers, Vector2f(composerScreenInfo_.GetRogWidthRatio(),
         composerScreenInfo_.GetRogHeightRatio()));
@@ -1323,7 +1329,7 @@ void RSRenderComposer::OnHwcDead()
 void RSRenderComposer::DestroyComposerLayer(std::shared_ptr<RSLayerParcel> rsLayerParcel)
 {
     RS_TRACE_NAME_FMT("%s screenId: %" PRIu64, __func__, screenId_);
-    RS_LOGI("%{public}s screenId: %{public}" PRIu64, __func__, screenId_);
+    RS_LOGD("%{public}s screenId: %{public}" PRIu64, __func__, screenId_);
     auto rsLayerId = rsLayerParcel->GetRSLayerId();
     auto rsLayer = rsRenderComposerContext_ == nullptr ?
         nullptr : rsRenderComposerContext_->GetRSRenderLayer(rsLayerId);
@@ -1354,6 +1360,10 @@ void RSRenderComposer::UpdateTransactionData(std::shared_ptr<RSLayerTransactionD
                 break;
             }
             case RSLayerParcelType::RS_RCD_LAYER_UPDATE: {
+                UpdateComposerLayer(rsLayerParcel);
+                break;
+            }
+            case RSLayerParcelType::RS_SOLID_FILLED_COLOR_LAYER_UPDATE: {
                 UpdateComposerLayer(rsLayerParcel);
                 break;
             }
@@ -1413,7 +1423,7 @@ void RSRenderComposer::AddSolidColorLayer(std::vector<std::shared_ptr<RSLayer>>&
 {
     for (uint32_t i = 0; i < layers.size(); i++) {
         if (layers[i] != nullptr && layers[i]->GetSolidColorLayerProperty().compositionType ==
-            GraphicCompositionType::GRAPHIC_COMPOSITION_SOLID_COLOR) {
+            GraphicCompositionType::GRAPHIC_COMPOSITION_SOLID_COLOR && !(layers[i]->IsSolidFilledColorLayer())) {
             auto solidColorLayer = std::make_shared<RSRenderSurfaceLayer>();
             solidColorLayer->CopyLayerInfo(layers[i]);
             solidColorLayer->SetZorder(layers[i]->GetSolidColorLayerProperty().zOrder);

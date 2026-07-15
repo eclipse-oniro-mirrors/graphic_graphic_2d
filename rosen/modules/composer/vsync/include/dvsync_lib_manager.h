@@ -46,7 +46,7 @@ using SetDistributorFunc = bool (*)(bool isRs, const sptr<VSyncDistributor>& dis
 using SetConnectionFunc = void (*)(bool isRs, const sptr<VSyncConnection>& connection);
 using DisableVSyncFunc = void (*)(const sptr<VSyncDistributor>& distributor);
 using NeedSkipAndUpdateTsFunc = bool (*)(const sptr<VSyncConnection>& connection, int64_t& timeStamp);
-using NeedSkipUiFunc = bool (*)(sptr<VSyncConnection> connection);
+using NeedSkipUiFunc = bool (*)(const sptr<VSyncConnection>& connection);
 using RecordEnableVsyncFunc = void (*)(const sptr<VSyncDistributor>& distributor);
 using RecordRNVFunc = void (*)(const sptr<VSyncConnection>& connection, const std::string& fromWhom,
     VSyncMode vsyncMode, int64_t lastVSyncTS, int64_t requestVsyncTime);
@@ -73,6 +73,7 @@ using SetEnableFunc = void (*)(bool enable, bool& isGeneratorEnable);
 using InitDvsyncControllerFunc = void (*)(const sptr<VSyncGenerator>& gen, int64_t offset,
                                           sptr<VSyncController>& controller);
 using SetVSyncTimeUpdatedFunc = void (*)();
+using NeedSkipRsCommitDelayFunc = bool (*)();
 
 //dvsync delay
 using ToDelayFunc = void (*)(const AppExecFwk::InnerEvent::Callback& callback, const std::string& name, int32_t fd);
@@ -113,7 +114,7 @@ public:
     void SetConnection(bool isRs, const sptr<VSyncConnection>& connection);
     void DisableVSync(const sptr<VSyncDistributor>& distributor);
     bool NeedSkipAndUpdateTs(const sptr<VSyncConnection>& connection, int64_t& timeStamp);
-    bool NeedSkipUi(sptr<VSyncConnection> connection);
+    bool NeedSkipUi(const sptr<VSyncConnection>& connection);
     void RecordEnableVsync(const sptr<VSyncDistributor>& distributor);
     void RecordRNV(const sptr<VSyncConnection>& connection, const std::string& fromWhom,
         VSyncMode vsyncMode, int64_t lastVSyncTS, int64_t requestVsyncTime);
@@ -136,7 +137,7 @@ public:
     int64_t GetVsyncCount(int64_t& VsyncCount);
     void InitDvsyncController(const sptr<VSyncGenerator>& gen, int64_t offset, sptr<VSyncController>& controller);
     void SetVSyncTimeUpdated();
-
+    bool NeedSkipRsCommitDelay() const;
 //dvsync delay
     void ToDelay(const AppExecFwk::InnerEvent::Callback& callback, const std::string& name, int32_t fd);
     void SetTouchEvent(int32_t touchType);
@@ -190,7 +191,7 @@ private:
     GetVsyncCountFunc getVsyncCountFunc_ = nullptr;
     InitDvsyncControllerFunc initDvsyncControllerFunc_ = nullptr;
     SetVSyncTimeUpdatedFunc setVSyncTimeUpdatedFunc_ = nullptr;
-
+    NeedSkipRsCommitDelayFunc needSkipRsCommitDelayFunc_ = nullptr;
     //dvsync delay
     ToDelayFunc toDelayFunc_ = nullptr;
     SetTouchEventFunc setTouchEventFunc_ = nullptr;
@@ -201,7 +202,7 @@ private:
     bool LoadDvsyncDelayFunctions();
     void ClearAllFunctions();
     void ClearDvsyncDelayFunctions();
-    
+
     template<typename FuncPtr>
     bool LoadFunction(const std::string& funcName, FuncPtr& funcPtr)
     {

@@ -59,6 +59,11 @@ bool RSSystemProperties::GetUniRenderEnabled()
     return isUniRenderEnabled_;
 }
 
+bool RSSystemProperties::GetBackgroundRebuildEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetRenderNodeTraceEnabled()
 {
     return {};
@@ -95,11 +100,6 @@ bool RSSystemProperties::GetRenderNodePurgeEnabled()
 }
 
 bool RSSystemProperties::GetRSImagePurgeEnabled()
-{
-    return false;
-}
-
-bool RSSystemProperties::GetClosePixelMapFdEnabled()
 {
     return false;
 }
@@ -273,6 +273,11 @@ bool RSSystemProperties::GetHardCursorEnabled()
 }
 
 bool RSSystemProperties::GetSLRScaleEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::DvsyncSkipRsCommitDelayEnabled()
 {
     return false;
 }

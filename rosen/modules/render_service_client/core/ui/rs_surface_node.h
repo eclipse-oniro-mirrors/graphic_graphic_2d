@@ -355,6 +355,10 @@ public:
     // such as transparent background.
     void SetHardwareEnableHint(bool enable);
 
+    void SetSurfaceNodeType(RSSurfaceNodeType nodeType);
+    RSSurfaceNodeType GetSurfaceNodeType() const;
+    bool IsAppWindow() const;
+
     /**
      * @brief Determines whether the surfaceNode is a selfDrawing node.
      *
@@ -379,10 +383,10 @@ public:
     void SetContainerWindowTransparent(bool isContainerWindowTransparent);
     void SetAppRotationCorrection(ScreenRotation appRotationCorrection);
     void SetHDRBrightnessWithType(const float& hdrBrightness, uint32_t hdrType);
-    void SetIsDepthResource(bool isDepthResource);
     void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer) override;
 
     void RecreateNodeAndSurface(SurfaceId surfaceId = 0, bool unobscured = false);
+    void SetIsDepthResource(bool isDepthResource);
 #ifndef ROSEN_CROSS_PLATFORM
     using BufferReleaseCallback = std::function<void(int release_fence_fd)>;
     void SetBuffer(sptr<SurfaceBuffer> buffer, UniqueFd fence_fd, const BufferReleaseCallback& callback);

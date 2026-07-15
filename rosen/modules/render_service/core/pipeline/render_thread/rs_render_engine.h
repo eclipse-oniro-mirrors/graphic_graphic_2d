@@ -32,11 +32,17 @@ public:
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     void DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<RSLayerPtr>& layers, bool forceCPU,
         const ComposerScreenInfo& composerScreenInfo = {},
-        GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB) override;
+        GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB,
+        const std::shared_ptr<HdiOutput>& output = nullptr) override;
 #else
     void DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<RSLayerPtr>& layers, bool forceCPU,
-        const ComposerScreenInfo& composerScreenInfo = {}) override;
+        const ComposerScreenInfo& composerScreenInfo = {},
+        const std::shared_ptr<HdiOutput>& output = nullptr) override;
 #endif
+    void SetMirrorAdaptiveCoefficient(float mirrorAdaptiveCoefficient)
+    {
+        mirrorAdaptiveCoefficient_ = mirrorAdaptiveCoefficient;
+    }
 
 private:
     void DrawWithParams(RSPaintFilterCanvas& canvas, BufferDrawParam& params,
@@ -52,6 +58,7 @@ private:
     void DrawSurfaceNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node, BufferDrawParam& params);
 
     void SetColorFilterModeToPaint(Drawing::Brush& paint);
+    float mirrorAdaptiveCoefficient_ = 1.0f;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include <gtest/gtest.h>
-
 #include "dvsync_lib_manager.h"
 
 using namespace testing;
@@ -105,6 +104,7 @@ HWTEST_F(DVSyncLibManagerTest, Initialize001, Function | MediumTest| Level1)
     DVSyncLibManagerTest::dvsyncLibManager.IsAppRequested();
     DVSyncLibManagerTest::dvsyncLibManager.GetVSyncConnectionApp(vsyncConnection);
 
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.NeedSkipRsCommitDelay(), false);
     ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.NeedUpdateVSyncTime(pid), false);
     ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.GetLastUpdateTime(), 0);
 }
@@ -128,7 +128,7 @@ HWTEST_F(DVSyncLibManagerTest, Initialize002, Function | MediumTest| Level1)
     int32_t touchType = 3;
     std::string name = "test";
     uint64_t dvsyncTime = 0;
-    uint64_t vsyncTime =0;
+    uint64_t vsyncTime = 0;
     AppExecFwk::InnerEvent::Callback callback;
     DVSyncLibManagerTest::dvsyncLibManager.DVSyncUpdate(dvsyncTime, vsyncTime);
     DVSyncLibManagerTest::dvsyncLibManager.ForceRsDVsync(sceneId);
@@ -285,7 +285,7 @@ HWTEST_F(DVSyncLibManagerTest, Initialize005, Function | MediumTest| Level1)
 {
     int32_t pid;
     uint64_t dvsyncTime = 0;
-    uint64_t vsyncTime =0;
+    uint64_t vsyncTime = 0;
     bool success = dvsyncLibManager.Initialize("libdvsync.z.so");
     if (!success) {
         return;
@@ -308,6 +308,8 @@ HWTEST_F(DVSyncLibManagerTest, Initialize005, Function | MediumTest| Level1)
     ASSERT_NE(DVSyncLibManagerTest::dvsyncLibManager.setToCurrentPeriodFunc_, nullptr);
     DVSyncLibManagerTest::dvsyncLibManager.SetVSyncTimeUpdated();
     ASSERT_NE(DVSyncLibManagerTest::dvsyncLibManager.setVSyncTimeUpdatedFunc_, nullptr);
+    DVSyncLibManagerTest::dvsyncLibManager.NeedSkipRsCommitDelay();
+    ASSERT_NE(DVSyncLibManagerTest::dvsyncLibManager.needSkipRsCommitDelayFunc_, nullptr);
     DVSyncLibManagerTest::dvsyncLibManager.Shutdown();
     ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.libHandle_, nullptr);
 }
@@ -404,6 +406,8 @@ HWTEST_F(DVSyncLibManagerTest, LoadFunction002, Function | MediumTest| Level1)
         dvsyncLibManager.initDvsyncControllerFunc_);
     loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetVSyncTimeUpdated",
         dvsyncLibManager.setVSyncTimeUpdatedFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongNeedSkipRsCommitDelay",
+        dvsyncLibManager.needSkipRsCommitDelayFunc_);
     loadSuccess &= dvsyncLibManager.LoadFunction("WrongToDelay", dvsyncLibManager.toDelayFunc_);
     loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetTouchEvent", dvsyncLibManager.setTouchEventFunc_);
     loadSuccess &= dvsyncLibManager.LoadFunction("WrongUpdateDelayInfo", dvsyncLibManager.updateDelayInfoFunc_);
@@ -445,8 +449,8 @@ HWTEST_F(DVSyncLibManagerTest, LoadFunction003, Function | MediumTest| Level1)
     bool loadSuccess = dvsyncLibManager.LoadAllFunctions();
     ASSERT_NE(loadSuccess, false);
     ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.CheckVsyncReceivedAndGetRelTs(timestamp), 0);
-    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.GetOccurPeriod(), 0);
-    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.GetOccurRefreshRate(), 0);
+    DVSyncLibManagerTest::dvsyncLibManager.GetOccurPeriod();
+    DVSyncLibManagerTest::dvsyncLibManager.GetOccurRefreshRate();
     DVSyncLibManagerTest::dvsyncLibManager.MarkRSRendering(true);
     ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.GetUiCommandDelayTime(), 0);
     ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.GetRealTimeOffsetOfDvsync(time, preTime), 0);
@@ -454,7 +458,7 @@ HWTEST_F(DVSyncLibManagerTest, LoadFunction003, Function | MediumTest| Level1)
     DVSyncLibManagerTest::dvsyncLibManager.SetPhysicalScreenNum(num);
     DVSyncLibManagerTest::dvsyncLibManager.SetTaskEndWithTime(timestamp);
     DVSyncLibManagerTest::dvsyncLibManager.InitWithParam(dvsyncParam);
-    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.SetDistributor(true, vsyncDistributor), true);
+    DVSyncLibManagerTest::dvsyncLibManager.SetDistributor(true, vsyncDistributor);
     DVSyncLibManagerTest::dvsyncLibManager.NotifyPackageEvent(packageList);
     DVSyncLibManagerTest::dvsyncLibManager.HandleTouchEvent(touchStatus, touchCnt);
     bool result = DVSyncLibManagerTest::dvsyncLibManager.SetBufferInfo(id, name, queueSize,

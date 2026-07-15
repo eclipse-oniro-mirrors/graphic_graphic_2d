@@ -599,6 +599,12 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::SharedTypeface&
 
     uint32_t coordsCount = 0;
     success &= Unmarshalling(parcel, coordsCount);
+    constexpr uint32_t MAX_COORDS_COUNT = 128;
+    if (coordsCount > MAX_COORDS_COUNT) {
+        ROSEN_LOGE("RSMarshallingHelper::Unmarshalling coords count %{public}u exceeds max limit %{public}u",
+            coordsCount, MAX_COORDS_COUNT);
+        return false;
+    }
     if (success) { coords.resize(coordsCount); }
 
     for (uint32_t i = 0; i < coordsCount; ++i) {
@@ -2230,11 +2236,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Medi
 static void CustomFreePixelMap(void* addr, void* context, uint32_t size)
 {
 #ifdef ROSEN_OHOS
-    if (RSSystemProperties::GetClosePixelMapFdEnabled()) {
-        MemoryTrack::Instance().RemovePictureRecord(addr);
-    } else {
-        MemoryTrack::Instance().RemovePictureRecord(context);
-    }
+    MemoryTrack::Instance().RemovePictureRecord(context);
 #else
     MemoryTrack::Instance().RemovePictureRecord(addr);
 #endif
@@ -2266,9 +2268,6 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Media::P
         
         return false;
     }
-    if (RSSystemProperties::GetClosePixelMapFdEnabled()) {
-        val->CloseFd();
-    }
     uint32_t pid = static_cast<uint32_t>(uniqueId >> 32);
     OHOS::Media::ImageInfo imageInfo;
     val->GetImageInfo(imageInfo);
@@ -2278,11 +2277,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Media::P
     };
 
 #ifdef ROSEN_OHOS
-    if (RSSystemProperties::GetClosePixelMapFdEnabled()) {
-        MemoryTrack::Instance().AddPictureRecord(val->GetPixels(), info);
-    } else {
-        MemoryTrack::Instance().AddPictureRecord(val->GetFd(), info);
-    }
+    MemoryTrack::Instance().AddPictureRecord(val->GetFd(), info);
 #else
     MemoryTrack::Instance().AddPictureRecord(val->GetPixels(), info);
 #endif
@@ -3224,6 +3219,30 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
     return true;
 }
 
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const DepthCameraPara& val)
+{
+    return Marshalling(parcel, val.position) && Marshalling(parcel, val.quaternion) && Marshalling(parcel, val.yFov) &&
+        Marshalling(parcel, val.zNear) && Marshalling(parcel, val.zFar) && Marshalling(parcel, val.offset);
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, DepthCameraPara& val)
+{
+    return Unmarshalling(parcel, val.position) && Unmarshalling(parcel, val.quaternion) &&
+        Unmarshalling(parcel, val.yFov) && Unmarshalling(parcel, val.zNear) && Unmarshalling(parcel, val.zFar) &&
+        Unmarshalling(parcel, val.offset);
+}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const DepthLightPara& val)
+{
+    return Marshalling(parcel, val.direction) && Marshalling(parcel, val.color) && Marshalling(parcel, val.intensity);
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, DepthLightPara& val)
+{
+    return Unmarshalling(parcel, val.direction) && Unmarshalling(parcel, val.color) &&
+        Unmarshalling(parcel, val.intensity);
+}
+
 #define MARSHALLING_AND_UNMARSHALLING(TYPE)                                                 \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<TYPE>& val) \
     {                                                                                       \
@@ -3339,7 +3358,9 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<Vector2f>)                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<Vector4f>)                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Media::PixelMap>)             \
-    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)        \
+    EXPLICIT_INSTANTIATION(TEMPLATE, DepthCameraPara)                              \
+    EXPLICIT_INSTANTIATION(TEMPLATE, DepthLightPara)
 
 BATCH_EXPLICIT_INSTANTIATION(RSRenderProperty)
 

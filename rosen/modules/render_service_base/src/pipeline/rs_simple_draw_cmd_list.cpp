@@ -27,6 +27,9 @@ std::shared_ptr<RSSimpleDrawCmdList> RSSimpleDrawCmdList::CreateFromDrawCmdList(
     if (drawCmdList == nullptr) {
         return nullptr;
     }
+    if (drawCmdList->IsEmpty()) {
+        return std::make_shared<RSSimpleDrawCmdList>(drawCmdList->GetWidth(), drawCmdList->GetHeight());
+    }
     if (!drawCmdList->UnmarshallingDrawOpsSimple()) {
         RS_LOGE("RSSimpleDrawCmdList::CreateFromDrawCmdList: UnmarshallingDrawOpsSimple fail.");
         return nullptr;
@@ -142,7 +145,6 @@ size_t RSSimpleDrawCmdList::GetSize() const
 
 size_t RSSimpleDrawCmdList::GetOpItemSize() const
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
     return drawOpItems_.size();
 }
 

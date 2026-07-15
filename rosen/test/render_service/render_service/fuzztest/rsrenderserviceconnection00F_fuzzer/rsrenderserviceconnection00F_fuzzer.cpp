@@ -53,6 +53,7 @@ public:
     {
         return nullptr;
     }
+    bool IsValidRenderProcessPid(pid_t pid) const override { return false; }
 
     sptr<IRemoteObject> OnScreenConnected(ScreenId id, const std::shared_ptr<HdiOutput>& output,
         const sptr<RSScreenProperty>& property) override

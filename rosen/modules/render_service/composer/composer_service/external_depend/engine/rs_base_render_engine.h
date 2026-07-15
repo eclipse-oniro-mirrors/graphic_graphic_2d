@@ -25,6 +25,7 @@
 
 #include "engine/rs_base_render_util.h"
 #include "hdi_layer_info.h"
+#include "hdi_output.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -115,6 +116,7 @@ public:
     // 3-phase flush: allows splitting Flush into discrete steps for pipeline parallelism.
     // Must be called in order: FlushGpu -> SubmitGpu -> FlushBuffer.
     // Do not mix with Flush(). If you start a 3-phase sequence, complete it with FlushBuffer().
+
     bool FlushGpu() noexcept;
     bool SubmitGpu() noexcept;
     bool FlushBuffer() noexcept;
@@ -268,10 +270,12 @@ public:
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     virtual void DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<RSLayerPtr>& layers, bool forceCPU = false,
         const ComposerScreenInfo& composerScreenInfo = {},
-        GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB) = 0;
+        GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB,
+        const std::shared_ptr<HdiOutput>& output = nullptr) = 0;
 #else
     virtual void DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<RSLayerPtr>& layers, bool forceCPU = false,
-        const ComposerScreenInfo& composerScreenInfo = {}) = 0;
+        const ComposerScreenInfo& composerScreenInfo = {},
+        const std::shared_ptr<HdiOutput>& output = nullptr) = 0;
 #endif
 
     void DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
@@ -324,7 +328,6 @@ public:
 #endif
 
 protected:
-
     static inline std::mutex colorFilterMutex_;
     static inline ColorFilterMode colorFilterMode_ = ColorFilterMode::COLOR_FILTER_END;
     static inline std::atomic_bool isHighContrastEnabled_ = false;

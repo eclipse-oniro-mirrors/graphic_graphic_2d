@@ -78,6 +78,7 @@ void RSUifirstManagerTest::TearDownTestCase()
     uifirstManager_.pendingPostCardNodes_.clear();
     uifirstManager_.pendingResetNodes_.clear();
     uifirstManager_.pendingResetWindowCachedNodes_.clear();
+    uifirstManager_.firstFrameCacheGeneratedNodes_.clear();
 
     mainThread->context_->globalRootRenderNode_->renderDrawable_ = nullptr;
     mainThread->context_->globalRootRenderNode_ = nullptr;
@@ -883,6 +884,7 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodesPhone001, TestSize.Level1)
     surfaceNode1->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
     surfaceNode1->firstLevelNodeId_ = surfaceNode1->GetId();
     surfaceNode1->SetSubThreadAssignable(true);
+    uifirstManager_.AddFirstFrameCacheGeneratedNode(surfaceNode1->GetId());
     // 1. surfaceNode1 only has animation.
     uifirstManager_.UpdateUifirstNodes(*surfaceNode1, true);
     ASSERT_EQ(surfaceNode1->uifirstState_.lastFrameCacheType, MultiThreadCacheType::LEASH_WINDOW);
@@ -933,6 +935,7 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodesPhone002, TestSize.Level1)
     auto surfaceNode2 = RSTestUtil::CreateSurfaceNode();
     surfaceNode1->UpdateChildSubSurfaceNodes(surfaceNode2, true);
     surfaceNode1->SetSubThreadAssignable(true);
+    uifirstManager_.AddFirstFrameCacheGeneratedNode(surfaceNode1->GetId());
     uifirstManager_.UpdateUifirstNodes(*surfaceNode1, false);
     ASSERT_EQ(surfaceNode1->uifirstState_.lastFrameCacheType, MultiThreadCacheType::LEASH_WINDOW);
     uifirstManager_.isRecentTaskScene_ = false;
@@ -953,6 +956,7 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodesPhone002, TestSize.Level1)
     surfaceNode3->shouldPaint_ = true;
     surfaceNode3->SetSubThreadAssignable(true);
     uifirstManager_.SetCardUiFirstSwitch(true);
+    uifirstManager_.AddFirstFrameCacheGeneratedNode(surfaceNode3->GetId());
     uifirstManager_.UpdateUifirstNodes(*surfaceNode3, false);
     ASSERT_EQ(surfaceNode3->uifirstState_.lastFrameCacheType, MultiThreadCacheType::ARKTS_CARD);
 }
@@ -990,6 +994,7 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodesPhone003, TestSize.Level1)
     children.push_back(startingWindow);
     leashWindow->fullChildrenList_ = std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>(children);
     // use starting window
+    uifirstManager_.AddFirstFrameCacheGeneratedNode(leashWindow->GetId());
     uifirstManager_.UpdateUifirstNodes(*leashWindow, true);
     ASSERT_EQ(leashWindow->GetLastFrameUifirstCacheType(), MultiThreadCacheType::LEASH_WINDOW);
 }
@@ -1014,6 +1019,7 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodesPC, TestSize.Level1)
     uifirstManager_.UpdateUifirstNodes(*surfaceNode1, true);
     ASSERT_EQ(surfaceNode1->uifirstState_.lastFrameCacheType, MultiThreadCacheType::NONE);
     // 3. second frame
+    uifirstManager_.AddFirstFrameCacheGeneratedNode(surfaceNode1->GetId());
     uifirstManager_.UpdateUifirstNodes(*surfaceNode1, true);
     ASSERT_EQ(surfaceNode1->uifirstState_.lastFrameCacheType, MultiThreadCacheType::NONFOCUS_WINDOW);
     // 4. surfaceNode1 is focus window, has animation and transparent, not has filter.
@@ -1033,6 +1039,7 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodesPC, TestSize.Level1)
     uifirstManager_.UpdateUifirstNodes(*surfaceNode2, false);
     ASSERT_EQ(surfaceNode2->uifirstState_.lastFrameCacheType, MultiThreadCacheType::NONE);
     // 6. second frame
+    uifirstManager_.AddFirstFrameCacheGeneratedNode(surfaceNode2->GetId());
     uifirstManager_.UpdateUifirstNodes(*surfaceNode2, false);
     ASSERT_EQ(surfaceNode2->uifirstState_.lastFrameCacheType, MultiThreadCacheType::NONFOCUS_WINDOW);
     // 7. surfaceNode2 is not focus window, has transparent.
@@ -1129,6 +1136,7 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodesPC_001, TestSize.Level1)
     rsCanvasRenderNode->shouldPaint_ = true;
     leashWindowNode->shouldPaint_ = true;
     leashWindowNode->SetSkipDraw(false);
+    uifirstManager_.AddFirstFrameCacheGeneratedNode(leashWindowNode->GetId());
     visitor->QuickPrepareCanvasRenderNode(*rsCanvasRenderNode);
     ASSERT_EQ(leashWindowNode->uifirstState_.lastFrameCacheType, MultiThreadCacheType::NONFOCUS_WINDOW);
     ASSERT_EQ(leashWindowNode->GetSubThreadAssignable(), true);
@@ -1154,6 +1162,18 @@ HWTEST_F(RSUifirstManagerTest, ResetUifirstNode, TestSize.Level1)
     uifirstManager_.ResetUifirstNode(nodePtr);
     nodePtr->isOnTheTree_ = true;
     uifirstManager_.ResetUifirstNode(nodePtr);
+
+    auto rsContext = std::make_shared<RSContext>();
+    ScreenId screenId = 100;
+    auto screenNode = std::make_shared<RSScreenRenderNode>(10, screenId, rsContext->weak_from_this());
+    nodePtr->SetAncestorScreenNode(screenNode);
+    auto stagingParams = static_cast<RSSurfaceRenderParams*>(nodePtr->stagingRenderParams_.get());
+    stagingParams->uifirstParams_.cacheType = MultiThreadCacheType::LEASH_WINDOW;
+    uifirstManager_.hasForceUpdateScreen_.clear();
+    uifirstManager_.ResetUifirstNode(nodePtr);
+    EXPECT_TRUE(uifirstManager_.hasForceUpdateScreen_.find(screenId) != uifirstManager_.hasForceUpdateScreen_.end());
+    uifirstManager_.hasForceUpdateScreen_.clear();
+    uifirstManager_.pendingForceUpdateNode_.clear();
 }
 
 /**
@@ -1320,7 +1340,7 @@ HWTEST_F(RSUifirstManagerTest, CollectSkipSyncNode001, TestSize.Level1)
 }
 
 /**
- * @tc.name: CollectSkipSyncNode001
+ * @tc.name: CollectSkipSyncNode002
  * @tc.desc: Test CollectSkipSyncNode
  * @tc.type: FUNC
  * @tc.require: issueIADDL3

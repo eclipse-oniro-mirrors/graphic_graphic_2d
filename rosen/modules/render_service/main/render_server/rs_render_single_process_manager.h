@@ -40,6 +40,8 @@ public:
     std::vector<sptr<RSIServiceToRenderConnection>> GetServiceToRenderConns() const override;
     sptr<RSIConnectToRenderProcess> GetConnectToRenderConnection(ScreenId screenId) const override;
 
+    bool IsValidRenderProcessPid(pid_t pid) const override { return false; }
+
 private:
     sptr<RSIServiceToRenderConnection> serviceToRenderConnection_ = nullptr;
     sptr<IRSComposerToRenderConnection> composerToRenderConnection_ = nullptr;

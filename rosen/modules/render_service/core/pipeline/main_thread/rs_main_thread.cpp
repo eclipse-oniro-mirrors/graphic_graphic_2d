@@ -125,6 +125,7 @@
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_painter.h"
 #include "property/rs_property_trace.h"
+#include "property/rs_spatial_effect_manager.h"
 #include "render/rs_image_cache.h"
 #include "render/rs_pixel_map_util.h"
 #include "render/rs_typeface_cache.h"
@@ -2074,11 +2075,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                         "buffer consumed and not HardwareEnabledType",
                         surfaceNode->GetName().c_str(), surfaceNode->GetId());
                 }
-                if (surfaceHandler->GetSourceTypeChanged()) {
-                    doDirectComposition_ = false;
-                    RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name %s, id %" PRIu64 " disable directComposition by "
-                        "sourceType changed", surfaceNode->GetName().c_str(), surfaceNode->GetId());
-                }
                 if (isUniRender_ && surfaceHandler->IsCurrentFrameBufferConsumed()) {
 #ifdef RS_ENABLE_GPU
                     auto buffer = surfaceHandler->GetBuffer();
@@ -2335,15 +2331,21 @@ bool RSMainThread::IsFoldScreenSwitching() const
     return res;
 }
 
-bool RSMainThread::IsMultiDisplay() const
+bool RSMainThread::IsMultiDisplay()
 {
     uint32_t validCount = 0;
+    uint32_t nonInternalDisplayCount = 0;
     const auto& nodeMap = context_->GetNodeMap();
-    nodeMap.TraverseScreenNodes([&validCount](const auto& node) {
-        if (node && node->GetChildrenCount() > 0) {
-            validCount++;
+    nodeMap.TraverseScreenNodes([&validCount, &nonInternalDisplayCount](const auto& node) {
+        if (!node || node->GetChildrenCount() == 0) {
+            return;
+        }
+        validCount++;
+        if (node->GetScreenProperty().GetConnectionType() != ScreenConnectionType::DISPLAY_CONNECTION_TYPE_INTERNAL) {
+            nonInternalDisplayCount++;
         }
     });
+    MultiDisplayChange(nonInternalDisplayCount > 0);
     return validCount > 1;
 }
 
@@ -2354,7 +2356,6 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
         colorFilterMode <= ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE;
     std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
     bool isMultiDisplay = IsMultiDisplay();
-    MultiDisplayChange(isMultiDisplay);
 
     // check all children of global root node, and only disable hardware composer
     // in case node's composite type is UNI_RENDER_EXPAND_COMPOSITE or Wired projection
@@ -2914,6 +2915,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         SetFocusLeashWindowId();
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         rsVsyncRateReduceManager_.SetFocusedNodeId(focusNodeId_);
+        RSSpatialEffectManager::Instance()->ProcessDepthNodeAndSpatialEffectNodeDirty();
         rootNode->QuickPrepare(uniVisitor);
         uniVisitor->ResetCrossNodesVisitedStatus();
 
@@ -2959,6 +2961,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         isAccessibilityConfigChanged_ = false;
         isCurtainScreenUsingStatusChanged_ = false;
         systemAnimatedScenesEnabled_ = RSSystemParameters::GetSystemAnimatedScenesEnabled();
+        RSSpatialEffectManager::Instance()->PrepareSpatialEffectParams();
         lastWatermarkFlag_ = watermarkFlag_;
         lastWatermarkImg_ = watermarkImg_;
         isOverDrawEnabledOfLastFrame_ = isOverDrawEnabledOfCurFrame_;
@@ -3132,6 +3135,9 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         }
 #endif
     }
+    pipelineParam_.dvsyncNeedSkipRsCommitDelay =
+            RSSystemProperties::DvsyncSkipRsCommitDelayEnabled() &&
+            rsVsyncManagerAgent_ != nullptr && rsVsyncManagerAgent_->DvsyncNeedSkipRsCommitDelay();
 
 #ifdef RS_ENABLE_GPU
     RSUniRenderThread::Instance().PostSyncTask([this, processor, screenNode]() mutable {
@@ -4377,9 +4383,12 @@ void RSMainThread::SurfaceOcclusionChangeCallback(VisibleData& dstCurVisVec)
 bool RSMainThread::SurfaceOcclusionCallBackIfOnTreeStateChanged()
 {
     std::vector<NodeId> registeredSurfaceOnTree;
-    for (auto it = savedAppWindowNode_.begin(); it != savedAppWindowNode_.end(); ++it) {
-        if (it->second.first->IsOnTheTree()) {
-            registeredSurfaceOnTree.push_back(it->first);
+    {
+        std::lock_guard<std::mutex> lock(surfaceOcclusionMutex_);
+        for (auto it = savedAppWindowNode_.begin(); it != savedAppWindowNode_.end(); ++it) {
+            if (it->second.first != nullptr && it->second.first->IsOnTheTree()) {
+                registeredSurfaceOnTree.push_back(it->first);
+            }
         }
     }
     if (lastRegisteredSurfaceOnTree_ != registeredSurfaceOnTree) {
@@ -5771,6 +5780,7 @@ void RSMainThread::SetFrameInfo(uint64_t frameCount, bool forceRefreshFlag)
     pipelineParam_.actualTimestamp = currentTimestamp;
     pipelineParam_.vsyncId = frameCount;
     pipelineParam_.hasGameScene = FrameReport::GetInstance().HasGameScene();
+    pipelineParam_.dvsyncNeedSkipRsCommitDelay = false;  // recalculated only in direct composition scene.
     auto &frameDeadline = RsFrameDeadlinePredict::GetInstance();
     uint32_t currentRate = pipelineParam_.pendingScreenRefreshRate ? pipelineParam_.pendingScreenRefreshRate :
         GetRefreshRate();

@@ -29,6 +29,8 @@ public:
     bool SetRenderProcessReadyPromise(pid_t pid, const sptr<RSIServiceToRenderConnection>& serviceToRenderConnection,
         const sptr<RSIConnectToRenderProcess>& connectToRenderConnection);
 
+    bool IsValidRenderProcessPid(pid_t pid) const;
+
     sptr<RSIServiceToRenderConnection> GetServiceToRenderConn(ScreenId screenId) const;
     std::vector<sptr<RSIServiceToRenderConnection>> GetServiceToRenderConns() const;
 

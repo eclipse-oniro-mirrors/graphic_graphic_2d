@@ -123,13 +123,13 @@ HWTEST_F(HgmContextTest, InitHgmTaskHandleThreadTest001, TestSize.Level1)
         auto orgGameNodeName = hgmContext->gameNodeName_;
 
         hgmContext->hgmDataChangeTypes_.reset();
-        hgmContext->isAdaptive_ = false;
+        hgmContext->isAdaptive_ = SupportASStatus::NOT_SUPPORT;
         hgmContext->gameNodeName_ = "";
 
-        frameRateMgr->adaptiveVsyncUpdateCallback_(true, "testGameNode");
+        frameRateMgr->adaptiveVsyncUpdateCallback_(SupportASStatus::SUPPORT_AS, "testGameNode");
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
         EXPECT_TRUE(hgmContext->hgmDataChangeTypes_.test(HgmDataChangeType::ADAPTIVE_VSYNC));
-        EXPECT_TRUE(hgmContext->isAdaptive_);
+        EXPECT_EQ(hgmContext->isAdaptive_, SupportASStatus::SUPPORT_AS);
         EXPECT_EQ(hgmContext->gameNodeName_, "testGameNode");
 
         hgmContext->hgmDataChangeTypes_ = orgHgmDataChangeTypes;
@@ -267,7 +267,7 @@ HWTEST_F(HgmContextTest, SetServiceToProcessInfoTest002, TestSize.Level1)
     ASSERT_EQ(hgmCore.GetPendingConstraintRelativeTime(), 1);
 
     hgmContext->hgmDataChangeTypes_.set(HgmDataChangeType::ADAPTIVE_VSYNC);
-    hgmContext->isAdaptive_ = true;
+    hgmContext->isAdaptive_ = SupportASStatus::SUPPORT_AS;
     hgmContext->gameNodeName_ = "testGameNode";
 
     auto serviceToProcessInfo = sptr<HgmServiceToProcessInfo>::MakeSptr();
@@ -277,7 +277,7 @@ HWTEST_F(HgmContextTest, SetServiceToProcessInfoTest002, TestSize.Level1)
     EXPECT_EQ(serviceToProcessInfo->pendingConstraintRelativeTime, 1);
 
     EXPECT_TRUE(serviceToProcessInfo->hgmDataChangeTypes.test(HgmDataChangeType::ADAPTIVE_VSYNC));
-    EXPECT_TRUE(serviceToProcessInfo->isAdaptive);
+    EXPECT_EQ(serviceToProcessInfo->isAdaptive, SupportASStatus::SUPPORT_AS);
     EXPECT_EQ(serviceToProcessInfo->gameNodeName, "testGameNode");
 
     hgmCore.SetPendingScreenRefreshRate(orgPendingScreenRefreshRate);
@@ -343,7 +343,7 @@ HWTEST_F(HgmContextTest, SetServiceToProcessInfoTest004, TestSize.Level1)
     ASSERT_EQ(hgmCore.GetPendingConstraintRelativeTime(), 1);
 
     hgmContext->hgmDataChangeTypes_.set(HgmDataChangeType::ADAPTIVE_VSYNC);
-    hgmContext->isAdaptive_ = true;
+    hgmContext->isAdaptive_ = SupportASStatus::SUPPORT_AS;
     hgmContext->gameNodeName_ = "testGameNode";
 
     hgmContext->hgmDataChangeTypes_.set(HgmDataChangeType::HGM_CONFIG_DATA);
@@ -358,7 +358,7 @@ HWTEST_F(HgmContextTest, SetServiceToProcessInfoTest004, TestSize.Level1)
     EXPECT_EQ(serviceToProcessInfo->pendingConstraintRelativeTime, 1);
 
     EXPECT_TRUE(serviceToProcessInfo->hgmDataChangeTypes.test(HgmDataChangeType::ADAPTIVE_VSYNC));
-    EXPECT_TRUE(serviceToProcessInfo->isAdaptive);
+    EXPECT_EQ(serviceToProcessInfo->isAdaptive, SupportASStatus::SUPPORT_AS);
     EXPECT_EQ(serviceToProcessInfo->gameNodeName, "testGameNode");
 
     EXPECT_TRUE(serviceToProcessInfo->hgmDataChangeTypes.test(HgmDataChangeType::HGM_CONFIG_DATA));

@@ -56,6 +56,7 @@
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
 #include "pipeline/rs_base_render_node.h"
+#include "pipeline/rs_depth_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_logical_display_render_node.h"
@@ -71,6 +72,7 @@
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "property/rs_point_light_manager.h"
+#include "property/rs_spatial_effect_manager.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_effect_luminance_manager.h"
 #include "render/rs_high_performance_visual_engine.h"
@@ -780,9 +782,7 @@ void RSUniRenderVisitor::QuickPrepareScreenRenderNode(RSScreenRenderNode& node, 
     globalZOrder_ = 0.0f;
     appWindowZOrder_ = 0;
     hasSkipLayer_ = false;
-    hwcVisitor_->curZOrderForHwcEnableByFilter_ = 0;
     hwcVisitor_->solidLayerHwcEnableCount_ = 0;
-    node.GetHwcRecorder().SetZOrderForHwcEnableByFilter(hwcVisitor_->curZOrderForHwcEnableByFilter_++);
     if (!(RSMainThread::Instance()->IsRequestedNextVSync())) {
         RS_OPTIONAL_TRACE_NAME_FMT("do not request next vsync");
         needRequestNextVsync_ = false;
@@ -1152,6 +1152,55 @@ void RSUniRenderVisitor::CollectHwcAndFilterNodesToParent(RSRenderNode& node, bo
             parentList.insert(parentList.end(), childList.begin(), childList.end());
         }
     }
+}
+
+void RSUniRenderVisitor::QuickPrepareDepthRenderNode(RSDepthRenderNode& node, bool isParentPrepareInReverseOrder)
+{
+    RS_OPTIONAL_TRACE_BEGIN_LEVEL(TRACE_LEVEL_PRINT_NODEID, "QuickPrepareDepthRenderNode nodeId[%llu]", node.GetId());
+    UpdateCurFrameInfoDetail(node);
+    RSSubTreePrepareController subTreePrepareController(isCurSubTreeForcePrepare_, IsCurrentSubTreeForcePrepare(node));
+    AutoRenderGroupExcludedSubTreeGuard renderGroupExcludedSubTreeGuard(
+        curExcludedRootNodeId_, node.IsExcludedFromNodeGroup(), node.GetId());
+    SetRenderGroupSubTreeDirtyIfNeed(node);
+    // 0. check current node need to tranverse
+    auto dirtyManager = curSurfaceNode_ ? curSurfaceDirtyManager_ : curScreenDirtyManager_;
+    if (!dirtyManager) {
+        RS_LOGE("QuickPrepareDepthRenderNode dirtyManager is nullptr");
+        RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
+        return;
+    }
+    auto dirtyFlag = dirtyFlag_;
+    auto prevAlpha = curAlpha_;
+    auto curCornerRadius = curCornerRadius_;
+    auto curCornerRect = curCornerRect_;
+    curAlpha_ *= std::clamp(node.GetRenderProperties().GetAlpha(), 0.f, 1.f);
+    CheckFilterCacheNeedForceClearOrSave(node);
+    MarkFilterInForegroundFilterAndCheckNeedForceClearCache(node);
+    RectI prepareClipRect = prepareClipRect_;
+    bool hasAccumulatedClip = hasAccumulatedClip_;
+    dirtyFlag_ =
+        node.UpdateDrawRectAndDirtyRegion(*dirtyManager, dirtyFlag_, prepareClipRect_, parentSurfaceNodeMatrix_);
+    node.AccumulateParentGeoDirty();
+    node.UpdateCurCornerInfo(curCornerRadius_, curCornerRect_);
+    // 1. Recursively traverse child nodes
+    hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
+    bool isSubTreeNeedPrepare = node.IsSubTreeNeedPrepare(filterInGlobal_) || ForcePrepareSubTree();
+    node.ClearAllHwcNodeAndFilterNode();
+    if (isSubTreeNeedPrepare) {
+        QuickPrepareChildren(node);
+    } else {
+        CollectHwcAndFilterNodesInSkippedSubTree(node);
+        node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareClipRect_);
+    }
+    PostPrepare(node, isParentPrepareInReverseOrder, !isSubTreeNeedPrepare);
+    prepareClipRect_ = prepareClipRect;
+    hasAccumulatedClip_ = hasAccumulatedClip;
+    dirtyFlag_ = dirtyFlag;
+    curAlpha_ = prevAlpha;
+    curCornerRadius_ = curCornerRadius;
+    curCornerRect_ = curCornerRect;
+    node.RenderTraceDebug();
+    RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
 }
 
 void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node, bool isParentPrepareInReverseOrder)
@@ -1982,7 +2031,11 @@ void RSUniRenderVisitor::TraverseRenderGroupCacheRoots(
 
 void RSUniRenderVisitor::AddRenderGroupCacheRoot(RSCanvasRenderNode& node)
 {
-    if (node.GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
+    auto isNeedAdd = (node.GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE &&
+                         node.GetNodeGroupType() != RSRenderNode::NodeGroupType::GROUPED_BY_LAYER) ||
+                     (node.GetNodeGroupType() == RSRenderNode::NodeGroupType::GROUPED_BY_LAYER &&
+                         RSLayerCacheManagerBase::IsNodeUnSupportLayer(node) != true);
+    if (isNeedAdd) {
         renderGroupCacheRoots_[node.GetId()] = node.shared_from_this()->ReinterpretCastTo<RSCanvasRenderNode>();
         hasMarkedRenderGroupSubTreeDirty_ = false;
         RS_OPTIONAL_TRACE_NAME_FMT("AddRenderGroupCacheRoot id:%llu", node.GetId());
@@ -2169,6 +2222,7 @@ void RSUniRenderVisitor::QuickPrepareWindowKeyFrameRenderNode(RSWindowKeyFrameRe
 
     dirtyFlag_ = node.UpdateDrawRectAndDirtyRegion(
         *dirtyManager, dirtyFlag_, prepareClipRect_, parentSurfaceNodeMatrix_);
+    node.AccumulateParentGeoDirty();
     node.UpdateCurCornerInfo(curCornerRadius_, curCornerRect_);
     PostPrepare(node, isParentPrepareInReverseOrder, true);
     node.CollectLinkedNodeInfo();
@@ -2258,7 +2312,6 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
             curDirty_ = child->IsDirty();
             curContainerDirty_ = curContainerDirty_ || child->IsDirty();
             child->SetFirstLevelCrossNode(node.IsFirstLevelCrossNode() || child->IsCrossNode());
-            child->GetHwcRecorder().SetZOrderForHwcEnableByFilter(hwcVisitor_->curZOrderForHwcEnableByFilter_++);
             if (node.IsParentTreeDirty()) {
                 child->SetParentTreeDirty(true);
             }
@@ -2280,7 +2333,6 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
             rsScreenNodeChildNum_++;
             curDirty_ = child->IsDirty();
             child->SetFirstLevelCrossNode(node.IsFirstLevelCrossNode() || child->IsCrossNode());
-            child->GetHwcRecorder().SetZOrderForHwcEnableByFilter(hwcVisitor_->curZOrderForHwcEnableByFilter_++);
             child->QuickPrepare(shared_from_this(), false);
 #ifdef SUBTREE_PARALLEL_ENABLE
             node.MergeSubtreeParallelNodes(*child);
@@ -2661,15 +2713,6 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
         return;
     }
     {
-        auto iter = std::find_if(strategy.begin(), strategy.end(),
-            [](const auto& elem) {
-            return (elem.second == RequestCompositionType::OFFLINE_DEVICE ||
-                elem.second == RequestCompositionType::OFFLINE_VCLD_OFF);
-        });
-        if (iter == strategy.end()) {
-            RSOfflineProcessor::GetOfflineProcessor().CheckAndPostClearOfflineResourceTask(
-                OfflineDeviceType::HPAE_OFFLINE_DEVICE);
-        }
         std::vector<uint64_t> offlineNodeIds;
         for (const auto& elem : strategy) {
             if (elem.second == RequestCompositionType::OFFLINE_DEVICE ||
@@ -3569,6 +3612,9 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
     }
     if (node.GetSharedTransitionParam() || node.ChildHasSharedTransition()) {
         nodeParent->SetChildHasSharedTransition(true);
+    }
+    if (node.GetRenderProperties().GetSpatialEffectPara() || node.ChildHasSpatialEffect()) {
+        nodeParent->SetChildHasSpatialEffect(true);
     }
     if (node.ChildHasVisibleHDRContent() || node.GetHDRStatus() != HdrStatus::NO_HDR) {
         nodeParent->SetChildHasVisibleHDRContent(true);

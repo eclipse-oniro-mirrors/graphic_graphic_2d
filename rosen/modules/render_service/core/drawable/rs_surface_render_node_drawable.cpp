@@ -243,6 +243,12 @@ void RSSurfaceRenderNodeDrawable::OnGeneralProcess(RSPaintFilterCanvas& canvas,
     if (CheckDrawAndCacheWindowContent(surfaceParams, uniParams)) {
         // 3/4 Draw content and children of this node by the main canvas, and cache
         subThreadCache_.GetRSDrawWindowCache().DrawAndCacheWindowContent(this, canvas, surfaceParams.GetBounds());
+        bool isUIFirstFirstFrameCacheGenerated = subThreadCache_.GetRSDrawWindowCache().HasCache()
+            && surfaceParams.GetNeedCacheSurface() && !surfaceParams.IsCrossNode()
+            && !surfaceParams.ClonedSourceNode();
+        if (isUIFirstFirstFrameCacheGenerated) {
+            RSUifirstManager::Instance().AddFirstFrameCacheGeneratedNode(GetId());
+        }
     } else {
         // 3. Draw content of this node by the main canvas.
         DrawContent(canvas, bounds);
@@ -703,11 +709,12 @@ void RSSurfaceRenderNodeDrawable::SyncUifirstDrawCmds()
 
 void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
+    SetDrawSkipType(DrawSkipType::NONE);
     if (MemorySnapshot::Instance().IsAbnormalProcess(ExtractPid(GetId()))) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw abnormal process %{public}d .", ExtractPid(GetId()));
+        SetDrawSkipType(DrawSkipType::MEMORYOVER_SKIP);
         return;
     }
-    SetDrawSkipType(DrawSkipType::NONE);
     if (!ShouldPaint()) {
         SetDrawSkipType(DrawSkipType::SHOULD_NOT_PAINT);
         RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnDraw %s should not paint", name_.c_str());
@@ -755,6 +762,10 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
     }
 
+    if (surfaceParams->IsDepthSrc()) {
+        RS_LOGD("RSSurfaceRenderNodeDrawable::OnDraw is skipped as depth source");
+        return;
+    }
     if (surfaceParams->IsUnobscuredUIExtension() && !UIExtensionNeedToDraw()) {
         RS_LOGE("Current Unobsucred UEC[%{public}s,%{public}" PRIu64 "] needn't to draw",
             name_.c_str(), surfaceParams->GetId());
@@ -1140,6 +1151,10 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(GetRenderParams().get());
     if (!surfaceParams) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnCapture surfaceParams is nullptr");
+        return;
+    }
+    if (surfaceParams->IsDepthSrc()) {
+        RS_LOGD("RSSurfaceRenderNodeDrawable::OnCapture is skipped as depth source");
         return;
     }
 

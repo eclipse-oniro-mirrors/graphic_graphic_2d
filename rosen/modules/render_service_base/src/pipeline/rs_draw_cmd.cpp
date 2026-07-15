@@ -590,19 +590,13 @@ RSExtendImageBaseObj::RSExtendImageBaseObj(const std::shared_ptr<Media::PixelMap
     dst_ = dst;
 }
  
-void RSExtendImageBaseObj::Record(ExtendRecordingCanvas& canvas, const Drawing::SamplingOptions& sampling,
-    Drawing::SrcRectConstraint constraint)
-{
-    if (std::shared_ptr<Media::PixelMap> pixelmap = rsImage_->GetPixelMap()) {
-        canvas.DrawPixelMapRect(pixelmap, src_, dst_, sampling, constraint);
-    }
-}
- 
 void RSExtendImageBaseObj::Record(Drawing::Canvas& canvas, const Drawing::SamplingOptions& sampling,
     Drawing::SrcRectConstraint constraint)
 {
     ExtendRecordingCanvas* extendRecordingCanvas = static_cast<ExtendRecordingCanvas*>(&canvas);
-    Record(*extendRecordingCanvas, sampling, constraint);
+    if (std::shared_ptr<Media::PixelMap> pixelmap = rsImage_->GetPixelMap()) {
+        extendRecordingCanvas->DrawPixelMapRect(pixelmap, src_, dst_, sampling, constraint);
+    }
 }
 
 void RSExtendImageBaseObj::Playback(Drawing::Canvas& canvas, const Drawing::Rect& rect,
@@ -655,19 +649,13 @@ RSExtendImageNineObject::RSExtendImageNineObject(const std::shared_ptr<Media::Pi
     }
 }
 
-void RSExtendImageNineObject::Record(ExtendRecordingCanvas& canvas, const Drawing::RectI& center,
-    const Drawing::Rect& dst, Drawing::FilterMode filterMode)
-{
-    if (std::shared_ptr<Media::PixelMap> pixelmap = rsImage_->GetPixelMap()) {
-        canvas.DrawPixelMapNine(pixelmap, center, dst, filterMode);
-    }
-}
- 
 void RSExtendImageNineObject::Record(Drawing::Canvas& canvas, const Drawing::RectI& center,
     const Drawing::Rect& dst, Drawing::FilterMode filterMode)
 {
     ExtendRecordingCanvas* extendRecordingCanvas = static_cast<ExtendRecordingCanvas*>(&canvas);
-    Record(*extendRecordingCanvas, center, dst, filterMode);
+    if (std::shared_ptr<Media::PixelMap> pixelmap = rsImage_->GetPixelMap()) {
+        extendRecordingCanvas->DrawPixelMapNine(pixelmap, center, dst, filterMode);
+    }
 }
 
 void RSExtendImageNineObject::Playback(Drawing::Canvas& canvas, const Drawing::RectI& center,
@@ -717,19 +705,13 @@ RSExtendImageLatticeObject::RSExtendImageLatticeObject(const std::shared_ptr<Med
     }
 }
 
-void RSExtendImageLatticeObject::Record(ExtendRecordingCanvas& canvas, const Drawing::Lattice& lattice,
-    const Drawing::Rect& dst, Drawing::FilterMode filterMode)
-{
-    if (std::shared_ptr<Media::PixelMap> pixelmap = rsImage_->GetPixelMap()) {
-        canvas.DrawPixelMapLattice(pixelmap, lattice, dst, filterMode);
-    }
-}
-
 void RSExtendImageLatticeObject::Record(Drawing::Canvas& canvas, const Drawing::Lattice& lattice,
     const Drawing::Rect& dst, Drawing::FilterMode filterMode)
 {
     ExtendRecordingCanvas* extendRecordingCanvas = static_cast<ExtendRecordingCanvas*>(&canvas);
-    Record(*extendRecordingCanvas, lattice, dst, filterMode);
+    if (std::shared_ptr<Media::PixelMap> pixelmap = rsImage_->GetPixelMap()) {
+        extendRecordingCanvas->DrawPixelMapLattice(pixelmap, lattice, dst, filterMode);
+    }
 }
 
 void RSExtendImageLatticeObject::Playback(Drawing::Canvas& canvas, const Drawing::Lattice& lattice,
@@ -775,6 +757,14 @@ void RSExtendDrawFuncObj::Playback(Drawing::Canvas* canvas, const Drawing::Rect*
 {
     if (drawFunc_) {
         drawFunc_(canvas, rect);
+    }
+}
+
+void RSExtendDrawFuncObj::Record(Drawing::Canvas& canvas)
+{
+    ExtendRecordingCanvas* extendRecordingCanvas = static_cast<ExtendRecordingCanvas*>(&canvas);
+    if (drawFunc_) {
+        extendRecordingCanvas->DrawDrawFunc(Drawing::RecordingCanvas::DrawFunc(drawFunc_));
     }
 }
 
@@ -1231,7 +1221,12 @@ void DrawFuncOpItem::Marshalling(DrawCmdList& cmdList)
 
 void DrawFuncOpItem::Playback(Canvas* canvas, const Rect* rect)
 {
-    if (objectHandle_) {
+    if (!objectHandle_) {
+        return;
+    }
+    if (canvas->GetDrawingType() == Drawing::DrawingType::RECORDING) {
+        objectHandle_->Record(*canvas);
+    } else {
         objectHandle_->Playback(canvas, rect);
     }
 }
@@ -1409,6 +1404,13 @@ void DrawSurfaceBufferOpItem::Playback(Canvas* canvas, const Rect* rect)
     if (auto recordingCanvas = static_cast<ExtendRecordingCanvas*>(canvas->GetRecordingCanvas())) {
         recordingCanvas->DrawSurfaceBuffer(surfaceBufferInfo_);
         return;
+    }
+    if (canvas->GetDrawingType() == Drawing::DrawingType::RECORDING) {
+        auto recordingCanvas = static_cast<ExtendRecordingCanvas*>(canvas);
+        if (recordingCanvas) {
+            recordingCanvas->DrawSurfaceBuffer(surfaceBufferInfo_);
+            return;
+        }
     }
     Clear();
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)

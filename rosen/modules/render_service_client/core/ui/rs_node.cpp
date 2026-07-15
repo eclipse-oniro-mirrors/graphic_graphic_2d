@@ -56,6 +56,7 @@
 #include "command/rs_base_node_command.h"
 #include "command/rs_canvas_node_command.h"
 #include "command/rs_node_command.h"
+#include "command/rs_spatial_effect_command.h"
 #include "common/rs_color.h"
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
@@ -69,14 +70,16 @@
 #include "modifier_ng/appearance/rs_border_modifier.h"
 #include "modifier_ng/appearance/rs_color_picker_modifier.h"
 #include "modifier_ng/appearance/rs_compositing_filter_modifier.h"
+#include "modifier_ng/appearance/rs_coverage_ng_shader_modifier.h"
 #include "modifier_ng/appearance/rs_dynamic_light_up_modifier.h"
 #include "modifier_ng/appearance/rs_foreground_filter_modifier.h"
+#include "modifier_ng/appearance/rs_spatial_effect_modifier.h"
 #include "modifier_ng/appearance/rs_hdr_brightness_modifier.h"
 #include "modifier_ng/appearance/rs_mask_modifier.h"
 #include "modifier_ng/appearance/rs_outline_modifier.h"
+#include "modifier_ng/appearance/rs_overlay_ng_shader_modifier.h"
 #include "modifier_ng/appearance/rs_particle_effect_modifier.h"
 #include "modifier_ng/appearance/rs_pixel_stretch_modifier.h"
-#include "modifier_ng/appearance/rs_overlay_ng_shader_modifier.h"
 #include "modifier_ng/appearance/rs_shadow_modifier.h"
 #include "modifier_ng/appearance/rs_material_filter_modifier.h"
 #include "modifier_ng/appearance/rs_material_shader_modifier.h"
@@ -142,7 +145,7 @@
 #ifdef __gnu_linux__
 #include <sys/syscall.h>
 #include <sys/types.h>
-#define gettid []() -> int32_t { return static_cast<int32_t>(syscall(SYS_gettid)); }
+#define gettid []()->int32_t { return static_cast<int32_t>(syscall(SYS_gettid)); }
 #endif
 
 #undef LOG_TAG
@@ -162,6 +165,7 @@ static const std::unordered_map<RSUINodeType, std::string> RSUINodeTypeStrs = {
     {RSUINodeType::CANVAS_NODE,         "CanvasNode"},
     {RSUINodeType::ROOT_NODE,           "RootNode"},
     {RSUINodeType::EFFECT_NODE,         "EffectNode"},
+    {RSUINodeType::DEPTH_NODE,          "DepthNode"},
     {RSUINodeType::CANVAS_DRAWING_NODE, "CanvasDrawingNode"},
     {RSUINodeType::UNION_NODE,          "UnionNode"},
     {RSUINodeType::WINDOW_KEYFRAME_NODE, "WindowKeyFrameNode"},
@@ -3478,9 +3482,63 @@ void RSNode::UpdateOcclusionCullingStatus(bool enable, NodeId keyOcclusionNodeId
     });
 }
 
-void RSNode::SetSpatialEffectPara(const std::shared_ptr<SpatialEffectVariantPara>& para) {}
+void RSNode::SetSpatialEffectPara(const std::shared_ptr<SpatialEffectVariantPara>& para)
+{
+    if (!para) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::SPATIAL_EFFECT);
+        if (modifier != nullptr) {
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_DEPTH);
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_LEFT_TOP);
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_RIGHT_TOP);
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_LEFT_BOTTOM);
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_RIGHT_BOTTOM);
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_OCCLUSION_WEIGHT);
+        }
+        return;
+    }
 
-void RSNode::SetIsDepthBackground(bool isDepthBackground) {}
+    if (!para->PerspectiveEnabled()) {
+        SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
+            &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectDepth>(std::get<float>(para->position));
+        SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
+            &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectOcclusionWeight>(para->occlusionWeight);
+
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::SPATIAL_EFFECT);
+        if (modifier != nullptr) {
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_LEFT_TOP);
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_RIGHT_TOP);
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_LEFT_BOTTOM);
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_RIGHT_BOTTOM);
+        }
+    } else {
+        const auto& corners = std::get<SpatialEffectPara::CornerPositions>(para->position);
+        SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
+            &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectLeftTop>(
+            corners[SpatialEffectPara::LEFT_TOP_INDEX]);
+        SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
+            &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectRightTop>(
+            corners[SpatialEffectPara::RIGHT_TOP_INDEX]);
+        SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
+            &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectLeftBottom>(
+            corners[SpatialEffectPara::LEFT_BOTTOM_INDEX]);
+        SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
+            &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectRightBottom>(
+            corners[SpatialEffectPara::RIGHT_BOTTOM_INDEX]);
+        SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
+            &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectOcclusionWeight>(para->occlusionWeight);
+
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::SPATIAL_EFFECT);
+        if (modifier != nullptr) {
+            modifier->DetachProperty(ModifierNG::RSPropertyType::SPATIAL_EFFECT_DEPTH);
+        }
+    }
+}
 
 void RSNode::MarkAllExtendModifierDirty()
 {
@@ -3550,6 +3608,8 @@ void RSNode::RegisterTransitionPair(const std::shared_ptr<RSUIContext> rsUIConte
         ROSEN_LOGE("RSNode::RegisterTransitionPair, rsUIContext is nullptr");
         return;
     }
+    RS_TRACE_NAME_FMT("RSNode::RegisterTransitionPair inNodeId: %" PRIu64 " outNodeId: %" PRIu64 " isInSameWindow: %d",
+        inNodeId, outNodeId, isInSameWindow);
     std::unique_ptr<RSCommand> command = std::make_unique<RSRegisterGeometryTransitionNodePair>(inNodeId, outNodeId,
         isInSameWindow);
     auto transaction = rsUIContext->GetRSTransaction();
@@ -3752,7 +3812,7 @@ void RSNode::SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch)
 void RSNode::SetLightIntensity(float lightIntensity)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
-    SetPropertyNG<ModifierNG::RSOverlayNGShaderModifier, &ModifierNG::RSOverlayNGShaderModifier::SetLightIntensity>(
+    SetPropertyNG<ModifierNG::RSCoverageNGShaderModifier, &ModifierNG::RSCoverageNGShaderModifier::SetLightIntensity>(
         lightIntensity);
 }
 
@@ -3760,7 +3820,7 @@ void RSNode::SetLightColor(uint32_t lightColorValue)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
     auto lightColor = Color::FromArgbInt(lightColorValue);
-    SetPropertyNG<ModifierNG::RSOverlayNGShaderModifier, &ModifierNG::RSOverlayNGShaderModifier::SetLightColor>(
+    SetPropertyNG<ModifierNG::RSCoverageNGShaderModifier, &ModifierNG::RSCoverageNGShaderModifier::SetLightColor>(
         lightColor);
 }
 
@@ -3773,28 +3833,28 @@ void RSNode::SetLightPosition(float positionX, float positionY, float positionZ)
 void RSNode::SetLightPosition(const Vector4f& lightPosition)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
-    SetPropertyNG<ModifierNG::RSOverlayNGShaderModifier, &ModifierNG::RSOverlayNGShaderModifier::SetLightPosition>(
+    SetPropertyNG<ModifierNG::RSCoverageNGShaderModifier, &ModifierNG::RSCoverageNGShaderModifier::SetLightPosition>(
         lightPosition);
 }
 
 void RSNode::SetIlluminatedBorderWidth(float illuminatedBorderWidth)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
-    SetPropertyNG<ModifierNG::RSOverlayNGShaderModifier,
-        &ModifierNG::RSOverlayNGShaderModifier::SetIlluminatedBorderWidth>(illuminatedBorderWidth);
+    SetPropertyNG<ModifierNG::RSCoverageNGShaderModifier,
+        &ModifierNG::RSCoverageNGShaderModifier::SetIlluminatedBorderWidth>(illuminatedBorderWidth);
 }
 
 void RSNode::SetIlluminatedType(uint32_t illuminatedType)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
-    SetPropertyNG<ModifierNG::RSOverlayNGShaderModifier, &ModifierNG::RSOverlayNGShaderModifier::SetIlluminatedType>(
+    SetPropertyNG<ModifierNG::RSCoverageNGShaderModifier, &ModifierNG::RSCoverageNGShaderModifier::SetIlluminatedType>(
         illuminatedType);
 }
 
 void RSNode::SetBloom(float bloomIntensity)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
-    SetPropertyNG<ModifierNG::RSOverlayNGShaderModifier, &ModifierNG::RSOverlayNGShaderModifier::SetBloom>(
+    SetPropertyNG<ModifierNG::RSCoverageNGShaderModifier, &ModifierNG::RSCoverageNGShaderModifier::SetBloom>(
         bloomIntensity);
 }
 
@@ -4190,6 +4250,13 @@ void RSNode::SetIsCrossNode(bool isCrossNode)
 {
     SetRSCmdProperty<IsCrossNodeCmdModifier>(IsCrossNodeCmdParam{
         isCrossNode
+    });
+}
+
+void RSNode::SetIsDepthBackground(bool isDepthBackground)
+{
+    SetRSCmdProperty<IsDepthBackgroundCmdModifier>(IsDepthBackgroundCmdParam{
+        isDepthBackground
     });
 }
 

@@ -165,6 +165,7 @@ public:
     static void SetSaveRDC(bool flag);
 
     static bool GetUniRenderEnabled();
+    static bool GetBackgroundRebuildEnabled();
     static bool GetRenderNodeTraceEnabled();
     static bool GetDrawOpTraceEnabled();
     static bool GetDrawOpLimitEnabled();
@@ -174,7 +175,6 @@ public:
     static bool GetRSClientMultiInstanceEnabled();
     static bool GetRenderNodePurgeEnabled();
     static bool GetRSImagePurgeEnabled();
-    static bool GetClosePixelMapFdEnabled();
     static bool GetAceTestMode();
     static DirtyRegionDebugType GetDirtyRegionDebugType();
     static AdvancedDirtyRegionType GetAdvancedDirtyRegionEnabled();
@@ -251,6 +251,7 @@ public:
     static bool GetForegroundFilterEnabled();
     static bool GetFgBlenderEnabled();
     static const std::vector<float>& GetAiInvertCoef();
+    static bool DvsyncSkipRsCommitDelayEnabled();
     static bool GetSkipForAlphaZeroEnabled();
     static bool GetSkipGeometryNotChangeEnabled();
     static bool GetRenderParallelEnabled();
@@ -420,6 +421,7 @@ private:
     RSSystemProperties() = default;
 
     static inline bool isUniRenderEnabled_ = false;
+    static inline bool isBackgroundRebuildEnabled_ = false;
     inline static bool isDrawTextAsBitmap_ = false;
     inline static std::atomic_bool cacheEnabledForRotation_ = false;
     static inline bool forceHpsBlurDisabled_ = false;

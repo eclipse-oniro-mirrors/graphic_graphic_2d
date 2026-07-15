@@ -91,20 +91,21 @@ bool HdiDeviceImpl::Init()
         HLOGE("%{public}s:get display_composer_service remote object failed!", __func__);
         usleep(GET_COMPOSER_DELAY_TIME);
     }
-    if (g_composer_v5 == nullptr && g_composer == nullptr) {
-        g_composer_v5 = Composer::V1_5::IDisplayComposerInterface::Get();
-        if (g_composer_v5 == nullptr) {
-            HLOGW("Composer::V1_5::IDisplayComposerInterface::Get fail");
-            g_composer = Composer::V1_4::IDisplayComposerInterface::Get();
-            if (g_composer == nullptr) {
-                HLOGE("Composer::V1_4::IDisplayComposerInterface::Get fail, return nullptr.");
-                return false;
-            }
-        } else {
-            g_composer = g_composer_v5;
-        }
+    if (g_composer != nullptr) {
+        return true;
     }
-    return true;
+    g_composer_v5 = Composer::V1_5::IDisplayComposerInterface::Get();
+    if (g_composer_v5 != nullptr) {
+        g_composer = g_composer_v5;
+        return true;
+    }
+    HLOGW("Composer::V1_5::IDisplayComposerInterface::Get fail, fallback to lower version");
+    g_composer = Composer::V1_4::IDisplayComposerInterface::Get();
+    if (g_composer != nullptr) {
+        return true;
+    }
+    HLOGE("Composer::V1_4::IDisplayComposerInterface::Get fail, no available composer interface.");
+    return false;
 }
 
 void HdiDeviceImpl::Destroy()
@@ -302,19 +303,6 @@ int32_t HdiDeviceImpl::SetScreenBacklight(uint32_t screenId, uint32_t level)
 {
     CHECK_FUNC(g_composer);
     return g_composer->SetDisplayBacklight(screenId, level);
-}
-
-int32_t HdiDeviceImpl::GetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode,
-    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
-{
-    CHECK_FUNC(g_composer_v5);
-    return g_composer_v5->GetDisplayVCPFeature(screenId, vcpCode, currentValue, maximumValue, errorCode);
-}
-
-int32_t HdiDeviceImpl::SetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode, uint16_t currentValue)
-{
-    CHECK_FUNC(g_composer_v5);
-    return g_composer_v5->SetDisplayVCPFeature(screenId, vcpCode, currentValue);
 }
 
 int32_t HdiDeviceImpl::PrepareScreenLayers(uint32_t screenId, bool &needFlush)
@@ -845,5 +833,29 @@ int32_t HdiDeviceImpl::CommitTunnelLayer(uint32_t screenId, uint64_t tunnleId, i
     return g_composer->CommitTunnelLayer(screenId, tunnleId, releaseFence);
 }
 
+int32_t HdiDeviceImpl::GetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    CHECK_FUNC(g_composer_v5);
+    return g_composer_v5->GetDisplayVCPFeature(screenId, vcpCode, currentValue, maximumValue, errorCode);
+}
+
+int32_t HdiDeviceImpl::SetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode, uint16_t currentValue)
+{
+    CHECK_FUNC(g_composer_v5);
+    return g_composer_v5->SetDisplayVCPFeature(screenId, vcpCode, currentValue);
+}
+
+int32_t HdiDeviceImpl::GetLayerSolidFilledColor(uint32_t screenId, uint32_t layerId, uint32_t& solidFilledColor)
+{
+    CHECK_FUNC(g_composer_v5);
+    solidFilledColor = 0;
+    LayerColor layerColor;
+    auto ret = g_composer_v5->GetLayerColor(screenId, layerId, layerColor);
+    if (ret == GRAPHIC_DISPLAY_SUCCESS) {
+        solidFilledColor = (layerColor.a << 24) | (layerColor.r << 16) | (layerColor.g << 8) | layerColor.b;
+    }
+    return ret;
+}
 } // namespace Rosen
 } // namespace OHOS

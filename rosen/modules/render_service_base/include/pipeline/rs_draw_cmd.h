@@ -36,7 +36,6 @@ typedef unsigned int GLuint;
  
 namespace OHOS {
 namespace Rosen {
-class ExtendRecordingCanvas;
 #ifdef ROSEN_OHOS
 #ifdef RS_ENABLE_VK
 namespace NativeBufferUtils {
@@ -128,8 +127,6 @@ public:
     RSExtendImageBaseObj(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::Rect& src,
         const Drawing::Rect& dst);
     ~RSExtendImageBaseObj() override = default;
-    void Record(ExtendRecordingCanvas& canvas, const Drawing::SamplingOptions& sampling,
-        Drawing::SrcRectConstraint constraint);
     void Record(Drawing::Canvas& canvas, const Drawing::SamplingOptions& sampling,
         Drawing::SrcRectConstraint constraint = Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT) override;
     void Playback(Drawing::Canvas& canvas, const Drawing::Rect& rect, const Drawing::SamplingOptions& sampling,
@@ -149,8 +146,6 @@ public:
     RSExtendImageNineObject() = default;
     RSExtendImageNineObject(const std::shared_ptr<Media::PixelMap>& pixelMap);
     ~RSExtendImageNineObject() override = default;
-    void Record(ExtendRecordingCanvas& canvas, const Drawing::RectI& center, const Drawing::Rect& dst,
-        Drawing::FilterMode filterMode);
     void Record(Drawing::Canvas& canvas, const Drawing::RectI& center, const Drawing::Rect& dst,
         Drawing::FilterMode filterMode) override;
     void Playback(Drawing::Canvas& canvas, const Drawing::RectI& center, const Drawing::Rect& dst,
@@ -168,8 +163,6 @@ public:
     RSExtendImageLatticeObject() = default;
     RSExtendImageLatticeObject(const std::shared_ptr<Media::PixelMap>& pixelMap);
     ~RSExtendImageLatticeObject() override = default;
-    void Record(ExtendRecordingCanvas& canvas, const Drawing::Lattice& lattice, const Drawing::Rect& dst,
-        Drawing::FilterMode filterMode);
     void Record(Drawing::Canvas& canvas, const Drawing::Lattice& lattice, const Drawing::Rect& dst,
         Drawing::FilterMode filterMode) override;
     void Playback(Drawing::Canvas& canvas, const Drawing::Lattice& lattice, const Drawing::Rect& dst,
@@ -187,6 +180,7 @@ public:
     explicit RSExtendDrawFuncObj(Drawing::RecordingCanvas::DrawFunc&& drawFunc) : drawFunc_(std::move(drawFunc)) {}
     ~RSExtendDrawFuncObj() override = default;
     void Playback(Drawing::Canvas* canvas, const Drawing::Rect* rect) override;
+    void Record(Drawing::Canvas& canvas) override;
     bool Marshalling(Parcel& parcel) const;
     static RSExtendDrawFuncObj* Unmarshalling(Parcel& parcel);
 

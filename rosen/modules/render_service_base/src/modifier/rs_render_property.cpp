@@ -650,6 +650,40 @@ void RSRenderProperty<std::vector<Vector2f>>::Dump(std::string& out) const
 template<>
 void RSRenderProperty<std::vector<Vector4f>>::Dump(std::string& out) const
 {}
+template<>
+void RSRenderProperty<DepthCameraPara>::Dump(std::string& out) const
+{
+    const auto& depthCameraPara = Get();
+    std::stringstream ss;
+    ss << "[";
+    const auto& position = depthCameraPara.position;
+    ss << std::fixed << std::setprecision(1) << "position: (" << position.x_ << ", " << position.y_ << ", "
+        << position.z_ << ")";
+    const auto& quaternion = depthCameraPara.quaternion;
+    ss << ", quaternion: (" << quaternion.x_ << ", " << quaternion.y_ << ", " << quaternion.z_ << ", "
+        << quaternion.w_ << ")";
+    ss << ", yFov: " << depthCameraPara.yFov << ", zNear: " << depthCameraPara.zNear
+        << ", zFar: " << depthCameraPara.zFar;
+    const auto& offset = depthCameraPara.offset;
+    ss << ", offset: (" << offset.x_ << ", " << offset.y_ << ")";
+    ss << "]";
+    out += ss.str();
+}
+template<>
+void RSRenderProperty<DepthLightPara>::Dump(std::string& out) const
+{
+    const auto& depthLightPara = Get();
+    std::stringstream ss;
+    ss << "[";
+    const auto& direction = depthLightPara.direction;
+    ss << std::fixed << std::setprecision(1) << "direction: (" << direction.x_ << ", " << direction.y_ << ", "
+        << direction.z_ << ")";
+    const auto& color = depthLightPara.color;
+    ss << ", color: (" << color.x_ << ", " << color.y_ << ", " << color.z_ << ")";
+    ss << ", intensity: " << depthLightPara.intensity;
+    ss << "]";
+    out += ss.str();
+}
 
 template<>
 bool RSRenderAnimatableProperty<float>::IsNearEqual(
@@ -898,14 +932,16 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::OnAttach(RSRenderNo
 {
     if (stagingValue_) {
         stagingValue_->Attach(node, modifier);
+        stagingValue_->SetOwnerId(reinterpret_cast<uintptr_t>(this));
     }
 }
 
 template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::OnDetach()
 {
-    if (stagingValue_) {
+    if (stagingValue_ && stagingValue_->GetOwnerId() == reinterpret_cast<uintptr_t>(this)) {
         stagingValue_->Detach();
+        stagingValue_->SetOwnerId(0); // clear stale owner id so a reused address can't match later
     }
 }
 
@@ -924,12 +960,15 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::Set(
     // PLANNING: node_ is only used in this function, find alternative way detach/attach values, and remove the node_
     // member variable.
     auto node = node_.lock();
-    if (node && stagingValue_) {
+    const auto self = reinterpret_cast<uintptr_t>(this);
+    if (node && stagingValue_ && stagingValue_->GetOwnerId() == self) {
         stagingValue_->Detach();
+        stagingValue_->SetOwnerId(0); // clear stale owner id so a reused address can't match later
     }
     stagingValue_ = value;
     if (node && value) {
         value->Attach(*node, modifier_.lock());
+        value->SetOwnerId(self);
     }
     OnChange();
 }

@@ -19,6 +19,7 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include "rs_render_service.h"
 #include "rs_render_process_manager.h"
+#include "render_server/rs_render_multi_process_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "vsync/vsync_manager.h"
 #include "screen_manager/rs_screen_manager.h"
@@ -185,8 +186,11 @@ HWTEST_F(RSRenderServiceTest, RegisterRenderProcessConnection001, TestSize.Level
 {
     auto renderService = sptr<RSRenderService>::MakeSptr();
     ASSERT_NE(renderService, nullptr);
+    auto runner = AppExecFwk::EventRunner::Create(false);
+    renderService->handler_ = std::make_shared<AppExecFwk::EventHandler>(runner);
+    renderService->renderProcessManager_ = sptr<RSMultiRenderProcessManager>::MakeSptr(*renderService);
     auto result = renderService->RegisterRenderProcessConnection();
-    ASSERT_NE(result, nullptr);
+    ASSERT_EQ(result, nullptr);
 }
 
 HWTEST_F(RSRenderServiceTest, GetConnection001, TestSize.Level1)

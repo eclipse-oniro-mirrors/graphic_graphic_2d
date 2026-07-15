@@ -29,6 +29,7 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_UI_RS_NODE_H
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_NODE_H
 
+#include <algorithm>
 #include <optional>
 #include <unordered_map>
 
@@ -2009,6 +2010,13 @@ public:
     void UpdateOcclusionCullingStatus(bool enable, NodeId keyOcclusionNodeId);
 
     /**
+     * @brief Mark the node for layer part rendering optimization
+     *
+     * @param isLayerPartRender true to enable layer part rendering optimization; false to disable
+     */
+    void MarkLayerPartRender(bool isLayerPartRender);
+
+    /**
      * @brief Set the spatial effect parameters of the node
      *
      * @param para spatial effect parameters
@@ -2021,13 +2029,6 @@ public:
      * @param isDepthBackground True if the node is a depth background node
      */
     void SetIsDepthBackground(bool isDepthBackground);
-
-    /**
-     * @brief Mark the node for layer part rendering optimization
-     *
-     * @param isLayerPartRender true to enable layer part rendering optimization; false to disable
-     */
-    void MarkLayerPartRender(bool isLayerPartRender);
 
     void ReSortChildrenByZIndex();
 
@@ -2052,8 +2053,11 @@ public:
             auto typedModifier = std::static_pointer_cast<ModifierType>(modifier);
             bool paramChanged = typedModifier->SetParam(param);
             // Only update when parameter changed
-            if (paramChanged && GetNodeState() != RSNodeState::INACTIVE) {
-                modifier->UpdateToRender();
+            if (paramChanged) {
+                modifier->index_ = RSCmdModifier::GenerateCmdModifierIndex();
+                if (GetNodeState() != RSNodeState::INACTIVE) {
+                    modifier->UpdateToRender();
+                }
             }
         }
     }
@@ -2077,8 +2081,11 @@ public:
             auto typedModifier = std::static_pointer_cast<ModifierType>(modifier);
             bool paramChanged = typedModifier->SetParam(param);
             // Only update when parameter changed
-            if (paramChanged && GetNodeState() != RSNodeState::INACTIVE) {
-                return modifier->UpdateToRenderWithResult();
+            if (paramChanged) {
+                modifier->index_ = RSCmdModifier::GenerateCmdModifierIndex();
+                if (GetNodeState() != RSNodeState::INACTIVE) {
+                    return modifier->UpdateToRenderWithResult();
+                }
             }
         }
         return false;
@@ -2130,7 +2137,7 @@ protected:
 
     bool hybridRenderCanvas_ = false;
 
-    mutable std::map<RSCmdModifierType, std::shared_ptr<RSCmdModifier>> rsCmdModifiers_;
+    mutable std::unordered_map<RSCmdModifierType, std::shared_ptr<RSCmdModifier>> rsCmdModifiers_;
     /**
      * @brief Called when child nodes are added to this node.
      */
@@ -2349,14 +2356,25 @@ private:
 
     // for node rebuilding only.
     void UpdateAllRSCmdModifiersToRender() {
+        // Sort modifiers by index (creation/update order) to ensure
+        // commands are sent in the correct order when pushing to foreground
+        std::vector<std::shared_ptr<RSCmdModifier>> sortedModifiers;
         for (auto& [type, modifier] : rsCmdModifiers_) {
             if (modifier) {
-                modifier->UpdateToRender();
+                sortedModifiers.push_back(modifier);
             }
+        }
+        std::sort(sortedModifiers.begin(), sortedModifiers.end(),
+            [](const std::shared_ptr<RSCmdModifier>& a, const std::shared_ptr<RSCmdModifier>& b) {
+                return a->GetIndex() < b->GetIndex();
+            });
+        for (auto& modifier : sortedModifiers) {
+            modifier->UpdateToRender();
         }
     }
  
     void ClearAllRSCmdModifiers() {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
         rsCmdModifiers_.clear();
     }
 

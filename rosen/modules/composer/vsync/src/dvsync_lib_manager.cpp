@@ -130,14 +130,15 @@ bool DVSyncLibManager::LoadAllFunctions()
     loadSuccess &= LoadFunction("GetVsyncCount", getVsyncCountFunc_);
     loadSuccess &= LoadFunction("InitDvsyncController", initDvsyncControllerFunc_);
     loadSuccess &= LoadFunction("SetVSyncTimeUpdated", setVSyncTimeUpdatedFunc_);
-    //load dvsync delay
+    loadSuccess &= LoadFunction("NeedSkipRsCommitDelay", needSkipRsCommitDelayFunc_);
+    // load dvsync delay
     loadSuccess &= LoadDvsyncDelayFunctions();
     return loadSuccess;
 }
 
 bool DVSyncLibManager::LoadDvsyncDelayFunctions()
 {
-    //load dvsync delay
+    // load dvsync delay
     bool loadSuccess = true;
     loadSuccess &= LoadFunction("ToDelay", toDelayFunc_);
     loadSuccess &= LoadFunction("SetTouchEvent", setTouchEventFunc_);
@@ -195,6 +196,8 @@ void DVSyncLibManager::ClearAllFunctions()
     getVsyncCountFunc_ = nullptr;
     initDvsyncControllerFunc_ = nullptr;
     setVSyncTimeUpdatedFunc_ = nullptr;
+    needSkipRsCommitDelayFunc_ = nullptr;
+
     ClearDvsyncDelayFunctions();
 }
 
@@ -368,7 +371,7 @@ bool DVSyncLibManager::NeedSkipAndUpdateTs(const sptr<VSyncConnection>& connecti
     return needSkipAndUpdateTsFunc_(connection, timeStamp);
 }
 
-bool DVSyncLibManager::NeedSkipUi(sptr<VSyncConnection> connection)
+bool DVSyncLibManager::NeedSkipUi(const sptr<VSyncConnection>& connection)
 {
     if (needSkipUiFunc_ == nullptr) {
         return false;
@@ -532,6 +535,14 @@ void DVSyncLibManager::SetVSyncTimeUpdated()
         return;
     }
     setVSyncTimeUpdatedFunc_();
+}
+
+bool DVSyncLibManager::NeedSkipRsCommitDelay() const
+{
+    if (needSkipRsCommitDelayFunc_ == nullptr) {
+        return false;
+    }
+    return needSkipRsCommitDelayFunc_();
 }
 
 void DVSyncLibManager::ToDelay(const AppExecFwk::InnerEvent::Callback& callback, const std::string& name,

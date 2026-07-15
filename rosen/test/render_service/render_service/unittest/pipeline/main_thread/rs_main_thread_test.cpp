@@ -162,6 +162,7 @@ public:
     {
         return connectToRenderConnection_;
     }
+    bool IsValidRenderProcessPid(pid_t pid) const override { return false; }
     sptr<RSIServiceToRenderConnection> serviceToRenderConnection_ = nullptr;
     sptr<IRSComposerToRenderConnection> composerToRenderConnection_ = nullptr;
     sptr<RSIRenderToServiceConnection> renderToServiceConnection_ = nullptr;
@@ -1831,6 +1832,77 @@ HWTEST_F(RSMainThreadTest, IsMultiDisplayTest003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsMultiDisplayTest004
+ * @tc.desc: Test IsMultiDisplay when single RSScreenRenderNode has internal connection type
+ * @tc.type: FUNC
+ * @tc.require: issue#24667
+ */
+HWTEST_F(RSMainThreadTest, IsMultiDisplayTest004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+    ASSERT_FALSE(mainThread->IsMultiDisplay());
+
+    mainThread->isMultiDisplayChange_ = false;
+    ASSERT_FALSE(mainThread->GetMultiDisplayChange());
+
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSScreenRenderNode>(100, 0, rsContext->weak_from_this());
+    auto childNode = std::make_shared<RSRenderNode>(300, true);
+    node->AddChild(childNode);
+    node->screenProperty_.Set<ScreenPropertyType::CONNECTION_TYPE>(
+        static_cast<uint32_t>(ScreenConnectionType::DISPLAY_CONNECTION_TYPE_INTERNAL));
+    auto& nodeMap = mainThread->context_->GetMutableNodeMap();
+    nodeMap.RegisterRenderNode(node);
+    ASSERT_FALSE(mainThread->IsMultiDisplay());
+    ASSERT_FALSE(mainThread->GetMultiDisplayChange());
+
+    nodeMap.UnregisterRenderNode(node->GetId());
+    ASSERT_FALSE(mainThread->IsMultiDisplay());
+}
+
+/**
+ * @tc.name: IsMultiDisplayTest005
+ * @tc.desc: Test IsMultiDisplay when multiple RSScreenRenderNode with different connection types
+ * @tc.type: FUNC
+ * @tc.require: issue#24667
+ */
+HWTEST_F(RSMainThreadTest, IsMultiDisplayTest005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+    ASSERT_FALSE(mainThread->IsMultiDisplay());
+
+    mainThread->isMultiDisplayChange_ = false;
+    ASSERT_FALSE(mainThread->GetMultiDisplayChange());
+
+    auto rsContext = std::make_shared<RSContext>();
+    auto node1 = std::make_shared<RSScreenRenderNode>(100, 0, rsContext->weak_from_this());
+    auto childNode1 = std::make_shared<RSRenderNode>(301, true);
+    node1->AddChild(childNode1);
+    node1->screenProperty_.Set<ScreenPropertyType::CONNECTION_TYPE>(
+        static_cast<uint32_t>(ScreenConnectionType::DISPLAY_CONNECTION_TYPE_INTERNAL));
+
+    auto node2 = std::make_shared<RSScreenRenderNode>(200, 0, rsContext->weak_from_this());
+    auto childNode2 = std::make_shared<RSRenderNode>(302, true);
+    node2->AddChild(childNode2);
+    node2->screenProperty_.Set<ScreenPropertyType::CONNECTION_TYPE>(
+        static_cast<uint32_t>(ScreenConnectionType::DISPLAY_CONNECTION_TYPE_EXTERNAL));
+
+    auto& nodeMap = mainThread->context_->GetMutableNodeMap();
+    nodeMap.RegisterRenderNode(node1);
+    nodeMap.RegisterRenderNode(node2);
+    ASSERT_TRUE(mainThread->IsMultiDisplay());
+    ASSERT_TRUE(mainThread->GetMultiDisplayChange());
+
+    nodeMap.UnregisterRenderNode(node1->GetId());
+    nodeMap.UnregisterRenderNode(node2->GetId());
+    ASSERT_FALSE(mainThread->IsMultiDisplay());
+}
+
+/**
  * @tc.name: HandlePowerStatusChangedTest001
  * @tc.desc: Test HandlePowerStatusChanged when ScreenPropertyType is not POWER_STATUS
  * @tc.type: FUNC
@@ -2910,6 +2982,52 @@ HWTEST_F(RSMainThreadTest, SurfaceOcclusionCallback005, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SurfaceOcclusionCallBackIfOnTreeStateChanged001
+ * @tc.desc: Verify SurfaceOcclusionCallBackIfOnTreeStateChanged detects on-tree state change
+ * @tc.type: FUNC
+ * @tc.require: issueI24779
+ */
+HWTEST_F(RSMainThreadTest, SurfaceOcclusionCallBackIfOnTreeStateChanged001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    // reset to avoid cross-test state leakage
+    mainThread->savedAppWindowNode_.clear();
+    mainThread->lastRegisteredSurfaceOnTree_.clear();
+
+    // prepare savedAppWindowNode_: two nodes both on tree
+    RSSurfaceRenderNodeConfig config;
+    config.id = 1;
+    auto node1 = std::make_shared<RSSurfaceRenderNode>(config);
+    ASSERT_NE(node1, nullptr);
+    node1->SetIsOnTheTree(true);
+    config.id = 2;
+    auto node2 = std::make_shared<RSSurfaceRenderNode>(config);
+    ASSERT_NE(node2, nullptr);
+    node2->SetIsOnTheTree(true);
+    mainThread->savedAppWindowNode_[1] = std::make_pair(node1, node1);
+    mainThread->savedAppWindowNode_[2] = std::make_pair(node2, node2);
+
+    // first call: lastRegisteredSurfaceOnTree_ was empty, now {1, 2} -> changed
+    bool result = mainThread->SurfaceOcclusionCallBackIfOnTreeStateChanged();
+    EXPECT_TRUE(result);
+
+    // second call: same on-tree state -> not changed
+    result = mainThread->SurfaceOcclusionCallBackIfOnTreeStateChanged();
+    EXPECT_FALSE(result);
+
+    // toggle node2 off the tree: registered set changes to {1} -> changed
+    node2->SetIsOnTheTree(false);
+    result = mainThread->SurfaceOcclusionCallBackIfOnTreeStateChanged();
+    EXPECT_TRUE(result);
+
+    // cleanup
+    mainThread->savedAppWindowNode_.clear();
+    mainThread->lastRegisteredSurfaceOnTree_.clear();
+}
+
+/**
  * @tc.name: CheckSurfaceOcclusionNeedProcess
  * @tc.desc: CheckSurfaceOcclusionNeedProcess Test while node out of appWindow
  * @tc.type: FUNC
@@ -2926,7 +3044,9 @@ HWTEST_F(RSMainThreadTest, CheckSurfaceOcclusionNeedProcess001, TestSize.Level1)
     ASSERT_NE(node, nullptr);
     mainThread->context_->GetMutableNodeMap().RegisterRenderNode(node);
     auto appNode = mainThread->savedAppWindowNode_.find(1);
-    appNode->second = {};
+    if (appNode != mainThread->savedAppWindowNode_.end()) {
+        appNode->second = {};
+    }
 
     bool result = mainThread->CheckSurfaceOcclusionNeedProcess(1);
     ASSERT_FALSE(result);
@@ -3144,7 +3264,6 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes004, TestSize.Level1)
     ret = psurf->RequestBuffer(bufferEntry.buffer, requestFence, requestConfig);
     ASSERT_EQ(ret, GSERROR_OK);
     rsSurfaceHandlerPtr_->SetBufferTransformTypeChanged(true);
-    rsSurfaceHandlerPtr_->SetSourceType(OHSurfaceSource::OH_SURFACE_SOURCE_VIDEO);
     ASSERT_TRUE(rsSurfaceHandlerPtr_->GetBufferTransformTypeChanged());
     mainThread->ConsumeAndUpdateAllNodes();
     mainThread->isUniRender_ = isUniRender;

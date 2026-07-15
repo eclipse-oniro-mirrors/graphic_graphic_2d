@@ -20,7 +20,7 @@
 
 using namespace testing;
 using namespace testing::ext;
-std::set<std::string> featureSet = {"ColorGamutConfig", "DrmConfig", "HwcConfig"};
+std::set<std::string> featureSet = {"ColorGamutConfig", "DrmConfig", "HwcConfig", "BackgroundRebuildConfig"};
 namespace OHOS {
 namespace Rosen {
 

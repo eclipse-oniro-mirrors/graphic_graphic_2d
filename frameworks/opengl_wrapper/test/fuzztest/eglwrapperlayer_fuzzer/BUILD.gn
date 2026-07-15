@@ -38,6 +38,7 @@ ohos_fuzztest("EGLWrapperLayerFuzzTest") {
     "graphic_surface:surface",
     "egl:libEGL",
     "opengles:libGLES",
+    "jsoncpp:jsoncpp",
   ]
 }
 

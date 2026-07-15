@@ -16,6 +16,8 @@
 #ifndef RENDER_SERVICE_BASE_EFFECT_RS_RENDER_SHAPE_BASE_H
 #define RENDER_SERVICE_BASE_EFFECT_RS_RENDER_SHAPE_BASE_H
 
+#include <cstdint>
+
 #include "effect/rs_render_effect_template.h"
 #include "effect/rs_render_property_tag.h"
 #include "transaction/rs_marshalling_helper.h"
@@ -26,6 +28,33 @@ namespace Rosen {
 namespace Drawing {
     class GEShaderShape;
 } // namespace Drawing
+
+// Depth guard for shape-tree recursion (Unmarshalling / GenerateGEVisualEffect / CalculateHash).
+// Caps nested shape depth to prevent stack-overflow DoS from attacker-crafted parcels or
+// server-built deep trees (e.g. nested RSUnionRenderNode subtrees, which bypass the deserialization
+// guard). One thread_local counter is shared by all three paths: the GenerateGEVisualEffect<->
+// CalculateHash cross-call in UpdateVisualEffectParamImpl does not double-count, because hash
+// recursion at generate-depth D only spans the subtree below D (depth M-D), so the peak stays at
+// the tree depth M. These paths are synchronous CPU work: do NOT add FFRT/coroutine suspension
+// inside them, or thread_local would stop tracking logical depth after a cross-thread resume.
+class RSB_EXPORT RSShapeRecursionGuard {
+public:
+    static constexpr int32_t MAX_DEPTH = 128;
+    RSShapeRecursionGuard()
+    {
+        ++Depth();
+    }
+    ~RSShapeRecursionGuard()
+    {
+        --Depth();
+    }
+    bool ExceedsLimit() const;
+    RSShapeRecursionGuard(const RSShapeRecursionGuard&) = delete;
+    RSShapeRecursionGuard& operator=(const RSShapeRecursionGuard&) = delete;
+
+private:
+    static int32_t& Depth();
+};
 
 class RSB_EXPORT RSNGRenderShapeBase : public RSNGRenderEffectBase<RSNGRenderShapeBase> {
 public:
@@ -39,12 +68,28 @@ public:
 
     const RectF& GetTransformDrawRect() const { return transformDrawRect_; }
 
+    // Owner identity: the render property instance that Attached this shape (its `this` pointer
+    // as uintptr_t). Only that property cascades Detach (see RSRenderProperty<shape>::OnDetach).
+    // Borrowers (ONLY_VALUE, no Attach) skip, so a shared SDFShape borrowed by e.g.
+    // FrostedGlass.Shape won't be Detach'd by the borrower and won't unregister inner
+    // sub-properties still used by the real owner. Uses the instance pointer (not GetId()) so
+    // default-constructed sub-properties (id 0) don't collide.
+    uintptr_t GetOwnerId() const { return ownerId_; }
+    void SetOwnerId(uintptr_t id) { ownerId_ = id; }
+
 protected:
     RectF transformDrawRect_;
+    uintptr_t ownerId_ = 0;
 
 private:
     friend class RSNGRenderShapeHelper;
 };
+
+// Opt-in: RSNGRenderShapeBase allows self-type-as-property (SHAPE_PTR) because all recursion
+// paths are guarded by RSShapeRecursionGuard (MAX_DEPTH=128). The static_assert in
+// RSNGRenderEffectTemplate bans this pattern for all other effect types (filter/mask/shader).
+template <>
+struct allow_self_type_property<RSNGRenderShapeBase> : std::true_type {};
 
 template<RSNGEffectType Type, typename... PropertyTags>
 class RSNGRenderShapeTemplate : public RSNGRenderEffectTemplate<RSNGRenderShapeBase, Type, PropertyTags...> {
@@ -58,6 +103,10 @@ public:
 
     std::shared_ptr<Drawing::GEVisualEffect> GenerateGEVisualEffect() override
     {
+        RSShapeRecursionGuard guard;
+        if (guard.ExceedsLimit()) {
+            return nullptr;
+        }
         RS_OPTIONAL_TRACE_FMT("RSRenderShape, Type: %s",
             RSNGRenderEffectHelper::GetEffectTypeString(Type).c_str());
         auto geShape = RSNGRenderEffectHelper::CreateGEVisualEffect(Type);
