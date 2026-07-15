@@ -310,15 +310,15 @@ void RSUIContext::DestroyModifiersDraw()
     if (auto transaction = GetRSTransaction()) {
         transaction->SetCommitTransactionCallback(nullptr);
     }
-    if (canvasModifiersDrawAgent_ != nullptr) {
-        canvasModifiersDrawAgent_->WaitAllTasksFinish();
-        canvasModifiersDrawAgent_->Destroy();
-        canvasModifiersDrawAgent_ = nullptr;
-    }
     if (modifiersDrawThread_ != nullptr) {
         modifiersDrawThread_->WaitAllTasksFinish();
         modifiersDrawThread_->Destroy();
         modifiersDrawThread_ = nullptr;
+    }
+    if (canvasModifiersDrawAgent_ != nullptr) {
+        canvasModifiersDrawAgent_->WaitAllTasksFinish();
+        canvasModifiersDrawAgent_->Destroy();
+        canvasModifiersDrawAgent_ = nullptr;
     }
 #endif
 }
