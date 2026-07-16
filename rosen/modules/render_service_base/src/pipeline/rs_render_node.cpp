@@ -1351,6 +1351,10 @@ void RSRenderNode::DumpNodeType(RSRenderNodeType nodeType, std::string& out)
             out += "WINDOW_KEYFRAME_NODE";
             break;
         }
+        case RSRenderNodeType::PROTECTIVE_SOLID_NODE: {
+            out += "PROTECTIVE_SOLID_NODE";
+            break;
+        }
         default: {
             out += "UNKNOWN_NODE";
             break;
