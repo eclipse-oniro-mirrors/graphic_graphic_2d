@@ -483,7 +483,7 @@ ADD_COMMAND(RSColorPickerCallback,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, COLOR_PICKER_CALLBACK,
         RSNodeCommandHelper::ColorPickerCallback, NodeId, pid_t, uint64_t, uint32_t))
 ADD_COMMAND(RSColorPickerDestroyInRender,
-    ARG(PERMISSION_APP, RS_NODE, COLOR_PICKER_DESTROY_IN_RENDER,
+    ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, COLOR_PICKER_DESTROY_IN_RENDER,
         RSNodeCommandHelper::ColorPickerDestroyInRender, NodeId, pid_t, uint64_t, uint8_t))
 
 ADD_COMMAND(RSUpdatePropertyDepthCameraPara,
