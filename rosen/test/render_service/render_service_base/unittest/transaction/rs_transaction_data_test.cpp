@@ -15,6 +15,8 @@
 
 #include <gtest/gtest.h>
 
+#include <parameters.h>
+
 #include "command/rs_base_node_command.h"
 #include "command/rs_command.h"
 #include "command/rs_command_factory.h"
@@ -973,6 +975,240 @@ HWTEST_F(RSTransactionDataTest, MarshallingNullCommandTest, TestSize.Level1)
     RSTransactionData dst;
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 0u);
+}
+
+/**
+ * @tc.name: SkippedCommandCount001
+ * @tc.desc: Test GetSkippedCommandCount returns 0 by default and after Clear
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+HWTEST_F(RSTransactionDataTest, SkippedCommandCount001, TestSize.Level1)
+{
+    RSTransactionData data;
+    EXPECT_EQ(data.GetSkippedCommandCount(), 0u);
+    data.skippedCommandCount_ = 5;
+    EXPECT_EQ(data.GetSkippedCommandCount(), 5u);
+    data.Clear();
+    EXPECT_EQ(data.GetSkippedCommandCount(), 0u);
+}
+
+/**
+ * @tc.name: BackwardCompatibility001
+ * @tc.desc: With property false (default), marshalling/unmarshalling round-trip is unchanged
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+HWTEST_F(RSTransactionDataTest, BackwardCompatibility001, TestSize.Level1)
+{
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "0");
+    RSTransactionData src;
+    NodeId nodeId1 = 100;
+    NodeId nodeId2 = 200;
+    std::unique_ptr<RSCommand> cmd1 = std::make_unique<RSBaseNodeDestroy>(nodeId1);
+    std::unique_ptr<RSCommand> cmd2 = std::make_unique<RSBaseNodeDestroy>(nodeId2);
+    src.AddCommand(cmd1, nodeId1, FollowType::FOLLOW_TO_PARENT);
+    src.AddCommand(cmd2, nodeId2, FollowType::FOLLOW_TO_PARENT);
+    Parcel parcel;
+    ASSERT_TRUE(src.Marshalling(parcel));
+    RSTransactionData dst;
+    ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
+    EXPECT_EQ(dst.GetCommandCount(), 2u);
+    EXPECT_EQ(dst.GetSkippedCommandCount(), 0u);
+}
+
+/**
+ * @tc.name: FormatNegotiation001
+ * @tc.desc: With property true, marshalling includes commandLen; round-trip succeeds
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+HWTEST_F(RSTransactionDataTest, FormatNegotiation001, TestSize.Level1)
+{
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "1");
+    RSTransactionData src;
+    NodeId nodeId1 = 100;
+    NodeId nodeId2 = 200;
+    std::unique_ptr<RSCommand> cmd1 = std::make_unique<RSBaseNodeDestroy>(nodeId1);
+    std::unique_ptr<RSCommand> cmd2 = std::make_unique<RSBaseNodeDestroy>(nodeId2);
+    src.AddCommand(cmd1, nodeId1, FollowType::FOLLOW_TO_PARENT);
+    src.AddCommand(cmd2, nodeId2, FollowType::FOLLOW_TO_PARENT);
+    Parcel parcel;
+    ASSERT_TRUE(src.Marshalling(parcel));
+    RSTransactionData dst;
+    ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
+    EXPECT_EQ(dst.GetCommandCount(), 2u);
+    EXPECT_EQ(dst.GetSkippedCommandCount(), 0u);
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "0");
+}
+
+/**
+ * @tc.name: UnmarshallingSkipAndContinue001
+ * @tc.desc: With property true, unregistered command is skipped; remaining commands processed
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+HWTEST_F(RSTransactionDataTest, UnmarshallingSkipAndContinue001, TestSize.Level1)
+{
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "1");
+    Parcel parcel;
+    parcel.WriteInt32(1);
+    parcel.WriteBool(false);
+    parcel.WriteUint64(1);
+    parcel.WriteUint8(1);
+    parcel.WriteUint8(1);
+    parcel.WriteUint32(4);
+    parcel.WriteUint16(0xFFFF);
+    parcel.WriteUint16(0xFFFF);
+    parcel.WriteBool(false);
+    parcel.WriteBool(false);
+    parcel.WriteInt32(0);
+    parcel.WriteUint64(0);
+    parcel.WriteUint64(0);
+    parcel.WriteInt32(0);
+    parcel.WriteUint64(0);
+    parcel.WriteUint64(0);
+    parcel.WriteInt32(-1);
+    parcel.WriteBool(false);
+    parcel.WriteUint64(0);
+    parcel.WriteUint8(0);
+#ifndef ROSEN_CROSS_PLATFORM
+    parcel.WriteInt32(-1);
+#endif
+    RSTransactionData dst;
+    ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
+    EXPECT_EQ(dst.GetCommandCount(), 0u);
+    EXPECT_EQ(dst.GetSkippedCommandCount(), 1u);
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "0");
+}
+
+/**
+ * @tc.name: AllSkippedReturnsNullptr001
+ * @tc.desc: With property true, all commands skipped -> Unmarshalling returns nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+HWTEST_F(RSTransactionDataTest, AllSkippedReturnsNullptr001, TestSize.Level1)
+{
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "1");
+    Parcel parcel;
+    parcel.WriteInt32(1);
+    parcel.WriteBool(false);
+    parcel.WriteUint64(1);
+    parcel.WriteUint8(1);
+    parcel.WriteUint8(1);
+    parcel.WriteUint32(4);
+    parcel.WriteUint16(0xFFFF);
+    parcel.WriteUint16(0xFFFF);
+    parcel.WriteBool(false);
+    parcel.WriteBool(false);
+    parcel.WriteInt32(0);
+    parcel.WriteUint64(0);
+    parcel.WriteUint64(0);
+    parcel.WriteInt32(0);
+    parcel.WriteUint64(0);
+    parcel.WriteUint64(0);
+    parcel.WriteInt32(-1);
+    parcel.WriteBool(false);
+    parcel.WriteUint64(0);
+    parcel.WriteUint8(0);
+#ifndef ROSEN_CROSS_PLATFORM
+    parcel.WriteInt32(-1);
+#endif
+    auto result = RSTransactionData::Unmarshalling(parcel);
+    EXPECT_EQ(result, nullptr);
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "0");
+}
+
+/**
+ * @tc.name: BoundsValidation001
+ * @tc.desc: With property true, invalid commandLen values cause abort
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+HWTEST_F(RSTransactionDataTest, BoundsValidation001, TestSize.Level1)
+{
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "1");
+    {
+        Parcel parcel;
+        parcel.WriteInt32(1);
+        parcel.WriteBool(false);
+        parcel.WriteUint64(1);
+        parcel.WriteUint8(1);
+        parcel.WriteUint8(1);
+        parcel.WriteUint32(0);
+        RSTransactionData dst;
+        EXPECT_FALSE(dst.UnmarshallingCommand(parcel));
+    }
+    {
+        Parcel parcel;
+        parcel.WriteInt32(1);
+        parcel.WriteBool(false);
+        parcel.WriteUint64(1);
+        parcel.WriteUint8(1);
+        parcel.WriteUint8(1);
+        parcel.WriteUint32(2);
+        RSTransactionData dst;
+        EXPECT_FALSE(dst.UnmarshallingCommand(parcel));
+    }
+    {
+        Parcel parcel;
+        parcel.WriteInt32(1);
+        parcel.WriteBool(false);
+        parcel.WriteUint64(1);
+        parcel.WriteUint8(1);
+        parcel.WriteUint8(1);
+        parcel.WriteUint32(0xFFFFFFFF);
+        RSTransactionData dst;
+        EXPECT_FALSE(dst.UnmarshallingCommand(parcel));
+    }
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "0");
+}
+
+/**
+ * @tc.name: RewindReadIsolation001
+ * @tc.desc: With property true, failed command body does not corrupt next command
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+HWTEST_F(RSTransactionDataTest, RewindReadIsolation001, TestSize.Level1)
+{
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "1");
+    Parcel parcel;
+    parcel.WriteInt32(2);
+    parcel.WriteBool(false);
+    parcel.WriteUint64(1);
+    parcel.WriteUint8(1);
+    parcel.WriteUint8(1);
+    parcel.WriteUint32(4);
+    parcel.WriteUint16(0xFFFF);
+    parcel.WriteUint16(0xFFFF);
+    parcel.WriteUint64(2);
+    parcel.WriteUint8(1);
+    parcel.WriteUint8(1);
+    parcel.WriteUint32(4);
+    parcel.WriteUint16(0xFFFF);
+    parcel.WriteUint16(0xFFFF);
+    parcel.WriteBool(false);
+    parcel.WriteBool(false);
+    parcel.WriteInt32(0);
+    parcel.WriteUint64(0);
+    parcel.WriteUint64(0);
+    parcel.WriteInt32(0);
+    parcel.WriteUint64(0);
+    parcel.WriteUint64(0);
+    parcel.WriteInt32(-1);
+    parcel.WriteBool(false);
+    parcel.WriteUint64(0);
+    parcel.WriteUint8(0);
+#ifndef ROSEN_CROSS_PLATFORM
+    parcel.WriteInt32(-1);
+#endif
+    RSTransactionData dst;
+    ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
+    EXPECT_EQ(dst.GetCommandCount(), 0u);
+    EXPECT_EQ(dst.GetSkippedCommandCount(), 2u);
+    system::SetParameter("persist.sys.graphic.commandLenPrefix.enabled", "0");
 }
 
 } // namespace Rosen

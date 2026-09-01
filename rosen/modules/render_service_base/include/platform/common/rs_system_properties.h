@@ -399,6 +399,7 @@ public:
     static bool GetPreparePhaseQuickSkipEnabled();
     static bool GetUnmarshalParallelEnabled();
     static uint32_t GetUnmarshalParallelMinDataSize();
+    static bool GetCommandLengthPrefixEnabled();
     static bool GetBootCompleted();
     static bool GetClipRRectOptimizationEnabled();
     static bool GetNodeMemClearEnabled();

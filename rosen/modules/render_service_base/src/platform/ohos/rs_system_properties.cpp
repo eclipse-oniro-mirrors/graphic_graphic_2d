@@ -1833,6 +1833,14 @@ uint32_t RSSystemProperties::GetUnmarshalParallelMinDataSize()
     return unmarshalParallelMinDataSize;
 }
 
+bool RSSystemProperties::GetCommandLengthPrefixEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("persist.sys.graphic.commandLenPrefix.enabled", "false");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return std::atoi(enable) == 1;
+}
+
 bool RSSystemProperties::GetSceneBoardIsPcMode()
 {
     static CachedHandle g_Handle = CachedParameterCreate("persist.sceneboard.ispcmode", "false");
