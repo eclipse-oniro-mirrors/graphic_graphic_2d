@@ -56,6 +56,40 @@ struct NodeIdPosTag {};
 #endif
 #endif
 
+// class body shared by every ADD_PREFIX_COMMAND build mode below
+#define RS_DECLARE_PREFIX_COMMAND_CLASS(ALIAS, TYPE)                       \
+    class RSB_EXPORT ALIAS : public RSCommandTemplate<TYPE> {              \
+    public:                                                                \
+        using CmdTemplate = RSCommandTemplate<TYPE>;                       \
+        using CmdTemplate::CmdTemplate;                                    \
+        bool UseLengthPrefix() const override                              \
+        {                                                                  \
+            return true;                                                   \
+        }                                                                  \
+    };
+
+// Same as ADD_COMMAND, but the generated command additionally opts in to the commandLen
+// prefix marshalling path (RSCommand::UseLengthPrefix), intended for large-payload commands.
+#ifdef _WIN32
+    #ifdef ROSEN_INSTANTIATE_COMMAND_TEMPLATE
+        #define ADD_PREFIX_COMMAND(ALIAS, TYPE)      \
+            RS_DECLARE_PREFIX_COMMAND_CLASS(ALIAS, TYPE) \
+            template class RSCommandTemplate<TYPE>;
+    #else
+        #define ADD_PREFIX_COMMAND(ALIAS, TYPE) RS_DECLARE_PREFIX_COMMAND_CLASS(ALIAS, TYPE)
+    #endif
+#else
+    #ifdef ROSEN_INSTANTIATE_COMMAND_TEMPLATE
+        #define ADD_PREFIX_COMMAND(ALIAS, TYPE)      \
+            RS_DECLARE_PREFIX_COMMAND_CLASS(ALIAS, TYPE) \
+            template class RSB_EXPORT RSCommandTemplate<TYPE>;
+    #else
+        #define ADD_PREFIX_COMMAND(ALIAS, TYPE)      \
+            RS_DECLARE_PREFIX_COMMAND_CLASS(ALIAS, TYPE) \
+            extern template class RSB_EXPORT RSCommandTemplate<TYPE>;
+    #endif
+#endif
+
 template<RSCommandPermissionType permissionType, typename NodeIdPos, uint16_t commandType, uint16_t commandSubType,
     auto processFunc, typename... Params>
 class RSCommandTemplate : public RSCommand {

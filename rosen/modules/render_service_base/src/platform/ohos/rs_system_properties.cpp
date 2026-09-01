@@ -1835,10 +1835,9 @@ uint32_t RSSystemProperties::GetUnmarshalParallelMinDataSize()
 
 bool RSSystemProperties::GetCommandLengthPrefixEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("persist.sys.graphic.commandLenPrefix.enabled", "false");
-    int changed = 0;
-    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) == 1;
+    static bool commandLengthPrefixEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.commandLenPrefix.enabled", "0")).c_str()) != 0;
+    return commandLengthPrefixEnabled;
 }
 
 bool RSSystemProperties::GetSceneBoardIsPcMode()
