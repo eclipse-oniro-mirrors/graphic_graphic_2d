@@ -56,11 +56,14 @@ struct NodeIdPosTag {};
 #endif
 #endif
 
-// class body shared by every ADD_PREFIX_COMMAND build mode below
-#define RS_DECLARE_PREFIX_COMMAND_CLASS(ALIAS, TYPE)                       \
-    class RSB_EXPORT ALIAS : public RSCommandTemplate<TYPE> {              \
+// class body shared by every ADD_PREFIX_COMMAND build mode below.
+// Variadic: TYPE is forwarded from ADD_PREFIX_COMMAND after being fully expanded
+// (ARG(...) unwrapped), so its commas are exposed and would be re-split by a named
+// parameter; __VA_ARGS__ rejoins them into the original template argument list.
+#define RS_DECLARE_PREFIX_COMMAND_CLASS(ALIAS, ...)                        \
+    class RSB_EXPORT ALIAS : public RSCommandTemplate<__VA_ARGS__> {       \
     public:                                                                \
-        using CmdTemplate = RSCommandTemplate<TYPE>;                       \
+        using CmdTemplate = RSCommandTemplate<__VA_ARGS__>;                \
         using CmdTemplate::CmdTemplate;                                    \
         bool UseLengthPrefix() const override                              \
         {                                                                  \
