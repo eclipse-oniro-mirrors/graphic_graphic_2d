@@ -50,6 +50,7 @@ bool MarshallingCommandBody(Parcel& parcel, RSCommand& command)
     size_t bodyStart = 0;
     // Step1 record prefix position and write a placeholder commandLen
     // (the per-command wire flag is written by the caller before entering here)
+    parcel.WriteBool(true);
     lenPos = parcel.GetWritePosition();
     parcel.WriteUint32(0);
     bodyStart = parcel.GetWritePosition();
@@ -224,6 +225,7 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
             }
             bool useLengthPrefix = isLengthPrefixEnabled && command->UseLengthPrefix();
             if (!useLengthPrefix) {
+                parcel.WriteBool(false);
                 success = success && isHeadWriteSuccess && command->Marshalling(parcel);
             } else if (!isHeadWriteSuccess || !MarshallingCommandBody(parcel, *command)) {
                 // drop the whole record (nodeId/followType/hasCommand/length prefix/partial body),
@@ -486,7 +488,6 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
     }
 
     std::unique_lock<std::mutex> payloadLock(commandMutex_, std::defer_lock);
-    bool isLengthPrefixEnabled = RSSystemProperties::GetCommandLengthPrefixEnabled();
     for (size_t i = 0; i < len; i++) {
         if (!isUniRender) {
             if (!parcel.ReadUint64(nodeId)) {
@@ -505,7 +506,7 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
         if (hasCommand) {
             size_t cmdEnd = 0;
             bool prefixEnabled = false;
-            if (isLengthPrefixEnabled && !parcel.ReadBool(prefixEnabled)) {
+            if (!parcel.ReadBool(prefixEnabled)) {
                 ROSEN_LOGE("RSTransactionData::ReadBool cannot read prefixEnabled");
                 return false;
             }
