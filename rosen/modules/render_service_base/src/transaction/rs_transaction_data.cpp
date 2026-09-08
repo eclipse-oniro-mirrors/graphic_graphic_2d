@@ -13,6 +13,14 @@
  * limitations under the License.
  */
 
+#include "transaction/rs_transaction_data.h"
+
+#include "info_collection/rs_gpu_dirty_region_collection.h"
+#include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
+#include "rs_profiler.h"
+#include "rs_trace.h"
+
+#include "animation/rs_animation_trace_utils.h"
 #include "command/rs_base_node_command.h"
 #include "command/rs_canvas_node_command.h"
 #include "command/rs_command.h"
@@ -20,15 +28,10 @@
 #include "command/rs_node_command.h"
 #include "command/rs_ui_director_command.h"
 #include "common/rs_optional_trace.h"
-#include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
-#include "rs_profiler.h"
-#include "rs_trace.h"
-#include "transaction/rs_transaction_data.h"
+#include "transaction/rs_marshalling_helper.h"
 #include "transaction/rs_transaction_data_callback_manager.h"
-#include "animation/rs_animation_trace_utils.h"
-#include "info_collection/rs_gpu_dirty_region_collection.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -48,9 +51,10 @@ bool MarshallingCommandBody(Parcel& parcel, RSCommand& command)
 {
     size_t lenPos = 0;
     size_t bodyStart = 0;
-    // Step1 record prefix position and write a placeholder commandLen
-    // (the per-command wire flag is written by the caller before entering here)
-    parcel.WriteBool(true);
+    // Step1 write the per-command prefix flag (version-negotiated: declared via
+    // RSPARCELVER_ADD_COMMAND_LEN_PREFIX in the transaction version header) and a
+    // placeholder commandLen which is backfilled after the body is marshalled
+    RSMarshallingHelper::CompatibleMarshalling(parcel, true, RSPARCELVER_ADD_COMMAND_LEN_PREFIX);
     lenPos = parcel.GetWritePosition();
     parcel.WriteUint32(0);
     bodyStart = parcel.GetWritePosition();
@@ -225,7 +229,9 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
             }
             bool useLengthPrefix = isLengthPrefixEnabled && command->UseLengthPrefix();
             if (!useLengthPrefix) {
-                parcel.WriteBool(false);
+                // same version-negotiated flag as in MarshallingCommandBody, set to false here:
+                // this record keeps the origin format (no commandLen prefix follows)
+                RSMarshallingHelper::CompatibleMarshalling(parcel, false, RSPARCELVER_ADD_COMMAND_LEN_PREFIX);
                 success = success && isHeadWriteSuccess && command->Marshalling(parcel);
             } else if (!isHeadWriteSuccess || !MarshallingCommandBody(parcel, *command)) {
                 // drop the whole record (nodeId/followType/hasCommand/length prefix/partial body),
@@ -505,9 +511,12 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
         }
         if (hasCommand) {
             size_t cmdEnd = 0;
+            // version-negotiated flag: low-version senders don't write it at all, the
+            // transaction version check then falls back to default false (origin format)
             bool prefixEnabled = false;
-            if (!parcel.ReadBool(prefixEnabled)) {
-                ROSEN_LOGE("RSTransactionData::ReadBool cannot read prefixEnabled");
+            if (!RSMarshallingHelper::CompatibleUnmarshalling(
+                    parcel, prefixEnabled, false, RSPARCELVER_ADD_COMMAND_LEN_PREFIX)) {
+                ROSEN_LOGE("RSTransactionData::UnmarshallingCommand cannot read prefixEnabled");
                 return false;
             }
             if (prefixEnabled && !ParseCommandLengthPrefix(parcel, cmdEnd)) {

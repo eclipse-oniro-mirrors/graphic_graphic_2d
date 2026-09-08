@@ -14,13 +14,13 @@
  */
 
 #include <gtest/gtest.h>
-
 #include <parameters.h>
 
 #include "command/rs_base_node_command.h"
 #include "command/rs_canvas_node_command.h"
 #include "command/rs_command.h"
 #include "draw/cmd_list.h"
+#include "transaction/rs_marshalling_helper.h"
 #include "transaction/rs_transaction_data.h"
 
 using namespace testing;
@@ -53,6 +53,24 @@ public:
         return true;
     }
 };
+
+// Writes the commit-transaction parcel head (parcelType + transaction version header) the same
+// way FillParcelWithTransactionData does. The receiver's per-command version check probes the
+// header (offset CommitTransactionFlagsOffset) to learn whether the sender writes the
+// prefixEnabled flag, so every test parcel built by a "new sender" must start with it.
+void WriteTransactionHead(Parcel& parcel)
+{
+    parcel.WriteInt32(0); // parcelType: 0 = normal parcel
+    RSMarshallingHelper::MarshallingTransactionVer(parcel);
+}
+
+// Consumes the head written by WriteTransactionHead before UnmarshallingCommand, mirroring the
+// stub side (ReadInt32 + UnmarshallingTransactionVer).
+void ReadTransactionHead(Parcel& parcel)
+{
+    parcel.ReadInt32(); // parcelType
+    RSMarshallingHelper::UnmarshallingTransactionVer(parcel);
+}
 
 // writes the fixed trailer fields that follow the command list
 void WriteTrailer(Parcel& parcel)
@@ -105,12 +123,14 @@ HWTEST_F(RSTransactionDataPrefixTest, PrefixCommandRoundTrip001, TestSize.Level1
 {
     RSTransactionData src;
     NodeId nodeId = 100;
-    std::unique_ptr<RSCommand> cmd = std::make_unique<RSCanvasNodeUpdateRecording>(
-        nodeId, std::make_shared<Drawing::DrawCmdList>(), 0);
+    std::unique_ptr<RSCommand> cmd =
+        std::make_unique<RSCanvasNodeUpdateRecording>(nodeId, std::make_shared<Drawing::DrawCmdList>(), 0);
     src.AddCommand(cmd, nodeId, FollowType::FOLLOW_TO_PARENT);
     Parcel parcel;
+    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
+    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 1u);
     EXPECT_EQ(dst.GetSkippedCommandCount(), 0u);
@@ -129,8 +149,10 @@ HWTEST_F(RSTransactionDataPrefixTest, NonPrefixCommandKeepsOriginPath001, TestSi
     std::unique_ptr<RSCommand> cmd = std::make_unique<RSBaseNodeDestroy>(nodeId);
     src.AddCommand(cmd, nodeId, FollowType::FOLLOW_TO_PARENT);
     Parcel parcel;
+    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
+    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 1u);
     EXPECT_EQ(dst.GetSkippedCommandCount(), 0u);
@@ -153,8 +175,10 @@ HWTEST_F(RSTransactionDataPrefixTest, MixedCommandsRoundTrip001, TestSize.Level1
     src.AddCommand(cmd1, nodeId1, FollowType::FOLLOW_TO_PARENT);
     src.AddCommand(cmd2, nodeId2, FollowType::FOLLOW_TO_PARENT);
     Parcel parcel;
+    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
+    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 2u);
     EXPECT_EQ(dst.GetSkippedCommandCount(), 0u);
@@ -169,11 +193,13 @@ HWTEST_F(RSTransactionDataPrefixTest, MixedCommandsRoundTrip001, TestSize.Level1
 HWTEST_F(RSTransactionDataPrefixTest, SkipUnregisteredCommand001, TestSize.Level1)
 {
     Parcel parcel;
+    WriteTransactionHead(parcel);
     parcel.WriteInt32(1);    // command count
     parcel.WriteBool(false); // isUniRender
     WriteBogusPrefixedCommand(parcel, 1);
     WriteTrailer(parcel);
     RSTransactionData dst;
+    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 0u);
     EXPECT_EQ(dst.GetSkippedCommandCount(), 1u);
@@ -188,10 +214,12 @@ HWTEST_F(RSTransactionDataPrefixTest, SkipUnregisteredCommand001, TestSize.Level
 HWTEST_F(RSTransactionDataPrefixTest, AllSkippedReturnsNullptr001, TestSize.Level1)
 {
     Parcel parcel;
+    WriteTransactionHead(parcel);
     parcel.WriteInt32(1);    // command count
     parcel.WriteBool(false); // isUniRender
     WriteBogusPrefixedCommand(parcel, 1);
     WriteTrailer(parcel);
+    ReadTransactionHead(parcel);
     EXPECT_EQ(RSTransactionData::Unmarshalling(parcel), nullptr);
 }
 
@@ -204,12 +232,14 @@ HWTEST_F(RSTransactionDataPrefixTest, AllSkippedReturnsNullptr001, TestSize.Leve
 HWTEST_F(RSTransactionDataPrefixTest, SkipIsolation001, TestSize.Level1)
 {
     Parcel parcel;
+    WriteTransactionHead(parcel);
     parcel.WriteInt32(2);    // command count
     parcel.WriteBool(false); // isUniRender
     WriteBogusPrefixedCommand(parcel, 1);
     WriteBogusPrefixedCommand(parcel, 2);
     WriteTrailer(parcel);
     RSTransactionData dst;
+    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 0u);
     EXPECT_EQ(dst.GetSkippedCommandCount(), 2u);
@@ -225,6 +255,7 @@ HWTEST_F(RSTransactionDataPrefixTest, CommandLenBounds001, TestSize.Level1)
 {
     for (uint32_t invalidLen : { 0u, 2u, 0xFFFFFFFFu }) {
         Parcel parcel;
+        WriteTransactionHead(parcel);
         parcel.WriteInt32(1);    // command count
         parcel.WriteBool(false); // isUniRender
         parcel.WriteUint64(1);   // nodeId
@@ -233,6 +264,7 @@ HWTEST_F(RSTransactionDataPrefixTest, CommandLenBounds001, TestSize.Level1)
         parcel.WriteBool(true);  // wire flag: commandLen prefix follows
         parcel.WriteUint32(invalidLen);
         RSTransactionData dst;
+        ReadTransactionHead(parcel);
         EXPECT_FALSE(dst.UnmarshallingCommand(parcel));
     }
 }
@@ -254,7 +286,71 @@ HWTEST_F(RSTransactionDataPrefixTest, MarshalFailDrop001, TestSize.Level1)
     src.AddCommand(failCmd, nodeId1, FollowType::FOLLOW_TO_PARENT);
     src.AddCommand(goodCmd, nodeId2, FollowType::FOLLOW_TO_PARENT);
     Parcel parcel;
+    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
+    RSTransactionData dst;
+    ReadTransactionHead(parcel);
+    ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
+    EXPECT_EQ(dst.GetCommandCount(), 1u);
+    EXPECT_EQ(dst.GetSkippedCommandCount(), 0u);
+}
+
+/**
+ * @tc.name: LowVersionSenderWithoutHeader001
+ * @tc.desc: Parcel from a low-version sender (no version header, no prefixEnabled flag per
+ *           command) is parsed in the origin format and must not fail or misalign
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+HWTEST_F(RSTransactionDataPrefixTest, LowVersionSenderWithoutHeader001, TestSize.Level1)
+{
+    Parcel parcel;
+    parcel.WriteInt32(1);    // command count
+    parcel.WriteBool(false); // isUniRender
+    std::unique_ptr<RSCommand> cmd = std::make_unique<RSBaseNodeDestroy>(1);
+    parcel.WriteUint64(1);              // nodeId
+    parcel.WriteUint8(1);               // followType
+    parcel.WriteUint8(1);               // hasCommand
+    parcel.WriteUint16(cmd->GetType()); // origin format: no prefixEnabled flag
+    parcel.WriteUint16(cmd->GetSubType());
+    parcel.WriteUint64(1); // param: NodeId
+    WriteTrailer(parcel);
+    RSTransactionData dst;
+    ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
+    EXPECT_EQ(dst.GetCommandCount(), 1u);
+    EXPECT_EQ(dst.GetSkippedCommandCount(), 0u);
+}
+
+/**
+ * @tc.name: LowVersionSenderWithoutFlag001
+ * @tc.desc: A released (low-version) sender writes the version header with only the old flags
+ *           (no RSPARCELVER_ADD_COMMAND_LEN_PREFIX bit); the receiver must fall back to the
+ *           origin format via the version negotiation
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+HWTEST_F(RSTransactionDataPrefixTest, LowVersionSenderWithoutFlag001, TestSize.Level1)
+{
+    constexpr uint64_t oldFlagsOnly =
+        (1ull << RSPARCELVER_ADD_ANIMTOKEN) | (1ull << RSPARCELVER_ADD_ISPROPDIRTY) | (1ull << RSPARCELVER_ADD_NONEED);
+    Parcel parcel;
+    parcel.WriteInt32(0);  // parcelType
+    parcel.WriteInt64(-1); // version header, old flags only
+    parcel.WriteUint64(oldFlagsOnly);
+    parcel.WriteUint64(0);
+    parcel.WriteUint64(0);
+    parcel.WriteUint64(0);
+    parcel.WriteInt32(1);    // command count
+    parcel.WriteBool(false); // isUniRender
+    std::unique_ptr<RSCommand> cmd = std::make_unique<RSBaseNodeDestroy>(1);
+    parcel.WriteUint64(1);              // nodeId
+    parcel.WriteUint8(1);               // followType
+    parcel.WriteUint8(1);               // hasCommand
+    parcel.WriteUint16(cmd->GetType()); // origin format: no prefixEnabled flag
+    parcel.WriteUint16(cmd->GetSubType());
+    parcel.WriteUint64(1); // param: NodeId
+    WriteTrailer(parcel);
+    ReadTransactionHead(parcel);
     RSTransactionData dst;
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 1u);
