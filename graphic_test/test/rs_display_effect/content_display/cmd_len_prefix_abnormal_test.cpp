@@ -171,7 +171,7 @@ private:
 GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_MarshalFailDropped_Test)
 {
     auto testNode1 = CreateLayoutNode({ 0, 0, 1000, 450 });
-    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_CYAN);
     });
 
@@ -196,7 +196,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_MarshalFa
 GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_UnregisteredTypeSkipped_Test)
 {
     auto testNode1 = CreateLayoutNode({ 0, 0, 1000, 450 });
-    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_YELLOW);
     });
 
@@ -218,10 +218,10 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_Unregiste
 GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_EmptyRecordingDropped_Test)
 {
     auto testNode1 = CreateLayoutNode({ 0, 0, 1000, 450 });
-    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {});
+    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {});
 
     auto testNode2 = CreateLayoutNode({ 0, 550, 1000, 450 });
-    testNode2->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode2->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
     });
 
@@ -245,7 +245,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_LegacyNul
     testNode1->AddCommand(legacyCmd, testNode1->IsRenderServiceNode());
 
     auto testNode2 = CreateLayoutNode({ 0, 550, 1000, 450 });
-    testNode2->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode2->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_CYAN);
     });
 
@@ -265,7 +265,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_LegacyNul
 GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_OversizedRecordingSplit_Test)
 {
     auto testNode1 = CreateLayoutNode({ 0, 0, 1000, 900 });
-    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         Drawing::Brush brush;
         brush.SetColor(Drawing::Color::COLOR_YELLOW);
         canvas->AttachBrush(brush);
@@ -276,7 +276,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_Oversized
     });
 
     auto testNode2 = CreateLayoutNode({ 0, 1000, 1000, 450 });
-    testNode2->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode2->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
     });
 
@@ -298,7 +298,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_MixedAbno
 {
     // healthy RSCanvasNodeUpdateRecording
     auto testNode1 = CreateLayoutNode({ 0, 0, 1000, 300 });
-    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 300), Drawing::Color::COLOR_GREEN);
     });
 
@@ -333,11 +333,11 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_RepeatedR
     for (int i = 0; i < REPEATED_UPDATE_COUNT; i++) {
         Drawing::Color color = (i % 2 == 0) ? Drawing::Color::COLOR_RED : Drawing::Color::COLOR_YELLOW;
         testNode1->DrawOnNode(
-            ModifierNG::RSModifierType::CONTENT_STYLE, [color](std::shared_ptr<Drawing::Canvas> canvas) {
+            RSModifierType::CONTENT_STYLE, [color](std::shared_ptr<Drawing::Canvas> canvas) {
                 FillRect(canvas, Drawing::Rect(0, 0, 1000, 900), color);
             });
     }
-    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 900), Drawing::Color::COLOR_CYAN);
     });
 
