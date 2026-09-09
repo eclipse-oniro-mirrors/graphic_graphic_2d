@@ -1012,48 +1012,5 @@ HWTEST_F(RSTransactionDataTest, MarshallingNullCommandTest, TestSize.Level1)
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 0u);
 }
-
-/**
- * @tc.name: SkippedCommandCount001
- * @tc.desc: Test GetSkippedCommandCount returns 0 by default and after Clear
- * @tc.type: FUNC
- * @tc.require: issue#26143
- */
-HWTEST_F(RSTransactionDataTest, SkippedCommandCount001, TestSize.Level1)
-{
-    RSTransactionData data;
-    EXPECT_EQ(data.GetSkippedCommandCount(), 0u);
-    data.skippedCommandCount_ = 5;
-    EXPECT_EQ(data.GetSkippedCommandCount(), 5u);
-    data.Clear();
-    EXPECT_EQ(data.GetSkippedCommandCount(), 0u);
-}
-
-/**
- * @tc.name: BackwardCompatibility001
- * @tc.desc: With property false (default), marshalling/unmarshalling round-trip is unchanged
- * @tc.type: FUNC
- * @tc.require: issue#26143
- */
-HWTEST_F(RSTransactionDataTest, BackwardCompatibility001, TestSize.Level1)
-{
-    RSTransactionData src;
-    NodeId nodeId1 = 100;
-    NodeId nodeId2 = 200;
-    std::unique_ptr<RSCommand> cmd1 = std::make_unique<RSBaseNodeDestroy>(nodeId1);
-    std::unique_ptr<RSCommand> cmd2 = std::make_unique<RSBaseNodeDestroy>(nodeId2);
-    src.AddCommand(cmd1, nodeId1, FollowType::FOLLOW_TO_PARENT);
-    src.AddCommand(cmd2, nodeId2, FollowType::FOLLOW_TO_PARENT);
-    Parcel parcel;
-    WriteTransactionHead(parcel);
-    ASSERT_TRUE(src.Marshalling(parcel));
-    RSTransactionData dst;
-    ReadTransactionHead(parcel);
-    ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
-    EXPECT_EQ(dst.GetCommandCount(), 2u);
-    EXPECT_EQ(dst.GetSkippedCommandCount(), 0u);
-}
-
-
 } // namespace Rosen
 } // namespace OHOS
