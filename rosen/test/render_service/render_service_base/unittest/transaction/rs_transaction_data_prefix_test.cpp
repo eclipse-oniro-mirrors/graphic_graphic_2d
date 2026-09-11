@@ -58,9 +58,9 @@ public:
 };
 
 // Writes the commit-transaction parcel head (parcelType + transaction version header) the same
-// way FillParcelWithTransactionData does. The receiver's per-command version check probes the
-// header (offset CommitTransactionFlagsOffset) to learn whether the sender writes the
-// prefixEnabled flag, so every test parcel built by a "new sender" must start with it.
+// way FillParcelWithTransactionData does. The per-command prefixEnabled flag no longer depends
+// on this header, but production commit parcels still carry it, so tests mirror the real wire
+// format.
 void WriteTransactionHead(Parcel& parcel)
 {
     parcel.WriteInt32(0); // parcelType: 0 = normal parcel
@@ -309,6 +309,35 @@ HWTEST_F(RSTransactionDataPrefixTest, MarshalFailDrop001, TestSize.Level1)
     ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 1u);
+    EXPECT_EQ(dst.GetSkippedCommandCount(), 0u);
+}
+
+/**
+ * @tc.name: NoVersionHeaderRoundTrip001
+ * @tc.desc: Parcels without the transaction version header (RSApplicationAgentProxy path)
+ *           round-trip prefix and non-prefix commands: the per-command flag is always on the
+ *           wire, so the agent path uses the same format as the commit path
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+HWTEST_F(RSTransactionDataPrefixTest, NoVersionHeaderRoundTrip001, TestSize.Level1)
+{
+    RSTransactionData src;
+    NodeId nodeId1 = 100;
+    NodeId nodeId2 = 200;
+    auto drawing = MakeRecording();
+    std::unique_ptr<RSCommand> prefixCmd =
+        std::make_unique<RSCanvasNodeUpdateRecording>(nodeId1, drawing, 0);
+    std::unique_ptr<RSCommand> originCmd = std::make_unique<RSBaseNodeDestroy>(nodeId2);
+    src.AddCommand(prefixCmd, nodeId1, FollowType::FOLLOW_TO_PARENT);
+    src.AddCommand(originCmd, nodeId2, FollowType::FOLLOW_TO_PARENT);
+    // no WriteTransactionHead: agent/composer parcels carry no version header
+    Parcel parcel;
+    ASSERT_TRUE(src.Marshalling(parcel));
+    // no ReadTransactionHead either: the stub unmarshalls the transaction right after the token
+    RSTransactionData dst;
+    ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
+    EXPECT_EQ(dst.GetCommandCount(), 2u);
     EXPECT_EQ(dst.GetSkippedCommandCount(), 0u);
 }
 

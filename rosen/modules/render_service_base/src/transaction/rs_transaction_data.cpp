@@ -51,10 +51,9 @@ bool MarshallingCommandBody(Parcel& parcel, RSCommand& command)
 {
     size_t lenPos = 0;
     size_t bodyStart = 0;
-    // Step1 write the per-command prefix flag (version-negotiated: declared via
-    // RSPARCELVER_ADD_COMMAND_LEN_PREFIX in the transaction version header) and a
-    // placeholder commandLen which is backfilled after the body is marshalled
-    RSMarshallingHelper::CompatibleMarshalling(parcel, true, RSPARCELVER_ADD_COMMAND_LEN_PREFIX);
+    // Step1 write the per-command prefix flag and a placeholder commandLen which is
+    // backfilled with the real body length after the body is marshalled
+    parcel.WriteBool(true);
     lenPos = parcel.GetWritePosition();
     parcel.WriteUint32(0);
     bodyStart = parcel.GetWritePosition();
@@ -194,6 +193,9 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
     size_t skippedMarshalCount = 0;
     static bool isUniRender = RSSystemProperties::GetUniRenderEnabled();
     success = success && parcel.WriteBool(isUniRender);
+    // The per-command prefix flag is written and read unconditionally (no version
+    // negotiation): sender and receiver must run the same build, and the flag value itself
+    // tells the receiver whether a commandLen prefix follows.
     bool isLengthPrefixEnabled = RSSystemProperties::GetCommandLengthPrefixEnabled();
     while (marshallingIndex_ < payload_.size()) {
         auto& [nodeId, followType, command] = payload_[marshallingIndex_];
@@ -229,9 +231,9 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
             }
             bool useLengthPrefix = isLengthPrefixEnabled && command->UseLengthPrefix();
             if (!useLengthPrefix) {
-                // same version-negotiated flag as in MarshallingCommandBody, set to false here:
-                // this record keeps the origin format (no commandLen prefix follows)
-                RSMarshallingHelper::CompatibleMarshalling(parcel, false, RSPARCELVER_ADD_COMMAND_LEN_PREFIX);
+                // same per-command flag as in MarshallingCommandBody, set to false here:
+                // this record keeps the origin format (no commandLen prefix follows).
+                isHeadWriteSuccess = isHeadWriteSuccess && parcel.WriteBool(false);
                 success = success && isHeadWriteSuccess && command->Marshalling(parcel);
             } else if (!isHeadWriteSuccess || !MarshallingCommandBody(parcel, *command)) {
                 // drop the whole record (nodeId/followType/hasCommand/length prefix/partial body),
@@ -511,11 +513,10 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
         }
         if (hasCommand) {
             size_t cmdEnd = 0;
-            // version-negotiated flag: low-version senders don't write it at all, the
-            // transaction version check then falls back to default false (origin format)
+            // per-command flag written unconditionally by the sender: true means a commandLen
+            // prefix follows the flag, false means the origin format
             bool prefixEnabled = false;
-            if (!RSMarshallingHelper::CompatibleUnmarshalling(
-                    parcel, prefixEnabled, false, RSPARCELVER_ADD_COMMAND_LEN_PREFIX)) {
+            if (!parcel.ReadBool(prefixEnabled)) {
                 ROSEN_LOGE("RSTransactionData::UnmarshallingCommand cannot read prefixEnabled");
                 return false;
             }
