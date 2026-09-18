@@ -18,8 +18,16 @@
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_img.h"
 
+#include "animation/rs_animation_timing_curve.h"
+#include "animation/rs_animation_timing_protocol.h"
+#include "command/rs_base_node_command.h"
+#include "command/rs_canvas_drawing_node_command.h"
+#include "command/rs_canvas_node_command.h"
 #include "command/rs_command.h"
+#include "command/rs_effect_node_command.h"
+#include "command/rs_frame_rate_linker_command.h"
 #include "command/rs_node_command.h"
+#include "feature/hyper_graphic_manager/rs_frame_rate_linker.h"
 #include "modifier_ng/custom/rs_content_style_modifier.h"
 #include "transaction/rs_interfaces.h"
 #include "ui/rs_canvas_node.h"
@@ -120,6 +128,10 @@ void FillRect(std::shared_ptr<Drawing::Canvas> canvas, const Drawing::Rect& rect
     canvas->DrawRect(rect);
     canvas->DetachBrush();
 }
+
+// Server-only node ids for commands that must not interfere with the client-side nodes of
+// the test; far away from this process's node id counter.
+constexpr uint64_t GHOST_ID_OFFSET = 0x100000;
 } // namespace
 
 class CmdLenPrefixAbnormalTest : public RSGraphicTest {
@@ -146,7 +158,8 @@ public:
     // convenience: create a canvas node, lay it out and attach it to the root
     std::shared_ptr<RSCanvasNode> CreateLayoutNode(const Vector4f& bounds)
     {
-        auto canvasNode = RSCanvasNode::Create(true);
+        auto canvasNode =
+            RSCanvasNode::Create(true, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         auto node = std::static_pointer_cast<RSNode>(canvasNode);
         SetNode(node, bounds);
         GetRootNode()->AddChild(canvasNode);
@@ -181,7 +194,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_MarshalFa
     std::unique_ptr<RSCommand> failCmd = std::make_unique<MarshalFailPrefixCommand>(testNode2->GetId());
     testNode2->AddCommand(failCmd, testNode2->IsRenderServiceNode());
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
 }
 
 /*
@@ -204,7 +217,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_Unregiste
     std::unique_ptr<RSCommand> bogusCmd = std::make_unique<UnregisteredPrefixCommand>(testNode2->GetId());
     testNode2->AddCommand(bogusCmd, testNode2->IsRenderServiceNode());
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
 }
 
 /*
@@ -225,7 +238,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_EmptyReco
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
     });
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
 }
 
 /*
@@ -249,7 +262,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_LegacyNul
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_CYAN);
     });
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
 }
 
 /*
@@ -280,7 +293,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_Oversized
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
     });
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
 }
 
 /*
@@ -316,7 +329,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_MixedAbno
     std::unique_ptr<RSCommand> failCmd = std::make_unique<MarshalFailPrefixCommand>(testNode3->GetId());
     testNode3->AddCommand(failCmd, testNode3->IsRenderServiceNode());
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
 }
 
 /*
@@ -341,6 +354,186 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_RepeatedR
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 900), Drawing::Color::COLOR_CYAN);
     });
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
+}
+
+/*
+ * @tc.name: LenPrefix_ParcelCanvasLifecycle_Test
+ * @tc.desc: One transaction (~16 records) covering the CANVAS_NODE lifecycle and BASE_NODE
+ *           hierarchy commands: the layout helper emits CANVAS_NODE_CREATE, ADD_MODIFIER_NG,
+ *           ADD_CHILD and UPDATE_RECORDING(prefix); BASE_NODE_ADD_CHILD, BASE_NODE_MOVE_CHILD,
+ *           CANVAS_NODE_SET_HDR_PRESENT, CANVAS_NODE_SET_COLOR_GAMUT, BASE_NODE_CLEAR_CHILDREN
+ *           and CANVAS_NODE_CLEAR_RECORDING are injected directly via RSNode::AddCommand, with
+ *           one unmarshalling-failing record (unregistered type pair, skipped via the
+ *           commandLen prefix) inserted in the middle; the parcel ends with a full-node green
+ *           fill after the abnormal record. Expected screenshot: green rect with green
+ *           border on the top node, bottom node gone.
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelCanvasLifecycle_Test)
+{
+    auto mainNode = CreateLayoutNode({ 0, 0, 1000, 450 });
+    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+        FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
+    });
+    auto carrierNode = CreateLayoutNode({ 0, 550, 1000, 450 });
+
+    // BASE_NODE/ADD_CHILD: carrier re-parented under the main node
+    std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeAddChild>(
+        carrierNode->GetId(), mainNode->GetId(), -1);
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    // BASE_NODE/MOVE_CHILD
+    command = std::make_unique<RSBaseNodeMoveChild>(carrierNode->GetId(), mainNode->GetId(), 0);
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    // CANVAS_NODE/SET_HDR_PRESENT
+    command = std::make_unique<RSCanvasNodeSetHDRPresent>(carrierNode->GetId(), false);
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    // CANVAS_NODE/SET_COLOR_GAMUT
+    command = std::make_unique<RSCanvasNodeSetColorGamut>(carrierNode->GetId(), 0);
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    // mid-parcel abnormal record
+    command = std::make_unique<UnregisteredPrefixCommand>(carrierNode->GetId());
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    // BASE_NODE/CLEAR_CHILDREN: drops the carrier
+    command = std::make_unique<RSBaseNodeClearChild>(mainNode->GetId());
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    // CANVAS_NODE/CLEAR_RECORDING: no-op, the carrier never recorded
+    command = std::make_unique<RSCanvasNodeClearRecording>(carrierNode->GetId());
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+
+    // the last record of the parcel: the full-node green fill lands after the abnormal
+    // record and must still apply, proving the rest of the parcel survives the skip
+    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+        FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_GREEN);
+    });
+
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
+}
+
+/*
+ * @tc.name: LenPrefix_ParcelModifierZSort_Test
+ * @tc.desc: One transaction (~14 records) covering the RS_NODE family: the layout helper
+ *           emits CANVAS_NODE_CREATE, ADD_MODIFIER_NG (+ MODIFIER_NG_ATTACH_PROPERTY),
+ *           ADD_CHILD and UPDATE_RECORDING(prefix); SET_DRAW_NODE_TYPE (RSSetDrawNodeType),
+ *           UPDATE_MODIFIER_DRAW_CMD_LIST_NG (prefix, RSUpdatePropertyDrawCmdListNG with an
+ *           empty DrawCmdList), REMOVE_MODIFIER_NG (bounds modifier of the carrier node is
+ *           removed) and SORT_CHILDREN_BY_INDEX (RSSortChildrenByZIndex) are injected
+ *           directly via RSNode::AddCommand, with one unmarshalling-failing record inserted
+ *           in the middle; the parcel ends with a full-node blue fill after the abnormal
+ *           record. Expected screenshot: blue rect on the top node, bottom node gone.
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelModifierZSort_Test)
+{
+    auto mainNode = CreateLayoutNode({ 0, 0, 1000, 450 });
+    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+        FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
+    });
+    auto carrierNode = CreateLayoutNode({ 0, 550, 1000, 450 });
+
+    // RS_NODE/SET_DRAW_NODE_TYPE
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSetDrawNodeType>(
+        mainNode->GetId(), DrawNodeType::DrawPropertyType);
+    mainNode->AddCommand(command, mainNode->IsRenderServiceNode());
+    // RS_NODE/UPDATE_MODIFIER_DRAW_CMD_LIST_NG (prefix) with an empty DrawCmdList
+    auto emptyCmdList = std::make_shared<Drawing::DrawCmdList>(0, 0);
+    command = std::make_unique<RSUpdatePropertyDrawCmdListNG>(carrierNode->GetId(), emptyCmdList, 0);
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    // RS_NODE/REMOVE_MODIFIER_NG: bounds modifier of the carrier is removed
+    command = std::make_unique<RSRemoveModifierNG>(
+        carrierNode->GetId(), ModifierNG::RSModifierType::BOUNDS, 0);
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    // mid-parcel abnormal record
+    command = std::make_unique<UnregisteredPrefixCommand>(carrierNode->GetId());
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    // RS_NODE/SORT_CHILDREN_BY_INDEX
+    command = std::make_unique<RSSortChildrenByZIndex>(GetRootNode()->GetId());
+    mainNode->AddCommand(command, mainNode->IsRenderServiceNode());
+
+    // the last record of the parcel: the full-node blue fill lands after the abnormal
+    // record and must still apply, proving the rest of the parcel survives the skip
+    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+        FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_BLUE);
+    });
+
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
+}
+
+/*
+ * @tc.name: LenPrefix_ParcelCrossFamily_Test
+ * @tc.desc: One transaction (~16 records) covering the remaining command families:
+ *           EFFECT_NODE_CREATE, CANVAS_DRAWING_NODE_CREATE and CANVAS_DRAWING_NODE_
+ *           RESET_SURFACE (on ghost ids), ANIMATION_CREATE_CURVE (RSNode::Animate),
+ *           FRAME_RATE_LINKER_UPDATE_RANGE, plus a ghost canvas node driven through
+ *           CANVAS_NODE_CREATE / BASE_NODE_ADD_CHILD / BASE_NODE_REMOVE_FROM_TREE /
+ *           BASE_NODE_DESTROY, all injected directly via RSNode::AddCommand except the
+ *           animation, with one unmarshalling-failing record inserted in the middle; the
+ *           parcel ends with a full-node green fill on the main node after the abnormal
+ *           record. Expected screenshot: green rect on the top node, blue rect (content
+ *           modifier) on the bottom node; ghost nodes stay invisible.
+ * @tc.type: FUNC
+ * @tc.require: issue#26143
+ */
+GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelCrossFamily_Test)
+{
+    auto uiContext = RSGraphicTestDirector::Instance().GetRSUIContext();
+    auto mainNode = CreateLayoutNode({ 0, 0, 1000, 450 });
+    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+        FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
+    });
+    auto carrierNode = CreateLayoutNode({ 0, 550, 1000, 450 });
+    carrierNode->AddModifier(std::make_shared<NativeRectModifier>()); // ADD_MODIFIER_NG + DRAW_CMD_LIST_NG(prefix)
+
+    NodeId ghostEffectId = carrierNode->GetId() + GHOST_ID_OFFSET;
+    // EFFECT_NODE/CREATE on a ghost id
+    std::unique_ptr<RSCommand> command = std::make_unique<RSEffectNodeCreate>(ghostEffectId, false);
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    NodeId ghostDrawingId = ghostEffectId + 1;
+    // CANVAS_DRAWING_NODE/CREATE on a ghost id
+    command = std::make_unique<RSCanvasDrawingNodeCreate>(ghostDrawingId, false);
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+    // CANVAS_DRAWING_NODE/RESET_SURFACE
+    command = std::make_unique<RSCanvasDrawingNodeResetSurface>(ghostDrawingId, 100, 100, 0);
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+
+    // ANIMATION/ANIMATION_CREATE_CURVE: long animation stays near its start value at capture
+    RSAnimationTimingProtocol protocol;
+    protocol.SetDuration(5000);
+    RSNode::Animate(uiContext, protocol, RSAnimationTimingCurve::EASE,
+        [mainNode]() { mainNode->SetAlpha(0.9f); });
+
+    // FRAME_RATE_LINKER/UPDATE_RANGE
+    auto frameRateLinker = RSFrameRateLinker::Create();
+    command = std::make_unique<RSFrameRateLinkerUpdateRange>(
+        frameRateLinker->GetId(), FrameRateRange(30, 120, 60), -1);
+    mainNode->AddCommand(command, mainNode->IsRenderServiceNode());
+
+    // mid-parcel abnormal record
+    command = std::make_unique<UnregisteredPrefixCommand>(carrierNode->GetId());
+    carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
+
+    NodeId ghostCanvasId = ghostEffectId + 2;
+    // CANVAS_NODE/CREATE on a ghost id, then the full BASE_NODE retire sequence
+    command = std::make_unique<RSCanvasNodeCreate>(ghostCanvasId, false);
+    mainNode->AddCommand(command, mainNode->IsRenderServiceNode());
+    // BASE_NODE/ADD_CHILD
+    command = std::make_unique<RSBaseNodeAddChild>(ghostCanvasId, GetRootNode()->GetId(), -1);
+    mainNode->AddCommand(command, mainNode->IsRenderServiceNode());
+    // BASE_NODE/REMOVE_FROM_TREE
+    command = std::make_unique<RSBaseNodeRemoveFromTree>(ghostCanvasId);
+    mainNode->AddCommand(command, mainNode->IsRenderServiceNode());
+    // BASE_NODE/DESTROY
+    command = std::make_unique<RSBaseNodeDestroy>(ghostCanvasId);
+    mainNode->AddCommand(command, mainNode->IsRenderServiceNode());
+
+    // the last record of the parcel: the full-node green fill lands after the abnormal
+    // record and must still apply, proving the rest of the parcel survives the skip
+    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+        FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_GREEN);
+    });
+
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
 }
 } // namespace OHOS::Rosen
