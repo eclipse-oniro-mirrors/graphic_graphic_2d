@@ -224,11 +224,23 @@ void RSScreenRenderNode::UpdateRenderParams()
         return;
     }
     auto mirroredNode = GetMirrorSource().lock();
-    if (mirroredNode) {
+    bool hasWindowRecordChild = false;
+    auto children = GetChildren();
+    if (children) {
+        for (const auto& child : *children) {
+            auto displayNode = child ? child->ReinterpretCastTo<RSLogicalDisplayRenderNode>() : nullptr;
+            if (displayNode && displayNode->IsWindowRecordActive()) {
+                hasWindowRecordChild = true;
+                break;
+            }
+        }
+    }
+    if (mirroredNode && !hasWindowRecordChild) {
         screenParams->mirrorSourceDrawable_ = mirroredNode->GetRenderDrawable();
     } else {
         screenParams->mirrorSourceDrawable_.reset();
     }
+    screenParams->hasWindowRecordDisplay_ = hasWindowRecordChild;
     screenParams->childDisplayCount_ = GetChildrenCount();
     screenParams->screenInfo_ = screenInfo_;
     screenParams->screenProperty_ = screenProperty_;

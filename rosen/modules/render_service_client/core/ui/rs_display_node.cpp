@@ -289,6 +289,14 @@ void RSDisplayNode::SetVirtualScreenMuteStatus(bool virtualScreenMuteStatus)
         "virtualScreenMuteStatus: %{public}d", GetId(), virtualScreenMuteStatus);
 }
 
+void RSDisplayNode::SetWindowRecordConfig(const RSWindowRecordConfig& config)
+{
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSDisplayNodeSetWindowRecordConfig>(GetId(), config);
+    AddCommand(command, true);
+    ROSEN_LOGI("RSDisplayNode::%{public}s, NodeId[%{public}" PRIu64 "]", __func__, GetId());
+}
+
 void RSDisplayNode::OnBoundsSizeChanged()
 {
     auto bounds = GetStagingProperties().GetBounds();

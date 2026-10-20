@@ -39,6 +39,7 @@ enum RSDisplayNodeCommandType : uint16_t {
     DISPLAY_NODE_SET_VIRTUAL_SCREEN_MUTE_STATUS = 11,
     DISPLAY_NODE_SET_FORCE_CLOSE_HDR = 12,
     DISPLAY_NODE_SET_DISPLAY_CONTENT_RECT = 13,
+    DISPLAY_NODE_SET_WINDOW_RECORD_CONFIG = 14,
 };
 
 class RSB_EXPORT DisplayNodeCommandHelper {
@@ -56,6 +57,7 @@ public:
     static void RemoveDisplayNodeFromTree(RSContext&, NodeId);
     static void ClearModifiersByPid(RSContext&, NodeId, int32_t pid);
     static void SetVirtualScreenMuteStatus(RSContext&, NodeId, bool);
+    static void SetWindowRecordConfig(RSContext&, NodeId, const RSWindowRecordConfig&);
 };
 
 ADD_COMMAND(RSDisplayNodeCreate,
@@ -91,6 +93,9 @@ ADD_COMMAND(RSDisplayNodeClearModifiersByPid,
 ADD_COMMAND(RSDisplayNodeSetVirtualScreenMuteStatus,
     ARG(PERMISSION_SYSTEM, NodeIdPosTag<0>, DISPLAY_NODE, DISPLAY_NODE_SET_VIRTUAL_SCREEN_MUTE_STATUS,
         DisplayNodeCommandHelper::SetVirtualScreenMuteStatus, NodeId, bool))
+ADD_COMMAND(RSDisplayNodeSetWindowRecordConfig,
+    ARG(PERMISSION_SYSTEM, NodeIdPosTag<0>, DISPLAY_NODE, DISPLAY_NODE_SET_WINDOW_RECORD_CONFIG,
+        DisplayNodeCommandHelper::SetWindowRecordConfig, NodeId, RSWindowRecordConfig))
 } // namespace Rosen
 } // namespace OHOS
 

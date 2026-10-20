@@ -47,6 +47,9 @@ public:
         isFirstTimeToProcessor_ = false;
     }
 
+    std::weak_ptr<RSLogicalDisplayRenderNode> GetCachedSourceNode() const { return cachedSourceNode_; }
+    void SetCachedSourceNode(std::shared_ptr<RSLogicalDisplayRenderNode> node) { cachedSourceNode_ = std::move(node); }
+
     ScreenRotation GetOriginScreenRotation() const
     {
         return originScreenRotation_;
@@ -115,6 +118,7 @@ private:
     std::shared_ptr<Drawing::Surface> offscreenSurface_ = nullptr;
     std::shared_ptr<RSPaintFilterCanvas> offscreenCanvas_ = nullptr;
     RSPaintFilterCanvas* curCanvas_ = nullptr;
+    std::weak_ptr<RSLogicalDisplayRenderNode> cachedSourceNode_;
     // backup current canvas before offscreen render
     RSPaintFilterCanvas* canvasBackup_ = nullptr;
     std::unordered_set<NodeId> currentBlackList_ = {};

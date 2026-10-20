@@ -85,6 +85,18 @@ public:
         RSLogicalDisplayRenderParams& params,
         const std::shared_ptr<RSProcessor>& processor);
 
+    static void HandleWindowRecordScreen(
+        RSScreenRenderNodeDrawable& drawable,
+        RSScreenRenderParams& params,
+        const std::shared_ptr<RSProcessor>& processor);
+
+    static void HandleWindowRecord(
+        RSLogicalDisplayRenderNodeDrawable& drawable,
+        RSLogicalDisplayRenderParams& params);
+
+    static Drawing::RectI ComputeGravityRect(
+        int32_t canvasW, int32_t canvasH, int32_t contentW, int32_t contentH, WindowRecordFit fit);
+
     static void HandleVirtualExtendScreen(
         RSScreenRenderNodeDrawable& drawable,
         RSScreenRenderParams& params,

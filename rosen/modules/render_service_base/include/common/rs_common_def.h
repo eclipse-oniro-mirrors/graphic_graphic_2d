@@ -464,6 +464,24 @@ struct RSSurfaceCaptureConfig {
     }
 };
 
+enum class WindowRecordFit {
+    ASPECT_FIT_TOP_LEFT,
+    ASPECT_FIT,
+};
+
+struct RSWindowRecordConfig {
+    bool needDrawMouse = false;
+    WindowRecordFit renderFit = WindowRecordFit::ASPECT_FIT_TOP_LEFT;
+    std::vector<NodeId> surfaceNodeIds = {};
+
+    bool operator==(const RSWindowRecordConfig& other) const
+    {
+        return needDrawMouse == other.needDrawMouse &&
+               renderFit == other.renderFit &&
+               surfaceNodeIds == other.surfaceNodeIds;
+    }
+};
+
 struct RSSurfaceCaptureBlurParam {
     bool isNeedBlur = false;
     float blurRadius = 1E-6;
@@ -702,6 +720,7 @@ struct RSDisplayNodeConfig {
     bool isSync = false;
     uint32_t mirrorSourceRotation = 4; // default INVALID_SCREEN_ROTATION
     float positionZ = 0.0f;
+    RSWindowRecordConfig windowRecordConfig;
 
     std::string ToString() const
     {
@@ -710,7 +729,8 @@ struct RSDisplayNodeConfig {
                ", sourceDisplayNodeId:" + std::to_string(mirrorNodeId) +
                ", isSync:" + std::to_string(isSync) +
                ", mirrorSourceRotation:" + std::to_string(mirrorSourceRotation) +
-               ", positionZ:" + std::to_string(positionZ) + "]";
+               ", positionZ:" + std::to_string(positionZ) +
+               ", surfaceNodeIdsCount:" + std::to_string(windowRecordConfig.surfaceNodeIds.size()) + "]";
     }
 };
 

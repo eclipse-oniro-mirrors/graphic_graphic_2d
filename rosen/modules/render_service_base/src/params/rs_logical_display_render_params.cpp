@@ -53,6 +53,8 @@ void RSLogicalDisplayRenderParams::OnSync(const std::unique_ptr<RSRenderParams>&
     targetLogicalDisplayRenderParam->offsetY_ = offsetY_;
     targetLogicalDisplayRenderParam->fixedWidth_ = fixedWidth_;
     targetLogicalDisplayRenderParam->fixedHeight_ = fixedHeight_;
+    targetLogicalDisplayRenderParam->windowRecordConfig_ = windowRecordConfig_;
+    targetLogicalDisplayRenderParam->recordSurfaceNodes_ = recordSurfaceNodes_;
     targetLogicalDisplayRenderParam->hasDstAlphaBlendModeNode_ = hasDstAlphaBlendModeNode_;
 
     RSRenderParams::OnSync(target);

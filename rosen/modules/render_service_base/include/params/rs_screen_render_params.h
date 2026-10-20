@@ -75,6 +75,10 @@ public:
     {
         return isMirrorScreen_;
     }
+    bool HasWindowRecordDisplay() const
+    {
+        return hasWindowRecordDisplay_;
+    }
     bool IsFirstVisitCrossNodeDisplay() const
     {
         return isFirstVisitCrossNodeDisplay_;
@@ -289,6 +293,7 @@ private:
     uint32_t childDisplayCount_ = 0;
     HdrStatus screenHDRStatus_ = HdrStatus::NO_HDR;
     bool isMirrorScreen_ = false;
+    bool hasWindowRecordDisplay_ = false;
     bool isFirstVisitCrossNodeDisplay_ = false;
     bool hasChildCrossNode_ = false;
     bool isMainAndLeashSurfaceDirty_ = false;

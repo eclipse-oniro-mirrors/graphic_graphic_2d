@@ -16,6 +16,7 @@
 #include "rs_multi_screen_util.h"
 
 #include <algorithm>
+#include <climits>
 
 #include "common/rs_optional_trace.h"
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
@@ -34,8 +35,9 @@
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
 #include "pipeline/render_thread/rs_virtual_screen_parallel_manager.h"
+#include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/main_thread/rs_main_thread.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "rs_profiler_capture_recorder.h"
@@ -1063,6 +1065,206 @@ std::pair<MultiScreenParams, bool> RSMultiScreenUtil::GetMultiScreenParams(RSLog
     multiScreenParams.mirrorSourceScreenParams = mirrorSourceScreenParams;
 
     return { multiScreenParams, true };
+}
+
+namespace {
+Drawing::RectI ComputeRecordBBox(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& recordNodes)
+{
+    int32_t left = INT32_MAX;
+    int32_t top = INT32_MAX;
+    int32_t right = INT32_MIN;
+    int32_t bottom = INT32_MIN;
+    for (const auto& weakNode : recordNodes) {
+        auto node = weakNode.lock();
+        if (!node || !node->GetRenderParams() || !node->IsMainWindowType()) {
+            continue;
+        }
+        const auto& rect = node->GetRenderParams()->GetAbsDrawRect();
+        left = std::min(left, rect.GetLeft());
+        top = std::min(top, rect.GetTop());
+        right = std::max(right, rect.GetRight());
+        bottom = std::max(bottom, rect.GetBottom());
+    }
+    return {left, top, right, bottom};
+}
+std::shared_ptr<RSLogicalDisplayRenderNode> FindWindowRecordSourceDisplay(
+    const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& recordNodes)
+{
+    // RS derives the source display itself (not the caller): anchor on the first
+    // main-window-type surface in the set and walk up to its logical display.
+    for (const auto& weakNode : recordNodes) {
+        auto surfaceNode = weakNode.lock();
+        if (!surfaceNode || !surfaceNode->IsMainWindowType()) {
+            continue;
+        }
+        auto ancestor = surfaceNode->GetParent().lock();
+        while (ancestor) {
+            auto display = ancestor->ReinterpretCastTo<RSLogicalDisplayRenderNode>();
+            if (display) {
+                return display;
+            }
+            ancestor = ancestor->GetParent().lock();
+        }
+    }
+    return nullptr;
+}
+
+void ApplyGravityTransform(RSPaintFilterCanvas* curCanvas, const Drawing::RectI& bbox,
+    int32_t canvasW, int32_t canvasH, WindowRecordFit fit)
+{
+    if (bbox.GetLeft() >= bbox.GetRight() || bbox.GetTop() >= bbox.GetBottom()) {
+        return;
+    }
+    int32_t contentW = bbox.GetRight() - bbox.GetLeft();
+    int32_t contentH = bbox.GetBottom() - bbox.GetTop();
+    auto targetRect = ComputeGravityRect(canvasW, canvasH, contentW, contentH, fit);
+    curCanvas->ClipRect(targetRect, Drawing::ClipOp::INTERSECT, false);
+    float sx = static_cast<float>(targetRect.GetWidth()) / contentW;
+    float sy = static_cast<float>(targetRect.GetHeight()) / contentH;
+    float tx = static_cast<float>(targetRect.GetLeft()) - static_cast<float>(bbox.GetLeft()) * sx;
+    float ty = static_cast<float>(targetRect.GetTop()) - static_cast<float>(bbox.GetTop()) * sy;
+    curCanvas->Translate(tx, ty);
+    curCanvas->Scale(sx, sy);
+}
+} // namespace
+
+Drawing::RectI RSMultiScreenUtil::ComputeGravityRect(int32_t canvasW, int32_t canvasH,
+    int32_t contentW, int32_t contentH, WindowRecordFit fit)
+{
+    float scale = std::min(static_cast<float>(canvasW) / contentW,
+                           static_cast<float>(canvasH) / contentH);
+    int32_t scaledW = static_cast<int32_t>(contentW * scale);
+    int32_t scaledH = static_cast<int32_t>(contentH * scale);
+    int32_t x = (fit == WindowRecordFit::ASPECT_FIT_TOP_LEFT) ? 0 : (canvasW - scaledW) / 2;
+    int32_t y = (fit == WindowRecordFit::ASPECT_FIT_TOP_LEFT) ? 0 : (canvasH - scaledH) / 2;
+    return {x, y, x + scaledW, y + scaledH};
+}
+
+void RSMultiScreenUtil::HandleWindowRecordScreen(
+    RSScreenRenderNodeDrawable& drawable,
+    RSScreenRenderParams& params,
+    const std::shared_ptr<RSProcessor>& processor)
+{
+    // Nothing drawable (no resolvable main in any record config on this screen):
+    // skip before the processor requests an output buffer, so the consumer surface
+    // receives no frame at all instead of a blank one (AC-1.4, 2026-09-22 decision)
+    for (const auto& displayDrawable : params.GetDisplayDrawables()) {
+        if (!displayDrawable) {
+            continue;
+        }
+        auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable->GetRenderParams().get());
+        if (!displayParams || !displayParams->IsWindowRecordActive()) {
+            continue;
+        }
+        auto sourceNode = FindWindowRecordSourceDisplay(displayParams->GetRecordSurfaceNodes());
+        if (!sourceNode) {
+            RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s no drawable main, skip without buffer request", __func__);
+            drawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
+            return;
+        }
+        std::static_pointer_cast<RSLogicalDisplayRenderNodeDrawable>(displayDrawable)->SetCachedSourceNode(sourceNode);
+    }
+    auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
+    if (!processor || !processor->InitForRenderThread(drawable, renderEngine, 0)) {
+        drawable.SetDrawSkipType(DrawSkipType::RENDER_ENGINE_NULL);
+        RS_LOGE("RSMultiScreenUtil::%{public}s processor init failed", __func__);
+        return;
+    }
+    auto expandProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
+    if (!expandProcessor) {
+        drawable.SetDrawSkipType(DrawSkipType::EXPAND_PROCESSOR_NULL);
+        RS_LOGE("RSMultiScreenUtil::%{public}s expandProcessor is null", __func__);
+        return;
+    }
+    RSUniRenderThread::BufferManagerGuard bufferGuard;
+    drawable.curCanvas_ = expandProcessor->GetCanvas();
+    auto& curCanvas = drawable.curCanvas_;
+    if (!curCanvas) {
+        RS_LOGE("RSMultiScreenUtil::%{public}s canvas is null", __func__);
+        return;
+    }
+    curCanvas->Save();
+    curCanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
+    drawable.RSRenderNodeDrawable::OnDraw(*curCanvas);
+    curCanvas->RestoreToCount(0);
+    processor->PostProcess();
+    bufferGuard.SetAcquireFence(expandProcessor->GetFrameAcquireFence());
+    drawable.SetDrawSkipType(DrawSkipType::MIRROR_DRAWABLE_SKIP);
+}
+
+void RSMultiScreenUtil::HandleWindowRecord(
+    RSLogicalDisplayRenderNodeDrawable& drawable,
+    RSLogicalDisplayRenderParams& params)
+{
+    auto curCanvas = drawable.curCanvas_;
+    if (!curCanvas) {
+        RS_LOGE("RSMultiScreenUtil::%{public}s canvas is null", __func__);
+        return;
+    }
+    const auto& config = params.GetWindowRecordConfig();
+    auto sourceNode = drawable.GetCachedSourceNode().lock();
+    if (!sourceNode) {
+        RS_LOGE("RSMultiScreenUtil::%{public}s source display not found", __func__);
+        return;
+    }
+    auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
+    auto sourceDrawable = std::static_pointer_cast<RSRenderNodeDrawable>(
+        sourceNode->GetRenderDrawable());
+    if (!sourceDrawable || !sourceDrawable->ShouldPaint()) {
+        RS_LOGE("RSMultiScreenUtil::%{public}s source drawable invalid", __func__);
+        return;
+    }
+    auto bbox = ComputeRecordBBox(params.GetRecordSurfaceNodes());
+    curCanvas->Save();
+    ApplyGravityTransform(curCanvas, bbox,
+        curCanvas->GetWidth(), curCanvas->GetHeight(), config.renderFit);
+    auto sourceParams = static_cast<RSLogicalDisplayRenderParams*>(sourceDrawable->GetRenderParams().get());
+    if (sourceParams) {
+        curCanvas->ConcatMatrix(sourceParams->GetMatrix());
+    }
+    // Set whitelist + capture mode so surface OnCapture filters non-recorded surfaces.
+    // The whitelist matches LeashPersistentIds (same id space as the cast-screen
+    // whitelist): a recorded window passes via its first-level leash root. INVALID
+    // ids must stay out of the set -- 0 would match every leashless window.
+    std::unordered_set<NodeId> ids;
+    for (const auto& weakNode : params.GetRecordSurfaceNodes()) {
+        auto surfaceNode = weakNode.lock();
+        auto leashPersistentId = surfaceNode ? surfaceNode->GetLeashPersistentId() : INVALID_LEASH_PERSISTENTID;
+        if (leashPersistentId != INVALID_LEASH_PERSISTENTID) {
+            ids.insert(leashPersistentId);
+        }
+    }
+    if (config.needDrawMouse) {
+        NodeId cursorId = RSPointerWindowManager::Instance().GetRsNodeId();
+        if (cursorId != INVALID_NODEID) {
+            ids.insert(cursorId);
+        }
+    }
+    RSUniRenderThread::Instance().SetWhiteList(ids);
+    RSUniRenderThread::SetCaptureParam(CaptureParam(false, false, true));
+    RSUniRenderThread::GetCaptureParam().virtualScreenId_ = params.GetScreenId();
+    RSRenderParams::SetParentSurfaceMatrix(curCanvas->GetTotalMatrix());
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    bool isOpDropped = false;
+    bool isMirrorScreen = false;
+    if (uniParam) {
+        isOpDropped = uniParam->IsOpDropped();
+        uniParam->SetOpDropped(false);
+        // Open CheckIfSurfaceSkipInMirrorOrScreenshot so whitelist membership
+        // actually filters this traversal; restored right after OnCapture.
+        isMirrorScreen = uniParam->IsMirrorScreen();
+        uniParam->SetIsMirrorScreen(true);
+    }
+    sourceDrawable->RSRenderNodeDrawable::OnCapture(*curCanvas);
+    if (uniParam) {
+        uniParam->SetOpDropped(isOpDropped);
+        uniParam->SetIsMirrorScreen(isMirrorScreen);
+    }
+    RSUniRenderThread::ResetCaptureParam();
+    RSUniRenderThread::Instance().SetWhiteList({});
+    curCanvas->Restore();
+    RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s surfaces[%zu] fit[%d]",
+        __func__, config.surfaceNodeIds.size(), static_cast<int>(config.renderFit));
 }
 
 } // namespace OHOS::Rosen::DrawableV2

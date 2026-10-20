@@ -23,6 +23,7 @@
 #include "params/rs_render_params.h"
 #include "params/rs_screen_render_params.h"
 namespace OHOS::Rosen {
+class RSSurfaceRenderNode;
 class RSB_EXPORT RSLogicalDisplayRenderParams : public RSRenderParams {
 public:
     explicit RSLogicalDisplayRenderParams(NodeId nodeId);
@@ -159,6 +160,15 @@ public:
         return fixedHeight_;
     }
 
+    bool IsWindowRecordActive() const { return !windowRecordConfig_.surfaceNodeIds.empty(); }
+    const RSWindowRecordConfig& GetWindowRecordConfig() const { return windowRecordConfig_; }
+    const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& GetRecordSurfaceNodes() const
+    {
+        return recordSurfaceNodes_;
+    }
+
+    void SetWindowRecordConfig(const RSWindowRecordConfig& config) { windowRecordConfig_ = config; needSync_ = true; }
+
 private:
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr ancestorScreenDrawable_;
     std::vector<Occlusion::Rect> topSurfaceOpaqueRects_;
@@ -188,6 +198,9 @@ private:
     float offsetY_ = 0.f;
     float fixedWidth_ = 0;
     float fixedHeight_ = 0;
+
+    RSWindowRecordConfig windowRecordConfig_;
+    std::vector<std::weak_ptr<RSSurfaceRenderNode>> recordSurfaceNodes_;
 
     friend class RSLogicalDisplayRenderNode;
 };

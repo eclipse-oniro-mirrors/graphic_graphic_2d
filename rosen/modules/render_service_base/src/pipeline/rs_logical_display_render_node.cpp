@@ -17,12 +17,45 @@
 
 #include "rs_trace.h"
 
+#include "pipeline/rs_context.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "params/rs_logical_display_render_params.h"
+#include "pipeline/rs_screen_render_node.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "property/rs_point_light_manager.h"
 #include "visitor/rs_node_visitor.h"
 
 namespace OHOS::Rosen {
+bool RSLogicalDisplayRenderNode::IsOnVirtualScreen() const
+{
+    if (screenId_ == INVALID_SCREEN_ID) {
+        return false;
+    }
+    auto parent = GetParent().lock();
+    auto screenNode = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(parent);
+    return screenNode != nullptr && screenNode->GetScreenProperty().IsVirtual();
+}
+
+void RSLogicalDisplayRenderNode::SetWindowRecordConfig(const RSWindowRecordConfig& config)
+{
+    windowRecordConfig_ = config;
+    recordSurfaceNodes_.clear();
+    recordSurfaceNodes_.reserve(config.surfaceNodeIds.size());
+    auto context = GetContext().lock();
+    if (!context) {
+        RS_LOGE("RSLogicalDisplayRenderNode::%{public}s context expired, NodeId:[%{public}" PRIu64 "]",
+            __func__, GetId());
+        return;
+    }
+    auto& nodeMap = context->GetNodeMap();
+    for (NodeId windowId : config.surfaceNodeIds) {
+        auto surfaceNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(windowId);
+        if (surfaceNode) {
+            recordSurfaceNodes_.emplace_back(std::move(surfaceNode));
+        }
+    }
+}
+
 RSLogicalDisplayRenderNode::RSLogicalDisplayRenderNode(NodeId id,
     const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
     : RSRenderNode(id, context, isTextureExportNode), screenId_(config.screenId)
@@ -124,6 +157,8 @@ void RSLogicalDisplayRenderNode::UpdateRenderParams()
     logicalDisplayRenderParam->SetAncestorScreenDrawable(screenDrawable);
     logicalDisplayRenderParam->fixedWidth_ = fixedWidth_;
     logicalDisplayRenderParam->fixedHeight_ = fixedHeight_;
+    logicalDisplayRenderParam->windowRecordConfig_ = windowRecordConfig_;
+    logicalDisplayRenderParam->recordSurfaceNodes_ = recordSurfaceNodes_;
     auto& boundGeo = GetRenderProperties().GetBoundsGeometry();
     if (boundGeo) {
         logicalDisplayRenderParam->offsetX_ = boundGeo->GetX();

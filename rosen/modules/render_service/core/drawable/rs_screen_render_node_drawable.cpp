@@ -779,6 +779,10 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
     RS_TRACE_NAME_FMT("RSScreenRenderNodeDrawable::OnDraw[%" PRIu64 "][%" PRIu64"] zoomed(%d)",
         paramScreenId, GetId(), params->GetZoomed());
+    if (params->HasWindowRecordDisplay()) {
+        RSMultiScreenUtil::HandleWindowRecordScreen(*this, *params, processor);
+        return;
+    }
     auto mirroredDrawable = params->GetMirrorSourceDrawable().lock();
     auto mirrorSourceParams =
         mirroredDrawable ? static_cast<RSScreenRenderParams*>(mirroredDrawable->GetRenderParams().get()) : nullptr;

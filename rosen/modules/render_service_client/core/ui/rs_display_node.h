@@ -182,6 +182,8 @@ public:
      */
     void SetVirtualScreenMuteStatus(bool virtualScreenMuteStatus);
 
+    void SetWindowRecordConfig(const RSWindowRecordConfig& config);
+
 protected:
     explicit RSDisplayNode(const RSDisplayNodeConfig& config, std::shared_ptr<RSUIContext> rsUIContext = nullptr);
     RSDisplayNode(const RSDisplayNodeConfig& config, NodeId id, std::shared_ptr<RSUIContext> rsUIContext = nullptr);

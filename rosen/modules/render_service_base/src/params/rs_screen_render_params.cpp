@@ -266,6 +266,7 @@ void RSScreenRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     targetScreenParams->compositeType_ = compositeType_;
     targetScreenParams->mirrorSourceDrawable_ = mirrorSourceDrawable_;
     targetScreenParams->isMirrorScreen_ = isMirrorScreen_;
+    targetScreenParams->hasWindowRecordDisplay_ = hasWindowRecordDisplay_;
     targetScreenParams->screenInfo_ = std::move(screenInfo_);
     targetScreenParams->screenProperty_ = std::move(screenProperty_);
     targetScreenParams->isMainAndLeashSurfaceDirty_ = isMainAndLeashSurfaceDirty_;

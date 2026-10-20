@@ -169,6 +169,10 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     ScreenId paramScreenId = params->GetScreenId();
     RSEffectLuminanceManager::GetInstance().SetCurrentScreenId(paramScreenId);
     RSEffectLuminanceManager::GetInstance().SetHdrPipelineStatus(screenParams->GetHDRPresent());
+    if (params->IsWindowRecordActive()) {
+        RSMultiScreenUtil::HandleWindowRecord(*this, *params);
+        return;
+    }
     auto mirroredRenderParams = mirroredDrawable ? mirroredDrawable->GetRenderParams().get() : nullptr;
     if (mirroredRenderParams) {
         RSMultiScreenUtil::HandleMirrorDisplay(*this, *params, processor);

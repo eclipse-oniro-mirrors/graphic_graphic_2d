@@ -540,6 +540,46 @@ public:
         return Unmarshalling(parcel, val.first) && Unmarshalling(parcel, val.second);
     }
 
+    static bool Marshalling(Parcel& parcel, const RSWindowRecordConfig& val)
+    {
+        return Marshalling(parcel, val.needDrawMouse) &&
+               Marshalling(parcel, static_cast<int32_t>(val.renderFit)) &&
+               Marshalling(parcel, val.surfaceNodeIds);
+    }
+
+    static bool Unmarshalling(Parcel& parcel, RSWindowRecordConfig& val)
+    {
+        int32_t renderFit = 0;
+        return Unmarshalling(parcel, val.needDrawMouse) &&
+               Unmarshalling(parcel, renderFit) &&
+               (val.renderFit = static_cast<WindowRecordFit>(renderFit), true) &&
+               Unmarshalling(parcel, val.surfaceNodeIds);
+    }
+
+    static bool Marshalling(Parcel& parcel, const RSDisplayNodeConfig& val)
+    {
+        return Marshalling(parcel, val.screenId) &&
+               Marshalling(parcel, static_cast<uint8_t>(val.displayMode)) &&
+               Marshalling(parcel, val.mirrorNodeId) &&
+               Marshalling(parcel, val.isSync) &&
+               Marshalling(parcel, val.mirrorSourceRotation) &&
+               Marshalling(parcel, val.positionZ) &&
+               Marshalling(parcel, val.windowRecordConfig);
+    }
+
+    static bool Unmarshalling(Parcel& parcel, RSDisplayNodeConfig& val)
+    {
+        uint8_t mode = 0;
+        return Unmarshalling(parcel, val.screenId) &&
+               Unmarshalling(parcel, mode) &&
+               (val.displayMode = static_cast<DisplayMode>(mode), true) &&
+               Unmarshalling(parcel, val.mirrorNodeId) &&
+               Unmarshalling(parcel, val.isSync) &&
+               Unmarshalling(parcel, val.mirrorSourceRotation) &&
+               Unmarshalling(parcel, val.positionZ) &&
+               Unmarshalling(parcel, val.windowRecordConfig);
+    }
+
     template<typename T, typename... Args>
     static bool Marshalling(Parcel& parcel, const T& first, const Args&... args)
     {

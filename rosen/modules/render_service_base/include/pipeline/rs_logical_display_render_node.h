@@ -26,6 +26,7 @@
 
 namespace OHOS {
 namespace Rosen {
+class RSSurfaceRenderNode;
 class RSB_EXPORT RSLogicalDisplayRenderNode : public RSRenderNode {
 public:
     using WeakPtr = std::weak_ptr<RSLogicalDisplayRenderNode>;
@@ -171,6 +172,30 @@ public:
     bool IsMirrorDisplay() const;
     void SetVirtualScreenMuteStatus(bool virtualScreenMuteStatus);
     bool GetVirtualScreenMuteStatus() const;
+
+    // Stores the config and resolves surfaceNodeIds into weak refs (main thread,
+    // command application): render-thread consumers then observe window lifetime
+    // directly instead of re-querying the node map per frame; ids without a live
+    // node are dropped (EX-3). Weak on purpose: a strong ref would keep destroyed
+    // windows' nodes and buffers alive past the render-node GC.
+    void SetWindowRecordConfig(const RSWindowRecordConfig& config);
+
+    const RSWindowRecordConfig& GetWindowRecordConfig() const { return windowRecordConfig_; }
+    const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& GetRecordSurfaceNodes() const
+    {
+        return recordSurfaceNodes_;
+    }
+    bool IsWindowRecordActive() const { return !windowRecordConfig_.surfaceNodeIds.empty(); }
+
+    // true when this display is bound to a virtual screen (both record config
+    // delivery channels gate on this, EX-1)
+    bool IsOnVirtualScreen() const;
+
+    void ClearWindowRecordSession()
+    {
+        windowRecordConfig_ = {};
+        recordSurfaceNodes_.clear();
+    }
     void SetDisplaySpecialSurfaceChanged(bool displaySpecialSurfaceChanged);
 
     void SetBootAnimation(bool isBootAnimation) override;
@@ -260,6 +285,9 @@ private:
     CompositeType compositeType_ = CompositeType::HARDWARE_COMPOSITE;
     DisplayMode displayMode_ = DisplayMode::INVALID;
     bool hasCaptureWindow_ = false;
+
+    RSWindowRecordConfig windowRecordConfig_;
+    std::vector<std::weak_ptr<RSSurfaceRenderNode>> recordSurfaceNodes_;
 
     bool isBootAnimation_ = false;
 

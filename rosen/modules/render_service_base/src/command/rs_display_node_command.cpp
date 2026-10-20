@@ -218,19 +218,33 @@ void DisplayNodeCommandHelper::SetDisplayMode(RSContext& context, NodeId id, con
 
     DisplayMode mode = config.displayMode;
     node->SetDisplayMode(mode);
-    if (mode == DisplayMode::MIRROR) {
-        NodeId mirroredNodeId = config.mirrorNodeId;
-        auto& nodeMap = context.GetNodeMap();
-        auto mirrorSourceNode = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(mirroredNodeId);
-        if (mirrorSourceNode == nullptr) {
-            RS_LOGW("DisplayNodeCommandHelper::%{public}s fail, displayNodeId[%{public}" PRIu64
-                    "], mirroredNodeId[%{public}" PRIu64 "]", __func__, id, mirroredNodeId);
-            return;
-        }
-        node->SetMirrorSource(mirrorSourceNode);
-        node->SetMirrorSourceRotation(static_cast<ScreenRotation>(config.mirrorSourceRotation));
-    } else {
+    bool hasRecordConfig = !config.windowRecordConfig.surfaceNodeIds.empty();
+    if (hasRecordConfig && !node->IsOnVirtualScreen()) {
+        // EX-1: record config embedded in RSDisplayNodeConfig is only valid on a
+        // virtual screen; reject it and keep the normal display-mode handling
+        RS_LOGE("DisplayNodeCommandHelper::%{public}s displayNodeId[%{public}" PRIu64
+                "] is not on a virtual screen, windowRecordConfig ignored", __func__, id);
+        hasRecordConfig = false;
+    }
+    if (hasRecordConfig) {
+        node->SetWindowRecordConfig(config.windowRecordConfig);
         node->ResetMirrorSource();
+    } else {
+        node->ClearWindowRecordSession();
+        if (mode == DisplayMode::MIRROR) {
+            NodeId mirroredNodeId = config.mirrorNodeId;
+            auto& nodeMap = context.GetNodeMap();
+            auto mirrorSourceNode = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(mirroredNodeId);
+            if (mirrorSourceNode == nullptr) {
+                RS_LOGW("DisplayNodeCommandHelper::%{public}s fail, displayNodeId[%{public}" PRIu64
+                        "], mirroredNodeId[%{public}" PRIu64 "]", __func__, id, mirroredNodeId);
+                return;
+            }
+            node->SetMirrorSource(mirrorSourceNode);
+            node->SetMirrorSourceRotation(static_cast<ScreenRotation>(config.mirrorSourceRotation));
+        } else {
+            node->ResetMirrorSource();
+        }
     }
 }
 
@@ -265,6 +279,23 @@ void DisplayNodeCommandHelper::SetVirtualScreenMuteStatus(RSContext& context, No
     } else {
         RS_LOGE("%{public}s Invalid NodeId curNodeId: %{public}" PRIu64, __func__, nodeId);
     }
+}
+
+void DisplayNodeCommandHelper::SetWindowRecordConfig(RSContext& context, NodeId id,
+    const RSWindowRecordConfig& config)
+{
+    auto node = context.GetNodeMap().GetRenderNode<RSLogicalDisplayRenderNode>(id);
+    if (node == nullptr) {
+        RS_LOGE("DisplayNodeCommandHelper::%{public}s Invalid NodeId: %{public}" PRIu64, __func__, id);
+        return;
+    }
+    if (!node->IsOnVirtualScreen()) {
+        RS_LOGE("DisplayNodeCommandHelper::%{public}s NodeId: %{public}" PRIu64
+            " is not on a virtual screen, config ignored", __func__, id);
+        return;
+    }
+    node->SetWindowRecordConfig(config);
+    node->ResetMirrorSource();
 }
 
 } // namespace Rosen
