@@ -20,7 +20,9 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "offscreen_render/rs_offscreen_render_thread.h"
 #include "rs_trace.h"
@@ -971,6 +973,33 @@ void RSRenderNode::UpdateChildrenRect(const RectI& subRect)
     }
 }
 
+bool RSRenderNode::IsReachableFrom(const std::shared_ptr<RSRenderNode>& node) const
+{
+    if (node == nullptr) {
+        return false;
+    }
+    // iterative DFS with visited set, so that an unexpected cycle in children links cannot hang the check
+    std::unordered_set<NodeId> visited { node->GetId() };
+    std::vector<std::shared_ptr<RSRenderNode>> pendingNodes { node };
+    while (!pendingNodes.empty()) {
+        const auto current = pendingNodes.back();
+        pendingNodes.pop_back();
+        for (const auto& weakChild : current->children_) {
+            auto child = weakChild.lock();
+            if (child == nullptr) {
+                continue;
+            }
+            if (child->GetId() == GetId()) {
+                return true;
+            }
+            if (visited.insert(child->GetId()).second) {
+                pendingNodes.emplace_back(std::move(child));
+            }
+        }
+    }
+    return false;
+}
+
 void RSRenderNode::AddCrossParentChild(const std::shared_ptr<RSSurfaceRenderNode>& child, int32_t index)
 {
     // AddCrossParentChild only used as: the child is under multiple parents(e.g. a window cross multi-screens),
@@ -990,6 +1019,13 @@ void RSRenderNode::AddCrossParentChild(const std::shared_ptr<RSSurfaceRenderNode
             }
             parent = parent->GetParent().lock();
         }
+    }
+    // Adding the child creates a cycle if the current node is already in the subtree of the child
+    // (a cross-parent child keeps children relationship with multiple parents).
+    if (IsReachableFrom(child)) {
+        ROSEN_LOGE("RSRenderNode::AddCrossParentChild current node is in subtree of child, "
+            "nodeId=%{public}" PRIu64 " childId=%{public}" PRIu64, GetId(), child->GetId());
+        return;
     }
     // Set parent-child relationship
     child->SetParent(weak_from_this());

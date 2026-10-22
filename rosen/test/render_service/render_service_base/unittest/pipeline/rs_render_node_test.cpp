@@ -3002,6 +3002,50 @@ HWTEST_F(RSRenderNodeTest, RemoveCrossParentChild009, TestSize.Level1)
 }
 
 /**
+ * @tc.name: AddCrossParentChildTest010
+ * @tc.desc: AddCrossParentChild would not create cycle
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest010, TestSize.Level1)
+{
+    // A->AddCrossParentChild(B), C->AddCrossParentChild(B), then B->AddCrossParentChild(A) would create
+    // cycle A->B->A, the last operation should be rejected.
+    std::shared_ptr<RSSurfaceRenderNode> nodeA = std::make_shared<RSSurfaceRenderNode>(1);
+    std::shared_ptr<RSSurfaceRenderNode> nodeB = std::make_shared<RSSurfaceRenderNode>(2);
+    std::shared_ptr<RSRenderNode> nodeC = std::make_shared<RSRenderNode>(3);
+    nodeA->AddCrossParentChild(nodeB);
+    EXPECT_EQ(nodeA->GetChildrenCount(), 1u);
+    nodeC->AddCrossParentChild(nodeB);
+    EXPECT_EQ(nodeC->GetChildrenCount(), 1u);
+
+    nodeB->AddCrossParentChild(nodeA);
+    EXPECT_EQ(nodeB->GetChildrenCount(), 0u);
+
+    // normal cross parent add is not affected
+    std::shared_ptr<RSRenderNode> nodeD = std::make_shared<RSRenderNode>(4);
+    nodeD->AddCrossParentChild(nodeB);
+    EXPECT_EQ(nodeD->GetChildrenCount(), 1u);
+}
+
+/**
+ * @tc.name: AddCrossParentChildTest011
+ * @tc.desc: AddCrossParentChild would not create cycle with ancestor
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest011, TestSize.Level1)
+{
+    // ancestor of current node should be rejected
+    std::shared_ptr<RSRenderNode> nodeC = std::make_shared<RSRenderNode>(3);
+    std::shared_ptr<RSSurfaceRenderNode> nodeD = std::make_shared<RSSurfaceRenderNode>(4);
+    nodeC->AddChild(nodeD);
+    EXPECT_EQ(nodeC->GetChildrenCount(), 1u);
+    nodeD->AddCrossParentChild(nodeC);
+    EXPECT_EQ(nodeD->GetChildrenCount(), 0u);
+}
+
+/**
  * @tc.name: AddCrossScreenChild
  * @tc.desc: AddCrossScreenChild test
  * @tc.type: FUNC

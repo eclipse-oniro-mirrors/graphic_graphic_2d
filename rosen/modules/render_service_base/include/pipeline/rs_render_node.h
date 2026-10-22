@@ -1464,6 +1464,11 @@ private:
     void ResortChildren();
     bool ShouldClearSurface();
 
+    // Whether current node is reachable from the given node via children_ links. A cross-parent child
+    // keeps children relationship with multiple parents while its parent_ points to the latest one,
+    // so cycles cannot be fully detected by the parent_ chain.
+    bool IsReachableFrom(const std::shared_ptr<RSRenderNode>& node) const;
+
     void InternalRemoveSelfFromDisappearingChildren();
     void FallbackAnimationsToRoot();
     void FilterModifiersByPid(pid_t pid);
