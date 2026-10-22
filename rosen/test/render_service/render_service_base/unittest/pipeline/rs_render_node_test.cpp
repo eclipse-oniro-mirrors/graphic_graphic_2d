@@ -3046,6 +3046,48 @@ HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest011, TestSize.Level1)
 }
 
 /**
+ * @tc.name: AddCrossParentChildTest012
+ * @tc.desc: AddCrossParentChild would not create cycle via disappearing children
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest012, TestSize.Level1)
+{
+    // Construct cycle A->B->A where the B->A edge is kept by a disappearing transition:
+    // 1. A registers a disappearing transition, then B->AddChild(A) and B->RemoveChild(A) moves A
+    //    into B.disappearingChildren_ while A.parent_ still points to B;
+    // 2. D->AddCrossParentChild(A) repoints A.parent_ to D, so the parent-chain ancestor check
+    //    cannot see B anymore;
+    // 3. A->AddCrossParentChild(B) would close the cycle A->B(disappearing)->A via the traversal
+    //    graph (fullChildrenList_ merges children_ and disappearingChildren_), it must be rejected.
+    std::shared_ptr<RSSurfaceRenderNode> nodeA = std::make_shared<RSSurfaceRenderNode>(1);
+    std::shared_ptr<RSRenderNode> nodeB = std::make_shared<RSRenderNode>(2);
+    std::shared_ptr<RSRenderNode> nodeD = std::make_shared<RSRenderNode>(3);
+
+    nodeA->isOnTheTree_ = true;
+    nodeA->disappearingTransitionCount_ = 1;
+    nodeB->AddChild(nodeA);
+    EXPECT_EQ(nodeB->GetChildrenCount(), 1u);
+    nodeB->RemoveChild(nodeA);
+    EXPECT_EQ(nodeB->GetChildrenCount(), 0u);
+    EXPECT_EQ(nodeB->disappearingChildren_.size(), 1u);
+
+    nodeD->AddCrossParentChild(nodeA);
+    EXPECT_EQ(nodeD->GetChildrenCount(), 1u);
+
+    nodeA->AddCrossParentChild(nodeB);
+    EXPECT_EQ(nodeA->GetChildrenCount(), 0u);
+
+    // simulate per-frame traversal: regenerate fullChildrenList_ like ApplyModifiers and walk
+    // recursively like RSRenderServiceVisitor::PrepareChildren; unbounded recursion means cycle.
+    nodeA->GenerateFullChildrenList();
+    nodeB->GenerateFullChildrenList();
+    std::vector<NodeId> allChildren;
+    nodeA->CollectAllChildren(nodeA, allChildren);
+    EXPECT_GT(allChildren.size(), 0u);
+}
+
+/**
  * @tc.name: AddCrossScreenChild
  * @tc.desc: AddCrossScreenChild test
  * @tc.type: FUNC

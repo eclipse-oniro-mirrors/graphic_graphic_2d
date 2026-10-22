@@ -996,6 +996,19 @@ bool RSRenderNode::IsReachableFrom(const std::shared_ptr<RSRenderNode>& node) co
                 pendingNodes.emplace_back(std::move(child));
             }
         }
+        // disappearing children are still traversed via fullChildrenList_, they count as children links
+        for (const auto& pair : current->disappearingChildren_) {
+            const auto& disappearingChild = pair.first;
+            if (disappearingChild == nullptr) {
+                continue;
+            }
+            if (disappearingChild->GetId() == GetId()) {
+                return true;
+            }
+            if (visited.insert(disappearingChild->GetId()).second) {
+                pendingNodes.emplace_back(disappearingChild);
+            }
+        }
     }
     return false;
 }
