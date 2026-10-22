@@ -3088,6 +3088,44 @@ HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest012, TestSize.Level1)
 }
 
 /**
+ * @tc.name: AddCrossParentChildTest013
+ * @tc.desc: AddCrossParentChild cycle check covers all branches of IsReachableFrom
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest013, TestSize.Level1)
+{
+    // defensive null input of IsReachableFrom
+    std::shared_ptr<RSRenderNode> nodeF = std::make_shared<RSRenderNode>(1);
+    EXPECT_FALSE(nodeF->IsReachableFrom(nullptr));
+
+    // search graph: B -> {expired, C, D}, C -> E, D -> E (diamond), X standalone;
+    // disappearing list of B holds a null entry, an already-visited node and a new node
+    std::shared_ptr<RSSurfaceRenderNode> nodeB = std::make_shared<RSSurfaceRenderNode>(2);
+    std::shared_ptr<RSRenderNode> nodeC = std::make_shared<RSRenderNode>(3);
+    std::shared_ptr<RSRenderNode> nodeD = std::make_shared<RSRenderNode>(4);
+    std::shared_ptr<RSSurfaceRenderNode> nodeE = std::make_shared<RSSurfaceRenderNode>(5);
+    std::shared_ptr<RSRenderNode> nodeX = std::make_shared<RSRenderNode>(6);
+    {
+        // leave an expired weak entry in B.children_
+        std::shared_ptr<RSSurfaceRenderNode> expiredChild = std::make_shared<RSSurfaceRenderNode>(7);
+        nodeB->AddChild(expiredChild);
+    }
+    nodeB->AddChild(nodeC);
+    nodeB->AddChild(nodeD);
+    nodeC->AddChild(nodeE);
+    nodeD->AddCrossParentChild(nodeE);
+    nodeB->disappearingChildren_.emplace_back(nullptr, 0);
+    nodeB->disappearingChildren_.emplace_back(nodeC, 1);
+    nodeB->disappearingChildren_.emplace_back(nodeX, 2);
+
+    // F is not reachable from B: the search must pass the expired and null entries, dedup C and E,
+    // push and traverse multi-hop nodes, then return false and allow the add
+    nodeF->AddCrossParentChild(nodeB);
+    EXPECT_EQ(nodeF->GetChildrenCount(), 1u);
+}
+
+/**
  * @tc.name: AddCrossScreenChild
  * @tc.desc: AddCrossScreenChild test
  * @tc.type: FUNC
