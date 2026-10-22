@@ -3037,8 +3037,8 @@ HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest010, TestSize.Level1)
 HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest011, TestSize.Level1)
 {
     // ancestor of current node should be rejected
-    std::shared_ptr<RSRenderNode> nodeC = std::make_shared<RSRenderNode>(3);
-    std::shared_ptr<RSSurfaceRenderNode> nodeD = std::make_shared<RSSurfaceRenderNode>(4);
+    std::shared_ptr<RSSurfaceRenderNode> nodeC = std::make_shared<RSSurfaceRenderNode>(3);
+    std::shared_ptr<RSRenderNode> nodeD = std::make_shared<RSRenderNode>(4);
     nodeC->AddChild(nodeD);
     EXPECT_EQ(nodeC->GetChildrenCount(), 1u);
     nodeD->AddCrossParentChild(nodeC);
@@ -3061,7 +3061,7 @@ HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest012, TestSize.Level1)
     // 3. A->AddCrossParentChild(B) would close the cycle A->B(disappearing)->A via the traversal
     //    graph (fullChildrenList_ merges children_ and disappearingChildren_), it must be rejected.
     std::shared_ptr<RSSurfaceRenderNode> nodeA = std::make_shared<RSSurfaceRenderNode>(1);
-    std::shared_ptr<RSRenderNode> nodeB = std::make_shared<RSRenderNode>(2);
+    std::shared_ptr<RSSurfaceRenderNode> nodeB = std::make_shared<RSSurfaceRenderNode>(2);
     std::shared_ptr<RSRenderNode> nodeD = std::make_shared<RSRenderNode>(3);
 
     nodeA->isOnTheTree_ = true;
