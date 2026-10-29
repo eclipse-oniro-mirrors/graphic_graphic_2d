@@ -77,6 +77,7 @@ public:
             case RSNGEffectType::PIXEL_MAP_MASK: return "PixelMapMask";
             case RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT: return "ContourDiagonalFlowLight";
             case RSNGEffectType::DOT_MATRIX_SHADER: return "DotMatrixShader";
+            case RSNGEffectType::FLOW_LIGHT_SWEEP: return "FlowLightSweep";
             case RSNGEffectType::WAVY_RIPPLE_LIGHT: return "WavyRippleLight";
             case RSNGEffectType::AURORA_NOISE: return "AuroraNoise";
             case RSNGEffectType::PARTICLE_CIRCULAR_HALO: return "ParticleCircularHalo";

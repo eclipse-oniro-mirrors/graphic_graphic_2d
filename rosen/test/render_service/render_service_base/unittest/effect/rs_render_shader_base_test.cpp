@@ -49,6 +49,9 @@ HWTEST_F(RSNGRenderShaderBaseTest, Create001, TestSize.Level1)
     auto dotMatrix = RSNGRenderShaderBase::Create(RSNGEffectType::DOT_MATRIX_SHADER);
     EXPECT_NE(dotMatrix, nullptr);
 
+    auto flowLightSweep = RSNGRenderShaderBase::Create(RSNGEffectType::FLOW_LIGHT_SWEEP);
+    EXPECT_NE(flowLightSweep, nullptr);
+
     auto ripple = RSNGRenderShaderBase::Create(RSNGEffectType::WAVY_RIPPLE_LIGHT);
     EXPECT_NE(ripple, nullptr);
 

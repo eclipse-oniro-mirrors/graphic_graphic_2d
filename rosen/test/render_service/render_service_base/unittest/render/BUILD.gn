@@ -711,7 +711,6 @@ ohos_unittest("RSFlowLightShaderFilterTest") {
   module_out_path = module_output_path
  
   sources = [
-    "rs_flow_light_sweep_shader_test.cpp",
     "rs_mask_test.cpp",
     "rs_render_linear_gradient_blur_filter_test.cpp",
     "rs_render_maskcolor_filter_test.cpp",

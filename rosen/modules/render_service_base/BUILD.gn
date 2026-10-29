@@ -354,7 +354,6 @@ ohos_source_set("render_service_base_src") {
     "src/render/rs_drawing_filter.cpp",
     "src/render/rs_effect_luminance_manager.cpp",
     "src/render/rs_filter.cpp",
-    "src/render/rs_flow_light_sweep_shader.cpp",
     "src/render/rs_fly_out_shader_filter.cpp",
     "src/render/rs_foreground_effect_filter.cpp",
     "src/render/rs_hdr_ui_brightness_filter.cpp",

@@ -126,6 +126,7 @@ enum class RSNGEffectType : int16_t {
     // shader type
     CONTOUR_DIAGONAL_FLOW_LIGHT,
     DOT_MATRIX_SHADER,
+    FLOW_LIGHT_SWEEP,
     WAVY_RIPPLE_LIGHT,
     AURORA_NOISE,
     PARTICLE_CIRCULAR_HALO,

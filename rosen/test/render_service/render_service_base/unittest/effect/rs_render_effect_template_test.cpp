@@ -136,6 +136,7 @@ HWTEST_F(RSNGRenderEffectTemplateTest, GetEffectTypeStringForShaderEffectTypes, 
     EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT),
         "ContourDiagonalFlowLight");
     EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::DOT_MATRIX_SHADER), "DotMatrixShader");
+    EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::FLOW_LIGHT_SWEEP), "FlowLightSweep");
     EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::WAVY_RIPPLE_LIGHT), "WavyRippleLight");
     EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::AURORA_NOISE), "AuroraNoise");
     EXPECT_EQ(

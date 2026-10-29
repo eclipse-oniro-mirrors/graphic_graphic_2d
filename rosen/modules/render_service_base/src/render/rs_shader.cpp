@@ -16,7 +16,6 @@
 #include "render/rs_shader.h"
 #include "platform/common/rs_log.h"
 #include "render/rs_complex_shader.h"
-#include "render/rs_flow_light_sweep_shader.h"
 #include "ge_visual_effect_impl.h"
 #include "effect/shader_effect_lazy.h"
 
@@ -38,10 +37,6 @@ std::shared_ptr<RSShader> RSShader::CreateRSShader(const ShaderType& type)
 {
     std::shared_ptr<RSShader> shader = nullptr;
     switch (type) {
-        case ShaderType::FLOW_LIGHT_SWEEP: {
-            shader = std::make_shared<RSFlowLightSweepShader>();
-            break;
-        }
         case ShaderType::DRAWING: {
             shader = std::make_shared<RSShader>();
             break;

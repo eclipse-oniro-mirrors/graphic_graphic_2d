@@ -38,6 +38,10 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
             return std::make_shared<RSNGRenderDotMatrixShader>();
         }
     },
+    {RSNGEffectType::FLOW_LIGHT_SWEEP, [] {
+            return std::make_shared<RSNGRenderFlowLightSweep>();
+        }
+    },
     {RSNGEffectType::WAVY_RIPPLE_LIGHT, [] {
             return std::make_shared<RSNGRenderWavyRippleLight>();
         }

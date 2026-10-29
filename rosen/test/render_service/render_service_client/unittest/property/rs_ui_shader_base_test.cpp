@@ -87,6 +87,19 @@ HWTEST_F(RSUIShaderBaseTest, RSNGShaderBaseCreateCircleFlowlight, TestSize.Level
 }
 
 /**
+ * @tc.name: RSNGShaderBaseCreateFlowLightSweep
+ * @tc.desc: Calling Create(RSNGEffectType::FLOW_LIGHT_SWEEP)
+ *           should return a non-null RSNGFlowLightSweep instance
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUIShaderBaseTest, RSNGShaderBaseCreateFlowLightSweep, TestSize.Level1)
+{
+    auto shader = RSNGShaderBase::Create(RSNGEffectType::FLOW_LIGHT_SWEEP);
+    EXPECT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetType(), RSNGEffectType::FLOW_LIGHT_SWEEP);
+}
+
+/**
  * @tc.name: RSNGShaderBaseCreateAIBarRectHalo
  * @tc.desc: Calling Create(RSNGEffectType::AIBAR_RECT_HALO)
  *           should return a non-null RSNGAIBarRectHalo instance
