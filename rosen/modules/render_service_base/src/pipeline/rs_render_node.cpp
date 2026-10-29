@@ -1020,19 +1020,6 @@ void RSRenderNode::AddCrossParentChild(const std::shared_ptr<RSSurfaceRenderNode
     if (child == nullptr || GetId() == child->GetId()) {
         return;
     }
-    // The child node cannot be an ancestor of the current node
-    {
-        auto parent = parent_.lock();
-        auto childId = child->GetId();
-        while (parent != nullptr) {
-            if (parent->GetId() == childId) {
-                ROSEN_LOGE("RSRenderNode::AddCrossParentChild child is ancestor of current node, "
-                    "nodeId=%{public}" PRIu64 " childId=%{public}" PRIu64, GetId(), childId);
-                return;
-            }
-            parent = parent->GetParent().lock();
-        }
-    }
     // Adding the child creates a cycle if the current node is already in the subtree of the child
     // (a cross-parent child keeps children relationship with multiple parents).
     if (IsReachableFrom(child)) {
