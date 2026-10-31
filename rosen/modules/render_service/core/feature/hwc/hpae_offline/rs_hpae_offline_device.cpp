@@ -40,6 +40,7 @@
 #include "rs_hetero_hdr_manager.h"
 #endif
 
+
 namespace OHOS {
 namespace Rosen {
 namespace {
