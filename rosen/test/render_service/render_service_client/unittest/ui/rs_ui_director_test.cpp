@@ -21,6 +21,7 @@
 #include "animation/rs_render_animation.h"
 #include "animation/rs_interactive_implict_animator.h"
 #include "modifier/rs_modifier_manager.h"
+#include "platform/common/rs_system_properties.h"
 #include "transaction/rs_interfaces.h"
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_thread.h"
@@ -841,6 +842,177 @@ HWTEST_F(RSUIDirectorTest, ProcessUIContextMessagesTest003, TestSize.Level1)
     RSUIDirector::ProcessUIContextMessages(cmdMap, 1);
     ASSERT_EQ(RSUIContextManager::Instance().GetRSUIContext(token), nullptr);
     ASSERT_NE(RSUIContextManager::Instance().GetRandomUITaskRunnerCtx(), nullptr);
+}
+
+/**
+ * @tc.name: UIContextMessageCallbacksTest001
+ * @tc.desc: registered callbacks are triggered by ProcessMessages with a token command
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUIDirectorTest, UIContextMessageCallbacksTest001, TestSize.Level1)
+{
+    // callbacks are process-wide statics, isolate them from other cases
+    RSUIDirector::ClearUIContextMessageCallbacks();
+    std::shared_ptr<RSUIDirector> director = CreateRSUIDirector();
+    ASSERT_NE(director, nullptr);
+    auto uiContext = director->GetRSUIContext();
+    ASSERT_NE(uiContext, nullptr);
+    if (!RSSystemProperties::GetUniRenderEnabled()) {
+        std::cout << "uni render disabled, received callback only fires on uni render" << std::endl;
+        RSUIDirector::ClearUIContextMessageCallbacks();
+        return;
+    }
+    // task() runs inline, so the processed callback fires within ProcessMessages
+    uiContext->SetUITaskRunner([](const std::function<void()>& task, uint32_t delay) { task(); });
+    uint64_t token = uiContext->GetToken();
+    ASSERT_NE(token, 0);
+
+    // capture by shared_ptr: a stale callback fired by a later case must not touch dangling state
+    auto recvCount = std::make_shared<uint32_t>(0);
+    auto recvMsgId = std::make_shared<uint32_t>(0);
+    auto procCount = std::make_shared<uint32_t>(0);
+    auto procMsgId = std::make_shared<uint32_t>(0);
+    RSUIDirector::SetUIContextMessageCallbacks(
+        [recvCount, recvMsgId](uint32_t messageId) {
+            (*recvCount)++;
+            *recvMsgId = messageId;
+        },
+        [procCount, procMsgId](uint32_t messageId) {
+            (*procCount)++;
+            *procMsgId = messageId;
+        });
+
+    std::shared_ptr<RSTransactionData> cmds = std::make_shared<RSTransactionData>();
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSAnimationCallback>(token, token, token, AnimationCallbackEvent::FINISHED);
+    cmds->AddCommand(command, token, FollowType::FOLLOW_TO_SELF);
+    director->ProcessMessages(cmds);
+
+    // received fires where the command enters uiContextCmdMap, processed before RequestVsyncCallback
+    EXPECT_EQ(*recvCount, 1u);
+    EXPECT_EQ(*procCount, 1u);
+    // both trigger points report the same pre-increment counter value of this message
+    EXPECT_EQ(*recvMsgId, *procMsgId);
+    RSUIDirector::ClearUIContextMessageCallbacks();
+}
+
+/**
+ * @tc.name: UIContextMessageCallbacksTest002
+ * @tc.desc: ProcessUIContextMessages triggers the processed callback with the given msgId only
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUIDirectorTest, UIContextMessageCallbacksTest002, TestSize.Level1)
+{
+    RSUIDirector::ClearUIContextMessageCallbacks();
+    auto director = CreateRSUIDirector();
+    ASSERT_NE(director, nullptr);
+    auto uiContext = director->GetRSUIContext();
+    ASSERT_NE(uiContext, nullptr);
+    uiContext->SetUITaskRunner([](const std::function<void()>& task, uint32_t delay) { task(); });
+    uint64_t token = uiContext->GetToken();
+    ASSERT_NE(token, 0);
+
+    auto recvCount = std::make_shared<uint32_t>(0);
+    auto procCount = std::make_shared<uint32_t>(0);
+    auto procMsgId = std::make_shared<uint32_t>(0);
+    RSUIDirector::SetUIContextMessageCallbacks(
+        [recvCount](uint32_t messageId) { (*recvCount)++; },
+        [procCount, procMsgId](uint32_t messageId) {
+            (*procCount)++;
+            *procMsgId = messageId;
+        });
+
+    constexpr uint32_t testMsgId = 4321;
+    std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>> cmdMap;
+    std::vector<std::unique_ptr<RSCommand>> commands;
+    commands.push_back(std::make_unique<RSAnimationCallback>(token, token, token, AnimationCallbackEvent::FINISHED));
+    cmdMap[token] = std::move(commands);
+    // the direct call passes the msgId of the enclosing ProcessMessages call; the processed
+    // callback reports msgId - 1, the pre-increment counter value the received callback reports;
+    // received is not triggered because ProcessMessages is not involved
+    RSUIDirector::ProcessUIContextMessages(cmdMap, testMsgId);
+
+    EXPECT_EQ(*procCount, 1u);
+    EXPECT_EQ(*procMsgId, testMsgId - 1);
+    EXPECT_EQ(*recvCount, 0u);
+    RSUIDirector::ClearUIContextMessageCallbacks();
+}
+
+/**
+ * @tc.name: UIContextMessageCallbacksTest003
+ * @tc.desc: cleared callbacks are not triggered by ProcessMessages
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUIDirectorTest, UIContextMessageCallbacksTest003, TestSize.Level1)
+{
+    RSUIDirector::ClearUIContextMessageCallbacks();
+    auto director = CreateRSUIDirector();
+    ASSERT_NE(director, nullptr);
+    auto uiContext = director->GetRSUIContext();
+    ASSERT_NE(uiContext, nullptr);
+    uiContext->SetUITaskRunner([](const std::function<void()>& task, uint32_t delay) { task(); });
+    uint64_t token = uiContext->GetToken();
+
+    auto recvCount = std::make_shared<uint32_t>(0);
+    auto procCount = std::make_shared<uint32_t>(0);
+    RSUIDirector::SetUIContextMessageCallbacks(
+        [recvCount](uint32_t messageId) { (*recvCount)++; },
+        [procCount](uint32_t messageId) { (*procCount)++; });
+    RSUIDirector::ClearUIContextMessageCallbacks();
+
+    std::shared_ptr<RSTransactionData> cmds = std::make_shared<RSTransactionData>();
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSAnimationCallback>(token, token, token, AnimationCallbackEvent::FINISHED);
+    cmds->AddCommand(command, token, FollowType::FOLLOW_TO_SELF);
+    director->ProcessMessages(cmds);
+
+    EXPECT_EQ(*recvCount, 0u);
+    EXPECT_EQ(*procCount, 0u);
+}
+
+/**
+ * @tc.name: UIContextMessageCallbacksTest004
+ * @tc.desc: null callbacks cause no crash and no trigger, partial registration fires one side only
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUIDirectorTest, UIContextMessageCallbacksTest004, TestSize.Level1)
+{
+    RSUIDirector::ClearUIContextMessageCallbacks();
+    auto director = CreateRSUIDirector();
+    ASSERT_NE(director, nullptr);
+    auto uiContext = director->GetRSUIContext();
+    ASSERT_NE(uiContext, nullptr);
+    if (!RSSystemProperties::GetUniRenderEnabled()) {
+        std::cout << "uni render disabled, received callback only fires on uni render" << std::endl;
+        RSUIDirector::ClearUIContextMessageCallbacks();
+        return;
+    }
+    uiContext->SetUITaskRunner([](const std::function<void()>& task, uint32_t delay) { task(); });
+    uint64_t token = uiContext->GetToken();
+    ASSERT_NE(token, 0);
+
+    // ProcessMessages moves commands out of the payload, build a fresh one per call
+    auto makeCmds = [token]() {
+        std::shared_ptr<RSTransactionData> cmds = std::make_shared<RSTransactionData>();
+        std::unique_ptr<RSCommand> command =
+            std::make_unique<RSAnimationCallback>(token, token, token, AnimationCallbackEvent::FINISHED);
+        cmds->AddCommand(command, token, FollowType::FOLLOW_TO_SELF);
+        return cmds;
+    };
+
+    // both callbacks null: processed is guarded by the null check, no crash and no trigger
+    RSUIDirector::SetUIContextMessageCallbacks(nullptr, nullptr);
+    director->ProcessMessages(makeCmds());
+
+    // only the received side registered: it fires, the processed side stays silent
+    auto recvCount = std::make_shared<uint32_t>(0);
+    auto procCount = std::make_shared<uint32_t>(0);
+    RSUIDirector::SetUIContextMessageCallbacks(
+        [recvCount](uint32_t messageId) { (*recvCount)++; }, nullptr);
+    director->ProcessMessages(makeCmds());
+    EXPECT_EQ(*recvCount, 1u);
+    EXPECT_EQ(*procCount, 0u);
+    RSUIDirector::ClearUIContextMessageCallbacks();
 }
 
 /**

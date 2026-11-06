@@ -57,6 +57,7 @@ class RSUIContext;
 class RSTransactionHandler;
 using TaskRunner = std::function<void(const std::function<void()>&, uint32_t)>;
 using FlushEmptyCallback = std::function<bool(const uint64_t)>;
+using UIContextMessageCallback = std::function<void(uint32_t messageId)>;
 
 /**
  * @class RSUIDirector
@@ -267,6 +268,30 @@ public:
     void SetRequestVsyncCallback(const std::function<void()>& callback);
 
     /**
+     * @brief Registers callbacks observing the UI context message lifecycle.
+     *
+     * The received callback is triggered when a command is added to the UI context command
+     * map while RSUIDirector receives messages from the render service; the processed
+     * callback is triggered after the commands of the message have been processed on the
+     * UI task runner, right before requesting the next vsync. Both callbacks take the
+     * message id as input. The callbacks are shared by all RSUIDirector instances.
+     * Registration and unregistration are thread safe.
+     *
+     * @param messageReceivedCallback Triggered when a UI context command is received.
+     * @param messageProcessedCallback Triggered when the received message has been processed.
+     */
+    static void SetUIContextMessageCallbacks(const UIContextMessageCallback& messageReceivedCallback,
+        const UIContextMessageCallback& messageProcessedCallback);
+
+    /**
+     * @brief Unregisters the callbacks registered by SetUIContextMessageCallbacks.
+     *
+     * Thread safe. A trigger thread may still be executing a callback copied before
+     * unregistration returns.
+     */
+    static void ClearUIContextMessageCallbacks();
+
+    /**
      * @brief Posts a task to handle frame rate operations.
      *
      * @param task The task to be executed, represented as a std::function<void()>.
@@ -379,6 +404,8 @@ private:
     static void PostDelayTask(
         const std::function<void()>& task, uint32_t delay = 0, int32_t instanceId = INSTANCE_ID_UNDEFINED); // planing
     static bool RequestVsyncCallback(int32_t instanceId);
+    static void NotifyUIContextMessageReceived(uint32_t messageId);
+    static void NotifyUIContextMessageProcessed(uint32_t messageId);
 
 #ifdef RS_MODIFIERS_DRAW_ENABLE
     void InitHybridRender();
@@ -393,6 +420,11 @@ private:
     inline static RS_CLIENT_HIDDEN std::unordered_map<RSUIDirector*, TaskRunner> uiTaskRunners_;
     inline static RS_CLIENT_HIDDEN std::unordered_map<RSUIDirector*, std::function<void()>> requestVsyncCallbacks_;
     inline static RS_CLIENT_HIDDEN std::mutex uiTaskRunnersVisitorMutex_;
+    // shared by all instances; trigger threads (IPC receiving thread and UI task runners)
+    // differ from the registration thread, guard with the mutex
+    inline static RS_CLIENT_HIDDEN UIContextMessageCallback uiContextMessageReceivedCallback_;
+    inline static RS_CLIENT_HIDDEN UIContextMessageCallback uiContextMessageProcessedCallback_;
+    inline static RS_CLIENT_HIDDEN std::mutex uiContextMessageCallbacksMutex_;
 
     NodeId root_ = 0;
     int32_t instanceId_ = INSTANCE_ID_UNDEFINED;
