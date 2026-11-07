@@ -34,6 +34,10 @@ using namespace std;
 constexpr uint32_t ANIMATION_DURATION_MS = 500;
 constexpr uint32_t PUMP_TICK_MS = 16;
 constexpr uint32_t PUMP_MARGIN_MS = 300;
+// stress mode: how many times the 4-case verification flow is repeated; one round takes ~9s
+// (4 x sleep(2) + animation/pump windows), so the default 100 rounds take ~15 minutes
+constexpr uint32_t STRESS_ROUNDS = 400 * 4;
+constexpr int32_t STRESS_MODE = 2; // stdin selector value that enters the stress loop
 constexpr int32_t SCREEN_WIDTH = 1260;
 constexpr int32_t SCREEN_HEIGHT = 2720;
 
@@ -41,7 +45,7 @@ shared_ptr<RSNode> rootNode;
 shared_ptr<RSCanvasNode> canvasNode;
 shared_ptr<RSSurfaceNode> surfaceNode;
 
-// case 1/2/3 counters, received fires on the IPC receiving thread,
+// case 1-4 counters, received fires on the IPC receiving thread,
 // processed fires on the UI task runner thread
 atomic<uint32_t> g_receivedCount(0);
 atomic<uint32_t> g_processedCount(0);
@@ -119,6 +123,81 @@ void StartFramePump(const shared_ptr<AppExecFwk::EventHandler>& handler, const s
     handler->PostTask([handler, rsUiDirector, start]() { PumpTick(handler, rsUiDirector, start, false); });
 }
 
+// Verify mode: the 4-case flow (warm-up / register / unregister / nullptr). Returns whether all
+// four cases passed, so the stress mode can aggregate over repetitions of this exact flow.
+bool RunVerifyCases(const shared_ptr<AppExecFwk::EventHandler>& handler, const shared_ptr<RSUIDirector>& rsUiDirector,
+    const shared_ptr<RSUIContext>& rsUIContext)
+{
+    // warm-up case, functionally identical to the unregister case: its return messages lag one case
+    // boundary on this windowless surface, so they arrive during the NEXT case's window — while the
+    // real callbacks are registered there. This case absorbs the lag and its own animation drives
+    // the RS return path hot before the register case starts.
+    cout << "\n===== case 1: warm-up (same as unregister case), callbacks should NOT be triggered =====" << endl;
+    RSInterfaces::GetInstance().UnRegisterUIContextMessageCallbacks();
+    uint32_t recvBefore = g_receivedCount;
+    uint32_t procBefore = g_processedCount;
+    StartAnimatedProperty(rsUIContext, "case1", 150.f, 150.f);
+    StartFramePump(handler, rsUiDirector);
+    sleep(2);
+    bool case1Pass = (g_receivedCount == recvBefore && g_processedCount == procBefore);
+    cout << "case1 " << (case1Pass ? "PASS" : "FAIL") << ", receivedCount:" << g_receivedCount << "/" << recvBefore
+         << ", processedCount:" << g_processedCount << "/" << procBefore << endl;
+
+    cout << "\n===== case 2: register callbacks, passively triggered by RS animation callback =====" << endl;
+    RSInterfaces::GetInstance().RegisterUIContextMessageCallbacks(OnMessageReceived, OnMessageProcessed);
+    StartAnimatedProperty(rsUIContext, "case2", 200.f, 200.f);
+    StartFramePump(handler, rsUiDirector);
+    sleep(2); // keep the total observation window at ~3s for late callbacks
+    bool case2Pass = (g_receivedCount > 0 && g_processedCount > 0);
+    cout << "case2 " << (case2Pass ? "PASS" : "FAIL") << ", receivedCount:" << g_receivedCount
+         << ", processedCount:" << g_processedCount << endl;
+
+    cout << "\n===== case 3: unregister, callbacks should NOT be triggered =====" << endl;
+    RSInterfaces::GetInstance().UnRegisterUIContextMessageCallbacks();
+    recvBefore = g_receivedCount;
+    procBefore = g_processedCount;
+    StartAnimatedProperty(rsUIContext, "case3", 400.f, 100.f);
+    StartFramePump(handler, rsUiDirector);
+    sleep(2);
+    bool case3Pass = (g_receivedCount == recvBefore && g_processedCount == procBefore);
+    cout << "case3 " << (case3Pass ? "PASS" : "FAIL") << ", receivedCount:" << g_receivedCount << "/" << recvBefore
+         << ", processedCount:" << g_processedCount << "/" << procBefore << endl;
+
+    cout << "\n===== case 4: register nullptr callbacks, should NOT be triggered and no crash =====" << endl;
+    RSInterfaces::GetInstance().RegisterUIContextMessageCallbacks(nullptr, nullptr);
+    recvBefore = g_receivedCount;
+    procBefore = g_processedCount;
+    StartAnimatedProperty(rsUIContext, "case4", 100.f, 400.f);
+    StartFramePump(handler, rsUiDirector);
+    sleep(2);
+    bool case4Pass = (g_receivedCount == recvBefore && g_processedCount == procBefore);
+    cout << "case4 " << (case4Pass ? "PASS" : "FAIL") << ", receivedCount:" << g_receivedCount << "/" << recvBefore
+         << ", processedCount:" << g_processedCount << "/" << procBefore << endl;
+
+    return case1Pass && case2Pass && case3Pass && case4Pass;
+}
+
+// Stress mode: the EXACT same 4-case flow as verify mode, repeated STRESS_ROUNDS times — no
+// separate stress logic. Counters are reset before each round so every round is judged in
+// isolation, like a fresh run; the reset is race-free because a round starts with callbacks
+// unregistered (warm-up case), so stragglers from the previous round arrive silently and never
+// touch the counters.
+void RunStressTest(const shared_ptr<AppExecFwk::EventHandler>& handler, const shared_ptr<RSUIDirector>& rsUiDirector,
+    const shared_ptr<RSUIContext>& rsUIContext)
+{
+    cout << "\n===== stress test: 4-case flow x " << STRESS_ROUNDS << " rounds =====" << endl;
+    uint32_t allPassRounds = 0;
+    for (uint32_t round = 1; round <= STRESS_ROUNDS; round++) {
+        cout << "\n===== stress round " << round << "/" << STRESS_ROUNDS << " =====" << endl;
+        g_receivedCount = 0;
+        g_processedCount = 0;
+        allPassRounds += RunVerifyCases(handler, rsUiDirector, rsUIContext) ? 1 : 0;
+    }
+    cout << "\n[stress] done, rounds:" << STRESS_ROUNDS << ", all-pass rounds:" << allPassRounds << endl;
+    cout << "[stress] " << ((allPassRounds == STRESS_ROUNDS) ? "PASS" : "FAIL")
+         << " (survived all rounds, per-round verdicts above)" << endl;
+}
+
 // No window_manager: create the surfaceNode with the rsUIContext and attach it to the default
 // display node by AttachToDisplay; nodes are all created with the same rsUIContext (multi-instance)
 void Init(const shared_ptr<RSUIDirector>& rsUiDirector, const shared_ptr<RSUIContext>& rsUIContext)
@@ -188,39 +267,29 @@ int main()
     rsUiDirector->SendMessages();
     sleep(1);
 
-    cout << "\n===== case 1: register callbacks, passively triggered by RS animation callback =====" << endl;
-    RSInterfaces::GetInstance().RegisterUIContextMessageCallbacks(OnMessageReceived, OnMessageProcessed);
-    StartAnimatedProperty(rsUIContext, "case1", 200.f, 200.f);
-    StartFramePump(handler, rsUiDirector);
-    sleep(2); // keep the total observation window at ~3s for late callbacks
-    cout << "case1 " << ((g_receivedCount > 0 && g_processedCount > 0) ? "PASS" : "FAIL")
-         << ", receivedCount:" << g_receivedCount << ", processedCount:" << g_processedCount << endl;
-
-    cout << "\n===== case 2: unregister, callbacks should NOT be triggered =====" << endl;
-    RSInterfaces::GetInstance().UnRegisterUIContextMessageCallbacks();
-    uint32_t recvBefore = g_receivedCount;
-    uint32_t procBefore = g_processedCount;
-    StartAnimatedProperty(rsUIContext, "case2", 400.f, 100.f);
-    StartFramePump(handler, rsUiDirector);
-    sleep(2);
-    cout << "case2 " << ((g_receivedCount == recvBefore && g_processedCount == procBefore) ? "PASS" : "FAIL")
-         << ", receivedCount:" << g_receivedCount << "/" << recvBefore << ", processedCount:" << g_processedCount << "/"
-         << procBefore << endl;
-
-    cout << "\n===== case 3: register nullptr callbacks, should NOT be triggered and no crash =====" << endl;
-    RSInterfaces::GetInstance().RegisterUIContextMessageCallbacks(nullptr, nullptr);
-    recvBefore = g_receivedCount;
-    procBefore = g_processedCount;
-    StartAnimatedProperty(rsUIContext, "case3", 100.f, 400.f);
-    StartFramePump(handler, rsUiDirector);
-    sleep(2);
-    cout << "case3 " << ((g_receivedCount == recvBefore && g_processedCount == procBefore) ? "PASS" : "FAIL")
-         << ", receivedCount:" << g_receivedCount << "/" << recvBefore << ", processedCount:" << g_processedCount << "/"
-         << procBefore << endl;
+    // choose the run mode from stdin: 1 = 4-case verification (default), 2 = stress loop;
+    // hdc shell without piped input hits EOF and falls back to verification
+    cout << "\nselect mode, 1 = verify (default), 2 = stress test: " << endl;
+    int mode = 1;
+    if (!(cin >> mode)) {
+        cout << "no stdin input, fall back to verify mode" << endl;
+        mode = 1;
+    }
+    if (mode == STRESS_MODE) {
+        RunStressTest(handler, rsUiDirector, rsUIContext);
+    } else {
+        RunVerifyCases(handler, rsUiDirector, rsUIContext);
+    }
 
     RSInterfaces::GetInstance().UnRegisterUIContextMessageCallbacks();
     cout << "\nrs client ui context message callback demo end!" << endl;
     surfaceNode->SetVisible(false);
+    // release the client-side node references with the final flush: the queued visibility command
+    // holds its own reference, and every pump window (800ms) has long expired inside its case's
+    // sleep(2), so no in-flight tick can dereference these nulls
+    rootNode = nullptr;
+    canvasNode = nullptr;
+    surfaceNode = nullptr;
     rsUiDirector->SendMessages();
     sleep(1);
     return 0;
