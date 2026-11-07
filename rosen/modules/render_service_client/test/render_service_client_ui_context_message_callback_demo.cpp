@@ -85,6 +85,10 @@ void Init(const shared_ptr<RSUIDirector>& rsUiDirector, const shared_ptr<RSUICon
     surfaceNode =
         RSSurfaceNode::Create(surfaceNodeConfig, RSSurfaceNodeType::APP_WINDOW_NODE, true, false, rsUIContext);
     surfaceNode->SetBounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    // same as render_service_client_multi_instance_demo: raise the windowless surface above the
+    // launcher, otherwise the layer is composed underneath and nothing shows up
+    surfaceNode->SetFrameGravity(Gravity::RESIZE_ASPECT_FILL);
+    surfaceNode->SetPositionZ(RSSurfaceNode::POINTER_WINDOW_POSITION_Z);
     surfaceNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     rsUiDirector->SetRSSurfaceNode(surfaceNode);
 
