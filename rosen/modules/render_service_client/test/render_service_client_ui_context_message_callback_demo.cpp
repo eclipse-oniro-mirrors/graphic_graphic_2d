@@ -56,18 +56,18 @@ void OnMessageProcessed(uint32_t msgId)
     cout << "[UIContextMessageCallback] processed, msgId:" << msgId << ", total:" << g_processedCount.load() << endl;
 }
 
-// The animation is created by RSNode::Animate with the rsUIContext, so the animation command carries
-// the context token and runs in the render service process. When it finishes, RS sends the
+// The animation is created by RSNode::Animate with the rsUIContext (single translate property as
+// graphic_test does, one animation -> one FINISHED callback), so the animation command carries the
+// context token and runs in the render service process. When it finishes, RS sends the
 // RSAnimationCallback command (with the same token) back to this process, it enters uiContextCmdMap
 // in RSUIDirector::ProcessMessages and passively triggers the registered callbacks.
-void StartAnimatedProperty(const shared_ptr<RSUIContext>& rsUIContext, const char* tag)
+void StartAnimatedProperty(const shared_ptr<RSUIContext>& rsUIContext, const char* tag, float tx, float ty)
 {
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION_MS);
     auto curve = RSAnimationTimingCurve::CreateCubicCurve(0.2f, 0.0f, 0.2f, 1.0f);
-    auto propertyCallback = []() {
-        canvasNode->SetBounds(200, 400, 600, 600);
-        canvasNode->SetFrame(200, 400, 600, 600);
+    auto propertyCallback = [tx, ty]() {
+        canvasNode->SetTranslate(tx, ty, 0.f);
     };
     auto finishCallback = [tag]() {
         // proves the RS->client callback message really arrived
@@ -85,9 +85,9 @@ void Init(const shared_ptr<RSUIDirector>& rsUiDirector, const shared_ptr<RSUICon
     surfaceNode =
         RSSurfaceNode::Create(surfaceNodeConfig, RSSurfaceNodeType::APP_WINDOW_NODE, true, false, rsUIContext);
     surfaceNode->SetBounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    // same as render_service_client_multi_instance_demo: raise the windowless surface above the
-    // launcher, otherwise the layer is composed underneath and nothing shows up
-    surfaceNode->SetFrameGravity(Gravity::RESIZE_ASPECT_FILL);
+    // raise the windowless surface above the launcher (as render_service_client_multi_instance_demo
+    // does with POINTER_WINDOW_POSITION_Z), otherwise the layer is composed underneath and nothing
+    // shows up; no SetFrameGravity here to avoid the display_manager include/dependency
     surfaceNode->SetPositionZ(RSSurfaceNode::POINTER_WINDOW_POSITION_Z);
     surfaceNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     rsUiDirector->SetRSSurfaceNode(surfaceNode);
@@ -147,7 +147,7 @@ int main()
 
     cout << "\n===== case 1: register callbacks, passively triggered by RS animation callback =====" << endl;
     RSInterfaces::GetInstance().RegisterUIContextMessageCallbacks(OnMessageReceived, OnMessageProcessed);
-    StartAnimatedProperty(rsUIContext, "case1");
+    StartAnimatedProperty(rsUIContext, "case1", 200.f, 200.f);
     rsUiDirector->SendMessages();
     sleep(STAGE_WAIT_SECONDS);
     cout << "case1 " << ((g_receivedCount > 0 && g_processedCount > 0) ? "PASS" : "FAIL")
@@ -157,7 +157,7 @@ int main()
     RSInterfaces::GetInstance().UnRegisterUIContextMessageCallbacks();
     uint32_t recvBefore = g_receivedCount;
     uint32_t procBefore = g_processedCount;
-    StartAnimatedProperty(rsUIContext, "case2");
+    StartAnimatedProperty(rsUIContext, "case2", 400.f, 100.f);
     rsUiDirector->SendMessages();
     sleep(STAGE_WAIT_SECONDS);
     cout << "case2 " << ((g_receivedCount == recvBefore && g_processedCount == procBefore) ? "PASS" : "FAIL")
@@ -168,7 +168,7 @@ int main()
     RSInterfaces::GetInstance().RegisterUIContextMessageCallbacks(nullptr, nullptr);
     recvBefore = g_receivedCount;
     procBefore = g_processedCount;
-    StartAnimatedProperty(rsUIContext, "case3");
+    StartAnimatedProperty(rsUIContext, "case3", 100.f, 400.f);
     rsUiDirector->SendMessages();
     sleep(STAGE_WAIT_SECONDS);
     cout << "case3 " << ((g_receivedCount == recvBefore && g_processedCount == procBefore) ? "PASS" : "FAIL")
