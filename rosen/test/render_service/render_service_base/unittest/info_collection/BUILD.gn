@@ -25,6 +25,7 @@ ohos_unittest("RSRenderServiceBaseInfoCollectionTest") {
     "rs_gpu_dirty_region_collection_test.cpp",
     "rs_hardware_compose_disabled_reason_collection_test.cpp",
     "rs_hdr_collection_test.cpp",
+    "rs_layer_compose_collection_test.cpp",
   ]
 
   cflags = [

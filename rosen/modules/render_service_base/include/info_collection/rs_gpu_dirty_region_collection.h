@@ -46,22 +46,29 @@ struct GlobalDirtyRegionInfo {
     int32_t consumeBufferSize = 0;
     int32_t frameAnimationCount = 0;
     pid_t mostSendingPidWhenDisplayNodeSkip = 0;
+    int32_t updateCacheSurfaceCount = 0;
+    int32_t skipCommitFrames = 0;
     GlobalDirtyRegionInfo()
         : globalDirtyRegionAreas(), globalFramesNumber(), skipProcessFramesNumber(),
-          commandCount(), consumeBufferSize(), frameAnimationCount(), mostSendingPidWhenDisplayNodeSkip() {}
+          commandCount(), consumeBufferSize(), frameAnimationCount(), mostSendingPidWhenDisplayNodeSkip(),
+          updateCacheSurfaceCount(), skipCommitFrames() {}
     GlobalDirtyRegionInfo(int64_t globalDirtyRegionAreas_, int32_t globalFramesNumber_,
         int32_t skipProcessFramesNumber_, int32_t commandCount_, int32_t consumeBufferSize_,
-        int32_t frameAnimationCount_, pid_t mostSendingPidWhenDisplayNodeSkip_)
+        int32_t frameAnimationCount_, pid_t mostSendingPidWhenDisplayNodeSkip_,
+        int32_t updateCacheSurfaceCount_ = 0, int32_t skipCommitFrames_ = 0)
         : globalDirtyRegionAreas(globalDirtyRegionAreas_), globalFramesNumber(globalFramesNumber_),
           skipProcessFramesNumber(skipProcessFramesNumber_), commandCount(commandCount_),
           consumeBufferSize(consumeBufferSize_), frameAnimationCount(frameAnimationCount_),
-          mostSendingPidWhenDisplayNodeSkip(mostSendingPidWhenDisplayNodeSkip_) {}
+          mostSendingPidWhenDisplayNodeSkip(mostSendingPidWhenDisplayNodeSkip_),
+          updateCacheSurfaceCount(updateCacheSurfaceCount_), skipCommitFrames(skipCommitFrames_) {}
     GlobalDirtyRegionInfo& operator+=(const GlobalDirtyRegionInfo& other) noexcept
     {
         globalDirtyRegionAreas += other.globalDirtyRegionAreas;
         globalFramesNumber += other.globalFramesNumber;
         skipProcessFramesNumber += other.skipProcessFramesNumber;
         mostSendingPidWhenDisplayNodeSkip += other.mostSendingPidWhenDisplayNodeSkip;
+        updateCacheSurfaceCount += other.updateCacheSurfaceCount;
+        skipCommitFrames += other.skipCommitFrames;
         return *this;
     }
 };
@@ -77,6 +84,8 @@ public:
     void AddCommandNumberForDFX();
     void AddConsumeBufferNumberForDFX();
     void AddFrameAnimationNumberForDFX();
+    void AddUpdateCacheSurfaceCountForDFX();
+    void AddSkipCommitFramesForDFX();
     std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo() const;
     GlobalDirtyRegionInfo GetGlobalDirtyRegionInfo() const;
     void ResetActiveDirtyRegionInfo();

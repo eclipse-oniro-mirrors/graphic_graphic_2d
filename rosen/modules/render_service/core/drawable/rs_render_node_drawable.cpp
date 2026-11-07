@@ -27,6 +27,7 @@
 #include "gfx/performance/rs_perfmonitor_reporter.h"
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
 #include "info_collection/rs_frame_stats_collection.h"
+#include "info_collection/rs_gpu_dirty_region_collection.h"
 #include "memory/rs_tag_tracker.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
@@ -290,6 +291,7 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
                     params.GetInstanceRootNodeName(), "UpdateCacheSurface");
             }
         }
+        GpuDirtyRegionCollection::GetInstance().AddUpdateCacheSurfaceCountForDFX();
         RSRenderNodeDrawableAdapter* root = curDrawingCacheRoot_;
         NodeId rootId = curDrawingCacheRootId_;
         curDrawingCacheRoot_ = this;
@@ -310,6 +312,7 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
         bool isOffScreenWithClipHole = isOffScreenWithClipHole_;
         isOffScreenWithClipHole_ = true;
         RS_TRACE_NAME_FMT("UpdateCacheSurface with filter id:%" PRIu64 "", nodeId_);
+        GpuDirtyRegionCollection::GetInstance().AddUpdateCacheSurfaceCountForDFX();
         RSRenderNodeDrawableAdapter* root = curDrawingCacheRoot_;
         NodeId rootId = curDrawingCacheRootId_;
         curDrawingCacheRoot_ = this;

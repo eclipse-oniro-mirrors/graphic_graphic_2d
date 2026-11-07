@@ -24,6 +24,7 @@
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
 #include "feature/tunnel_layer/rs_tunnel_layer_utils.h"
+#include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 #include "engine/rs_base_render_util.h"
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
 #include "feature/dirty/rs_uni_dirty_occlusion_util.h"
@@ -1501,8 +1502,9 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
 
     if (hasAncoDimmer_ && (node.GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE))) {
         node.SetHardwareForcedDisabledState(true);
-        RS_OPTIONAL_TRACE_FMT("anco node debug: name:%s id:%" PRIu64 " disabled by dimming node below.",
-                              node.GetName().c_str(), node.GetId());
+        hwcVisitor_->Statistics().RecordHwcDisabledWithTrace(node.GetId(),
+            HwcDisabledReasons::DISABLED_BY_ANCO_DIMMING_NODE_BELOW, node.GetName(),
+            "disabled by dimming node below.");
     }
 
     PostPrepare(node, isParentPrepareInReverseOrder, !isSubTreeNeedPrepare);
@@ -1771,10 +1773,9 @@ void RSUniRenderVisitor::PrepareForCrossNode(RSSurfaceRenderNode& node)
         bool needCacheSurface = node.QuerySubAssignable(curLogicalDisplayNode_->IsRotationChanged());
         if (needCacheSurface) {
             node.SetHwcChildrenDisabledState();
-            RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " children disabled by crossNode",
-                node.GetName().c_str(), node.GetId());
-            hwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(node.GetId(),
-                HwcDisabledReasons::DISABLED_BY_CROSS_NODE, node.GetName());
+            hwcVisitor_->Statistics().RecordHwcDisabledWithTrace(node.GetId(),
+                HwcDisabledReasons::DISABLED_BY_CROSS_NODE, node.GetName(),
+                "children disabled by crossNode");
         }
         node.SetNeedCacheSurface(needCacheSurface);
     }
@@ -2606,9 +2607,9 @@ bool RSUniRenderVisitor::InitScreenInfo(RSScreenRenderNode& node)
     auto geoPtr = node.GetRenderProperties().GetBoundsGeometry();
     if (geoPtr->IsNeedClientCompose()) {
         hwcVisitor_->isHardwareForcedDisabled_ = true;
-        RS_OPTIONAL_TRACE_FMT("hwc debug: id:%" PRIu64 " disabled by screenNode rotation", node.GetId());
-        hwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(node.GetId(),
-            HwcDisabledReasons::DISABLED_BY_SCREEN_NODE_ROTATION, " ");
+        hwcVisitor_->Statistics().RecordHwcDisabledWithTrace(node.GetId(),
+            HwcDisabledReasons::DISABLED_BY_SCREEN_NODE_ROTATION, " ",
+            "disabled by screenNode rotation");
     }
 
     // init hdr
@@ -2783,11 +2784,10 @@ void RSUniRenderVisitor::ProcessAncoNode(const std::shared_ptr<RSSurfaceRenderNo
     }
     ancoHasGpu = ancoHasGpu || hwcNodePtr->IsHardwareForcedDisabled();
     if (ancoHasGpu && !hwcNodePtr->IsHardwareForcedDisabled()) {
-        RS_OPTIONAL_TRACE_NAME_FMT("ProcessAncoNode: name:%s id:%" PRIu64 " disabled by anco has gpu",
-            hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
         hwcNodePtr->SetHardwareForcedDisabledState(true);
-        hwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
-            HwcDisabledReasons::DISABLED_BY_ANCO_HAS_GPU, hwcNodePtr->GetName());
+        hwcVisitor_->Statistics().RecordHwcDisabledWithTrace(hwcNodePtr->GetId(),
+            HwcDisabledReasons::DISABLED_BY_ANCO_HAS_GPU, hwcNodePtr->GetName(),
+            "disabled by anco has gpu");
     }
 }
 
@@ -2891,15 +2891,14 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByPrevalidate(std::map<uint64_t, Req
         if (node->IsInFixedRotation() || node->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
             continue;
         }
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by preValidate",
-            node->GetName().c_str(), node->GetId());
         hwcVisitor_->PrintHiperfLog(node, "preValidate");
         node->SetHardwareForcedDisabledState(true);
         if (node->GetRSSurfaceHandler()) {
             node->GetRSSurfaceHandler()->SetGlobalZOrder(-1.f);
         }
-        hwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(node->GetId(),
-            HwcDisabledReasons::DISABLED_BY_PREVALIDATE, node->GetName());
+        hwcVisitor_->Statistics().RecordHwcDisabledWithTrace(node->GetId(),
+            HwcDisabledReasons::DISABLED_BY_PREVALIDATE, node->GetName(),
+            "disabled by preValidate");
     }
 }
 
@@ -2955,16 +2954,16 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(
         bool hasProtectedLayer = hwcNodePtr->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED);
         if ((isHardwareHdrDisabled || isDisableHwcForHdrSurface || !drmNodes_.empty() || hasFingerprint_) &&
             !hasProtectedLayer) {
-            RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by Having UniRenderHdrSurface/DRM node, "
-                "isHardwareHdrDis:%d isHdrSurfaceDis:%d hasDrmNodes:%d hasFingerprint:%d",
-                hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId(), isHardwareHdrDisabled, isDisableHwcForHdrSurface,
-                !drmNodes_.empty(), hasFingerprint_);
             hwcVisitor_->PrintHiperfLog(hwcNodePtr, "uniRender HDR");
             hwcNodePtr->SetHardwareForcedDisabledState(true);
             // DRM will force HDR to use unirender
             curScreenNode_->SetHasUniRenderHdrSurface(hasUniRenderHdrSurface || isHdrSurface);
-            hwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
-                HwcDisabledReasons::DISABLED_BY_RENDER_HDR_SURFACE, hwcNodePtr->GetName());
+            hwcVisitor_->Statistics().RecordHwcDisabledWithTrace(hwcNodePtr->GetId(),
+                HwcDisabledReasons::DISABLED_BY_RENDER_HDR_SURFACE, hwcNodePtr->GetName(),
+                "disabled by Having UniRenderHdrSurface/DRM node, "
+                "isHardwareHdrDis[%d] isHdrSurfaceDis[%d] hasDrmNodes[%d] hasFingerprint[%d]",
+                isHardwareHdrDisabled, isDisableHwcForHdrSurface,
+                !drmNodes_.empty(), hasFingerprint_);
         }
         if (appNode) {
             UpdateHwcNodeDirtyRegionForApp(appNode, hwcNodePtr);
@@ -3026,10 +3025,9 @@ void RSUniRenderVisitor::UpdatePointWindowDirtyStatus(std::shared_ptr<RSSurfaceR
             pointSurfaceHandler->SetGlobalZOrder(static_cast<float>(TopLayerZOrder::POINTER_WINDOW));
         }
         surfaceNode->SetHardwareForcedDisabledState(true);
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " use hardCursor to display",
-            surfaceNode->GetName().c_str(), surfaceNode->GetId());
-        hwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(surfaceNode->GetId(),
-            HwcDisabledReasons::DISABLED_BY_POINT_WINDOW, surfaceNode->GetName());
+        hwcVisitor_->Statistics().RecordHwcDisabledWithTrace(surfaceNode->GetId(),
+            HwcDisabledReasons::DISABLED_BY_POINT_WINDOW, surfaceNode->GetName(),
+            "use hardCursor to display");
         bool isPointerInvisible = RSPointerWindowManager::Instance().IsPointerInvisibleInMultiScreen();
         RSPointerWindowManager::Instance().SetIsPointerEnableHwc(isHardCursor && isPointerInvisible);
         auto transform = RSUniHwcComputeUtil::GetLayerTransform(*surfaceNode);
@@ -3063,12 +3061,12 @@ void RSUniRenderVisitor::UpdateTopLayersDirtyStatus(const std::vector<std::share
             // gpu offline
             ProcessGpuOfflineForTopLayer(topLayer, hwcDisabled);
             if (hwcDisabled) {
-                RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by toplayers dirty status, "
+                hwcVisitor_->Statistics().RecordHwcDisabledWithTrace(topLayer->GetId(),
+                    HwcDisabledReasons::DISABLED_BY_TOP_LAYERS, topLayer->GetName(),
+                    "disabled by toplayers dirty status, "
                     "IsHardwareComposerEnabled[%d],TopLayerShouldPaint[%d],DrmNodeEmpty[%d]",
-                    topLayer->GetName().c_str(), topLayer->GetId(), IsHardwareComposerEnabled(),
+                    IsHardwareComposerEnabled(),
                     topLayer->ShouldPaint(), drmNodes_.empty());
-                hwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(topLayer->GetId(),
-                    HwcDisabledReasons::DISABLED_BY_TOP_LAYERS, topLayer->GetName());
             }
             auto transform = RSUniHwcComputeUtil::GetLayerTransform(*topLayer);
             topLayer->UpdateHwcNodeLayerInfo(transform);
@@ -3803,8 +3801,9 @@ void RSUniRenderVisitor::DisableOccludedHwcNodeInSkippedSubTree(const RSRenderNo
             continue;
         }
         hwcNodePtr->SetHardwareForcedDisabledState(true);
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by subTreeSkipped && isOccluded",
-            hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
+        hwcVisitor_->Statistics().RecordHwcDisabledWithTrace(hwcNodePtr->GetId(),
+            HwcDisabledReasons::DISABLED_BY_SUBTREE_SKIPPED_OCCLUDED, hwcNodePtr->GetName(),
+            "disabled by subTreeSkipped && isOccluded");
     }
 }
 
