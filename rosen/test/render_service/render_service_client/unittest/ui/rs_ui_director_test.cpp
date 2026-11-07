@@ -933,7 +933,7 @@ HWTEST_F(RSUIDirectorTest, UIContextMessageCallbacksTest002, TestSize.Level1)
     RSUIDirector::ProcessUIContextMessages(cmdMap, testMsgId);
 
     EXPECT_EQ(*procCount, 1u);
-    EXPECT_EQ(*procMsgId, testMsgId - 1);
+    EXPECT_EQ(*procMsgId, testMsgId);
     EXPECT_EQ(*recvCount, 0u);
     RSUIDirector::ClearUIContextMessageCallbacks();
 }
