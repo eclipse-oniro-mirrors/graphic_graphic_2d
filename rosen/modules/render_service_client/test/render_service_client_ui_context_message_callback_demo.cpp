@@ -14,6 +14,7 @@
  */
 
 #include <atomic>
+#include <chrono>
 #include <event_handler.h>
 #include <iostream>
 
@@ -31,7 +32,8 @@ using namespace OHOS::Rosen;
 using namespace std;
 
 constexpr uint32_t ANIMATION_DURATION_MS = 500;
-constexpr uint32_t STAGE_WAIT_SECONDS = 3;
+constexpr uint32_t PUMP_TICK_MS = 16;
+constexpr uint32_t PUMP_MARGIN_MS = 300;
 constexpr int32_t SCREEN_WIDTH = 1260;
 constexpr int32_t SCREEN_HEIGHT = 2720;
 
@@ -61,19 +63,60 @@ void OnMessageProcessed(uint32_t msgId)
 // context token and runs in the render service process. When it finishes, RS sends the
 // RSAnimationCallback command (with the same token) back to this process, it enters uiContextCmdMap
 // in RSUIDirector::ProcessMessages and passively triggers the registered callbacks.
+// NOTE: the finish callback alone does NOT prove the RS round-trip. RSImplicitAnimator also runs it
+// from two local fallbacks when no RSAnimationCallback ever arrives: ~duration ms after close when
+// no implicit animation was created (ProcessEmptyAnimations), or ~max(2 x duration, 1000) ms as a
+// safety net when the real FINISHED event was lost. Only a finish print accompanied by the
+// received/processed prints above came from the real RS->client message path, so the elapsed time is
+// printed to tell them apart on device.
 void StartAnimatedProperty(const shared_ptr<RSUIContext>& rsUIContext, const char* tag, float tx, float ty)
 {
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION_MS);
     auto curve = RSAnimationTimingCurve::CreateCubicCurve(0.2f, 0.0f, 0.2f, 1.0f);
-    auto propertyCallback = [tx, ty]() {
-        canvasNode->SetTranslate(tx, ty, 0.f);
-    };
-    auto finishCallback = [tag]() {
-        // proves the RS->client callback message really arrived
-        cout << "[RSNode::Animate] " << tag << " finish callback (from RS process)" << endl;
+    auto propertyCallback = [tx, ty]() { canvasNode->SetTranslate(tx, ty, 0.f); };
+    auto startTime = chrono::steady_clock::now();
+    auto finishCallback = [tag, startTime]() {
+        auto elapsed = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - startTime);
+        cout << "[RSNode::Animate] " << tag << " finish callback after " << elapsed.count() << "ms" << endl;
     };
     RSNode::Animate(rsUIContext, protocol, curve, propertyCallback, finishCallback);
+}
+
+// One frame-pump tick: enqueues a visually neutral command (an alpha toggle on canvasNode, a
+// different property from the animated translate) and flushes it, then re-posts itself on the UI
+// task runner until the animation window ends. Every non-empty transaction wakes RS
+// (RecvRSTransactionData -> RequestNextVSync), which re-runs RSMainThread::Animate and drives the
+// animation to completion, so the real FINISHED comes back through the message path instead of
+// the 1000ms client safety net. Ticks run on the runner — the same thread that dispatches the
+// pushed RS callbacks — so pump ticks and callback processing stay serialized, matching
+// production UI threading; a bare SendMessages with an empty payload sends no IPC at all
+// (RSTransactionHandler::FlushImplicitTransaction skips empty transactions).
+void PumpTick(const shared_ptr<AppExecFwk::EventHandler>& handler, const shared_ptr<RSUIDirector>& rsUiDirector,
+    const shared_ptr<const chrono::steady_clock::time_point>& start, bool toggle)
+{
+    constexpr uint32_t windowMs = ANIMATION_DURATION_MS + PUMP_MARGIN_MS;
+    auto elapsedMs = static_cast<uint32_t>(
+        chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - *start).count());
+    if (elapsedMs >= windowMs) {
+        return;
+    }
+    auto nowNs = static_cast<uint64_t>(
+        chrono::duration_cast<chrono::nanoseconds>(chrono::steady_clock::now().time_since_epoch()).count());
+    rsUiDirector->SetTimeStamp(nowNs, "UiContextMsgCallbackDemo");
+    canvasNode->SetAlpha(toggle ? 1.0f : 0.9999f);
+    rsUiDirector->SendMessages();
+    handler->PostTask(
+        [handler, rsUiDirector, start, nextToggle = !toggle]() { PumpTick(handler, rsUiDirector, start, nextToggle); },
+        PUMP_TICK_MS);
+}
+
+// Start the frame pump on the UI task runner for the animation window; the windowless headless
+// surface has no other frame source while the RS-side animation is running.
+void StartFramePump(const shared_ptr<AppExecFwk::EventHandler>& handler, const shared_ptr<RSUIDirector>& rsUiDirector)
+{
+    auto start = make_shared<const chrono::steady_clock::time_point>(chrono::steady_clock::now());
+    handler->PostTask([handler, rsUiDirector, start]() { PumpTick(handler, rsUiDirector, start, false); });
 }
 
 // No window_manager: create the surfaceNode with the rsUIContext and attach it to the default
@@ -148,8 +191,8 @@ int main()
     cout << "\n===== case 1: register callbacks, passively triggered by RS animation callback =====" << endl;
     RSInterfaces::GetInstance().RegisterUIContextMessageCallbacks(OnMessageReceived, OnMessageProcessed);
     StartAnimatedProperty(rsUIContext, "case1", 200.f, 200.f);
-    rsUiDirector->SendMessages();
-    sleep(STAGE_WAIT_SECONDS);
+    StartFramePump(handler, rsUiDirector);
+    sleep(2); // keep the total observation window at ~3s for late callbacks
     cout << "case1 " << ((g_receivedCount > 0 && g_processedCount > 0) ? "PASS" : "FAIL")
          << ", receivedCount:" << g_receivedCount << ", processedCount:" << g_processedCount << endl;
 
@@ -158,8 +201,8 @@ int main()
     uint32_t recvBefore = g_receivedCount;
     uint32_t procBefore = g_processedCount;
     StartAnimatedProperty(rsUIContext, "case2", 400.f, 100.f);
-    rsUiDirector->SendMessages();
-    sleep(STAGE_WAIT_SECONDS);
+    StartFramePump(handler, rsUiDirector);
+    sleep(2);
     cout << "case2 " << ((g_receivedCount == recvBefore && g_processedCount == procBefore) ? "PASS" : "FAIL")
          << ", receivedCount:" << g_receivedCount << "/" << recvBefore << ", processedCount:" << g_processedCount << "/"
          << procBefore << endl;
@@ -169,8 +212,8 @@ int main()
     recvBefore = g_receivedCount;
     procBefore = g_processedCount;
     StartAnimatedProperty(rsUIContext, "case3", 100.f, 400.f);
-    rsUiDirector->SendMessages();
-    sleep(STAGE_WAIT_SECONDS);
+    StartFramePump(handler, rsUiDirector);
+    sleep(2);
     cout << "case3 " << ((g_receivedCount == recvBefore && g_processedCount == procBefore) ? "PASS" : "FAIL")
          << ", receivedCount:" << g_receivedCount << "/" << recvBefore << ", processedCount:" << g_processedCount << "/"
          << procBefore << endl;
