@@ -23,6 +23,7 @@
 #include "ui/rs_canvas_node.h"
 #include "ui/rs_root_node.h"
 #include "ui/rs_surface_node.h"
+#include "ui/rs_ui_context.h"
 #include "ui/rs_ui_director.h"
 
 using namespace OHOS;
