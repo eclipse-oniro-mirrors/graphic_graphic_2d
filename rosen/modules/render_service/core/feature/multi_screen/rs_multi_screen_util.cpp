@@ -1207,7 +1207,7 @@ void RSMultiScreenUtil::HandleWindowRecordScreen(
         // display instead of the configured windows. Skip the frame -- before the processor
         // requests an output buffer -- rather than leak non-configured content into the recording.
         if (displayParams->GetRecordLeashPersistentIds().empty()) {
-            RS_LOGE("RSMultiScreenUtil::%{public}s no recordable leash id, skip without buffer request", __func__);
+            RS_LOGD("RSMultiScreenUtil::%{public}s no recordable leash id, skip without buffer request", __func__);
             drawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
             return;
         }
@@ -1264,7 +1264,7 @@ void RSMultiScreenUtil::HandleWindowRecord(
     // Defensive duplicate of the HandleWindowRecordScreen gate: an empty whitelist disables
     // filtering entirely, so bail out before touching the canvas to keep Save/Restore balanced.
     if (params.GetRecordLeashPersistentIds().empty()) {
-        RS_LOGE("RSMultiScreenUtil::%{public}s empty record whitelist, skip frame", __func__);
+        RS_LOGD("RSMultiScreenUtil::%{public}s empty record whitelist, skip frame", __func__);
         return;
     }
     // The source display arrives as a main-thread snapshot (drawable weak ref), so this path stays

@@ -249,24 +249,29 @@ void RSScreenRenderNode::UpdateRenderParams()
     }
     screenParams->hasWindowRecordDisplay_ = hasWindowRecordChild;
     // White list source is either/or, never merged: a record-active display child owns it, resolved
-    // from its config right here, otherwise the screen property white list applies. The screen is
-    // prepared before its display children, so re-resolving (instead of reading the child's
-    // per-frame cache) is what keeps this same-frame fresh; the node map is stable during the
-    // prepare phase, so this matches what the display node itself resolves later this frame.
-    // Downstream consumers (render-thread white list hand-off and the special-layer state checks)
-    // all read this single effective list, which is what makes a record-active screen visible to
-    // the special-layer machinery.
+    // from its config right here, otherwise the screen property white list applies. A virtual screen
+    // hosts at most one mirror-type display node, so this record-active child is the only possible
+    // record source on the screen and the effective list cannot leak into a sibling extend display's
+    // draw path. The screen is prepared before its display children, so re-resolving (instead of
+    // reading the child's per-frame cache) is what keeps this same-frame fresh; the node map is
+    // stable during the prepare phase, so this matches what the display node itself resolves later
+    // this frame. Downstream consumers (render-thread white list hand-off and the special-layer
+    // state checks) all read this single effective list, which is what makes a record-active screen
+    // visible to the special-layer machinery.
     std::unordered_set<NodeId> effectiveWhiteList = recordDisplayNode != nullptr
         ? recordDisplayNode->ResolveRecordLeashIds()
         : screenProperty_.GetWhiteList();
     screenParams->SetEffectiveWhiteList(effectiveWhiteList);
     // Also keep the main-thread special-layer registry in sync, so that the visitor's
     // allWhiteList_ query and the virtual-screen occlusion culling (IsValidInVirtualScreen) treat
-    // record-active screens exactly like cast-whitelist screens. Update() is called on the main
-    // thread during Prepare (before InitScreenInfo queries in the same frame). While a record
-    // session is active this node owns the IS_WHITE_LIST entries and rewrites them every frame --
-    // self-healing against the property-change path (UpdateScreenSpecialLayer) overwriting them;
-    // with record inactive the event path owns them and the diff gate keeps us silent.
+    // record-active screens exactly like cast-whitelist screens. In the uni-render traversal this
+    // runs after the current screen's InitScreenInfo (QuickPrepareScreenRenderNode queries the
+    // registry at entry, PostPrepare later calls UpdateRenderParams), so the record screen's own
+    // allWhiteList_ diff observes a session change on the next frame; screens prepared later in
+    // the same traversal see it immediately. While a record session is active this node owns the
+    // IS_WHITE_LIST entries and rewrites them every frame -- self-healing against the
+    // property-change path (UpdateScreenSpecialLayer) overwriting them; with record inactive the
+    // event path owns them and the diff gate keeps us silent.
     if (hasWindowRecordChild || effectiveWhiteList != lastRegisteredWhiteList_) {
         ScreenSpecialLayerInfo::Update(SpecialLayerType::IS_WHITE_LIST, GetScreenId(), effectiveWhiteList);
         lastRegisteredWhiteList_ = std::move(effectiveWhiteList);

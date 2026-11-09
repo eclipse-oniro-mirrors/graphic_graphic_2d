@@ -556,7 +556,17 @@ public:
             return false; // out-of-range enum from an untrusted parcel: drop the config
         }
         val.renderFit = static_cast<WindowRecordFit>(renderFit);
-        return Unmarshalling(parcel, val.surfaceNodeIds);
+        if (!Unmarshalling(parcel, val.surfaceNodeIds)) {
+            return false;
+        }
+        // Enforce the bound at the parcel boundary so every delivery channel (Create via
+        // RSDisplayNodeConfig, SetDisplayMode, SetWindowRecordConfig) is covered; the setters'
+        // own cap alone cannot catch the constructor-embedded path.
+        if (val.surfaceNodeIds.size() > MAX_WINDOW_RECORD_SURFACE_NUM) {
+            val.surfaceNodeIds.clear();
+            return false;
+        }
+        return true;
     }
 
     static bool Marshalling(Parcel& parcel, const RSDisplayNodeConfig& val)

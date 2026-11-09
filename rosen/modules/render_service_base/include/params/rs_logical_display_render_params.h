@@ -162,7 +162,6 @@ public:
         return fixedHeight_;
     }
 
-    bool IsWindowRecordActive() const { return !windowRecordConfig_.surfaceNodeIds.empty(); }
     // A record session is only active on a virtual screen: consumers gate on this instead of the
     // raw config, so a display re-parented to a physical screen (or whose parent screen is not
     // ready yet) falls back to normal drawing instead of hijacking the frame.
