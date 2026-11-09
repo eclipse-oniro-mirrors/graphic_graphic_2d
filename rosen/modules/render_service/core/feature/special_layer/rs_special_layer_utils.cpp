@@ -110,10 +110,13 @@ DisplaySpecialLayerState RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(
     const auto& specialLayerManager = displayParams->GetSpecialLayerMgr();
     ScreenId screenId = displayParams->GetScreenId();
     const auto& screenProperty = screenParams->GetScreenProperty();
-    bool hasGeneralSpecialLayer = !screenProperty.GetWhiteList().empty() ||
+    // White list check uses the effective white list (record snapshot or screen property, see
+    // RSScreenRenderNode::UpdateRenderParams) so that a record-active screen counts as having a
+    // special layer just like a cast-whitelist screen does.
+    bool hasGeneralSpecialLayer = !screenParams->GetEffectiveWhiteList().empty() ||
         !screenProperty.GetTypeBlackList().empty() || specialLayerManager.GetHasSlInVisibleRect(screenId);
     RS_LOGD("%{public}sWhiteList:%{public}d, TypeBlackList:%{public}d, "
-        "HasSlInVisibleRect:%{public}d", __func__, !screenProperty.GetWhiteList().empty(),
+        "HasSlInVisibleRect:%{public}d", __func__, !screenParams->GetEffectiveWhiteList().empty(),
         !screenProperty.GetTypeBlackList().empty(), specialLayerManager.GetHasSlInVisibleRect(screenId));
     
     return hasGeneralSpecialLayer ? DisplaySpecialLayerState::HAS_SPECIAL_LAYER :
@@ -137,7 +140,8 @@ DisplaySpecialLayerState RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(
         hasGeneralSpecialLayer |= (specialLayerManager.Find(SpecialLayerType::HAS_SNAPSHOT_SKIP) ||
             uniRenderThread.IsCurtainScreenOn());
     } else {
-        hasGeneralSpecialLayer |= !screenProperty.GetWhiteList().empty() || !screenProperty.GetTypeBlackList().empty()
+        hasGeneralSpecialLayer |= !screenParams->GetEffectiveWhiteList().empty() ||
+            !screenProperty.GetTypeBlackList().empty()
             || specialLayerManager.FindWithScreen(screenId, SpecialLayerType::HAS_BLACK_LIST);
     }
 

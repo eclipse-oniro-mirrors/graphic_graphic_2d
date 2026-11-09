@@ -637,21 +637,20 @@ NodeId RSSurfaceRenderNodeDrawable::GetWhiteListPersistentId(
     const RSSurfaceRenderParams& surfaceParam, const RSPaintFilterCanvas& canvas)
 {
     const auto& whiteList = RSUniRenderThread::Instance().GetWhiteList();
-    // 1 . sub thread drawing doesn't check the whitelist, so there is no need to get whiteList's persistentId
-    if (canvas.GetIsParallelCanvas()) {
-        return INVALID_LEASH_PERSISTENTID;
-    }
-    // 2 . match by leash persistent id (normal windows)
     auto persistentId = surfaceParam.GetLeashPersistentId();
-    if (whiteList.find(persistentId) != whiteList.end()) {
-        return persistentId;
+
+    // 1 . sub thread drawing doesn't check the whitelist, so there is no need to get whiteList's persistentId
+    // 2 . when the persistent id of the node doesn't match the whitelist, don't return the persistent id
+    if (canvas.GetIsParallelCanvas() || whiteList.find(persistentId) == whiteList.end()) {
+        //cursor node has no leash persistent id; fall back to surface node id for whitelist match
+        if (surfaceParam.GetSurfaceNodeType() == RSSurfaceNodeType::CURSOR_NODE &&
+            whiteList.find(surfaceParam.GetId()) != whiteList.end()) {
+            persistentId = surfaceParam.GetId();
+        } else {
+            persistentId = INVALID_LEASH_PERSISTENTID;
+        }
     }
-    // 3 . cursor-type surfaces have no leash persistent id; fall back to surface node id
-    auto surfaceId = surfaceParam.GetId();
-    if (whiteList.find(surfaceId) != whiteList.end()) {
-        return surfaceId;
-    }
-    return INVALID_LEASH_PERSISTENTID;
+    return persistentId;
 }
 
 void RSSurfaceRenderNodeDrawable::DrawUifirstContentChildren(Drawing::Canvas& canvas, const Drawing::Rect& rect)

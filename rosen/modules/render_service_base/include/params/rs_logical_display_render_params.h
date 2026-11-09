@@ -18,6 +18,8 @@
 
 #include <memory>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 #include "common/rs_macros.h"
 #include "params/rs_render_params.h"
@@ -161,11 +163,40 @@ public:
     }
 
     bool IsWindowRecordActive() const { return !windowRecordConfig_.surfaceNodeIds.empty(); }
-    const RSWindowRecordConfig& GetWindowRecordConfig() const { return windowRecordConfig_; }
-    const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& GetRecordSurfaceNodes() const
+    // A record session is only active on a virtual screen: consumers gate on this instead of the
+    // raw config, so a display re-parented to a physical screen (or whose parent screen is not
+    // ready yet) falls back to normal drawing instead of hijacking the frame.
+    bool IsRecordSessionActive() const
     {
-        return recordSurfaceNodes_;
+        return !windowRecordConfig_.surfaceNodeIds.empty() && isOnVirtualScreen_;
     }
+    void SetOnVirtualScreen(bool onVirtualScreen)
+    {
+        isOnVirtualScreen_ = onVirtualScreen;
+        needSync_ = true;
+    }
+    const RSWindowRecordConfig& GetWindowRecordConfig() const { return windowRecordConfig_; }
+    // Window-record snapshots, resolved per frame on the RS main thread (see
+    // RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot). The render thread consumes only
+    // these: drawables are the render-thread side representation, so locking them and reading
+    // their params is safe. It must never touch RSRenderNodeMap or RSRenderNode, whose state
+    // (node map containers, parent chain, node members) is main-thread exclusive and unlocked.
+    const std::vector<DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr>& GetRecordSurfaceDrawables() const
+    {
+        return recordSurfaceDrawables_;
+    }
+    const std::unordered_set<NodeId>& GetRecordLeashPersistentIds() const
+    {
+        return recordLeashPersistentIds_;
+    }
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetRecordSourceDisplayDrawable() const
+    {
+        return recordSourceDisplayDrawable_;
+    }
+    // Called by RSLogicalDisplayRenderNode after writing the record snapshot fields (friend
+    // access), to make their sync requirement explicit instead of riding on another field's
+    // needSync_ side effect.
+    void MarkWindowRecordSnapshotSynced() { needSync_ = true; }
 
     void SetWindowRecordConfig(const RSWindowRecordConfig& config) { windowRecordConfig_ = config; needSync_ = true; }
 
@@ -200,7 +231,14 @@ private:
     float fixedHeight_ = 0;
 
     RSWindowRecordConfig windowRecordConfig_;
-    std::vector<std::weak_ptr<RSSurfaceRenderNode>> recordSurfaceNodes_;
+    bool isOnVirtualScreen_ = false;
+    // Main-thread resolved window-record snapshots (see GetRecordSurfaceDrawables() for the
+    // thread contract). recordSurfaceDrawables_ holds only main-window-type surfaces, so the
+    // render thread needs no node type check; recordLeashPersistentIds_ feeds the capture
+    // whitelist; recordSourceDisplayDrawable_ replaces the per-frame parent-chain walk.
+    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr> recordSurfaceDrawables_;
+    std::unordered_set<NodeId> recordLeashPersistentIds_;
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr recordSourceDisplayDrawable_;
 
     friend class RSLogicalDisplayRenderNode;
 };

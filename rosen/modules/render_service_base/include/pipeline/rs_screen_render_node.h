@@ -18,6 +18,7 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 
 #ifndef ROSEN_CROSS_PLATFORM
 #include <ibuffer_consumer_listener.h>
@@ -663,6 +664,9 @@ private:
     NodeId targetSurfaceRenderNodeId_ = INVALID_NODEID;
     ScreenInfo screenInfo_;
     RSScreenProperty screenProperty_;
+    // Last white list this node registered into ScreenSpecialLayerInfo (IS_WHITE_LIST), used to
+    // gate registry writes in UpdateRenderParams; see the registration comment there.
+    std::unordered_set<NodeId> lastRegisteredWhiteList_;
     friend class DisplayNodeCommandHelper;
 
     HeadroomMap headroomCounts_;

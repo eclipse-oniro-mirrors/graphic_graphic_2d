@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <climits>
+#include <cmath>
 
 #include "common/rs_optional_trace.h"
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
@@ -42,6 +43,7 @@
 #include "platform/common/rs_system_properties.h"
 #include "rs_profiler_capture_recorder.h"
 #include "rs_trace.h"
+#include "surface.h"
 #include "system/rs_system_parameters.h"
 
 namespace OHOS::Rosen::DrawableV2 {
@@ -89,7 +91,7 @@ void RSMultiScreenUtil::HandleMirrorDisplay(
 
     drawable.currentTypeBlackList_ = screenProperty.GetTypeBlackList();
     RSUniRenderThread::Instance().SetTypeBlackList(drawable.currentTypeBlackList_);
-    RSUniRenderThread::Instance().SetWhiteList(screenProperty.GetWhiteList());
+    RSUniRenderThread::Instance().SetWhiteList(screenParams->GetEffectiveWhiteList());
     drawable.curSecExemption_ = params.GetSecurityExemption();
     uniParam->SetSecExemption(drawable.curSecExemption_);
 
@@ -142,7 +144,7 @@ void RSMultiScreenUtil::HandleVirtualExtendDisplay(
     drawable.currentBlackList_ = RSSpecialLayerUtils::GetMergeBlackListInRenderThread(screenProperty);
     RSUniRenderThread::Instance().SetBlackList(drawable.currentBlackList_);
     RSUniRenderThread::Instance().SetTypeBlackList(screenProperty.GetTypeBlackList());
-    RSUniRenderThread::Instance().SetWhiteList(screenProperty.GetWhiteList());
+    RSUniRenderThread::Instance().SetWhiteList(screenParams->GetEffectiveWhiteList());
     drawable.curSecExemption_ = params.GetSecurityExemption();
     uniParam->SetSecExemption(drawable.curSecExemption_);
 
@@ -1068,18 +1070,22 @@ std::pair<MultiScreenParams, bool> RSMultiScreenUtil::GetMultiScreenParams(RSLog
 }
 
 namespace {
-Drawing::RectI ComputeRecordBBox(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& recordNodes)
+// Runs on the RSUniRenderThread and consumes only the main-thread snapshot of drawables (see
+// RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot). Drawables and their params are the
+// render-thread side representation, so this never touches RSRenderNodeMap or RSRenderNode.
+// The snapshot already contains main-window-type surfaces only, hence no node type check here.
+Drawing::RectI ComputeRecordBBox(const std::vector<RSRenderNodeDrawableAdapter::WeakPtr>& recordDrawables)
 {
     int32_t left = INT32_MAX;
     int32_t top = INT32_MAX;
     int32_t right = INT32_MIN;
     int32_t bottom = INT32_MIN;
-    for (const auto& weakNode : recordNodes) {
-        auto node = weakNode.lock();
-        if (!node || !node->GetRenderParams() || !node->IsMainWindowType()) {
+    for (const auto& weakDrawable : recordDrawables) {
+        auto drawable = weakDrawable.lock();
+        if (!drawable || !drawable->GetRenderParams()) {
             continue;
         }
-        const auto& rect = node->GetRenderParams()->GetAbsDrawRect();
+        const auto& rect = drawable->GetRenderParams()->GetAbsDrawRect();
         left = std::min(left, rect.GetLeft());
         top = std::min(top, rect.GetTop());
         right = std::max(right, rect.GetRight());
@@ -1087,37 +1093,19 @@ Drawing::RectI ComputeRecordBBox(const std::vector<std::weak_ptr<RSSurfaceRender
     }
     return {left, top, right, bottom};
 }
-std::shared_ptr<RSLogicalDisplayRenderNode> FindWindowRecordSourceDisplay(
-    const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& recordNodes)
-{
-    // RS derives the source display itself (not the caller): anchor on the first
-    // main-window-type surface in the set and walk up to its logical display.
-    for (const auto& weakNode : recordNodes) {
-        auto surfaceNode = weakNode.lock();
-        if (!surfaceNode || !surfaceNode->IsMainWindowType()) {
-            continue;
-        }
-        auto ancestor = surfaceNode->GetParent().lock();
-        while (ancestor) {
-            auto display = ancestor->ReinterpretCastTo<RSLogicalDisplayRenderNode>();
-            if (display) {
-                return display;
-            }
-            ancestor = ancestor->GetParent().lock();
-        }
-    }
-    return nullptr;
-}
 
 void ApplyGravityTransform(RSPaintFilterCanvas* curCanvas, const Drawing::RectI& bbox,
-    int32_t canvasW, int32_t canvasH, WindowRecordFit fit)
+    int32_t canvasW, int32_t canvasH, WindowRecordFit fit, ScreenRotation rotation)
 {
-    if (bbox.GetLeft() >= bbox.GetRight() || bbox.GetTop() >= bbox.GetBottom()) {
+    // IsValid() computes the span with int64 and rejects rects whose span exceeds int32, so the
+    // int32 subtractions below cannot overflow; the canvas sizes are guarded the same way as in
+    // ComputeGravityRect.
+    if (!bbox.IsValid() || canvasW <= 0 || canvasH <= 0) {
         return;
     }
-    int32_t contentW = bbox.GetRight() - bbox.GetLeft();
-    int32_t contentH = bbox.GetBottom() - bbox.GetTop();
-    auto targetRect = ComputeGravityRect(canvasW, canvasH, contentW, contentH, fit);
+    int32_t contentW = bbox.GetWidth();
+    int32_t contentH = bbox.GetHeight();
+    auto targetRect = RSMultiScreenUtil::ComputeGravityRect(canvasW, canvasH, contentW, contentH, fit, rotation);
     curCanvas->ClipRect(targetRect, Drawing::ClipOp::INTERSECT, false);
     float sx = static_cast<float>(targetRect.GetWidth()) / contentW;
     float sy = static_cast<float>(targetRect.GetHeight()) / contentH;
@@ -1129,16 +1117,64 @@ void ApplyGravityTransform(RSPaintFilterCanvas* curCanvas, const Drawing::RectI&
 } // namespace
 
 Drawing::RectI RSMultiScreenUtil::ComputeGravityRect(int32_t canvasW, int32_t canvasH,
-    int32_t contentW, int32_t contentH, WindowRecordFit fit)
+    int32_t contentW, int32_t contentH, WindowRecordFit fit, ScreenRotation rotation)
 {
+    // Public entry point: guard the divisors here rather than relying on every caller. With a zero
+    // or negative content/canvas size, scale becomes inf, contentW * scale becomes NaN, and
+    // static_cast<int32_t>(NaN) is undefined behavior. An empty rect makes callers skip the
+    // clip/scale path via RectI::IsValid().
+    if (contentW <= 0 || contentH <= 0 || canvasW <= 0 || canvasH <= 0) {
+        RS_LOGE("RSMultiScreenUtil::%{public}s invalid size canvas[%{public}d,%{public}d] "
+            "content[%{public}d,%{public}d]", __func__, canvasW, canvasH, contentW, contentH);
+        return {0, 0, 0, 0};
+    }
     float scale = std::min(static_cast<float>(canvasW) / contentW,
                            static_cast<float>(canvasH) / contentH);
     int32_t scaledW = static_cast<int32_t>(contentW * scale);
     int32_t scaledH = static_cast<int32_t>(contentH * scale);
-    int32_t x = (fit == WindowRecordFit::ASPECT_FIT_TOP_LEFT) ? 0 : (canvasW - scaledW) / 2;
-    int32_t y = (fit == WindowRecordFit::ASPECT_FIT_TOP_LEFT) ? 0 : (canvasH - scaledH) / 2;
+    int32_t x = 0;
+    int32_t y = 0;
+    if (fit == WindowRecordFit::ASPECT_FIT) {
+        x = (canvasW - scaledW) / 2;
+        y = (canvasH - scaledH) / 2;
+    } else {
+        // ASPECT_FIT_TOP_LEFT: align content to buffer top-left corner.
+        // Canvas is rotated reletive to buffer, so (0,0) in canvas space maps to
+        // different buffer corners depending on rotation.
+        if (rotation == ScreenRotation::ROTATION_90) {
+            x = 0;
+            y = canvasH - scaledH;
+        } else if (rotation == ScreenRotation::ROTATION_180) {
+            x = canvasW - scaledW;
+            y = canvasH - scaledH;
+        } else if (rotation == ScreenRotation::ROTATION_270) {
+            x = canvasW - scaledW;
+            y = 0;
+        }
+    }
     return {x, y, x + scaledW, y + scaledH};
 }
+
+namespace {
+constexpr float ROTATION_0_DEG = 0.0f;
+constexpr float ROTATION_180_DEG = 180.0f;
+constexpr float ROTATION_270_DEG = 270.0f;
+constexpr float ROTATION_90_DEG = 90.0f;
+
+float ScreenRotationToDegrees(ScreenRotation rotation)
+{
+    switch (rotation) {
+        case ScreenRotation::ROTATION_90:
+            return ROTATION_90_DEG;
+        case ScreenRotation::ROTATION_180:
+            return ROTATION_180_DEG;
+        case ScreenRotation::ROTATION_270:
+            return ROTATION_270_DEG;
+        default:
+            return ROTATION_0_DEG;
+    }
+}
+} // namespace
 
 void RSMultiScreenUtil::HandleWindowRecordScreen(
     RSScreenRenderNodeDrawable& drawable,
@@ -1149,20 +1185,32 @@ void RSMultiScreenUtil::HandleWindowRecordScreen(
     // skip before the processor requests an output buffer, so the consumer surface
     // receives no frame at all instead of a blank one (AC-1.4, 2026-09-22 decision)
     for (const auto& displayDrawable : params.GetDisplayDrawables()) {
-        if (!displayDrawable) {
+        // Type gate before any downcast: the container holds base adapter pointers, and static_cast
+        // on a mismatched element yields a non-null pointer at a wrong offset, which the null check
+        // below cannot catch.
+        if (!displayDrawable || displayDrawable->GetNodeType() != RSRenderNodeType::LOGICAL_DISPLAY_NODE) {
             continue;
         }
         auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable->GetRenderParams().get());
-        if (!displayParams || !displayParams->IsWindowRecordActive()) {
+        if (displayParams == nullptr || !displayParams->IsRecordSessionActive()) {
             continue;
         }
-        auto sourceNode = FindWindowRecordSourceDisplay(displayParams->GetRecordSurfaceNodes());
-        if (!sourceNode) {
+        // The source display is resolved on the RS main thread every frame; an empty snapshot means
+        // this record config currently has no drawable main window.
+        if (displayParams->GetRecordSourceDisplayDrawable().lock() == nullptr) {
             RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s no drawable main, skip without buffer request", __func__);
             drawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
             return;
         }
-        std::static_pointer_cast<RSLogicalDisplayRenderNodeDrawable>(displayDrawable)->SetCachedSourceNode(sourceNode);
+        // An empty render-thread whitelist means "draw everything" (RSRenderNodeDrawable::
+        // IsWhiteListNode returns true for an empty set), which would record the whole source
+        // display instead of the configured windows. Skip the frame -- before the processor
+        // requests an output buffer -- rather than leak non-configured content into the recording.
+        if (displayParams->GetRecordLeashPersistentIds().empty()) {
+            RS_LOGE("RSMultiScreenUtil::%{public}s no recordable leash id, skip without buffer request", __func__);
+            drawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
+            return;
+        }
     }
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if (!processor || !processor->InitForRenderThread(drawable, renderEngine, 0)) {
@@ -1170,12 +1218,22 @@ void RSMultiScreenUtil::HandleWindowRecordScreen(
         RS_LOGE("RSMultiScreenUtil::%{public}s processor init failed", __func__);
         return;
     }
+    drawable.syncDirtyManager_->ResetDirtyAsSurfaceSize();
+    drawable.syncDirtyManager_->UpdateDirty(false);
     auto expandProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
     if (!expandProcessor) {
         drawable.SetDrawSkipType(DrawSkipType::EXPAND_PROCESSOR_NULL);
         RS_LOGE("RSMultiScreenUtil::%{public}s expandProcessor is null", __func__);
         return;
     }
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    if (!uniParam) {
+        drawable.SetDrawSkipType(DrawSkipType::RENDER_PARAMS_OR_UNI_PARAMS_NULL);
+        RS_LOGE("RSMultiScreenUtil::%{public}s uniParam is null", __func__);
+        return;
+    }
+
+    DirtyStatusAutoUpdate dirtyStatusAutoUpdate(*uniParam, false);
     RSUniRenderThread::BufferManagerGuard bufferGuard;
     drawable.curCanvas_ = expandProcessor->GetCanvas();
     auto& curCanvas = drawable.curCanvas_;
@@ -1194,7 +1252,8 @@ void RSMultiScreenUtil::HandleWindowRecordScreen(
 
 void RSMultiScreenUtil::HandleWindowRecord(
     RSLogicalDisplayRenderNodeDrawable& drawable,
-    RSLogicalDisplayRenderParams& params)
+    RSLogicalDisplayRenderParams& params,
+    RSUniRenderVirtualProcessor& processor)
 {
     auto curCanvas = drawable.curCanvas_;
     if (!curCanvas) {
@@ -1202,67 +1261,155 @@ void RSMultiScreenUtil::HandleWindowRecord(
         return;
     }
     const auto& config = params.GetWindowRecordConfig();
-    auto sourceNode = drawable.GetCachedSourceNode().lock();
-    if (!sourceNode) {
-        RS_LOGE("RSMultiScreenUtil::%{public}s source display not found", __func__);
+    // Defensive duplicate of the HandleWindowRecordScreen gate: an empty whitelist disables
+    // filtering entirely, so bail out before touching the canvas to keep Save/Restore balanced.
+    if (params.GetRecordLeashPersistentIds().empty()) {
+        RS_LOGE("RSMultiScreenUtil::%{public}s empty record whitelist, skip frame", __func__);
         return;
     }
-    auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
-    auto sourceDrawable = std::static_pointer_cast<RSRenderNodeDrawable>(
-        sourceNode->GetRenderDrawable());
-    if (!sourceDrawable || !sourceDrawable->ShouldPaint()) {
+    // The source display arrives as a main-thread snapshot (drawable weak ref), so this path stays
+    // off RSRenderNode / RSRenderNodeMap on the render thread.
+    auto sourceDisplayDrawable = params.GetRecordSourceDisplayDrawable().lock();
+    if (!sourceDisplayDrawable || sourceDisplayDrawable->GetNodeType() != RSRenderNodeType::LOGICAL_DISPLAY_NODE) {
+        RS_LOGE("RSMultiScreenUtil::%{public}s source display drawable invalid", __func__);
+        return;
+    }
+    auto sourceDrawable = std::static_pointer_cast<RSRenderNodeDrawable>(sourceDisplayDrawable);
+    if (!sourceDrawable->ShouldPaint() || !sourceDrawable->GetRenderParams()) {
         RS_LOGE("RSMultiScreenUtil::%{public}s source drawable invalid", __func__);
         return;
     }
-    auto bbox = ComputeRecordBBox(params.GetRecordSurfaceNodes());
+    auto bbox = ComputeRecordBBox(params.GetRecordSurfaceDrawables());
+    // Type gate above guarantees these are logical display params; hold a reference so the pointer
+    // cannot be reused outside the gated scope.
+    auto& sourceParams = static_cast<RSLogicalDisplayRenderParams&>(*sourceDrawable->GetRenderParams());
     curCanvas->Save();
-    ApplyGravityTransform(curCanvas, bbox,
-        curCanvas->GetWidth(), curCanvas->GetHeight(), config.renderFit);
-    auto sourceParams = static_cast<RSLogicalDisplayRenderParams*>(sourceDrawable->GetRenderParams().get());
-    if (sourceParams) {
-        curCanvas->ConcatMatrix(sourceParams->GetMatrix());
+
+    auto [screenDrawable, screenParams] = drawable.GetScreenParams(params);
+    bool canvasRotation = false;
+    ScreenRotation screenCorrection = ScreenRotation::ROTATION_0;
+    if (screenParams) {
+        const auto& screenProperty = screenParams->GetScreenProperty();
+        canvasRotation = screenProperty.GetCanvasRotation();
+        screenCorrection = screenProperty.GetScreenCorrection();
     }
-    // Set whitelist + capture mode so surface OnCapture filters non-recorded surfaces.
-    // The whitelist matches LeashPersistentIds (same id space as the cast-screen
-    // whitelist): a recorded window passes via its first-level leash root. INVALID
-    // ids must stay out of the set -- 0 would match every leashless window.
-    std::unordered_set<NodeId> ids;
-    for (const auto& weakNode : params.GetRecordSurfaceNodes()) {
-        auto surfaceNode = weakNode.lock();
-        auto leashPersistentId = surfaceNode ? surfaceNode->GetLeashPersistentId() : INVALID_LEASH_PERSISTENTID;
-        if (leashPersistentId != INVALID_LEASH_PERSISTENTID) {
-            ids.insert(leashPersistentId);
+    auto sourceRotation = sourceParams.GetScreenRotation();
+    //Mirror CanvasInit: update originScreenRotation on first frame or when canvasRotation is enabled.
+    if (drawable.IsFirstTimeToProcessor() || canvasRotation) {
+        drawable.SetOriginScreenRotation(sourceRotation);
+    }
+    //rotationAngle = originScreenRotation - screenCorrection (always applied, same as CanvasInit).
+    auto rotationDiff =
+        static_cast<int>(drawable.GetOriginScreenRotation()) - static_cast<int>(screenCorrection);
+    auto rotation = static_cast<ScreenRotation>((rotationDiff + SCREEN_ROTATION_NUM) % SCREEN_ROTATION_NUM);
+
+    int32_t canvasW = curCanvas->GetWidth();
+    int32_t canvasH = curCanvas->GetHeight();
+    if (rotation == ScreenRotation::ROTATION_90) {
+        curCanvas->Translate(canvasW / 2.0f, canvasH / 2.0f);
+        curCanvas->Rotate(90, 0, 0);
+        curCanvas->Translate(-canvasH / 2.0f, -canvasW / 2.0f);
+        std::swap(canvasW, canvasH);
+    } else if (rotation == ScreenRotation::ROTATION_180) {
+        curCanvas->Rotate(180, canvasW / 2.0f, canvasH / 2.0f);
+    } else if (rotation == ScreenRotation::ROTATION_270) {
+        curCanvas->Translate(canvasW / 2.0f, canvasH / 2.0f);
+        curCanvas->Rotate(270, 0, 0);
+        curCanvas->Translate(-canvasH / 2.0f, -canvasW / 2.0f);
+        std::swap(canvasW, canvasH);
+    }
+    // Capture M_rot: canvas->buffer matrix after rotation, before gravity transform.
+    // Used to map targetTect (canvas scope) to buffer coords for currentFrameRect.
+    auto rotMatrix = curCanvas->GetTotalMatrix();
+    ApplyGravityTransform(curCanvas, bbox, canvasW, canvasH, config.renderFit, rotation);
+
+    // Compute window record rects and set them on the producer surface directly.
+    // originalRect = bounding box of recorded windows on source display (display coords).
+    // currentFrameRect = where content actually lands on the output buffer (buffer coords).
+    if (bbox.IsValid()) {
+        int32_t contentW = bbox.GetWidth();
+        int32_t contentH = bbox.GetHeight();
+        auto targetRect = RSMultiScreenUtil::ComputeGravityRect(
+            canvasW, canvasH, contentW, contentH, config.renderFit, rotation);
+        Drawing::Rect targetRectF(static_cast<float>(targetRect.GetLeft()),
+            static_cast<float>(targetRect.GetTop()),
+            static_cast<float>(targetRect.GetRight()),
+            static_cast<float>(targetRect.GetBottom()));
+        Drawing::Rect bufferRectF;
+        rotMatrix.MapRect(bufferRectF, targetRectF);
+        auto curFrameRect = Drawing::RectI(static_cast<int32_t>(bufferRectF.GetLeft()),
+            static_cast<int32_t>(bufferRectF.GetTop()),
+            static_cast<int32_t>(bufferRectF.GetRight()),
+            static_cast<int32_t>(bufferRectF.GetBottom()));
+        if (curFrameRect.IsValid()) {
+            float angle = ScreenRotationToDegrees(drawable.GetOriginScreenRotation());
+            Rect surfaceCurRect = { curFrameRect.GetLeft(), curFrameRect.GetTop(),
+                curFrameRect.GetWidth(), curFrameRect.GetHeight() };
+            Rect surfaceOrigRect = { bbox.GetLeft(), bbox.GetTop(), bbox.GetWidth(), bbox.GetHeight() };
+            GSError ret = processor.SetScreenInfoForWindowRecord(surfaceCurRect, surfaceOrigRect, angle);
+            if (ret != GSERROR_OK) {
+                // The frame content is still valid; only the accompanying metadata is missing.
+                RS_LOGE("RSMultiScreenUtil::%{public}s SetScreenInfoForWindowRecord failed ret=%{public}d",
+                    __func__, static_cast<int>(ret));
+            }
         }
+        RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s originalRect[%d,%d,%d,%d] currentFrameRect[%d,%d,%d,%d]",
+            __func__, bbox.GetLeft(), bbox.GetTop(), bbox.GetRight(), bbox.GetBottom(),
+            curFrameRect.GetLeft(), curFrameRect.GetTop(), curFrameRect.GetRight(), curFrameRect.GetBottom());
     }
+    curCanvas->ConcatMatrix(sourceParams.GetMatrix());
+    // Set whitelist + capture mode so surface OnCapture filters non-recorded surfaces.
+    // The ids are LeashPersistentIds resolved on the RS main thread (same id space as the
+    // cast-screen whitelist): a recorded window passes via its first-level leash root, and INVALID
+    // (0) ids are already dropped there -- 0 would match every leashless window. The render thread
+    // therefore reads no RSSurfaceRenderNode member to build this set.
+    std::unordered_set<NodeId> ids(params.GetRecordLeashPersistentIds());
     if (config.needDrawMouse) {
         NodeId cursorId = RSPointerWindowManager::Instance().GetRsNodeId();
         if (cursorId != INVALID_NODEID) {
             ids.insert(cursorId);
         }
     }
+    // Restore the shared filter lists on every exit path instead of clearing them: an empty white
+    // list means "draw everything", and clearing would also drop lists this path never owned.
+    RSUniRenderThread::NodeListGuard nodeListGuard;
     RSUniRenderThread::Instance().SetWhiteList(ids);
+    if (screenParams) {
+        const auto& screenProperty = screenParams->GetScreenProperty();
+        drawable.currentBlackList_ = RSSpecialLayerUtils::GetMergeBlackListInRenderThread(screenProperty);
+        RSUniRenderThread::Instance().SetBlackList(drawable.currentBlackList_);
+        // Same trio as the mirror/extend paths: the capture below also filters by window type.
+        RSUniRenderThread::Instance().SetTypeBlackList(screenProperty.GetTypeBlackList());
+    }
+    bool secExemption = params.GetSecurityExemption();
     RSUniRenderThread::SetCaptureParam(CaptureParam(false, false, true));
     RSUniRenderThread::GetCaptureParam().virtualScreenId_ = params.GetScreenId();
-    RSRenderParams::SetParentSurfaceMatrix(curCanvas->GetTotalMatrix());
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    // Save the shared render-thread state we are about to override and restore it afterwards
+    // (OpDropped / SecurityDisplay / SecExemption / parentSurfaceMatrix): resetting to defaults
+    // instead would drop whatever the enclosing path had set.
     bool isOpDropped = false;
-    bool isMirrorScreen = false;
+    bool prevSecurityDisplay = false;
+    bool prevSecExemption = false;
     if (uniParam) {
         isOpDropped = uniParam->IsOpDropped();
+        prevSecurityDisplay = uniParam->IsSecurityDisplay();
+        prevSecExemption = uniParam->GetSecExemption();
         uniParam->SetOpDropped(false);
-        // Open CheckIfSurfaceSkipInMirrorOrScreenshot so whitelist membership
-        // actually filters this traversal; restored right after OnCapture.
-        isMirrorScreen = uniParam->IsMirrorScreen();
-        uniParam->SetIsMirrorScreen(true);
+        uniParam->SetSecurityDisplay(true);
+        uniParam->SetSecExemption(secExemption);
     }
+    const Drawing::Matrix parentSurfaceMatrix = RSRenderParams::GetParentSurfaceMatrix();
+    RSRenderParams::SetParentSurfaceMatrix(curCanvas->GetTotalMatrix());
     sourceDrawable->RSRenderNodeDrawable::OnCapture(*curCanvas);
+    RSRenderParams::SetParentSurfaceMatrix(parentSurfaceMatrix);
     if (uniParam) {
         uniParam->SetOpDropped(isOpDropped);
-        uniParam->SetIsMirrorScreen(isMirrorScreen);
+        uniParam->SetSecurityDisplay(prevSecurityDisplay);
+        uniParam->SetSecExemption(prevSecExemption);
     }
-    RSUniRenderThread::ResetCaptureParam();
-    RSUniRenderThread::Instance().SetWhiteList({});
     curCanvas->Restore();
+    RSUniRenderThread::ResetCaptureParam();
     RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s surfaces[%zu] fit[%d]",
         __func__, config.surfaceNodeIds.size(), static_cast<int>(config.renderFit));
 }

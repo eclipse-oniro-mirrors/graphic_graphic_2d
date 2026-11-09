@@ -550,10 +550,13 @@ public:
     static bool Unmarshalling(Parcel& parcel, RSWindowRecordConfig& val)
     {
         int32_t renderFit = 0;
-        return Unmarshalling(parcel, val.needDrawMouse) &&
-               Unmarshalling(parcel, renderFit) &&
-               (val.renderFit = static_cast<WindowRecordFit>(renderFit), true) &&
-               Unmarshalling(parcel, val.surfaceNodeIds);
+        if (!Unmarshalling(parcel, val.needDrawMouse) || !Unmarshalling(parcel, renderFit) ||
+            renderFit < static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT) ||
+            renderFit > static_cast<int32_t>(WindowRecordFit::ASPECT_FIT)) {
+            return false; // out-of-range enum from an untrusted parcel: drop the config
+        }
+        val.renderFit = static_cast<WindowRecordFit>(renderFit);
+        return Unmarshalling(parcel, val.surfaceNodeIds);
     }
 
     static bool Marshalling(Parcel& parcel, const RSDisplayNodeConfig& val)
@@ -570,10 +573,14 @@ public:
     static bool Unmarshalling(Parcel& parcel, RSDisplayNodeConfig& val)
     {
         uint8_t mode = 0;
-        return Unmarshalling(parcel, val.screenId) &&
-               Unmarshalling(parcel, mode) &&
-               (val.displayMode = static_cast<DisplayMode>(mode), true) &&
-               Unmarshalling(parcel, val.mirrorNodeId) &&
+        if (!Unmarshalling(parcel, val.screenId) || !Unmarshalling(parcel, mode)) {
+            return false;
+        }
+        // Clamp out-of-range values to INVALID (the pre-existing default semantics) instead of
+        // storing an out-of-range enum value coming from an untrusted parcel.
+        val.displayMode = mode <= static_cast<uint8_t>(DisplayMode::INDEPENDENT)
+            ? static_cast<DisplayMode>(mode) : DisplayMode::INVALID;
+        return Unmarshalling(parcel, val.mirrorNodeId) &&
                Unmarshalling(parcel, val.isSync) &&
                Unmarshalling(parcel, val.mirrorSourceRotation) &&
                Unmarshalling(parcel, val.positionZ) &&

@@ -38,27 +38,91 @@ bool RSLogicalDisplayRenderNode::IsOnVirtualScreen() const
 
 void RSLogicalDisplayRenderNode::SetWindowRecordConfig(const RSWindowRecordConfig& config)
 {
+    if (config.surfaceNodeIds.size() > MAX_WINDOW_RECORD_SURFACE_NUM) {
+        RS_LOGE("RSLogicalDisplayRenderNode::%{public}s too many record surfaces:%{public}zu, keep previous",
+            __func__, config.surfaceNodeIds.size());
+        return;
+    }
     windowRecordConfig_ = config;
-    recordSurfaceNodes_.clear();
-    recordSurfaceNodes_.reserve(config.surfaceNodeIds.size());
+}
+
+std::unordered_set<NodeId> RSLogicalDisplayRenderNode::ResolveRecordLeashIds() const
+{
+    std::unordered_set<NodeId> leashIds;
+    if (windowRecordConfig_.surfaceNodeIds.empty()) {
+        return leashIds;
+    }
     auto context = GetContext().lock();
     if (!context) {
         RS_LOGE("RSLogicalDisplayRenderNode::%{public}s context expired, NodeId:[%{public}" PRIu64 "]",
             __func__, GetId());
-        return;
+        return leashIds;
     }
+    // Main thread only: queries RSRenderNodeMap.
     auto& nodeMap = context->GetNodeMap();
-    for (NodeId windowId : config.surfaceNodeIds) {
+    for (NodeId windowId : windowRecordConfig_.surfaceNodeIds) {
         auto surfaceNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(windowId);
-        if (surfaceNode) {
-            recordSurfaceNodes_.emplace_back(std::move(surfaceNode));
+        // Ids without a live main-window node are skipped (EX-3).
+        if (surfaceNode == nullptr || !surfaceNode->IsMainWindowType()) {
+            continue;
+        }
+        auto leashPersistentId = surfaceNode->GetLeashPersistentId();
+        if (leashPersistentId != INVALID_LEASH_PERSISTENTID) {
+            leashIds.insert(leashPersistentId);
         }
     }
+    return leashIds;
+}
+
+void RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot(RSLogicalDisplayRenderParams& param)
+{
+    param.recordSurfaceDrawables_.clear();
+    param.recordLeashPersistentIds_.clear();
+    param.recordSourceDisplayDrawable_.reset();
+    if (windowRecordConfig_.surfaceNodeIds.empty()) {
+        return;
+    }
+    auto context = GetContext().lock();
+    if (!context) {
+        return; // ResolveRecordLeashIds has already logged the expired context.
+    }
+    // Main thread, per-frame prepare: the only place allowed to query RSRenderNodeMap and to walk
+    // the node tree. The render thread later consumes just the snapshots written here.
+    auto& nodeMap = context->GetNodeMap();
+    param.recordLeashPersistentIds_ = ResolveRecordLeashIds();
+    param.recordSurfaceDrawables_.reserve(windowRecordConfig_.surfaceNodeIds.size());
+    for (NodeId windowId : windowRecordConfig_.surfaceNodeIds) {
+        auto surfaceNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(windowId);
+        // Ids without a live main-window node are skipped (EX-3). Filtering here means the render
+        // thread never needs the node to decide what belongs to the recording.
+        if (surfaceNode == nullptr || !surfaceNode->IsMainWindowType()) {
+            continue;
+        }
+        auto surfaceDrawable = surfaceNode->GetRenderDrawable();
+        if (surfaceDrawable == nullptr) {
+            // Drawable not generated yet: skip this frame, the per-frame resolve picks it up later.
+            continue;
+        }
+        param.recordSurfaceDrawables_.emplace_back(std::move(surfaceDrawable));
+        // RSLogicalDisplayRenderNode::SetIsOnTheTree stamps the display id down the whole subtree,
+        // so an on-tree surface already knows which display owns it: one node-map lookup instead of
+        // a parent-chain walk, which would need cycle detection and a depth bound of its own.
+        if (param.recordSourceDisplayDrawable_.expired() && surfaceNode->IsOnTheTree()) {
+            auto sourceDisplay =
+                nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(surfaceNode->GetLogicalDisplayNodeId());
+            auto sourceDrawable = sourceDisplay ? sourceDisplay->GetRenderDrawable() : nullptr;
+            if (sourceDrawable != nullptr) {
+                param.recordSourceDisplayDrawable_ = std::move(sourceDrawable);
+            }
+        }
+    }
+    param.MarkWindowRecordSnapshotSynced();
 }
 
 RSLogicalDisplayRenderNode::RSLogicalDisplayRenderNode(NodeId id,
     const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
-    : RSRenderNode(id, context, isTextureExportNode), screenId_(config.screenId)
+    : RSRenderNode(id, context, isTextureExportNode), screenId_(config.screenId),
+      windowRecordConfig_(config.windowRecordConfig)
 {
     RS_TRACE_NAME_FMT("RSLogicalDisplayRenderNode ctor id[%" PRIu64 "], %s", id, config.ToString().c_str());
 
@@ -157,8 +221,9 @@ void RSLogicalDisplayRenderNode::UpdateRenderParams()
     logicalDisplayRenderParam->SetAncestorScreenDrawable(screenDrawable);
     logicalDisplayRenderParam->fixedWidth_ = fixedWidth_;
     logicalDisplayRenderParam->fixedHeight_ = fixedHeight_;
-    logicalDisplayRenderParam->windowRecordConfig_ = windowRecordConfig_;
-    logicalDisplayRenderParam->recordSurfaceNodes_ = recordSurfaceNodes_;
+    logicalDisplayRenderParam->SetWindowRecordConfig(windowRecordConfig_);
+    logicalDisplayRenderParam->SetOnVirtualScreen(IsOnVirtualScreen());
+    ResolveWindowRecordSnapshot(*logicalDisplayRenderParam);
     auto& boundGeo = GetRenderProperties().GetBoundsGeometry();
     if (boundGeo) {
         logicalDisplayRenderParam->offsetX_ = boundGeo->GetX();

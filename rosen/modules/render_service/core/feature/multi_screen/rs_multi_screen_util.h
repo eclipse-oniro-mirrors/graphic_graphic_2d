@@ -92,10 +92,12 @@ public:
 
     static void HandleWindowRecord(
         RSLogicalDisplayRenderNodeDrawable& drawable,
-        RSLogicalDisplayRenderParams& params);
+        RSLogicalDisplayRenderParams& params,
+        RSUniRenderVirtualProcessor& processor);
 
     static Drawing::RectI ComputeGravityRect(
-        int32_t canvasW, int32_t canvasH, int32_t contentW, int32_t contentH, WindowRecordFit fit);
+        int32_t canvasW, int32_t canvasH, int32_t contentW, int32_t contentH, WindowRecordFit fit,
+        ScreenRotation rotation = ScreenRotation::ROTATION_0);
 
     static void HandleVirtualExtendScreen(
         RSScreenRenderNodeDrawable& drawable,

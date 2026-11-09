@@ -16,6 +16,7 @@
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_LOGICAL_DISPLAY_RENDER_NODE_H
 
 #include <memory>
+#include <unordered_set>
 
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
@@ -173,19 +174,20 @@ public:
     void SetVirtualScreenMuteStatus(bool virtualScreenMuteStatus);
     bool GetVirtualScreenMuteStatus() const;
 
-    // Stores the config and resolves surfaceNodeIds into weak refs (main thread,
-    // command application): render-thread consumers then observe window lifetime
-    // directly instead of re-querying the node map per frame; ids without a live
-    // node are dropped (EX-3). Weak on purpose: a strong ref would keep destroyed
-    // windows' nodes and buffers alive past the render-node GC.
+    // Stores the record config only (main thread, command application). The ids are resolved
+    // every frame in UpdateRenderParams() -> ResolveWindowRecordSnapshot(), so a config that
+    // arrives before its window nodes exist is picked up on a later frame instead of being
+    // dropped permanently. Ids without a live main-window node are skipped (EX-3).
     void SetWindowRecordConfig(const RSWindowRecordConfig& config);
 
     const RSWindowRecordConfig& GetWindowRecordConfig() const { return windowRecordConfig_; }
-    const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& GetRecordSurfaceNodes() const
-    {
-        return recordSurfaceNodes_;
-    }
     bool IsWindowRecordActive() const { return !windowRecordConfig_.surfaceNodeIds.empty(); }
+    // Main thread only: resolves the leash persistent ids of the current record config by querying
+    // RSRenderNodeMap. Called every frame by this node (for its params snapshot) and by the parent
+    // screen node when it selects the effective white list -- the screen is prepared before its
+    // display children, so the screen re-resolves from the config instead of reading a stale
+    // per-frame cache, which keeps the whole white list chain same-frame fresh.
+    std::unordered_set<NodeId> ResolveRecordLeashIds() const;
 
     // true when this display is bound to a virtual screen (both record config
     // delivery channels gate on this, EX-1)
@@ -194,7 +196,6 @@ public:
     void ClearWindowRecordSession()
     {
         windowRecordConfig_ = {};
-        recordSurfaceNodes_.clear();
     }
     void SetDisplaySpecialSurfaceChanged(bool displaySpecialSurfaceChanged);
 
@@ -287,7 +288,12 @@ private:
     bool hasCaptureWindow_ = false;
 
     RSWindowRecordConfig windowRecordConfig_;
-    std::vector<std::weak_ptr<RSSurfaceRenderNode>> recordSurfaceNodes_;
+
+    // Main thread only. Resolves windowRecordConfig_.surfaceNodeIds into render-thread safe
+    // snapshots (main-window surface drawables, leash persistent ids, source display drawable).
+    // Doing this here is what lets the render thread avoid RSRenderNodeMap and RSRenderNode
+    // entirely: both are main-thread exclusive and unlocked.
+    void ResolveWindowRecordSnapshot(RSLogicalDisplayRenderParams& param);
 
     bool isBootAnimation_ = false;
 

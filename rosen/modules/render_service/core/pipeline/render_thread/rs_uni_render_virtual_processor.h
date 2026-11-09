@@ -116,6 +116,7 @@ public:
     void CancelCurrentFrame();
     sptr<SyncFence> GetFrameAcquireFence();
     bool SetCropRectForMetadata(const HDI::Display::Graphic::Common::V1_0::BufferHandleMetaRegion& metaRegion);
+    GSError SetScreenInfoForWindowRecord(const Rect& currentFrameRect, const Rect& originalRect, float angle);
 
     // Multi-surface support
     bool IsMultiSurfaceExtendMode() const { return needsOffscreenRender_; }

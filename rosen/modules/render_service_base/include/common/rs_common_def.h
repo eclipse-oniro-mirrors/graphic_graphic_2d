@@ -469,6 +469,11 @@ enum class WindowRecordFit {
     ASPECT_FIT,
 };
 
+// Upper bound for one record session's window list: the ids are re-resolved on the RS main thread
+// every frame and the resulting set is copied into the render params every frame, so the list must
+// stay small (the generic parcel bound is 65535).
+constexpr size_t MAX_WINDOW_RECORD_SURFACE_NUM = 64;
+
 struct RSWindowRecordConfig {
     bool needDrawMouse = false;
     WindowRecordFit renderFit = WindowRecordFit::ASPECT_FIT_TOP_LEFT;

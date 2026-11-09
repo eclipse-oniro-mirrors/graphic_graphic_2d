@@ -220,11 +220,12 @@ void DisplayNodeCommandHelper::SetDisplayMode(RSContext& context, NodeId id, con
     node->SetDisplayMode(mode);
     bool hasRecordConfig = !config.windowRecordConfig.surfaceNodeIds.empty();
     if (hasRecordConfig && !node->IsOnVirtualScreen()) {
-        // EX-1: record config embedded in RSDisplayNodeConfig is only valid on a
-        // virtual screen; reject it and keep the normal display-mode handling
-        RS_LOGE("DisplayNodeCommandHelper::%{public}s displayNodeId[%{public}" PRIu64
-                "] is not on a virtual screen, windowRecordConfig ignored", __func__, id);
-        hasRecordConfig = false;
+        // EX-1: a record config is only *active* on a virtual screen. Keep it instead of dropping:
+        // every consumer gates on IsRecordSessionActive (which requires the virtual-screen flag
+        // from the node), so it stays inert and activates automatically once the display is
+        // attached to a virtual screen -- config-before-screen ordering no longer loses the session.
+        RS_LOGW("DisplayNodeCommandHelper::%{public}s displayNodeId[%{public}" PRIu64
+                "] is not on a virtual screen yet, windowRecordConfig kept inactive", __func__, id);
     }
     if (hasRecordConfig) {
         node->SetWindowRecordConfig(config.windowRecordConfig);

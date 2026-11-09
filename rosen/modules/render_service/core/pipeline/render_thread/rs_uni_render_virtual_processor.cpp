@@ -32,6 +32,7 @@
 #include "rs_uni_render_util.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "string_utils.h"
+#include "surface.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -361,6 +362,25 @@ bool RSUniRenderVirtualProcessor::SetCropRectForMetadata(
         return false;
     }
     return SetMetadataForAllSurfaces(HDI::Display::Graphic::Common::V1_0::ATTRKEY_CROP_REGION, data) == GSERROR_OK;
+}
+
+GSError RSUniRenderVirtualProcessor::SetScreenInfoForWindowRecord(
+    const Rect& currentFrameRect, const Rect& originalRect, float angle)
+{
+    GSError finalResult = GSERROR_OK;
+    for (size_t i = 0; i < surfaceFrames_.size(); ++i) {
+        if (!surfaceFrames_[i].surface) {
+            RS_LOGD_IF(DEBUG_PIPELINE, "%{public}s: surfaceFrames_[%zu] surface is null.", __func__, i);
+            continue;
+        }
+        GSError ret = surfaceFrames_[i].surface->SetScreenInfoForWindowRecord(currentFrameRect, originalRect, angle);
+        if (ret != GSERROR_OK) {
+            RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: surfaceFrames_[%zu] SetScreenInfoForWindowRecord failed, ret=%{public}d.",
+                __func__, i, static_cast<int>(ret));
+            finalResult = ret;
+        }
+    }
+    return finalResult;
 }
 
 void RSUniRenderVirtualProcessor::SetDirtyInfo(const std::vector<RectI>& damageRegion)

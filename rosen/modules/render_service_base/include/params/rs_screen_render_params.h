@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_BASE_PARAMS_RS_SCREEN_RENDER_PARAMS_H
 
 #include <memory>
+#include <unordered_set>
 
 #include "common/rs_macros.h"
 #include "common/rs_occlusion_region.h"
@@ -78,6 +79,21 @@ public:
     bool HasWindowRecordDisplay() const
     {
         return hasWindowRecordDisplay_;
+    }
+    // Effective white list of this screen, selected on the RS main thread in
+    // RSScreenRenderNode::UpdateRenderParams: either the per-frame leash id snapshot of a
+    // record-active display child, or the screen property white list -- one source or the other,
+    // never merged. The render-thread white list hand-off and the special-layer state checks all
+    // consume this single list, so a record-active screen is no longer invisible to the
+    // special-layer machinery.
+    const std::unordered_set<NodeId>& GetEffectiveWhiteList() const
+    {
+        return effectiveWhiteList_;
+    }
+    void SetEffectiveWhiteList(std::unordered_set<NodeId> effectiveWhiteList)
+    {
+        effectiveWhiteList_ = std::move(effectiveWhiteList);
+        needSync_ = true;
     }
     bool IsFirstVisitCrossNodeDisplay() const
     {
@@ -294,6 +310,7 @@ private:
     HdrStatus screenHDRStatus_ = HdrStatus::NO_HDR;
     bool isMirrorScreen_ = false;
     bool hasWindowRecordDisplay_ = false;
+    std::unordered_set<NodeId> effectiveWhiteList_ = {};
     bool isFirstVisitCrossNodeDisplay_ = false;
     bool hasChildCrossNode_ = false;
     bool isMainAndLeashSurfaceDirty_ = false;

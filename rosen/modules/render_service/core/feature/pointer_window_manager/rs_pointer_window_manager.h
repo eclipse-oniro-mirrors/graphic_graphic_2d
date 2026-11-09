@@ -16,6 +16,8 @@
 #ifndef RENDER_SERVICE_CORE_PIPELINE_RS_POINTER_WINDOW_MANAGER_H
 #define RENDER_SERVICE_CORE_PIPELINE_RS_POINTER_WINDOW_MANAGER_H
 
+#include <atomic>
+
 #include "params/rs_render_thread_params.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_logical_display_render_node.h"
@@ -94,14 +96,16 @@ public:
         return isPointerCanSkipFrame_.compare_exchange_weak(expectChanged, changeFlag);
     }
 
+    // Atomic: read on RSUniRenderThread (window record white list), written under mtx_ on a binder
+    // thread (SET_POINTER_POSITION). A plain NodeId here is a data race; see report issue 6.
     NodeId GetRsNodeId() const
     {
-        return rsNodeId_;
+        return rsNodeId_.load(std::memory_order_relaxed);
     }
 
     void SetRsNodeId(NodeId id)
     {
-        rsNodeId_ = id;
+        rsNodeId_.store(id, std::memory_order_relaxed);
     }
 
     bool GetBoundHasUpdate() const
@@ -169,7 +173,7 @@ private:
     std::atomic<bool> isPointerCanSkipFrame_ = false;
     std::atomic<bool> boundHasUpdate_ = false;
     BoundParam bound_ = {0.0f, 0.0f, 0.0f, 0.0f};
-    NodeId rsNodeId_ = INVALID_NODEID;
+    std::atomic<NodeId> rsNodeId_ = INVALID_NODEID;
     bool isTuiEnabled_ = false;
 };
 } // namespace Rosen

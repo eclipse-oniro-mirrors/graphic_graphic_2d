@@ -169,8 +169,17 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     ScreenId paramScreenId = params->GetScreenId();
     RSEffectLuminanceManager::GetInstance().SetCurrentScreenId(paramScreenId);
     RSEffectLuminanceManager::GetInstance().SetHdrPipelineStatus(screenParams->GetHDRPresent());
-    if (params->IsWindowRecordActive()) {
-        RSMultiScreenUtil::HandleWindowRecord(*this, *params);
+    if (params->IsRecordSessionActive()) {
+        auto virtualProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
+        if (!virtualProcessor) {
+            // Record sessions run on a virtual screen whose processor is a virtual processor; a
+            // mismatch would otherwise silently drop the frame while reporting a normal draw.
+            SetDrawSkipType(DrawSkipType::EXPAND_PROCESSOR_NULL);
+            RS_LOGE("RSLogicalDisplayRenderNodeDrawable::%{public}s record requires virtual processor,"
+                " nodeId[%{public}" PRIu64 "]", __func__, GetId());
+            return;
+        }
+        RSMultiScreenUtil::HandleWindowRecord(*this, *params, *virtualProcessor);
         return;
     }
     auto mirroredRenderParams = mirroredDrawable ? mirroredDrawable->GetRenderParams().get() : nullptr;

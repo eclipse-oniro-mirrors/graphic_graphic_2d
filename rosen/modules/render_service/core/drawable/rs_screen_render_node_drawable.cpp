@@ -646,7 +646,7 @@ bool RSScreenRenderNodeDrawable::PrepareForDraw(std::shared_ptr<RSProcessor>& pr
     RSRenderNodeDrawable::InitDfxForCacheInfo();
     CompositeType compositeType = params->GetCompositeType();
     // set for cache and draw cross node in extended screen model
-    uniParam->SetIsMirrorScreen(params->IsMirrorScreen());
+    uniParam->SetIsMirrorScreen(params->IsMirrorScreen() || params->HasWindowRecordDisplay());
     uniParam->SetCurrentVisitDisplayDrawableId(GetId());
     uniParam->SetIsFirstVisitCrossNodeDisplay(params->IsFirstVisitCrossNodeDisplay());
     uniParam->SetCompositeType(compositeType);
