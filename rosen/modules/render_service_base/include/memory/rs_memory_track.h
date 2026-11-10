@@ -65,21 +65,13 @@ class MemoryNodeOfPid {
 public:
     MemoryNodeOfPid() = default;
     ~MemoryNodeOfPid() = default;
-    MemoryNodeOfPid(size_t size, NodeId id, size_t drawableNodeSize = 0);
+    MemoryNodeOfPid(size_t size, NodeId id);
     size_t GetMemSize();
     void SetMemSize(size_t size);
     bool operator==(const MemoryNodeOfPid& other);
-    size_t GetDrawableMemSize() const;
-    void SetDrawableMemSize(size_t size);
-    NodeId GetNodeId() const
-    {
-        return nodeId_;
-    }
-
 private:
     size_t nodeSize_ = 0;
     NodeId nodeId_ = 0;
-    size_t drawableNodeSize_ = 0;
 };
 
 class RSB_EXPORT MemoryTrack {
@@ -136,6 +128,7 @@ private:
 
     // Data to statistic information of Pid
     std::unordered_map<pid_t, std::vector<MemoryNodeOfPid>> memNodeOfPidMap_;
+    
     // RS Node Size [pid, RenderNodeMemSize, DrawableNodeMemSize]
     std::unordered_map<pid_t, std::pair<size_t, size_t>> nodeMemOfPid_;
 
