@@ -20,7 +20,7 @@
 #include "sandbox_utils.h"
 
 #undef LOG_TAG
-#define LOG_TAG "graphic_2d_hgm"
+#define LOG_TAG "hgm"
 
 namespace OHOS {
 namespace Rosen {

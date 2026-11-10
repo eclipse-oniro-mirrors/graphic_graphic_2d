@@ -64,6 +64,23 @@ constexpr int32_t VIRTUAL_KEYBOARD_FINGERS_MIN_CNT = 8;
 constexpr uint32_t FRAME_RATE_REPORT_MAX_RETRY_TIMES = 3;
 constexpr uint32_t FRAME_RATE_REPORT_DELAY_TIME = 20000;
 constexpr size_t VOTE_INFO_SIMPLE_PREFIX_LEN = 6;
+const std::string STRATEGY_ID_LTPO_DEFAULT = "LTPO-DEFAULT";
+const std::string STRATEGY_ID_LTPS_DEFAULT = "LTPS-DEFAULT";
+const std::string STRATEGY_ID_SHORT_LTPO_DEFAULT = "O-DE";
+const std::string STRATEGY_ID_SHORT_LTPS_DEFAULT = "S-DE";
+
+// Returns a reference to a file-scope constant when matched; otherwise returns the input
+// parameter's reference, so callers must pass an lvalue whose lifetime outlives the result.
+const std::string& GetShortStrategyId(const std::string& strategyId)
+{
+    if (strategyId == STRATEGY_ID_LTPO_DEFAULT) {
+        return STRATEGY_ID_SHORT_LTPO_DEFAULT;
+    }
+    if (strategyId == STRATEGY_ID_LTPS_DEFAULT) {
+        return STRATEGY_ID_SHORT_LTPS_DEFAULT;
+    }
+    return strategyId;
+}
 
 bool IsMouseOrTouchPadEvent(int32_t touchStatus, int32_t sourceType)
 {
@@ -836,10 +853,10 @@ void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eve
         return;
     }
     if (eventName == "VOTER_TOUCH" || eventName == "VOTER_POINTER") {
-        HGM_LOGD("%{public}s %{public}d %{public}u %{public}u %{public}d %{public}s", eventName.c_str(), pid,
+        HGM_LOGD_SHORT("%{public}s %{public}d %{public}u %{public}u %{public}d %{public}s", eventName.c_str(), pid,
             eventInfo.minRefreshRate, eventInfo.maxRefreshRate, eventInfo.eventStatus, eventInfo.description.c_str());
     } else {
-        HGM_LOGI("%{public}s %{public}d %{public}u %{public}u %{public}d %{public}s", eventName.c_str(), pid,
+        HGM_LOGI_SHORT("%{public}s %{public}d %{public}u %{public}u %{public}d %{public}s", eventName.c_str(), pid,
             eventInfo.minRefreshRate, eventInfo.maxRefreshRate, eventInfo.eventStatus, eventInfo.description.c_str());
     }
     if (eventName == "VOTER_SCENE") {
@@ -1328,7 +1345,8 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
         }
     } else {
         lastVoteInfo_ = resultVoteInfo;
-        HGM_LOGI_SHORT("%{public}s %{public}d %{public}d %{public}s", curScreenStrategyId_.c_str(),
+        HGM_LOGI_SHORT("%{public}s %{public}d %{public}d %{public}s",
+            GetShortStrategyId(curScreenStrategyId_).c_str(),
             static_cast<int>(curScreenId_.load()), curRefreshRateMode_,
             resultVoteInfo.ToSimpleString().erase(0, VOTE_INFO_SIMPLE_PREFIX_LEN).c_str());
     }

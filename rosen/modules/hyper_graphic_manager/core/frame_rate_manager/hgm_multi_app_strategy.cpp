@@ -62,7 +62,7 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
     HgmEnergyConsumptionPolicy::Instance().SetCurrentPkgName(pkgs);
     for (const auto& param : pkgs_) {
         RS_TRACE_NAME_FMT("%s: pkg update:%s", __func__, param.c_str());
-        HGM_LOGI("pkg update:%{public}s", param.c_str());
+        HGM_LOGI_SHORT("pkg update:%{public}s", param.c_str());
         auto [pkgName, pid, appType] = AnalyzePkgParam(param);
 
         // save sceneBoard real pid used to notify the sceneBoard of changes in speed and frame rate policies

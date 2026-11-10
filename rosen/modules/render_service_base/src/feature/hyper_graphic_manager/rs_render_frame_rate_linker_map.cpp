@@ -20,7 +20,7 @@
 #include "platform/common/rs_log.h"
 
 #undef LOG_TAG
-#define LOG_TAG "graphic_2d_hgm"
+#define LOG_TAG "hgm"
 
 namespace OHOS {
 namespace Rosen {
@@ -45,7 +45,7 @@ bool RSRenderFrameRateLinkerMap::RegisterFrameRateLinker(const std::shared_ptr<R
 
 void RSRenderFrameRateLinkerMap::UnregisterFrameRateLinker(FrameRateLinkerId id)
 {
-    ROSEN_LOGI("%{public}s: RSRenderFrameRateLinkerMap id: %{public}" PRIu64, __func__, id);
+    ROSEN_LOGI("%{public}s: id %{public}" PRIu64, __func__, id);
     frameRateLinkerMap_.erase(id);
 }
 
