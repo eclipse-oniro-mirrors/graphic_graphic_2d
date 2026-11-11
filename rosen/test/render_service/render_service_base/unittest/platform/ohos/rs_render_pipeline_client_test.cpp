@@ -38,6 +38,7 @@ namespace OHOS {
 namespace Rosen {
 static constexpr uint32_t SET_REFRESHRATE_SLEEP_US = 50000;  // wait for refreshrate change
 static constexpr uint64_t TEST_ID = 123;
+static constexpr int64_t TEST_SURFACE_CAPTURE_REPLY_TIMEOUT_MS = 5000;
 class RSPipelineClientTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -121,6 +122,41 @@ public:
     AfterAcquireBufferRet afterAcquireBufferRet_;
 };
 
+namespace {
+class CountingConnection : public RSClientToRenderConnectionProxy {
+public:
+    explicit CountingConnection(const sptr<IRemoteObject>& impl) : RSClientToRenderConnectionProxy(impl) {}
+    void TakeSurfaceCapture(NodeId, sptr<RSISurfaceCaptureCallback>, const RSSurfaceCaptureConfig&,
+        const RSSurfaceCaptureBlurParam&, const Drawing::Rect&, RSSurfaceCapturePermissions) override
+    {
+        ++captureCount_;
+    }
+    int32_t captureCount_ = 0;
+};
+
+class ScopedRenderConn {
+public:
+    explicit ScopedRenderConn(RSIClientToRenderConnection* conn)
+    {
+        hub_ = RSRenderServiceConnectHub::GetInstance();
+        if (hub_ != nullptr) {
+            oldConn_ = hub_->renderConn_;
+            hub_->renderConn_ = conn;
+        }
+    }
+    ~ScopedRenderConn()
+    {
+        if (hub_ != nullptr) {
+            hub_->renderConn_ = oldConn_;
+        }
+    }
+
+private:
+    sptr<RSRenderServiceConnectHub> hub_;
+    sptr<RSIClientToRenderConnection> oldConn_;
+};
+} // namespace
+
 /**
  * @tc.name: TakeSurfaceCapture_Test
  * @tc.desc: Test capture twice with same id
@@ -166,6 +202,272 @@ HWTEST_F(RSPipelineClientTest, TakeSurfaceCapture01, TestSize.Level1)
     captureConfig.isSync = true;
     bool ret = rsClient->TakeSurfaceCapture(TEST_ID, nullptr, captureConfig);
     ASSERT_NE(ret, true);
+}
+
+/**
+ * @tc.name: SurfaceCaptureTimeout_001
+ * @tc.desc: Resend capture when the pending request exceeds the reply timeout
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPipelineClientTest, SurfaceCaptureTimeout_001, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    rsClient->surfaceCaptureCbMap_.clear();
+    RSSurfaceCaptureConfig captureConfig;
+    auto deadCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto newCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto staleTime = std::chrono::steady_clock::now() -
+        std::chrono::milliseconds(TEST_SURFACE_CAPTURE_REPLY_TIMEOUT_MS + 1);
+    RSRenderPipelineClient::SurfaceCaptureEntry captureEntry;
+    captureEntry.callbacks = { deadCb };
+    captureEntry.lastSendTime = staleTime;
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(TEST_ID, captureConfig), std::move(captureEntry));
+
+    bool ret = rsClient->TakeSurfaceCapture(TEST_ID, newCb, captureConfig);
+
+    ASSERT_EQ(ret, true);
+    auto iter = rsClient->surfaceCaptureCbMap_.find({ TEST_ID, captureConfig });
+    ASSERT_NE(iter, rsClient->surfaceCaptureCbMap_.end());
+    EXPECT_EQ(iter->second.callbacks.size(), 1);
+    EXPECT_EQ(iter->second.callbacks[0], newCb);
+    EXPECT_NE(iter->second.lastSendTime, staleTime);
+    rsClient->surfaceCaptureCbMap_.clear();
+}
+
+/**
+ * @tc.name: SurfaceCaptureTimeout_002
+ * @tc.desc: Merge callbacks when the pending request is within the reply timeout
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPipelineClientTest, SurfaceCaptureTimeout_002, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    rsClient->surfaceCaptureCbMap_.clear();
+    RSSurfaceCaptureConfig captureConfig;
+    auto firstCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto secondCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto sendTime = std::chrono::steady_clock::now();
+    RSRenderPipelineClient::SurfaceCaptureEntry captureEntry;
+    captureEntry.callbacks = { firstCb };
+    captureEntry.lastSendTime = sendTime;
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(TEST_ID, captureConfig), std::move(captureEntry));
+
+    bool ret = rsClient->TakeSurfaceCapture(TEST_ID, secondCb, captureConfig);
+
+    ASSERT_EQ(ret, true);
+    auto iter = rsClient->surfaceCaptureCbMap_.find({ TEST_ID, captureConfig });
+    ASSERT_NE(iter, rsClient->surfaceCaptureCbMap_.end());
+    ASSERT_EQ(iter->second.callbacks.size(), 2);
+    EXPECT_EQ(iter->second.callbacks[0], firstCb);
+    EXPECT_EQ(iter->second.callbacks[1], secondCb);
+    EXPECT_EQ(iter->second.lastSendTime, sendTime);
+    rsClient->surfaceCaptureCbMap_.clear();
+}
+
+/**
+ * @tc.name: SurfaceCaptureTimeout_003
+ * @tc.desc: Deliver the reply only to the caller of the resent request
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPipelineClientTest, SurfaceCaptureTimeout_003, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    rsClient->surfaceCaptureCbMap_.clear();
+    RSSurfaceCaptureConfig captureConfig;
+    auto deadCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto newCb = std::make_shared<TestSurfaceCaptureCallback>();
+    RSRenderPipelineClient::SurfaceCaptureEntry captureEntry;
+    captureEntry.callbacks = { deadCb };
+    captureEntry.lastSendTime =
+        std::chrono::steady_clock::now() - std::chrono::milliseconds(TEST_SURFACE_CAPTURE_REPLY_TIMEOUT_MS + 1);
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(TEST_ID, captureConfig), std::move(captureEntry));
+    ASSERT_EQ(rsClient->TakeSurfaceCapture(TEST_ID, newCb, captureConfig), true);
+
+    Media::InitializationOptions opts;
+    opts.size.width = 480;
+    opts.size.height = 320;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(pixelMap, nullptr);
+    rsClient->TriggerSurfaceCaptureCallback(TEST_ID, captureConfig, pixelMap, CaptureError::CAPTURE_OK, nullptr);
+
+    EXPECT_TRUE(newCb->isOnCallBack_);
+    EXPECT_FALSE(deadCb->isOnCallBack_);
+    EXPECT_TRUE(rsClient->surfaceCaptureCbMap_.empty());
+}
+
+/**
+ * @tc.name: SurfaceCaptureTimeout_004
+ * @tc.desc: Other capture entries keep merging without resend after timeout
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPipelineClientTest, SurfaceCaptureTimeout_004, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    rsClient->surfaceCaptureCbMap_.clear();
+    RSSurfaceCaptureConfig captureConfig;
+    auto firstCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto secondCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto staleTime = std::chrono::steady_clock::now() -
+        std::chrono::milliseconds(TEST_SURFACE_CAPTURE_REPLY_TIMEOUT_MS + 1);
+    RSRenderPipelineClient::SurfaceCaptureEntry captureEntry;
+    captureEntry.callbacks = { firstCb };
+    captureEntry.lastSendTime = staleTime;
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(TEST_ID, captureConfig), std::move(captureEntry));
+
+    bool ret = rsClient->SetWindowFreezeImmediately(TEST_ID, true, secondCb, captureConfig);
+
+    ASSERT_EQ(ret, true);
+    auto iter = rsClient->surfaceCaptureCbMap_.find({ TEST_ID, captureConfig });
+    ASSERT_NE(iter, rsClient->surfaceCaptureCbMap_.end());
+    ASSERT_EQ(iter->second.callbacks.size(), 2);
+    EXPECT_EQ(iter->second.callbacks[0], firstCb);
+    EXPECT_EQ(iter->second.callbacks[1], secondCb);
+    EXPECT_EQ(iter->second.lastSendTime, staleTime);
+    rsClient->surfaceCaptureCbMap_.clear();
+}
+
+/**
+ * @tc.name: SurfaceCaptureTimeout_005
+ * @tc.desc: Resend capture when elapsed time equals the reply timeout
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPipelineClientTest, SurfaceCaptureTimeout_005, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    rsClient->surfaceCaptureCbMap_.clear();
+    RSSurfaceCaptureConfig captureConfig;
+    auto deadCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto newCb = std::make_shared<TestSurfaceCaptureCallback>();
+    RSRenderPipelineClient::SurfaceCaptureEntry captureEntry;
+    captureEntry.callbacks = { deadCb };
+    captureEntry.lastSendTime =
+        std::chrono::steady_clock::now() - std::chrono::milliseconds(TEST_SURFACE_CAPTURE_REPLY_TIMEOUT_MS);
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(TEST_ID, captureConfig), std::move(captureEntry));
+
+    bool ret = rsClient->TakeSurfaceCapture(TEST_ID, newCb, captureConfig);
+
+    ASSERT_EQ(ret, true);
+    auto iter = rsClient->surfaceCaptureCbMap_.find({ TEST_ID, captureConfig });
+    ASSERT_NE(iter, rsClient->surfaceCaptureCbMap_.end());
+    EXPECT_EQ(iter->second.callbacks.size(), 1);
+    EXPECT_EQ(iter->second.callbacks[0], newCb);
+    rsClient->surfaceCaptureCbMap_.clear();
+}
+
+/**
+ * @tc.name: SurfaceCaptureDispatch_001
+ * @tc.desc: Verify IPC is sent once on first call, not on merged call, and once more after timeout
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPipelineClientTest, SurfaceCaptureDispatch_001, TestSize.Level1)
+{
+    auto localClient = std::make_shared<RSRenderPipelineClient>();
+    ASSERT_NE(localClient, nullptr);
+    localClient->tokenMaskId_ = INVALID_TOKEN_MASK_ID;
+
+    sptr<CountingConnection> countingConn = new CountingConnection(nullptr);
+    ScopedRenderConn guard(countingConn.GetRefPtr());
+
+    RSSurfaceCaptureConfig captureConfig;
+    auto firstCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto secondCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto thirdCb = std::make_shared<TestSurfaceCaptureCallback>();
+
+    ASSERT_EQ(localClient->TakeSurfaceCapture(TEST_ID, firstCb, captureConfig), true);
+    EXPECT_EQ(countingConn->captureCount_, 1);
+
+    ASSERT_EQ(localClient->TakeSurfaceCapture(TEST_ID, secondCb, captureConfig), true);
+    EXPECT_EQ(countingConn->captureCount_, 1);
+
+    auto iter = localClient->surfaceCaptureCbMap_.find({ TEST_ID, captureConfig });
+    ASSERT_NE(iter, localClient->surfaceCaptureCbMap_.end());
+    iter->second.lastSendTime =
+        std::chrono::steady_clock::now() - std::chrono::milliseconds(TEST_SURFACE_CAPTURE_REPLY_TIMEOUT_MS + 1);
+
+    ASSERT_EQ(localClient->TakeSurfaceCapture(TEST_ID, thirdCb, captureConfig), true);
+    EXPECT_EQ(countingConn->captureCount_, 2);
+}
+
+/**
+ * @tc.name: TakeSelfSurfaceCapture_001
+ * @tc.desc: TakeSelfSurfaceCapture keeps insert-then-merge behavior after entry type change
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPipelineClientTest, TakeSelfSurfaceCapture_001, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    rsClient->surfaceCaptureCbMap_.clear();
+    RSSurfaceCaptureConfig captureConfig;
+    auto firstCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto secondCb = std::make_shared<TestSurfaceCaptureCallback>();
+
+    ASSERT_EQ(rsClient->TakeSelfSurfaceCapture(TEST_ID, firstCb, captureConfig), true);
+    auto iter = rsClient->surfaceCaptureCbMap_.find({ TEST_ID, captureConfig });
+    ASSERT_NE(iter, rsClient->surfaceCaptureCbMap_.end());
+    EXPECT_EQ(iter->second.callbacks.size(), 1);
+
+    ASSERT_EQ(rsClient->TakeSelfSurfaceCapture(TEST_ID, secondCb, captureConfig), true);
+    EXPECT_EQ(iter->second.callbacks.size(), 2);
+    EXPECT_EQ(iter->second.callbacks[1], secondCb);
+    rsClient->surfaceCaptureCbMap_.clear();
+}
+
+/**
+ * @tc.name: SetWindowFreezeImmediately_001
+ * @tc.desc: SetWindowFreezeImmediately keeps insert-then-merge behavior after entry type change
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPipelineClientTest, SetWindowFreezeImmediately_001, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    rsClient->surfaceCaptureCbMap_.clear();
+    RSSurfaceCaptureConfig captureConfig;
+    auto firstCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto secondCb = std::make_shared<TestSurfaceCaptureCallback>();
+
+    ASSERT_EQ(rsClient->SetWindowFreezeImmediately(TEST_ID, true, firstCb, captureConfig), true);
+    auto iter = rsClient->surfaceCaptureCbMap_.find({ TEST_ID, captureConfig });
+    ASSERT_NE(iter, rsClient->surfaceCaptureCbMap_.end());
+    EXPECT_EQ(iter->second.callbacks.size(), 1);
+
+    ASSERT_EQ(rsClient->SetWindowFreezeImmediately(TEST_ID, true, secondCb, captureConfig), true);
+    EXPECT_EQ(iter->second.callbacks.size(), 2);
+    EXPECT_EQ(iter->second.callbacks[1], secondCb);
+    rsClient->surfaceCaptureCbMap_.clear();
+}
+
+/**
+ * @tc.name: TakeUICaptureInRangeMerge_001
+ * @tc.desc: TakeUICaptureInRange merges into the pending entry after entry type change
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPipelineClientTest, TakeUICaptureInRangeMerge_001, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    rsClient->surfaceCaptureCbMap_.clear();
+    RSSurfaceCaptureConfig captureConfig;
+    auto firstCb = std::make_shared<TestSurfaceCaptureCallback>();
+    auto secondCb = std::make_shared<TestSurfaceCaptureCallback>();
+    RSRenderPipelineClient::SurfaceCaptureEntry captureEntry;
+    captureEntry.callbacks = { firstCb };
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(TEST_ID, captureConfig), std::move(captureEntry));
+
+    ASSERT_EQ(rsClient->TakeUICaptureInRange(TEST_ID, secondCb, captureConfig), true);
+    auto iter = rsClient->surfaceCaptureCbMap_.find({ TEST_ID, captureConfig });
+    ASSERT_NE(iter, rsClient->surfaceCaptureCbMap_.end());
+    ASSERT_EQ(iter->second.callbacks.size(), 2);
+    EXPECT_EQ(iter->second.callbacks[0], firstCb);
+    EXPECT_EQ(iter->second.callbacks[1], secondCb);
+    rsClient->surfaceCaptureCbMap_.clear();
 }
 
 /**
@@ -494,8 +796,8 @@ HWTEST_F(RSPipelineClientTest, TakeSurfaceCaptureWithAllWindowsTest, TestSize.Le
     ASSERT_EQ(ret, false);
 
     cb = std::make_shared<TestSurfaceCaptureCallback>();
-    std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector;
-    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(TEST_ID, captureConfig), callbackVector);
+    RSRenderPipelineClient::SurfaceCaptureEntry captureEntry;
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(TEST_ID, captureConfig), std::move(captureEntry));
     ret = rsClient->TakeSurfaceCaptureWithAllWindows(TEST_ID, cb, captureConfig, checkDrmAndSurfaceLock);
     ASSERT_EQ(ret, true);
 
@@ -632,10 +934,11 @@ HWTEST_F(RSPipelineClientTest, TriggerSurfaceCaptureCallback001, TestSize.Level1
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.isHdrCapture = true;
     std::shared_ptr<TestSurfaceCaptureCallback> callback = std::make_shared<TestSurfaceCaptureCallback>();
- 
-    std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
-    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), callbackVector);
- 
+
+    RSRenderPipelineClient::SurfaceCaptureEntry captureEntry;
+    captureEntry.callbacks = { callback };
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), std::move(captureEntry));
+
     Media::InitializationOptions opts;
     opts.size.width = 480;
     opts.size.height = 320;
@@ -662,10 +965,11 @@ HWTEST_F(RSPipelineClientTest, TriggerSurfaceCaptureCallback002, TestSize.Level1
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.needErrorCode = true;
     std::shared_ptr<TestSurfaceCaptureCallback> callback = std::make_shared<TestSurfaceCaptureCallback>();
- 
-    std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
-    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), callbackVector);
- 
+
+    RSRenderPipelineClient::SurfaceCaptureEntry captureEntry;
+    captureEntry.callbacks = { callback };
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), std::move(captureEntry));
+
     Media::InitializationOptions opts;
     opts.size.width = 480;
     opts.size.height = 320;

@@ -18,6 +18,7 @@
 
 #include "common/rs_common_def.h"
 #include "rs_client_render_comm_def_info.h"
+#include <chrono>
 #include <functional>
 #include <map>
 #include <memory>
@@ -282,6 +283,11 @@ private:
         }
     };
 
+    struct SurfaceCaptureEntry {
+        std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbacks;
+        std::chrono::steady_clock::time_point lastSendTime = std::chrono::steady_clock::now();
+    };
+
     std::mutex mutex_;
     std::map<NodeId, sptr<RSIBufferAvailableCallback>> bufferAvailableCbRTMap_;
     std::mutex mapMutex_;
@@ -289,8 +295,7 @@ private:
     sptr<RSIScreenChangeCallback> screenChangeCb_ = nullptr;
     sptr<RSIScreenSwitchingNotifyCallback> screenSwitchingNotifyCb_ = nullptr;
     sptr<RSISurfaceCaptureCallback> surfaceCaptureCbDirector_ = nullptr;
-    std::unordered_map<std::pair<NodeId, RSSurfaceCaptureConfig>,
-    std::vector<std::shared_ptr<SurfaceCaptureCallback>>, PairHash> surfaceCaptureCbMap_;
+    std::unordered_map<std::pair<NodeId, RSSurfaceCaptureConfig>, SurfaceCaptureEntry, PairHash> surfaceCaptureCbMap_;
 
     sptr<RSISurfaceBufferCallback> surfaceBufferCbDirector_;
     std::map<uint64_t, std::shared_ptr<SurfaceBufferCallback>> surfaceBufferCallbacks_;
