@@ -1206,8 +1206,8 @@ void RSMultiScreenUtil::HandleWindowRecordScreen(
         // IsWhiteListNode returns true for an empty set), which would record the whole source
         // display instead of the configured windows. Skip the frame -- before the processor
         // requests an output buffer -- rather than leak non-configured content into the recording.
-        if (displayParams->GetRecordLeashPersistentIds().empty()) {
-            RS_LOGD("RSMultiScreenUtil::%{public}s no recordable leash id, skip without buffer request", __func__);
+        if (displayParams->GetRecordWhiteListIds().empty()) {
+            RS_LOGD("RSMultiScreenUtil::%{public}s no recordable id, skip without buffer request", __func__);
             drawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
             return;
         }
@@ -1263,7 +1263,7 @@ void RSMultiScreenUtil::HandleWindowRecord(
     const auto& config = params.GetWindowRecordConfig();
     // Defensive duplicate of the HandleWindowRecordScreen gate: an empty whitelist disables
     // filtering entirely, so bail out before touching the canvas to keep Save/Restore balanced.
-    if (params.GetRecordLeashPersistentIds().empty()) {
+    if (params.GetRecordWhiteListIds().empty()) {
         RS_LOGD("RSMultiScreenUtil::%{public}s empty record whitelist, skip frame", __func__);
         return;
     }
@@ -1359,11 +1359,12 @@ void RSMultiScreenUtil::HandleWindowRecord(
     }
     curCanvas->ConcatMatrix(sourceParams.GetMatrix());
     // Set whitelist + capture mode so surface OnCapture filters non-recorded surfaces.
-    // The ids are LeashPersistentIds resolved on the RS main thread (same id space as the
-    // cast-screen whitelist): a recorded window passes via its first-level leash root, and INVALID
-    // (0) ids are already dropped there -- 0 would match every leashless window. The render thread
-    // therefore reads no RSSurfaceRenderNode member to build this set.
-    std::unordered_set<NodeId> ids(params.GetRecordLeashPersistentIds());
+    // The ids are the record whitelist synced from the RS main thread: a mixed set of leash
+    // persistent ids and surface node ids normalized from config.surfaceNodeIds (INVALID/0 already
+    // dropped there). A recorded window passes via its first-level leash root, or -- only because
+    // this path sets isWindowRecord_ below -- via its own surface node id when it has no leash.
+    // The render thread therefore reads no RSSurfaceRenderNode member to build this set.
+    std::unordered_set<NodeId> ids(params.GetRecordWhiteListIds());
     if (config.needDrawMouse) {
         NodeId cursorId = RSPointerWindowManager::Instance().GetRsNodeId();
         if (cursorId != INVALID_NODEID) {
@@ -1384,6 +1385,10 @@ void RSMultiScreenUtil::HandleWindowRecord(
     bool secExemption = params.GetSecurityExemption();
     RSUniRenderThread::SetCaptureParam(CaptureParam(false, false, true));
     RSUniRenderThread::GetCaptureParam().virtualScreenId_ = params.GetScreenId();
+    // Record-only: let a leashless recorded window match the mixed whitelist by its own surface node
+    // id. The NodeListGuard above restores the previous value on every exit path, so cast/mirror and
+    // parallel canvas captures never observe this flag set.
+    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     // Save the shared render-thread state we are about to override and restore it afterwards
     // (OpDropped / SecurityDisplay / SecExemption / parentSurfaceMatrix): resetting to defaults

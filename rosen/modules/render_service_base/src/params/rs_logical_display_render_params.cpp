@@ -55,7 +55,7 @@ void RSLogicalDisplayRenderParams::OnSync(const std::unique_ptr<RSRenderParams>&
     targetLogicalDisplayRenderParam->fixedHeight_ = fixedHeight_;
     targetLogicalDisplayRenderParam->windowRecordConfig_ = windowRecordConfig_;
     targetLogicalDisplayRenderParam->recordSurfaceDrawables_ = recordSurfaceDrawables_;
-    targetLogicalDisplayRenderParam->recordLeashPersistentIds_ = recordLeashPersistentIds_;
+    targetLogicalDisplayRenderParam->recordWhiteListIds_ = recordWhiteListIds_;
     targetLogicalDisplayRenderParam->recordSourceDisplayDrawable_ = recordSourceDisplayDrawable_;
     targetLogicalDisplayRenderParam->isOnVirtualScreen_ = isOnVirtualScreen_;
     targetLogicalDisplayRenderParam->hasDstAlphaBlendModeNode_ = hasDstAlphaBlendModeNode_;

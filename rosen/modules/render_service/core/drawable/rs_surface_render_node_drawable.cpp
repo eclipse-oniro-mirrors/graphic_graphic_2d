@@ -642,9 +642,11 @@ NodeId RSSurfaceRenderNodeDrawable::GetWhiteListPersistentId(
     // 1 . sub thread drawing doesn't check the whitelist, so there is no need to get whiteList's persistentId
     // 2 . when the persistent id of the node doesn't match the whitelist, don't return the persistent id
     if (canvas.GetIsParallelCanvas() || whiteList.find(persistentId) == whiteList.end()) {
-        //cursor node has no leash persistent id; fall back to surface node id for whitelist match
-        if (surfaceParam.GetSurfaceNodeType() == RSSurfaceNodeType::CURSOR_NODE &&
-            whiteList.find(surfaceParam.GetId()) != whiteList.end()) {
+        // Only window record allows any surface to match the mixed whitelist by its own node id.
+        // Other captures match persistent ids only; parallel canvas keeps the existing behavior.
+        bool allowNodeIdFallback =
+            !canvas.GetIsParallelCanvas() && RSUniRenderThread::GetCaptureParam().isWindowRecord_;
+        if (allowNodeIdFallback && whiteList.find(surfaceParam.GetId()) != whiteList.end()) {
             persistentId = surfaceParam.GetId();
         } else {
             persistentId = INVALID_LEASH_PERSISTENTID;

@@ -177,17 +177,17 @@ public:
     // Stores the record config only (main thread, command application). The ids are resolved
     // every frame in UpdateRenderParams() -> ResolveWindowRecordSnapshot(), so a config that
     // arrives before its window nodes exist is picked up on a later frame instead of being
-    // dropped permanently. Ids without a live main-window node are skipped (EX-3).
+    // dropped permanently. Node ids that cannot be resolved are skipped for bbox and source-display
+    // resolution; the capture white list retains every nonzero id supplied by the client.
     void SetWindowRecordConfig(const RSWindowRecordConfig& config);
 
     const RSWindowRecordConfig& GetWindowRecordConfig() const { return windowRecordConfig_; }
     bool IsWindowRecordActive() const { return !windowRecordConfig_.surfaceNodeIds.empty(); }
-    // Main thread only: resolves the leash persistent ids of the current record config by querying
-    // RSRenderNodeMap. Called every frame by this node (for its params snapshot) and by the parent
-    // screen node when it selects the effective white list -- the screen is prepared before its
-    // display children, so the screen re-resolves from the config instead of reading a stale
-    // per-frame cache, which keeps the whole white list chain same-frame fresh.
-    std::unordered_set<NodeId> ResolveRecordLeashIds() const;
+    // Main thread only: builds the effective mixed persistent-id/node-id capture white list when
+    // at least one main-window node is resolvable. Called every frame by this node and by the
+    // parent screen node when it selects the effective white list, keeping the whole chain
+    // same-frame fresh without exposing node state to the render thread.
+    std::unordered_set<NodeId> BuildEffectiveRecordWhiteListIds() const;
 
     // true when this display is bound to a virtual screen (both record config
     // delivery channels gate on this, EX-1)
@@ -290,9 +290,9 @@ private:
     RSWindowRecordConfig windowRecordConfig_;
 
     // Main thread only. Resolves windowRecordConfig_.surfaceNodeIds into render-thread safe
-    // snapshots (main-window surface drawables, leash persistent ids, source display drawable).
-    // Doing this here is what lets the render thread avoid RSRenderNodeMap and RSRenderNode
-    // entirely: both are main-thread exclusive and unlocked.
+    // snapshots (main-window surface drawables, mixed-id capture white list, source display
+    // drawable). Doing this here is what lets the render thread avoid RSRenderNodeMap and
+    // RSRenderNode entirely: both are main-thread exclusive and unlocked.
     void ResolveWindowRecordSnapshot(RSLogicalDisplayRenderParams& param);
 
     bool isBootAnimation_ = false;

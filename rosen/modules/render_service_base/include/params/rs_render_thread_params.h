@@ -49,6 +49,10 @@ struct CaptureParam {
     bool needCaptureSpecialLayer_ = false;
     bool hasDirtyContent_ = false;
     bool hasPrivacyAndSpecialLayer_ = false;
+    // Marks the window-record capture, where the whitelist is a mixed id set (leash persistent ids
+    // plus surface node ids) and any surface may match by its own node id. Other captures match
+    // leash persistent ids only.
+    bool isWindowRecord_ = false;
     std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> effectData_ = nullptr;
     CaptureParam() {}
     CaptureParam(bool isSnapshot, bool isSingleSurface, bool isMirror, bool isFirstNode = false,

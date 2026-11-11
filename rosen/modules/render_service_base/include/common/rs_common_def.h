@@ -477,6 +477,8 @@ constexpr size_t MAX_WINDOW_RECORD_SURFACE_NUM = 64;
 struct RSWindowRecordConfig {
     bool needDrawMouse = false;
     WindowRecordFit renderFit = WindowRecordFit::ASPECT_FIT_TOP_LEFT;
+    // Contains leash persistent ids and surface node ids. Every main window is supplied with both
+    // ids, and values from the two id spaces never collide across different windows.
     std::vector<NodeId> surfaceNodeIds = {};
 
     bool operator==(const RSWindowRecordConfig& other) const

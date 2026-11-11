@@ -46,50 +46,54 @@ void RSLogicalDisplayRenderNode::SetWindowRecordConfig(const RSWindowRecordConfi
     windowRecordConfig_ = config;
 }
 
-std::unordered_set<NodeId> RSLogicalDisplayRenderNode::ResolveRecordLeashIds() const
+std::unordered_set<NodeId> RSLogicalDisplayRenderNode::BuildEffectiveRecordWhiteListIds() const
 {
-    std::unordered_set<NodeId> leashIds;
     if (windowRecordConfig_.surfaceNodeIds.empty()) {
-        return leashIds;
+        return {};
     }
     auto context = GetContext().lock();
     if (!context) {
-        RS_LOGE("RSLogicalDisplayRenderNode::%{public}s context expired, NodeId:[%{public}" PRIu64 "]",
-            __func__, GetId());
-        return leashIds;
+        return {};
     }
-    // Main thread only: queries RSRenderNodeMap.
     auto& nodeMap = context->GetNodeMap();
-    for (NodeId windowId : windowRecordConfig_.surfaceNodeIds) {
-        auto surfaceNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(windowId);
-        // Ids without a live main-window node are skipped (EX-3).
-        if (surfaceNode == nullptr || !surfaceNode->IsMainWindowType()) {
+    std::unordered_set<NodeId> whiteListIds;
+    bool hasMainWindow = false;
+    for (NodeId id : windowRecordConfig_.surfaceNodeIds) {
+        // Keep both client-supplied id spaces so a leashless child can match by its node id during
+        // record-only capture. Zero is invalid in both spaces and must not become an allow-all id.
+        if (id == INVALID_NODEID) {
             continue;
         }
-        auto leashPersistentId = surfaceNode->GetLeashPersistentId();
-        if (leashPersistentId != INVALID_LEASH_PERSISTENTID) {
-            leashIds.insert(leashPersistentId);
+        whiteListIds.insert(id);
+        if (!hasMainWindow) {
+            auto surfaceNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(id);
+            hasMainWindow = surfaceNode && surfaceNode->IsMainWindowType();
         }
     }
-    return leashIds;
+    // Mixed ids alone do not activate capture: a live main window is still required for bbox and
+    // source-display resolution (EX-3/AC-1.4).
+    if (!hasMainWindow) {
+        return {};
+    }
+    return whiteListIds;
 }
 
 void RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot(RSLogicalDisplayRenderParams& param)
 {
     param.recordSurfaceDrawables_.clear();
-    param.recordLeashPersistentIds_.clear();
+    param.recordWhiteListIds_.clear();
     param.recordSourceDisplayDrawable_.reset();
     if (windowRecordConfig_.surfaceNodeIds.empty()) {
         return;
     }
     auto context = GetContext().lock();
     if (!context) {
-        return; // ResolveRecordLeashIds has already logged the expired context.
+        return;
     }
     // Main thread, per-frame prepare: the only place allowed to query RSRenderNodeMap and to walk
     // the node tree. The render thread later consumes just the snapshots written here.
     auto& nodeMap = context->GetNodeMap();
-    param.recordLeashPersistentIds_ = ResolveRecordLeashIds();
+    param.recordWhiteListIds_ = BuildEffectiveRecordWhiteListIds();
     param.recordSurfaceDrawables_.reserve(windowRecordConfig_.surfaceNodeIds.size());
     for (NodeId windowId : windowRecordConfig_.surfaceNodeIds) {
         auto surfaceNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(windowId);
@@ -100,7 +104,7 @@ void RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot(RSLogicalDisplayRen
         }
         auto surfaceDrawable = surfaceNode->GetRenderDrawable();
         if (surfaceDrawable == nullptr) {
-            // Drawable not generated yet: skip this frame, the per-frame resolve picks it up later.
+            // Omit this surface for the current frame; the per-frame resolve retries on the next.
             continue;
         }
         param.recordSurfaceDrawables_.emplace_back(std::move(surfaceDrawable));

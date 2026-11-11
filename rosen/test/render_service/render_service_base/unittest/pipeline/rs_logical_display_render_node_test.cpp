@@ -18,6 +18,7 @@
 #include "animation/rs_render_property_animation.h"
 #include "params/rs_logical_display_render_params.h"
 #include "pipeline/rs_canvas_render_node.h"
+#include "pipeline/rs_context.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
@@ -38,6 +39,14 @@ public:
         : RSRenderPropertyAnimation(id, propertyId, originValue)
     {}
     void RebuildPropertyValue(float fraction) override {}
+};
+
+class RSRenderNodeDrawableAdapterMock : public DrawableV2::RSRenderNodeDrawableAdapter {
+public:
+    explicit RSRenderNodeDrawableAdapterMock(std::shared_ptr<const RSRenderNode> node)
+        : RSRenderNodeDrawableAdapter(std::move(node))
+    {}
+    void Draw(Drawing::Canvas&) override {}
 };
 
 class RSLogicalDisplayRenderNodeTest : public testing::Test {
@@ -1003,6 +1012,94 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, CheckAncestorChildBlendModeBoundaryTest
 
     EXPECT_FALSE(displayNode->CheckAncestorChildBlendMode(
         100, static_cast<int>(RSColorBlendMode::SRC_IN), false, false));
+}
+
+/**
+ * @tc.name: WindowRecordSnapshotKeepsMixedWhiteListIdsTest
+ * @tc.desc: Verify the white list keeps persistent and node ids while only main windows drive bbox and source
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordSnapshotKeepsMixedWhiteListIdsTest, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    constexpr NodeId displayId = 20;
+    constexpr NodeId otherDisplayId = 21;
+    constexpr NodeId mainId = 10;
+    constexpr NodeId childId = 11;
+    constexpr LeashPersistentId mainLeashId = 1001;
+    constexpr LeashPersistentId childLeashId = 1002;
+    RSDisplayNodeConfig displayConfig;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
+    display->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(display);
+    auto otherDisplay = std::make_shared<RSLogicalDisplayRenderNode>(otherDisplayId, displayConfig, rsContext);
+    otherDisplay->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(otherDisplay);
+
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
+    mainNode->SetLeashPersistentId(mainLeashId);
+    mainNode->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(mainNode);
+    mainNode->isOnTheTree_ = true;
+    mainNode->logicalDisplayNodeId_ = displayId;
+    RSSurfaceRenderNodeConfig childConfig { .id = childId, .nodeType = RSSurfaceNodeType::LEASH_WINDOW_NODE };
+    auto childNode = std::make_shared<RSSurfaceRenderNode>(childConfig, rsContext);
+    EXPECT_EQ(childNode->GetLeashPersistentId(), INVALID_LEASH_PERSISTENTID);
+    childNode->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(childNode);
+    childNode->isOnTheTree_ = true;
+    childNode->logicalDisplayNodeId_ = otherDisplayId;
+
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(displayId)][displayId] = display;
+    nodeMap.renderNodeMap_[ExtractPid(otherDisplayId)][otherDisplayId] = otherDisplay;
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+    nodeMap.renderNodeMap_[ExtractPid(childId)][childId] = childNode;
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { childId, childLeashId, mainLeashId, mainId };
+    display->SetWindowRecordConfig(recordConfig);
+    RSLogicalDisplayRenderParams params(displayId);
+    display->ResolveWindowRecordSnapshot(params);
+
+    const std::unordered_set<NodeId> expectedWhiteListIds = { childId, childLeashId, mainLeashId, mainId };
+    EXPECT_EQ(display->BuildEffectiveRecordWhiteListIds(), expectedWhiteListIds);
+    EXPECT_EQ(params.GetRecordWhiteListIds(), expectedWhiteListIds);
+    ASSERT_EQ(params.GetRecordSurfaceDrawables().size(), 1u);
+    auto bboxDrawable = params.GetRecordSurfaceDrawables()[0].lock();
+    ASSERT_NE(bboxDrawable, nullptr);
+    EXPECT_EQ(bboxDrawable->GetId(), mainId);
+    auto sourceDisplay = params.GetRecordSourceDisplayDrawable().lock();
+    ASSERT_NE(sourceDisplay, nullptr);
+    EXPECT_EQ(sourceDisplay->GetId(), displayId);
+}
+
+/**
+ * @tc.name: WindowRecordSnapshotWithoutMainWindowDisablesCaptureTest
+ * @tc.desc: Verify mixed whitelist ids do not activate capture without a resolvable main window
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordSnapshotWithoutMainWindowDisablesCaptureTest, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    constexpr NodeId displayId = 30;
+    constexpr NodeId childId = 31;
+    constexpr LeashPersistentId childLeashId = 1003;
+    RSDisplayNodeConfig displayConfig;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
+    RSSurfaceRenderNodeConfig childConfig { .id = childId, .nodeType = RSSurfaceNodeType::LEASH_WINDOW_NODE };
+    auto childNode = std::make_shared<RSSurfaceRenderNode>(childConfig, rsContext);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(childId)][childId] = childNode;
+
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { childId, childLeashId };
+    display->SetWindowRecordConfig(recordConfig);
+    RSLogicalDisplayRenderParams params(displayId);
+    display->ResolveWindowRecordSnapshot(params);
+
+    EXPECT_TRUE(display->BuildEffectiveRecordWhiteListIds().empty());
+    EXPECT_TRUE(params.GetRecordWhiteListIds().empty());
+    EXPECT_TRUE(params.GetRecordSurfaceDrawables().empty());
+    EXPECT_TRUE(params.GetRecordSourceDisplayDrawable().expired());
 }
 
 } // namespace OHOS::Rosen

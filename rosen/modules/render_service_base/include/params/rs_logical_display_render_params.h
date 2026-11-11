@@ -184,9 +184,9 @@ public:
     {
         return recordSurfaceDrawables_;
     }
-    const std::unordered_set<NodeId>& GetRecordLeashPersistentIds() const
+    const std::unordered_set<NodeId>& GetRecordWhiteListIds() const
     {
-        return recordLeashPersistentIds_;
+        return recordWhiteListIds_;
     }
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetRecordSourceDisplayDrawable() const
     {
@@ -233,10 +233,11 @@ private:
     bool isOnVirtualScreen_ = false;
     // Main-thread resolved window-record snapshots (see GetRecordSurfaceDrawables() for the
     // thread contract). recordSurfaceDrawables_ holds only main-window-type surfaces, so the
-    // render thread needs no node type check; recordLeashPersistentIds_ feeds the capture
-    // whitelist; recordSourceDisplayDrawable_ replaces the per-frame parent-chain walk.
+    // render thread needs no node type check; recordWhiteListIds_ contains both persistent ids
+    // and surface node ids for record-only capture matching; recordSourceDisplayDrawable_
+    // replaces the per-frame parent-chain walk.
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr> recordSurfaceDrawables_;
-    std::unordered_set<NodeId> recordLeashPersistentIds_;
+    std::unordered_set<NodeId> recordWhiteListIds_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr recordSourceDisplayDrawable_;
 
     friend class RSLogicalDisplayRenderNode;

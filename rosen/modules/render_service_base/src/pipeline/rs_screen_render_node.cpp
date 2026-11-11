@@ -248,18 +248,17 @@ void RSScreenRenderNode::UpdateRenderParams()
         screenParams->mirrorSourceDrawable_.reset();
     }
     screenParams->hasWindowRecordDisplay_ = hasWindowRecordChild;
-    // White list source is either/or, never merged: a record-active display child owns it, resolved
-    // from its config right here, otherwise the screen property white list applies. A virtual screen
-    // hosts at most one mirror-type display node, so this record-active child is the only possible
-    // record source on the screen and the effective list cannot leak into a sibling extend display's
-    // draw path. The screen is prepared before its display children, so re-resolving (instead of
-    // reading the child's per-frame cache) is what keeps this same-frame fresh; the node map is
-    // stable during the prepare phase, so this matches what the display node itself resolves later
-    // this frame. Downstream consumers (render-thread white list hand-off and the special-layer
-    // state checks) all read this single effective list, which is what makes a record-active screen
-    // visible to the special-layer machinery.
+    // White list source is either/or, never merged: a record-active display child owns its mixed
+    // persistent-id/node-id list from the current config, otherwise the screen property white list
+    // applies. A virtual screen hosts at most one mirror-type display node, so this record-active
+    // child is the only possible record source on the screen and the effective list cannot leak
+    // into a sibling extend display's draw path. The screen is prepared before its display
+    // children, so normalizing the current config here (instead of reading the child's per-frame
+    // cache) keeps this same-frame fresh. Downstream consumers (render-thread white list hand-off
+    // and the special-layer state checks) all read this single effective list, which is what makes
+    // a record-active screen visible to the special-layer machinery.
     std::unordered_set<NodeId> effectiveWhiteList = recordDisplayNode != nullptr
-        ? recordDisplayNode->ResolveRecordLeashIds()
+        ? recordDisplayNode->BuildEffectiveRecordWhiteListIds()
         : screenProperty_.GetWhiteList();
     screenParams->SetEffectiveWhiteList(effectiveWhiteList);
     // Also keep the main-thread special-layer registry in sync, so that the visitor's
