@@ -95,9 +95,7 @@ void RSRenderPipelineClient::CommitTransaction(std::unique_ptr<RSTransactionData
         tokenMaskId_ = RSRenderServiceConnectHub::GetDefaultTokenMaskId();
         RSRenderServiceConnectHub::SeedTransactionDataIndex(tokenMaskId_);
     }
-
     auto clientToRenderConnection = RSRenderServiceConnectHub::GetClientToRenderConnection(tokenMaskId_);
-
 #if defined(RS_MULTI_DISPLAY_FEATURES)
     // Multi-display products pin the render-process topology at construction: an INVALID_TOKEN_MASK_ID
     // here means the client never obtained a valid render connection, and any fallback path would
