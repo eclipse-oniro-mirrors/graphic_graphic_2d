@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <securec.h>
 
+#include "common/rs_common_def.h"
 #include "ui/rs_display_node.h"
 
 namespace OHOS {
@@ -48,6 +49,19 @@ T GetData()
     return object;
 }
 
+inline RSWindowRecordConfig GetRSWindowRecordConfigFromData()
+{
+    RSWindowRecordConfig recordConfig;
+    recordConfig.needDrawMouse = GetData<bool>();
+    recordConfig.renderFit = GetData<bool>() ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
+    // Keep the id count bounded while still reaching the rejecting cap + 1 (65) case.
+    size_t idCount = GetData<uint8_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
+    for (size_t i = 0; i < idCount; ++i) {
+        recordConfig.surfaceNodeIds.push_back(GetData<NodeId>());
+    }
+    return recordConfig;
+}
+
 inline RSDisplayNodeConfig GetRSDisplayNodeConfigFromData()
 {
     uint64_t screenId = GetData<uint64_t>();
@@ -59,6 +73,7 @@ inline RSDisplayNodeConfig GetRSDisplayNodeConfigFromData()
     float positionZ = GetData<float>();
 
     RSDisplayNodeConfig config = { screenId, displayMode, mirrorNodeId, isSync, mirrorSourceRotation, positionZ };
+    config.windowRecordConfig = GetRSWindowRecordConfigFromData();
     return config;
 }
 } // namespace
@@ -207,6 +222,19 @@ bool DoSetVirtualScreenMuteStatus()
     
     return true;
 }
+
+bool DoSetWindowRecordConfig()
+{
+    // test
+    RSDisplayNodeConfig config;
+    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
+    RSWindowRecordConfig recordConfig = GetRSWindowRecordConfigFromData();
+    displayNode->SetWindowRecordConfig(recordConfig);
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS
 
@@ -228,5 +256,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSetBootAnimation();
     OHOS::Rosen::DoCreateNode();
     OHOS::Rosen::DoSetVirtualScreenMuteStatus();
+    OHOS::Rosen::DoSetWindowRecordConfig();
     return 0;
 }

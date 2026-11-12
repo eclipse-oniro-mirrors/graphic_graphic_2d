@@ -1102,4 +1102,276 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordSnapshotWithoutMainWindowDi
     EXPECT_TRUE(params.GetRecordSourceDisplayDrawable().expired());
 }
 
+/**
+ * @tc.name: WindowRecordConstructorConfigInheritanceTest
+ * @tc.desc: Verify the constructor inherits the window record config from RSDisplayNodeConfig
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordConstructorConfigInheritanceTest, TestSize.Level1)
+{
+    constexpr ScreenId screenId = 6100;
+    constexpr NodeId displayId = 1100;
+    RSDisplayNodeConfig config;
+    config.screenId = screenId;
+    config.windowRecordConfig.needDrawMouse = true;
+    config.windowRecordConfig.renderFit = WindowRecordFit::ASPECT_FIT;
+    config.windowRecordConfig.surfaceNodeIds = { 1101, 1102 };
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config);
+
+    ASSERT_TRUE(display->IsWindowRecordActive());
+    EXPECT_EQ(display->GetWindowRecordConfig(), config.windowRecordConfig);
+    EXPECT_EQ(display->GetWindowRecordConfig().surfaceNodeIds.size(), 2u);
+}
+
+/**
+ * @tc.name: WindowRecordVirtualPhysicalAndParentlessDetectionTest
+ * @tc.desc: Verify IsOnVirtualScreen for virtual, physical, parentless, and invalid-screen-id displays
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordVirtualPhysicalAndParentlessDetectionTest, TestSize.Level1)
+{
+    constexpr ScreenId virtualScreenId = 6200;
+    constexpr ScreenId physicalScreenId = 6201;
+    auto rsContext = std::make_shared<RSContext>();
+    auto virtualScreen = std::make_shared<RSScreenRenderNode>(6202, virtualScreenId, rsContext);
+    virtualScreen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    auto physicalScreen = std::make_shared<RSScreenRenderNode>(6203, physicalScreenId, rsContext);
+    physicalScreen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(false);
+
+    RSDisplayNodeConfig virtualConfig;
+    virtualConfig.screenId = virtualScreenId;
+    auto virtualDisplay = std::make_shared<RSLogicalDisplayRenderNode>(6210, virtualConfig, rsContext);
+    virtualScreen->AddChild(virtualDisplay);
+    EXPECT_TRUE(virtualDisplay->IsOnVirtualScreen());
+
+    RSDisplayNodeConfig physicalConfig;
+    physicalConfig.screenId = physicalScreenId;
+    auto physicalDisplay = std::make_shared<RSLogicalDisplayRenderNode>(6211, physicalConfig, rsContext);
+    physicalScreen->AddChild(physicalDisplay);
+    EXPECT_FALSE(physicalDisplay->IsOnVirtualScreen());
+
+    RSDisplayNodeConfig parentlessConfig;
+    parentlessConfig.screenId = virtualScreenId;
+    auto parentlessDisplay = std::make_shared<RSLogicalDisplayRenderNode>(6212, parentlessConfig, rsContext);
+    EXPECT_FALSE(parentlessDisplay->IsOnVirtualScreen());
+
+    RSDisplayNodeConfig invalidConfig;
+    invalidConfig.screenId = INVALID_SCREEN_ID;
+    auto invalidDisplay = std::make_shared<RSLogicalDisplayRenderNode>(6213, invalidConfig, rsContext);
+    virtualScreen->AddChild(invalidDisplay);
+    EXPECT_FALSE(invalidDisplay->IsOnVirtualScreen());
+}
+
+/**
+ * @tc.name: WindowRecordRejectsOverLimitConfigTest
+ * @tc.desc: Verify 64 ids are accepted while 65 ids are rejected and the previous config is kept
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordRejectsOverLimitConfigTest, TestSize.Level1)
+{
+    constexpr NodeId displayId = 6300;
+    RSDisplayNodeConfig config;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config);
+    RSWindowRecordConfig accepted;
+    for (size_t index = 0; index < MAX_WINDOW_RECORD_SURFACE_NUM; ++index) {
+        accepted.surfaceNodeIds.push_back(6301 + index);
+    }
+    display->SetWindowRecordConfig(accepted);
+    EXPECT_EQ(display->GetWindowRecordConfig().surfaceNodeIds.size(), MAX_WINDOW_RECORD_SURFACE_NUM);
+
+    RSWindowRecordConfig rejected = accepted;
+    rejected.surfaceNodeIds.push_back(6400);
+    display->SetWindowRecordConfig(rejected);
+    EXPECT_EQ(display->GetWindowRecordConfig(), accepted);
+    EXPECT_EQ(display->GetWindowRecordConfig().surfaceNodeIds.size(), MAX_WINDOW_RECORD_SURFACE_NUM);
+}
+
+/**
+ * @tc.name: WindowRecordEmptyAndZeroWhitelistTest
+ * @tc.desc: Verify empty config and zero ids do not produce white list entries while a main window does
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordEmptyAndZeroWhitelistTest, TestSize.Level1)
+{
+    constexpr NodeId displayId = 6500;
+    constexpr NodeId mainId = 6501;
+    auto rsContext = std::make_shared<RSContext>();
+    RSDisplayNodeConfig config;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config, rsContext);
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
+    mainNode->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(mainNode);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+
+    RSWindowRecordConfig emptyConfig;
+    display->SetWindowRecordConfig(emptyConfig);
+    RSLogicalDisplayRenderParams emptyParams(displayId);
+    display->ResolveWindowRecordSnapshot(emptyParams);
+    EXPECT_TRUE(display->BuildEffectiveRecordWhiteListIds().empty());
+    EXPECT_TRUE(emptyParams.GetRecordWhiteListIds().empty());
+    EXPECT_FALSE(emptyParams.NeedSync());
+
+    RSWindowRecordConfig zeroConfig;
+    zeroConfig.surfaceNodeIds = { INVALID_NODEID, INVALID_NODEID };
+    display->SetWindowRecordConfig(zeroConfig);
+    RSLogicalDisplayRenderParams zeroParams(displayId);
+    display->ResolveWindowRecordSnapshot(zeroParams);
+    EXPECT_TRUE(display->BuildEffectiveRecordWhiteListIds().empty());
+    EXPECT_TRUE(zeroParams.GetRecordWhiteListIds().empty());
+    EXPECT_TRUE(zeroParams.GetRecordSurfaceDrawables().empty());
+    EXPECT_TRUE(zeroParams.NeedSync());
+
+    RSWindowRecordConfig mixedConfig;
+    mixedConfig.surfaceNodeIds = { INVALID_NODEID, mainId };
+    display->SetWindowRecordConfig(mixedConfig);
+    RSLogicalDisplayRenderParams mixedParams(displayId);
+    display->ResolveWindowRecordSnapshot(mixedParams);
+    const std::unordered_set<NodeId> expectedWhiteListIds = { mainId };
+    EXPECT_EQ(display->BuildEffectiveRecordWhiteListIds(), expectedWhiteListIds);
+    EXPECT_EQ(mixedParams.GetRecordWhiteListIds(), expectedWhiteListIds);
+    EXPECT_EQ(mixedParams.GetRecordWhiteListIds().count(INVALID_NODEID), 0u);
+    ASSERT_EQ(mixedParams.GetRecordSurfaceDrawables().size(), 1u);
+}
+
+/**
+ * @tc.name: WindowRecordExpiredContextTest
+ * @tc.desc: Verify record resolution degrades to an empty snapshot when the node has no context
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordExpiredContextTest, TestSize.Level1)
+{
+    constexpr NodeId displayId = 6600;
+    RSDisplayNodeConfig config;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config);
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { 6601 };
+    display->SetWindowRecordConfig(recordConfig);
+    RSLogicalDisplayRenderParams params(displayId);
+    display->ResolveWindowRecordSnapshot(params);
+
+    EXPECT_TRUE(display->BuildEffectiveRecordWhiteListIds().empty());
+    EXPECT_TRUE(params.GetRecordWhiteListIds().empty());
+    EXPECT_TRUE(params.GetRecordSurfaceDrawables().empty());
+    EXPECT_TRUE(params.GetRecordSourceDisplayDrawable().expired());
+    EXPECT_FALSE(params.NeedSync());
+}
+
+/**
+ * @tc.name: WindowRecordMissingNodeAndDrawableTest
+ * @tc.desc: Verify missing nodes, non-main windows, and main windows without drawables are skipped
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordMissingNodeAndDrawableTest, TestSize.Level1)
+{
+    constexpr NodeId displayId = 6700;
+    constexpr NodeId mainId = 6701;
+    constexpr NodeId childId = 6702;
+    constexpr NodeId missingId = 6703;
+    auto rsContext = std::make_shared<RSContext>();
+    RSDisplayNodeConfig config;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config, rsContext);
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
+    RSSurfaceRenderNodeConfig childConfig { .id = childId, .nodeType = RSSurfaceNodeType::LEASH_WINDOW_NODE };
+    auto childNode = std::make_shared<RSSurfaceRenderNode>(childConfig, rsContext);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+    nodeMap.renderNodeMap_[ExtractPid(childId)][childId] = childNode;
+
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { mainId, childId, missingId };
+    display->SetWindowRecordConfig(recordConfig);
+    RSLogicalDisplayRenderParams params(displayId);
+    display->ResolveWindowRecordSnapshot(params);
+
+    const std::unordered_set<NodeId> expectedWhiteListIds = { mainId, childId, missingId };
+    EXPECT_EQ(params.GetRecordWhiteListIds(), expectedWhiteListIds);
+    EXPECT_TRUE(params.GetRecordSurfaceDrawables().empty());
+    EXPECT_TRUE(params.GetRecordSourceDisplayDrawable().expired());
+    EXPECT_TRUE(params.NeedSync());
+}
+
+/**
+ * @tc.name: WindowRecordOffTreeSourceDisplayTest
+ * @tc.desc: Verify the source display drawable is resolved only for on-tree record surfaces
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordOffTreeSourceDisplayTest, TestSize.Level1)
+{
+    constexpr NodeId displayId = 6800;
+    constexpr NodeId mainId = 6801;
+    auto rsContext = std::make_shared<RSContext>();
+    RSDisplayNodeConfig config;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config, rsContext);
+    display->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(display);
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
+    mainNode->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(mainNode);
+    mainNode->logicalDisplayNodeId_ = displayId;
+    mainNode->isOnTheTree_ = false;
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(displayId)][displayId] = display;
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { mainId };
+    display->SetWindowRecordConfig(recordConfig);
+    RSLogicalDisplayRenderParams offTreeParams(displayId);
+    display->ResolveWindowRecordSnapshot(offTreeParams);
+    ASSERT_EQ(offTreeParams.GetRecordSurfaceDrawables().size(), 1u);
+    EXPECT_TRUE(offTreeParams.GetRecordSourceDisplayDrawable().expired());
+
+    mainNode->isOnTheTree_ = true;
+    RSLogicalDisplayRenderParams onTreeParams(displayId);
+    display->ResolveWindowRecordSnapshot(onTreeParams);
+    auto sourceDisplay = onTreeParams.GetRecordSourceDisplayDrawable().lock();
+    ASSERT_NE(sourceDisplay, nullptr);
+    EXPECT_EQ(sourceDisplay->GetId(), displayId);
+}
+
+/**
+ * @tc.name: WindowRecordSessionClearingTest
+ * @tc.desc: Verify ClearWindowRecordSession drops the config and empties the next snapshot
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordSessionClearingTest, TestSize.Level1)
+{
+    constexpr NodeId displayId = 6900;
+    constexpr NodeId mainId = 6901;
+    auto rsContext = std::make_shared<RSContext>();
+    RSDisplayNodeConfig config;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config, rsContext);
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
+    mainNode->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(mainNode);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { mainId };
+    display->SetWindowRecordConfig(recordConfig);
+    RSLogicalDisplayRenderParams params(displayId);
+    display->ResolveWindowRecordSnapshot(params);
+    ASSERT_EQ(params.GetRecordSurfaceDrawables().size(), 1u);
+
+    display->ClearWindowRecordSession();
+    EXPECT_FALSE(display->IsWindowRecordActive());
+    EXPECT_TRUE(display->GetWindowRecordConfig().surfaceNodeIds.empty());
+    params.SetNeedSync(false);
+    display->ResolveWindowRecordSnapshot(params);
+    EXPECT_TRUE(params.GetRecordWhiteListIds().empty());
+    EXPECT_TRUE(params.GetRecordSurfaceDrawables().empty());
+    EXPECT_TRUE(params.GetRecordSourceDisplayDrawable().expired());
+    EXPECT_FALSE(params.NeedSync());
+}
+
 } // namespace OHOS::Rosen

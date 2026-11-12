@@ -16,7 +16,9 @@
 #include "gtest/gtest.h"
 
 #include "common/rs_obj_abs_geometry.h"
+#include "common/rs_special_layer_manager.h"
 #include "display_engine/rs_luminance_control.h"
+#include "drawable/rs_render_node_drawable_adapter.h"
 #include "params/rs_screen_render_params.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_logical_display_render_node.h"
@@ -28,6 +30,27 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
+namespace {
+class ScreenTestDrawableAdapterMock : public DrawableV2::RSRenderNodeDrawableAdapter {
+public:
+    explicit ScreenTestDrawableAdapterMock(std::shared_ptr<const RSRenderNode> node)
+        : RSRenderNodeDrawableAdapter(std::move(node))
+    {}
+    void Draw(Drawing::Canvas&) override {}
+};
+
+class ScopedScreenSpecialLayerCleaner {
+public:
+    explicit ScopedScreenSpecialLayerCleaner(ScreenId screenId) : screenId_(screenId) {}
+    ~ScopedScreenSpecialLayerCleaner()
+    {
+        ScreenSpecialLayerInfo::ClearByScreenId(screenId_);
+    }
+private:
+    ScreenId screenId_;
+};
+}
+
 class RSScreenRenderNodeTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -1602,5 +1625,166 @@ HWTEST_F(RSScreenRenderNodeTest, SetUIMode3D_003, TestSize.Level1)
 
     node->SetUIMode3D(UIMode3D::MODE_GLASSESFREE_3D);
     EXPECT_EQ(node->GetUIMode3D(), UIMode3D::MODE_GLASSESFREE_3D);
+}
+
+/**
+ * @tc.name: UpdateRenderParamsRecordChildAndEitherOrWhiteList
+ * @tc.desc: Verify a virtual screen selects a record-active child and its white list instead of the property list.
+ * The UpdateRenderParams body stays inside LCOV_EXCL; this test documents behavior only.
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildAndEitherOrWhiteList, TestSize.Level1)
+{
+    constexpr ScreenId testScreenId = 7100;
+    constexpr NodeId screenNodeId = 7101;
+    constexpr NodeId displayId = 7102;
+    constexpr NodeId mainId = 7103;
+    constexpr NodeId propertyWhiteListId = 7104;
+    constexpr NodeId nonRecordDisplayId = 7105;
+    ScopedScreenSpecialLayerCleaner cleaner(testScreenId);
+    auto rsContext = std::make_shared<RSContext>();
+    std::unordered_set<NodeId> propertyWhiteList = { propertyWhiteListId };
+    auto screen = std::make_shared<RSScreenRenderNode>(screenNodeId, testScreenId, rsContext);
+    screen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    screen->screenProperty_.Set<ScreenPropertyType::WHITE_LIST>(propertyWhiteList);
+    screen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(screenNodeId);
+    ASSERT_NE(screen->stagingRenderParams_, nullptr);
+
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
+    mainNode->renderDrawable_ = std::make_shared<ScreenTestDrawableAdapterMock>(mainNode);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+
+    RSDisplayNodeConfig displayConfig;
+    displayConfig.screenId = testScreenId;
+    displayConfig.windowRecordConfig.surfaceNodeIds = { mainId };
+    // A non-record display child is added first so the scan really walks past a non-matching child
+    // before selecting the record-active one (children keep their insertion order).
+    RSDisplayNodeConfig nonRecordDisplayConfig;
+    nonRecordDisplayConfig.screenId = testScreenId;
+    auto nonRecordDisplay =
+        std::make_shared<RSLogicalDisplayRenderNode>(nonRecordDisplayId, nonRecordDisplayConfig, rsContext);
+    EXPECT_FALSE(nonRecordDisplay->IsWindowRecordActive());
+    screen->AddChild(nonRecordDisplay);
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
+    screen->AddChild(display);
+
+    screen->UpdateRenderParams();
+    auto screenParams = static_cast<RSScreenRenderParams*>(screen->stagingRenderParams_.get());
+    ASSERT_NE(screenParams, nullptr);
+    EXPECT_TRUE(screenParams->HasWindowRecordDisplay());
+    const std::unordered_set<NodeId> recordWhiteList = { mainId };
+    EXPECT_EQ(screenParams->GetEffectiveWhiteList(), recordWhiteList);
+    EXPECT_EQ(ScreenSpecialLayerInfo::QueryEnableScreen(SpecialLayerType::IS_WHITE_LIST,
+        { mainId, INVALID_LEASH_PERSISTENTID }), (std::unordered_set<ScreenId>{ testScreenId }));
+    EXPECT_NE(ScreenSpecialLayerInfo::QueryNodeIdsByType(SpecialLayerType::IS_WHITE_LIST).count(mainId), 0u);
+
+    display->ClearWindowRecordSession();
+    screen->UpdateRenderParams();
+    EXPECT_FALSE(screenParams->HasWindowRecordDisplay());
+    EXPECT_EQ(screenParams->GetEffectiveWhiteList(), propertyWhiteList);
+    EXPECT_TRUE(ScreenSpecialLayerInfo::QueryEnableScreen(SpecialLayerType::IS_WHITE_LIST,
+        { mainId, INVALID_LEASH_PERSISTENTID }).empty());
+    EXPECT_EQ(ScreenSpecialLayerInfo::QueryEnableScreen(SpecialLayerType::IS_WHITE_LIST,
+        { propertyWhiteListId, INVALID_LEASH_PERSISTENTID }), (std::unordered_set<ScreenId>{ testScreenId }));
+
+    ScreenSpecialLayerInfo::ClearByScreenId(testScreenId);
+    EXPECT_TRUE(ScreenSpecialLayerInfo::QueryEnableScreen(SpecialLayerType::IS_WHITE_LIST,
+        { propertyWhiteListId, INVALID_LEASH_PERSISTENTID }).empty());
+}
+
+/**
+ * @tc.name: UpdateRenderParamsRecordChildResetsMirrorSource
+ * @tc.desc: Verify a record-active child suppresses the mirror source drawable until the session is cleared.
+ * The UpdateRenderParams body stays inside LCOV_EXCL; this test documents behavior only.
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildResetsMirrorSource, TestSize.Level1)
+{
+    constexpr ScreenId testScreenId = 7200;
+    constexpr NodeId screenNodeId = 7201;
+    constexpr NodeId displayId = 7202;
+    constexpr NodeId mainId = 7203;
+    ScopedScreenSpecialLayerCleaner cleaner(testScreenId);
+    auto rsContext = std::make_shared<RSContext>();
+    auto screen = std::make_shared<RSScreenRenderNode>(screenNodeId, testScreenId, rsContext);
+    screen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    screen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(screenNodeId);
+    ASSERT_NE(screen->stagingRenderParams_, nullptr);
+
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
+    mainNode->renderDrawable_ = std::make_shared<ScreenTestDrawableAdapterMock>(mainNode);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+
+    RSDisplayNodeConfig displayConfig;
+    displayConfig.screenId = testScreenId;
+    displayConfig.windowRecordConfig.surfaceNodeIds = { mainId };
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
+    screen->AddChild(display);
+    auto mirrorScreen = std::make_shared<RSScreenRenderNode>(7204, 7205, rsContext);
+    mirrorScreen->renderDrawable_ = std::make_shared<ScreenTestDrawableAdapterMock>(mirrorScreen);
+    screen->isMirroredScreen_ = true;
+    screen->SetMirrorSource(mirrorScreen);
+    ASSERT_NE(screen->GetMirrorSource().lock(), nullptr);
+
+    screen->UpdateRenderParams();
+    auto screenParams = static_cast<RSScreenRenderParams*>(screen->stagingRenderParams_.get());
+    ASSERT_NE(screenParams, nullptr);
+    EXPECT_TRUE(screenParams->HasWindowRecordDisplay());
+    EXPECT_TRUE(screenParams->GetMirrorSourceDrawable().expired());
+
+    display->ClearWindowRecordSession();
+    screen->UpdateRenderParams();
+    EXPECT_FALSE(screenParams->HasWindowRecordDisplay());
+    auto mirrorDrawable = screenParams->GetMirrorSourceDrawable().lock();
+    ASSERT_NE(mirrorDrawable, nullptr);
+    EXPECT_EQ(mirrorDrawable, mirrorScreen->renderDrawable_);
+}
+
+/**
+ * @tc.name: UpdateRenderParamsPhysicalScreenIgnoresRecordChild
+ * @tc.desc: Verify a physical screen ignores an active record child and keeps the property white list.
+ * The UpdateRenderParams body stays inside LCOV_EXCL; this test documents behavior only.
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsPhysicalScreenIgnoresRecordChild, TestSize.Level1)
+{
+    constexpr ScreenId testScreenId = 7300;
+    constexpr NodeId screenNodeId = 7301;
+    constexpr NodeId displayId = 7302;
+    constexpr NodeId mainId = 7303;
+    constexpr NodeId propertyWhiteListId = 7304;
+    ScopedScreenSpecialLayerCleaner cleaner(testScreenId);
+    auto rsContext = std::make_shared<RSContext>();
+    std::unordered_set<NodeId> propertyWhiteList = { propertyWhiteListId };
+    auto screen = std::make_shared<RSScreenRenderNode>(screenNodeId, testScreenId, rsContext);
+    screen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(false);
+    screen->screenProperty_.Set<ScreenPropertyType::WHITE_LIST>(propertyWhiteList);
+    screen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(screenNodeId);
+    ASSERT_NE(screen->stagingRenderParams_, nullptr);
+
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
+    mainNode->renderDrawable_ = std::make_shared<ScreenTestDrawableAdapterMock>(mainNode);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+
+    RSDisplayNodeConfig displayConfig;
+    displayConfig.screenId = testScreenId;
+    displayConfig.windowRecordConfig.surfaceNodeIds = { mainId };
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
+    screen->AddChild(display);
+
+    screen->UpdateRenderParams();
+    auto screenParams = static_cast<RSScreenRenderParams*>(screen->stagingRenderParams_.get());
+    ASSERT_NE(screenParams, nullptr);
+    EXPECT_FALSE(screenParams->HasWindowRecordDisplay());
+    EXPECT_EQ(screenParams->GetEffectiveWhiteList(), propertyWhiteList);
 }
 } // namespace OHOS::Rosen

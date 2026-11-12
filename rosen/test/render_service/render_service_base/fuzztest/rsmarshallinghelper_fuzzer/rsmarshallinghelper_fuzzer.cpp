@@ -46,6 +46,7 @@ constexpr size_t FUNCTYPE_SIZE = 4;
 constexpr size_t MATRIXTYPE_SIZE = 5;
 constexpr size_t POINTNUMBER = 4;
 constexpr size_t MATH_TEN = 10;
+constexpr uint8_t WINDOWRECORDFIT_SIZE = 2;
 size_t g_size = 0;
 size_t g_pos;
 } // namespace
@@ -754,6 +755,65 @@ bool DoMarshallingHelper022()
     return true;
 }
 
+// RSWindowRecordConfig round trip. Bytes come from the shared GetData() cursor, so no argument is needed.
+// The id count spans 0..65 to cover the MAX_WINDOW_RECORD_SURFACE_NUM bound on both sides.
+bool DoMarshallingHelper023()
+{
+    if (DATA == nullptr) {
+        return false;
+    }
+
+    Parcel parcel;
+    RSWindowRecordConfig config;
+    config.needDrawMouse = GetData<bool>();
+    config.renderFit = static_cast<WindowRecordFit>(GetData<uint8_t>() % WINDOWRECORDFIT_SIZE);
+    size_t idCount = GetData<uint8_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
+    for (size_t i = 0; i < idCount; i++) {
+        config.surfaceNodeIds.push_back(GetData<NodeId>());
+    }
+    RSMarshallingHelper::Marshalling(parcel, config);
+    RSWindowRecordConfig unmarshalled;
+    RSMarshallingHelper::Unmarshalling(parcel, unmarshalled);
+
+    // Untrusted wire value: a renderFit byte outside the enum range must be rejected.
+    Parcel invalidFitParcel;
+    invalidFitParcel.WriteBool(GetData<bool>());
+    invalidFitParcel.WriteInt32(static_cast<int32_t>(GetData<uint8_t>()));
+    invalidFitParcel.WriteUint64(0);
+    RSWindowRecordConfig invalidFitConfig;
+    RSMarshallingHelper::Unmarshalling(invalidFitParcel, invalidFitConfig);
+    return true;
+}
+
+// RSDisplayNodeConfig nested round trip. The raw display mode byte is taken verbatim from the input so the
+// clamping branch (out-of-range mode -> DisplayMode::INVALID) is reachable.
+bool DoMarshallingHelper024()
+{
+    if (DATA == nullptr) {
+        return false;
+    }
+
+    Parcel parcel;
+    RSDisplayNodeConfig config;
+    config.screenId = GetData<uint64_t>();
+    config.displayMode = static_cast<DisplayMode>(GetData<uint8_t>());
+    config.mirrorNodeId = GetData<NodeId>();
+    config.isSync = GetData<bool>();
+    config.mirrorSourceRotation = GetData<uint32_t>();
+    config.positionZ = GetData<float>();
+    config.windowRecordConfig.needDrawMouse = GetData<bool>();
+    config.windowRecordConfig.renderFit =
+        static_cast<WindowRecordFit>(GetData<uint8_t>() % WINDOWRECORDFIT_SIZE);
+    size_t idCount = GetData<uint8_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
+    for (size_t i = 0; i < idCount; i++) {
+        config.windowRecordConfig.surfaceNodeIds.push_back(GetData<NodeId>());
+    }
+    RSMarshallingHelper::Marshalling(parcel, config);
+    RSDisplayNodeConfig unmarshalled;
+    RSMarshallingHelper::Unmarshalling(parcel, unmarshalled);
+    return true;
+}
+
 } // namespace Rosen
 } // namespace OHOS
 
@@ -788,5 +848,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoMarshallingHelper019(data, size);
     OHOS::Rosen::DoMarshallingHelper020(data, size);
     OHOS::Rosen::DoMarshallingHelper022();
+    OHOS::Rosen::DoMarshallingHelper023();
+    OHOS::Rosen::DoMarshallingHelper024();
     return 0;
 }

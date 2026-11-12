@@ -289,6 +289,40 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId005, TestSize.
 }
 
 /**
+ * @tc.name: GetWhiteListPersistentId006
+ * @tc.desc: Test parallel canvas keeps persistent-id-only matching even for window record
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId006, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
+
+    const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
+    const std::unordered_set<NodeId> savedWhiteList = RSUniRenderThread::Instance().GetWhiteList();
+    const bool savedParallelCanvas = canvas_->GetIsParallelCanvas();
+    RSUniRenderThread::Instance().SetWhiteList({surfaceParams->GetId()});
+    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
+
+    // The node-id fallback is record-only, but the parallel canvas must not use it.
+    canvas_->SetIsParallelCanvas(true);
+    EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), INVALID_LEASH_PERSISTENTID);
+
+    // Same inputs on the serial canvas still take the record fallback, guarding the branch order.
+    canvas_->SetIsParallelCanvas(false);
+    EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), surfaceParams->GetId());
+
+    // restore
+    canvas_->SetIsParallelCanvas(savedParallelCanvas);
+    RSUniRenderThread::SetCaptureParam(savedCaptureParam);
+    RSUniRenderThread::Instance().SetWhiteList(savedWhiteList);
+}
+
+/**
  * @tc.name: OnDraw001
  * @tc.desc: Test OnDraw
  * @tc.type: FUNC

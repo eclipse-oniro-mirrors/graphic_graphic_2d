@@ -29,6 +29,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "screen_manager/rs_screen_property.h"
 #include "drawable/rs_render_node_drawable.h"
+#include "engine/rs_base_render_engine.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -50,6 +51,107 @@ ScreenId GenerateScreenId()
 constexpr int CANVAS_WIDTH = 800;
 constexpr int CANVAS_HEIGHT = 600;
 const Drawing::Rect DEFAULT_RECT {0, 0, 100, 100};
+
+// RSSpecialLayerUtils::GetSpecialLayerStateInSubTree reads ambient process state through
+// RSUniRenderThread: the capture param, the curtain flag of the render-thread params owned by
+// RSRenderThreadParamsManager, and the process-wide color filter mode of RSBaseRenderEngine.
+// This guard normalizes all three to "off"/non-snapshot so the NO_SPECIAL_LAYER assertions cannot
+// be polluted by other tests, and restores the saved values on scope exit, including every early
+// test return (the main-thread staging RSRenderThreadParams is not touched: it is not what the
+// function reads). The color filter mode is replayed through an ordered helper because
+// SetColorFilterMode is a transition API, not an assignment.
+class ScopedSubTreeSpecialLayerState {
+public:
+    ScopedSubTreeSpecialLayerState()
+        : savedCaptureParam_(RSUniRenderThread::GetCaptureParam()),
+          savedColorFilterMode_(RSBaseRenderEngine::GetColorFilterMode())
+    {
+        auto& manager = RSRenderThreadParamsManager::Instance();
+        hadRenderThreadParams_ = manager.GetRSRenderThreadParams() != nullptr;
+        if (!hadRenderThreadParams_) {
+            manager.SetRSRenderThreadParams(std::make_unique<RSRenderThreadParams>());
+        }
+        auto& renderThreadParams = manager.GetRSRenderThreadParams();
+        savedCurtainScreenOn_ = renderThreadParams->IsCurtainScreenOn();
+        renderThreadParams->SetCurtainScreenUsingStatus(false);
+        // Disable invert first so that a residual invert bit cannot survive the daltonization reset;
+        // DALTONIZATION_NORMAL_MODE then lands on COLOR_FILTER_END, which IsColorFilterModeOn treats
+        // as off for every starting mode.
+        RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
+        RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::DALTONIZATION_NORMAL_MODE);
+        CaptureParam captureParam;
+        captureParam.isSnapshot_ = false;
+        RSUniRenderThread::SetCaptureParam(captureParam);
+    }
+
+    ~ScopedSubTreeSpecialLayerState()
+    {
+        auto& manager = RSRenderThreadParamsManager::Instance();
+        if (hadRenderThreadParams_) {
+            auto& renderThreadParams = manager.GetRSRenderThreadParams();
+            if (renderThreadParams != nullptr) {
+                renderThreadParams->SetCurtainScreenUsingStatus(savedCurtainScreenOn_);
+            }
+        } else {
+            manager.SetRSRenderThreadParams(nullptr);
+        }
+        RestoreColorFilterMode(savedColorFilterMode_);
+        RSUniRenderThread::SetCaptureParam(savedCaptureParam_);
+    }
+
+    ScopedSubTreeSpecialLayerState(const ScopedSubTreeSpecialLayerState&) = delete;
+    ScopedSubTreeSpecialLayerState& operator=(const ScopedSubTreeSpecialLayerState&) = delete;
+
+private:
+    // RSBaseRenderEngine::SetColorFilterMode is a state transition, not an assignment: the mode is
+    // derived from the current mode, COLOR_FILTER_END cannot be set directly, INVERT_DALTONIZATION_*
+    // falls through to END, and INVERT_COLOR_DISABLE_MODE only clears the invert bit (a no-op at END),
+    // while DALTONIZATION_NORMAL_MODE only clears to END when no invert bit is set. The guard therefore
+    // leaves the mode at END and replays the saved *sustainable* state from there in dependency order.
+    // DALTONIZATION_NORMAL_MODE (16) is a command, never an observable state, so it is not reproduced.
+    static void RestoreColorFilterMode(ColorFilterMode savedMode)
+    {
+        constexpr uint32_t invertBitMask = 1u;
+        switch (savedMode) {
+            case ColorFilterMode::COLOR_FILTER_END:
+                // END is the normalized state and is terminal; no call can or should be made.
+                break;
+            case ColorFilterMode::INVERT_COLOR_ENABLE_MODE:
+                // The only mode that leaves END, so it must be issued first for invert states.
+                RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+                break;
+            case ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE:
+            case ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE:
+            case ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE:
+                // A base daltonization mode assigned while the invert bit is clear lands exactly.
+                RSBaseRenderEngine::SetColorFilterMode(savedMode);
+                break;
+            case ColorFilterMode::INVERT_DALTONIZATION_PROTANOMALY_MODE:
+            case ColorFilterMode::INVERT_DALTONIZATION_DEUTERANOMALY_MODE:
+            case ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE:
+                // INVERT_DALTONIZATION_* is not directly settable: enter invert first, then apply the
+                // matching base mode, which ORs the invert bit back in (3/5/9 -> 1 -> 3/5/9).
+                RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+                RSBaseRenderEngine::SetColorFilterMode(static_cast<ColorFilterMode>(
+                    static_cast<uint32_t>(savedMode) & ~invertBitMask));
+                break;
+            case ColorFilterMode::INVERT_COLOR_DISABLE_MODE:
+                // DISABLE is a no-op at END; enter invert first, then clear the invert bit to 0.
+                RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+                RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
+                break;
+            case ColorFilterMode::DALTONIZATION_NORMAL_MODE:
+            default:
+                // NORMAL is a command and unknown values are not reproducible; stay at END.
+                break;
+        }
+    }
+
+    CaptureParam savedCaptureParam_;
+    ColorFilterMode savedColorFilterMode_;
+    bool hadRenderThreadParams_ = false;
+    bool savedCurtainScreenOn_ = false;
+};
 }
 class RSSpecialLayerUtilsTest : public testing::Test {
 public:
@@ -1708,4 +1810,86 @@ HWTEST_F(RSSpecialLayerUtilsTest, GetMergeBlackListInRenderThread_SkipWindowDisa
     RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
 }
 
+/**
+ * @tc.name: GetSpecialLayerStateInVisibleRectEffectiveWhiteList
+ * @tc.desc: Verify the visible-rect query treats the effective white list as a general special layer
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, GetSpecialLayerStateInVisibleRectEffectiveWhiteList, TestSize.Level2)
+{
+    constexpr ScreenId screenId = 8101;
+    constexpr NodeId displayId = 8102;
+    constexpr NodeId whiteListId = 8103;
+    RSLogicalDisplayRenderParams displayParams(displayId);
+    displayParams.SetScreenId(screenId);
+    RSScreenRenderParams screenParams(screenId);
+
+    EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
+        DisplaySpecialLayerState::NO_SPECIAL_LAYER);
+
+    screenParams.SetEffectiveWhiteList({ whiteListId });
+    EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+
+    screenParams.SetEffectiveWhiteList({});
+    std::unordered_set<NodeType> typeBlackList = { static_cast<NodeType>(0) };
+    screenParams.screenProperty_.Set<ScreenPropertyType::TYPE_BLACK_LIST>(typeBlackList);
+    EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+
+    typeBlackList.clear();
+    screenParams.screenProperty_.Set<ScreenPropertyType::TYPE_BLACK_LIST>(typeBlackList);
+    displayParams.specialLayerManager_.SetHasSlInVisibleRect(screenId, true);
+    EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+
+    displayParams.specialLayerManager_.SetHasSlInVisibleRect(screenId, false);
+    EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
+        DisplaySpecialLayerState::NO_SPECIAL_LAYER);
+}
+
+/**
+ * @tc.name: GetSpecialLayerStateInSubTreeEffectiveWhiteList
+ * @tc.desc: Verify the subtree query consumes the effective white list outside snapshot capture
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, GetSpecialLayerStateInSubTreeEffectiveWhiteList, TestSize.Level2)
+{
+    constexpr ScreenId screenId = 8201;
+    constexpr NodeId displayId = 8202;
+    constexpr NodeId whiteListId = 8203;
+    // Normalizes capture param, render-thread curtain flag and color filter mode for the whole case
+    // and restores them on every exit path.
+    ScopedSubTreeSpecialLayerState scopedState;
+    CaptureParam normalCaptureParam;
+    normalCaptureParam.isSnapshot_ = false;
+
+    RSLogicalDisplayRenderParams displayParams(displayId);
+    displayParams.SetScreenId(screenId);
+    RSScreenRenderParams screenParams(screenId);
+    EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::NO_SPECIAL_LAYER);
+
+    screenParams.SetEffectiveWhiteList({ whiteListId });
+    EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+
+    CaptureParam snapshotCaptureParam;
+    snapshotCaptureParam.isSnapshot_ = true;
+    RSUniRenderThread::SetCaptureParam(snapshotCaptureParam);
+    EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::NO_SPECIAL_LAYER);
+
+    displayParams.hasCaptureWindow_ = true;
+    EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::CAPTURE_WINDOW);
+
+    displayParams.hasCaptureWindow_ = false;
+    screenParams.SetEffectiveWhiteList({});
+    RSUniRenderThread::SetCaptureParam(normalCaptureParam);
+    EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::NO_SPECIAL_LAYER);
+}
 } // namespace Rosen

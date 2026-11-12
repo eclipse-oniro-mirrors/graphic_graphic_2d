@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "common/rs_common_def.h"
 #include "transaction/rs_interfaces.h"
 #include "ui/rs_display_node.h"
 
@@ -494,4 +495,68 @@ HWTEST_F(RSDisplayNodeTest, ClearModifierByPid003, TestSize.Level1)
     }
 }
 #endif
+
+/**
+ * @tc.name: SetWindowRecordConfigTest001
+ * @tc.desc: SetWindowRecordConfig accepts a bounded config through the public API.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDisplayNodeTest, SetWindowRecordConfigTest001, TestSize.Level1)
+{
+    RSDisplayNodeConfig config;
+    config.screenId = 6000;
+    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    ASSERT_NE(displayNode, nullptr);
+
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    ASSERT_NE(transactionProxy, nullptr);
+    // Drop the commands queued by Create so the assertion below only observes SetWindowRecordConfig.
+    transactionProxy->FlushImplicitTransaction();
+    ASSERT_TRUE(transactionProxy->IsEmpty());
+
+    RSWindowRecordConfig recordConfig;
+    recordConfig.needDrawMouse = true;
+    recordConfig.renderFit = WindowRecordFit::ASPECT_FIT;
+    recordConfig.surfaceNodeIds = { 1, 2 };
+    displayNode->SetWindowRecordConfig(recordConfig);
+
+    // The accepted config must reach RSTransactionProxy as a queued render-service command.
+    EXPECT_FALSE(transactionProxy->IsEmpty());
+    transactionProxy->FlushImplicitTransaction();
+    EXPECT_TRUE(transactionProxy->IsEmpty());
+}
+
+/**
+ * @tc.name: SetWindowRecordConfigTest002
+ * @tc.desc: SetWindowRecordConfig rejects an id list above the cap before submitting a command.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDisplayNodeTest, SetWindowRecordConfigTest002, TestSize.Level1)
+{
+    RSDisplayNodeConfig config;
+    config.screenId = 6000;
+    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    ASSERT_NE(displayNode, nullptr);
+
+    RSWindowRecordConfig oversizedConfig;
+    oversizedConfig.surfaceNodeIds.assign(MAX_WINDOW_RECORD_SURFACE_NUM + 1, 1);
+    ASSERT_GT(oversizedConfig.surfaceNodeIds.size(), MAX_WINDOW_RECORD_SURFACE_NUM);
+
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    ASSERT_NE(transactionProxy, nullptr);
+    transactionProxy->FlushImplicitTransaction();
+    ASSERT_TRUE(transactionProxy->IsEmpty());
+
+    // The oversized list must be dropped early, so no command is queued for it.
+    displayNode->SetWindowRecordConfig(oversizedConfig);
+    EXPECT_TRUE(transactionProxy->IsEmpty());
+
+    // The same proxy path still queues an accepted config, which keeps the negative check meaningful.
+    RSWindowRecordConfig validConfig;
+    validConfig.surfaceNodeIds = { 1 };
+    displayNode->SetWindowRecordConfig(validConfig);
+    EXPECT_FALSE(transactionProxy->IsEmpty());
+    transactionProxy->FlushImplicitTransaction();
+    EXPECT_TRUE(transactionProxy->IsEmpty());
+}
 } // namespace OHOS::Rosen

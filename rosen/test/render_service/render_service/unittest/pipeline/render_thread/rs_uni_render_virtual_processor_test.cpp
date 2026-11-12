@@ -1976,6 +1976,46 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetCropRectForMetadata004, TestSize.Le
 }
 
 /**
+ * @tc.name: SetScreenInfoForWindowRecord001
+ * @tc.desc: Test SetScreenInfoForWindowRecord with empty surfaceFrames_
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, SetScreenInfoForWindowRecord001, TestSize.Level2)
+{
+    auto processor = std::make_shared<RSUniRenderVirtualProcessor>();
+    ASSERT_TRUE(processor->surfaceFrames_.empty());
+    const Rect currentFrameRect = {0, 0, 100, 100};
+    const Rect originalRect = {0, 0, 100, 100};
+
+    EXPECT_EQ(processor->SetScreenInfoForWindowRecord(currentFrameRect, originalRect, 0.0f), GSERROR_OK);
+}
+
+/**
+ * @tc.name: SetScreenInfoForWindowRecord002
+ * @tc.desc: Test SetScreenInfoForWindowRecord skips null-surface entries without failing
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, SetScreenInfoForWindowRecord002, TestSize.Level2)
+{
+    auto processor = std::make_shared<RSUniRenderVirtualProcessor>();
+    SurfaceFrameConfig nullSurfaceConfig;
+    nullSurfaceConfig.surface = nullptr;
+    nullSurfaceConfig.frame = nullptr;
+    processor->surfaceFrames_.push_back(std::move(nullSurfaceConfig));
+    SurfaceFrameConfig secondNullSurfaceConfig;
+    secondNullSurfaceConfig.surface = nullptr;
+    processor->surfaceFrames_.push_back(std::move(secondNullSurfaceConfig));
+    ASSERT_EQ(processor->surfaceFrames_.size(), 2u);
+    const Rect currentFrameRect = {0, 0, 100, 100};
+    const Rect originalRect = {0, 0, 100, 100};
+
+    EXPECT_EQ(processor->SetScreenInfoForWindowRecord(currentFrameRect, originalRect, 0.0f), GSERROR_OK);
+    processor->surfaceFrames_.clear();
+}
+
+/**
  * @tc.name: CancelCurrentFrame_SurfaceFrames
  * @tc.desc: Test CancelCurrentFrame with surfaceFrames_ entries
  * @tc.type: FUNC

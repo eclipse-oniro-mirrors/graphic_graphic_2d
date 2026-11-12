@@ -17,10 +17,12 @@
 
 #include <parameters.h>
 
+#include "common/rs_common_def.h"
 #include "common/rs_special_layer_manager.h"
 #include "composer/composer_client/pipeline/rs_composer_client_manager.h"
 #include "engine/rs_uni_render_engine.h"
 #include "drawable/rs_logical_display_render_node_drawable.h"
+#include "drawable/rs_render_node_drawable.h"
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
 #include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/multi_screen/rs_multi_screen_util.h"
@@ -37,6 +39,8 @@
 #include "render/rs_pixel_map_util.h"
 #include "screen_manager/rs_screen.h"
 #include "screen_manager/rs_screen_property.h"
+#include "screen_manager/screen_types.h"
+#include "utils/rect.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -49,6 +53,7 @@ constexpr NodeId SCREEN_NODE_ID = DEFAULT_ID + 1;
 constexpr NodeId DISPLAY_NODE_ID = DEFAULT_ID + 2;
 constexpr NodeId MIRROR_SOURCE_SCREEN_NODE_ID = DEFAULT_ID + 3;
 constexpr NodeId MIRROR_SOURCE_DISPLAY_NODE_ID = DEFAULT_ID + 4;
+constexpr NodeId RECORD_SURFACE_NODE_ID = DEFAULT_ID + 5;
 constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
 constexpr ScreenId SCREEN_ID = 10086;
 constexpr uint32_t DEFAULT_CANVAS_WIDTH = 800;
@@ -1840,5 +1845,316 @@ HWTEST_F(RSMultiScreenUtilTest, GetMultiScreenParamsTest001, TestSize.Level1)
     displayParams_->SetAncestorScreenDrawable(nullptr);
     RSMultiScreenUtil::GetMultiScreenParams(*displayParams_);
     EXPECT_EQ(screenDrawable_, nullptr);
+}
+
+/**
+ * @tc.name: ComputeGravityRectInvalidSizeTest
+ * @tc.desc: Invalid canvas or content sizes return an empty rect so callers skip clip/scale
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectInvalidSizeTest, TestSize.Level1)
+{
+    auto expectEmptyRect = [](const Drawing::RectI& rect) {
+        EXPECT_EQ(rect.GetLeft(), 0);
+        EXPECT_EQ(rect.GetTop(), 0);
+        EXPECT_EQ(rect.GetRight(), 0);
+        EXPECT_EQ(rect.GetBottom(), 0);
+    };
+
+    // content size is the divisor: zero and negative values must not reach the float scale path
+    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 0, 300, WindowRecordFit::ASPECT_FIT));
+    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 300, 0, WindowRecordFit::ASPECT_FIT));
+    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, -1, 300, WindowRecordFit::ASPECT_FIT));
+    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 300, -1, WindowRecordFit::ASPECT_FIT_TOP_LEFT));
+
+    // canvas size is guarded here so every caller can rely on the returned rect
+    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(0, 600, 300, 300, WindowRecordFit::ASPECT_FIT));
+    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, 0, 300, 300, WindowRecordFit::ASPECT_FIT));
+    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(-800, 600, 300, 300, WindowRecordFit::ASPECT_FIT));
+    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, -600, 300, 300, WindowRecordFit::ASPECT_FIT));
+}
+
+/**
+ * @tc.name: ComputeGravityRectAspectFitTest
+ * @tc.desc: Aspect-fit centers the scaled content, horizontally and vertically
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectAspectFitTest, TestSize.Level1)
+{
+    auto expectRect = [](const Drawing::RectI& rect, int32_t left, int32_t top, int32_t right, int32_t bottom) {
+        EXPECT_EQ(rect.GetLeft(), left);
+        EXPECT_EQ(rect.GetTop(), top);
+        EXPECT_EQ(rect.GetRight(), right);
+        EXPECT_EQ(rect.GetBottom(), bottom);
+    };
+
+    // canvas 800x600, content 500x1000: scale 0.6 -> 300x600, centered horizontally
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT),
+        250, 0, 550, 600);
+    // aspect fit ignores rotation
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT,
+        ScreenRotation::ROTATION_270), 250, 0, 550, 600);
+
+    // canvas 800x600, content 1000x500: scale 0.8 -> 800x400, centered vertically
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT),
+        0, 100, 800, 500);
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT,
+        ScreenRotation::ROTATION_90), 0, 100, 800, 500);
+}
+
+/**
+ * @tc.name: ComputeGravityRectTopLeftTest
+ * @tc.desc: Top-left placement maps canvas (0,0) to a different buffer corner per rotation
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectTopLeftTest, TestSize.Level1)
+{
+    auto expectRect = [](const Drawing::RectI& rect, int32_t left, int32_t top, int32_t right, int32_t bottom) {
+        EXPECT_EQ(rect.GetLeft(), left);
+        EXPECT_EQ(rect.GetTop(), top);
+        EXPECT_EQ(rect.GetRight(), right);
+        EXPECT_EQ(rect.GetBottom(), bottom);
+    };
+
+    // canvas 800x600, content 500x1000: scaled size 300x600
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
+        0, 0, 300, 600);
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+        ScreenRotation::ROTATION_90), 0, 0, 300, 600);
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+        ScreenRotation::ROTATION_180), 500, 0, 800, 600);
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+        ScreenRotation::ROTATION_270), 500, 0, 800, 600);
+
+    // canvas 800x600, content 1000x500: scaled size 800x400
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
+        0, 0, 800, 400);
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+        ScreenRotation::ROTATION_90), 0, 200, 800, 600);
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+        ScreenRotation::ROTATION_180), 0, 200, 800, 600);
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+        ScreenRotation::ROTATION_270), 0, 0, 800, 400);
+}
+
+/**
+ * @tc.name: ComputeGravityRectInvalidRotationTest
+ * @tc.desc: An unknown rotation falls back to the unrotated top-left placement
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectInvalidRotationTest, TestSize.Level1)
+{
+    auto expectRect = [](const Drawing::RectI& rect, int32_t left, int32_t top, int32_t right, int32_t bottom) {
+        EXPECT_EQ(rect.GetLeft(), left);
+        EXPECT_EQ(rect.GetTop(), top);
+        EXPECT_EQ(rect.GetRight(), right);
+        EXPECT_EQ(rect.GetBottom(), bottom);
+    };
+
+    // canvas 800x600, content 500x1000: scaled size 300x600
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+        ScreenRotation::INVALID_SCREEN_ROTATION), 0, 0, 300, 600);
+    // default rotation argument behaves like ROTATION_0
+    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
+        0, 0, 300, 600);
+}
+
+/**
+ * @tc.name: HandleWindowRecordScreenGatesTest001
+ * @tc.desc: Screen-level record gates skip before a buffer request only for their own condition
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenGatesTest001, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(screenParams_, nullptr);
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayParams_, nullptr);
+    ASSERT_NE(screenNode_, nullptr);
+    ASSERT_EQ(screenParams_->logicalDisplayNodeDrawables_.size(), 1u);
+
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { RECORD_SURFACE_NODE_ID };
+
+    // Baseline where every loop gate passes: one live logical display entry, an active record
+    // session, a live source display snapshot and a non-empty whitelist. Every case below starts
+    // from this baseline and breaks exactly one condition, so no case can inherit an invalid input
+    // from the previous one, and a deleted gate cannot land on the same result as another gate.
+    auto armPassingLoopGates = [&]() {
+        screenParams_->logicalDisplayNodeDrawables_ = { displayNode_->GetRenderDrawable() };
+        displayParams_->SetWindowRecordConfig(recordConfig);
+        displayParams_->SetOnVirtualScreen(true);
+        displayParams_->recordSourceDisplayDrawable_ = displayNode_->GetRenderDrawable();
+        displayParams_->recordWhiteListIds_ = { RECORD_SURFACE_NODE_ID };
+        screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+    };
+    auto runScreenGate = [&]() {
+        RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+        return screenDrawable_->GetDrawSkipType();
+    };
+
+    // Record ids without the virtual-screen flag: the session gate continues before the source and
+    // whitelist gates. The source is cleared here as well, so only that continue keeps the entry
+    // from being reported as a missing-source skip: an entry wrongly treated as active would hit
+    // the source gate and yield SKIP_FRAME instead of the null-processor fallthrough.
+    armPassingLoopGates();
+    displayParams_->SetOnVirtualScreen(false);
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    EXPECT_FALSE(displayParams_->IsRecordSessionActive());
+    ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
+    EXPECT_EQ(runScreenGate(), DrawSkipType::RENDER_ENGINE_NULL);
+
+    // No display drawable at all: nothing to gate, same processor fallthrough.
+    armPassingLoopGates();
+    screenParams_->logicalDisplayNodeDrawables_.clear();
+    EXPECT_EQ(runScreenGate(), DrawSkipType::RENDER_ENGINE_NULL);
+
+    // Null and wrong-type entries are ignored before any downcast; none of them is skipped as a
+    // record session, so the frame is not dropped here.
+    armPassingLoopGates();
+    screenParams_->logicalDisplayNodeDrawables_ = { nullptr, screenNode_->GetRenderDrawable() };
+    EXPECT_EQ(runScreenGate(), DrawSkipType::RENDER_ENGINE_NULL);
+
+    // Active session and an already populated whitelist, but no resolved source display: SKIP_FRAME
+    // can only come from the missing-source gate. Deleting that gate would fall through to the null
+    // processor (RENDER_ENGINE_NULL), so the two outcomes stay distinguishable.
+    armPassingLoopGates();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    ASSERT_TRUE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+    ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
+    EXPECT_EQ(runScreenGate(), DrawSkipType::SKIP_FRAME);
+
+    // Live source snapshot but an empty whitelist: SKIP_FRAME can only come from the whitelist gate.
+    armPassingLoopGates();
+    displayParams_->recordWhiteListIds_.clear();
+    ASSERT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+    ASSERT_TRUE(displayParams_->GetRecordWhiteListIds().empty());
+    EXPECT_EQ(runScreenGate(), DrawSkipType::SKIP_FRAME);
+
+    // Every loop gate satisfied: the loop cannot skip and execution reaches the processor gate.
+    armPassingLoopGates();
+    EXPECT_EQ(runScreenGate(), DrawSkipType::RENDER_ENGINE_NULL);
+
+    // restore fixture state
+    screenParams_->logicalDisplayNodeDrawables_ = { displayNode_->GetRenderDrawable() };
+    displayParams_->SetWindowRecordConfig(RSWindowRecordConfig{});
+    displayParams_->SetOnVirtualScreen(false);
+    displayParams_->recordWhiteListIds_.clear();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+}
+
+/**
+ * @tc.name: HandleWindowRecordGatesTest001
+ * @tc.desc: Display-level record early returns keep canvas, capture param and filter lists untouched
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordGatesTest001, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayParams_, nullptr);
+    ASSERT_NE(displayNode_, nullptr);
+    ASSERT_NE(screenNode_, nullptr);
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+
+    // Restore the whole thread-local capture param on exit; the cases below only preset one field of
+    // it, but the production path owns all of them.
+    struct CaptureParamRestorer {
+        CaptureParam saved_ = RSUniRenderThread::GetCaptureParam();
+        ~CaptureParamRestorer()
+        {
+            RSUniRenderThread::SetCaptureParam(saved_);
+        }
+    } captureParamRestorer;
+
+    auto sourceDrawable = std::static_pointer_cast<RSRenderNodeDrawable>(displayNode_->GetRenderDrawable());
+    ASSERT_NE(sourceDrawable, nullptr);
+    ASSERT_NE(sourceDrawable->GetRenderParams(), nullptr);
+    const bool prevShouldPaint = sourceDrawable->GetRenderParams()->GetShouldPaint();
+
+    const uint32_t saveCount = paintFilterCanvas_->GetSaveCount();
+    const bool prevWindowRecordFlag = RSUniRenderThread::GetCaptureParam().isWindowRecord_;
+    const auto prevWhiteList = RSUniRenderThread::Instance().GetWhiteList();
+    auto expectNoSideEffect = [&]() {
+        EXPECT_EQ(paintFilterCanvas_->GetSaveCount(), saveCount);
+        EXPECT_EQ(RSUniRenderThread::GetCaptureParam().isWindowRecord_, prevWindowRecordFlag);
+        EXPECT_EQ(RSUniRenderThread::Instance().GetWhiteList(), prevWhiteList);
+        // The full path restores the three values above on its own exits (Restore() and
+        // NodeListGuard), so they cannot separate an early return from a full run. The capture param
+        // is reset rather than restored by the full path, so this preset field survives only when
+        // the call returned before touching the capture state.
+        EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
+    };
+
+    // Baseline where every early-return gate passes: canvas present, non-empty whitelist, live
+    // logical display source that is paintable, plus the preset capture-param sentinel.
+    auto armPassingRecordGates = [&]() {
+        displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
+        displayParams_->recordWhiteListIds_ = { RECORD_SURFACE_NODE_ID };
+        displayParams_->recordSourceDisplayDrawable_ = displayNode_->GetRenderDrawable();
+        sourceDrawable->GetRenderParams()->SetShouldPaint(true);
+        RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
+    };
+    auto runRecordGate = [&]() {
+        RSMultiScreenUtil::HandleWindowRecord(*displayDrawable_, *displayParams_, *virtualProcessor_);
+    };
+
+    // null canvas: return before any canvas state is touched
+    armPassingRecordGates();
+    displayDrawable_->curCanvas_ = nullptr;
+    runRecordGate();
+    expectNoSideEffect();
+
+    // empty record whitelist with a live, paintable source: only the whitelist gate can stop it
+    armPassingRecordGates();
+    displayParams_->recordWhiteListIds_.clear();
+    ASSERT_TRUE(displayParams_->GetRecordWhiteListIds().empty());
+    ASSERT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+    runRecordGate();
+    expectNoSideEffect();
+
+    // populated whitelist but the source display snapshot is missing
+    armPassingRecordGates();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    ASSERT_TRUE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+    ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
+    runRecordGate();
+    expectNoSideEffect();
+
+    // source snapshot resolves to the wrong node type
+    armPassingRecordGates();
+    displayParams_->recordSourceDisplayDrawable_ = screenNode_->GetRenderDrawable();
+    auto wrongTypeSource = displayParams_->GetRecordSourceDisplayDrawable().lock();
+    ASSERT_NE(wrongTypeSource, nullptr);
+    ASSERT_EQ(wrongTypeSource->GetNodeType(), RSRenderNodeType::SCREEN_NODE);
+    runRecordGate();
+    expectNoSideEffect();
+
+    // source is a logical display but not paintable
+    armPassingRecordGates();
+    ASSERT_TRUE(sourceDrawable->ShouldPaint());
+    sourceDrawable->GetRenderParams()->SetShouldPaint(false);
+    ASSERT_FALSE(sourceDrawable->ShouldPaint());
+    runRecordGate();
+    expectNoSideEffect();
+
+    // The full path installs its own CaptureParam and ends in ResetCaptureParam(), which clears the
+    // preset sentinel. Checking it here documents why the assertions above stay meaningful without
+    // running a GPU capture.
+    RSUniRenderThread::ResetCaptureParam();
+    EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
+
+    // restore fixture state
+    sourceDrawable->GetRenderParams()->SetShouldPaint(prevShouldPaint);
+    displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
+    displayParams_->recordWhiteListIds_.clear();
+    displayParams_->recordSourceDisplayDrawable_.reset();
 }
 } // namespace OHOS::Rosen

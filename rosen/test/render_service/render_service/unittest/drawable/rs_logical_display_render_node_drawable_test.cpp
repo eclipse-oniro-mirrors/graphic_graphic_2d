@@ -526,6 +526,69 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnDrawTest005, TestSize.Level1)
 }
 
 /**
+ * @tc.name: OnDrawTestWindowRecordMissingProcessor
+ * @tc.desc: Test record session routing when the render thread has no processor
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnDrawTestWindowRecordMissingProcessor, TestSize.Level2)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    renderParams->shouldPaint_ = true;
+    renderParams->contentEmpty_ = false;
+    renderParams->SetOnVirtualScreen(true);
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = {DEFAULT_ID};
+    renderParams->SetWindowRecordConfig(recordConfig);
+    ASSERT_TRUE(renderParams->IsRecordSessionActive());
+
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+    auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    ASSERT_EQ(uniParam->GetRSProcessor(), nullptr);
+
+    displayDrawable_->OnDraw(*drawingFilterCanvas_);
+    // The record branch must reject a missing processor instead of falling through to the mirror path.
+    EXPECT_EQ(displayDrawable_->GetDrawSkipType(), DrawSkipType::EXPAND_PROCESSOR_NULL);
+}
+
+/**
+ * @tc.name: OnDrawTestWindowRecordWrongProcessor
+ * @tc.desc: Test record session routing when the render thread holds a non-virtual processor
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnDrawTestWindowRecordWrongProcessor, TestSize.Level2)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    renderParams->shouldPaint_ = true;
+    renderParams->contentEmpty_ = false;
+    renderParams->SetOnVirtualScreen(true);
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = {DEFAULT_ID};
+    renderParams->SetWindowRecordConfig(recordConfig);
+    ASSERT_TRUE(renderParams->IsRecordSessionActive());
+
+    auto processor = RSProcessorFactory::CreateProcessor(renderParams->GetCompositeType(), 0);
+    ASSERT_NE(processor, nullptr);
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    uniParams->SetRSProcessor(processor);
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+    auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    ASSERT_EQ(uniParam->GetRSProcessor(), processor);
+
+    displayDrawable_->OnDraw(*drawingFilterCanvas_);
+    // A record session needs the virtual processor; a same-thread non-virtual one must not be reused.
+    EXPECT_EQ(displayDrawable_->GetDrawSkipType(), DrawSkipType::EXPAND_PROCESSOR_NULL);
+}
+
+/**
  * @tc.name: OnDrawTest006
  * @tc.desc: Test OnDraw When needOffscreen is true
  * @tc.type: FUNC

@@ -37,6 +37,15 @@ using namespace testing::ext;
 using namespace OHOS::Rosen::DrawableV2;
 
 namespace OHOS::Rosen {
+namespace {
+constexpr NodeId NODE_LIST_GUARD_WHITE_OUTER = 101;
+constexpr NodeId NODE_LIST_GUARD_BLACK_OUTER = 102;
+constexpr NodeId NODE_LIST_GUARD_WHITE_INNER = 103;
+constexpr NodeId NODE_LIST_GUARD_BLACK_INNER = 104;
+constexpr NodeType NODE_LIST_GUARD_TYPE_OUTER = 1;
+constexpr NodeType NODE_LIST_GUARD_TYPE_INNER = 2;
+} // namespace
+
 class RSUniRenderThreadTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -105,6 +114,105 @@ HWTEST_F(RSUniRenderThreadTest, SetAndGetCaptureParam001, TestSize.Level1)
     param.isSingleSurface_ = true;
     instance.SetCaptureParam(param);
     EXPECT_TRUE(instance.GetCaptureParam().isSingleSurface_);
+}
+
+/**
+ * @tc.name: NodeListGuardRestoresSharedState001
+ * @tc.desc: Test NodeListGuard restores the render-thread filter lists and record flag
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSUniRenderThreadTest, NodeListGuardRestoresSharedState001, TestSize.Level1)
+{
+    auto& instance = RSUniRenderThread::Instance();
+    const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
+    const auto savedWhiteList = instance.GetWhiteList();
+    const auto savedBlackList = instance.GetBlackList();
+    const auto savedTypeBlackList = instance.GetTypeBlackList();
+
+    const std::unordered_set<NodeId> outerWhiteList = {NODE_LIST_GUARD_WHITE_OUTER};
+    const std::unordered_set<NodeId> outerBlackList = {NODE_LIST_GUARD_BLACK_OUTER};
+    const std::unordered_set<NodeType> outerTypeBlackList = {NODE_LIST_GUARD_TYPE_OUTER};
+    instance.SetWhiteList(outerWhiteList);
+    instance.SetBlackList(outerBlackList);
+    instance.SetTypeBlackList(outerTypeBlackList);
+    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
+    {
+        RSUniRenderThread::NodeListGuard guard;
+        instance.SetWhiteList({NODE_LIST_GUARD_WHITE_INNER});
+        instance.SetBlackList({NODE_LIST_GUARD_BLACK_INNER});
+        instance.SetTypeBlackList({NODE_LIST_GUARD_TYPE_INNER});
+        RSUniRenderThread::GetCaptureParam().isWindowRecord_ = false;
+        EXPECT_EQ(instance.GetWhiteList(), std::unordered_set<NodeId>({NODE_LIST_GUARD_WHITE_INNER}));
+        EXPECT_EQ(instance.GetBlackList(), std::unordered_set<NodeId>({NODE_LIST_GUARD_BLACK_INNER}));
+        EXPECT_EQ(instance.GetTypeBlackList(), std::unordered_set<NodeType>({NODE_LIST_GUARD_TYPE_INNER}));
+        EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
+    }
+    EXPECT_EQ(instance.GetWhiteList(), outerWhiteList);
+    EXPECT_EQ(instance.GetBlackList(), outerBlackList);
+    EXPECT_EQ(instance.GetTypeBlackList(), outerTypeBlackList);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
+
+    // restore
+    RSUniRenderThread::SetCaptureParam(savedCaptureParam);
+    instance.SetWhiteList(savedWhiteList);
+    instance.SetBlackList(savedBlackList);
+    instance.SetTypeBlackList(savedTypeBlackList);
+}
+
+/**
+ * @tc.name: NodeListGuardRestoresSharedState002
+ * @tc.desc: Test a nested NodeListGuard restores the state saved by the enclosing guard
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSUniRenderThreadTest, NodeListGuardRestoresSharedState002, TestSize.Level1)
+{
+    auto& instance = RSUniRenderThread::Instance();
+    const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
+    const auto savedWhiteList = instance.GetWhiteList();
+    const auto savedBlackList = instance.GetBlackList();
+    const auto savedTypeBlackList = instance.GetTypeBlackList();
+
+    const std::unordered_set<NodeId> baselineWhiteList = {NODE_LIST_GUARD_WHITE_OUTER};
+    const std::unordered_set<NodeId> baselineBlackList = {NODE_LIST_GUARD_BLACK_OUTER};
+    const std::unordered_set<NodeType> baselineTypeBlackList = {NODE_LIST_GUARD_TYPE_OUTER};
+    instance.SetWhiteList(baselineWhiteList);
+    instance.SetBlackList(baselineBlackList);
+    instance.SetTypeBlackList(baselineTypeBlackList);
+    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
+    {
+        RSUniRenderThread::NodeListGuard outerGuard;
+        instance.SetWhiteList({NODE_LIST_GUARD_WHITE_INNER});
+        instance.SetBlackList({NODE_LIST_GUARD_BLACK_INNER});
+        instance.SetTypeBlackList({NODE_LIST_GUARD_TYPE_INNER});
+        {
+            RSUniRenderThread::NodeListGuard innerGuard;
+            instance.SetWhiteList({});
+            instance.SetBlackList({});
+            instance.SetTypeBlackList({});
+            RSUniRenderThread::GetCaptureParam().isWindowRecord_ = false;
+            EXPECT_TRUE(instance.GetWhiteList().empty());
+            EXPECT_TRUE(instance.GetBlackList().empty());
+            EXPECT_TRUE(instance.GetTypeBlackList().empty());
+            EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
+        }
+        // The inner guard restores the lists and flag installed between the two guards.
+        EXPECT_EQ(instance.GetWhiteList(), std::unordered_set<NodeId>({NODE_LIST_GUARD_WHITE_INNER}));
+        EXPECT_EQ(instance.GetBlackList(), std::unordered_set<NodeId>({NODE_LIST_GUARD_BLACK_INNER}));
+        EXPECT_EQ(instance.GetTypeBlackList(), std::unordered_set<NodeType>({NODE_LIST_GUARD_TYPE_INNER}));
+        EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
+    }
+    EXPECT_EQ(instance.GetWhiteList(), baselineWhiteList);
+    EXPECT_EQ(instance.GetBlackList(), baselineBlackList);
+    EXPECT_EQ(instance.GetTypeBlackList(), baselineTypeBlackList);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
+
+    // restore
+    RSUniRenderThread::SetCaptureParam(savedCaptureParam);
+    instance.SetWhiteList(savedWhiteList);
+    instance.SetBlackList(savedBlackList);
+    instance.SetTypeBlackList(savedTypeBlackList);
 }
 
 /**
