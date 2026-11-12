@@ -57,6 +57,7 @@ class RSNGRenderShapeBase; // forward declaration, impl in rs_render_shape_base.
 #include "effect/rs_render_property_tag_mask_def.in"
 #include "effect/rs_render_property_tag_shader_def.in"
 #include "effect/rs_render_property_tag_shape_def.in"
+#include "effect/rs_render_property_tag_blender_def.in"
 
 #undef MASK_PTR
 #undef SHAPE_PTR
@@ -171,6 +172,11 @@ enum class RSNGEffectType : int16_t {
     SDF_UBER_SHAPE,
     POINT_LIGHT,
     PARTICLE_AGGREGATION,
+
+    // blender type
+    COLORFUL_BRIGHTNESS_BLENDER,
+    BRIGHTNESS_BLENDER,
+    HDR_DARKEN_BLENDER,
 };
 
 using RSNGEffectTypeUnderlying = std::underlying_type<RSNGEffectType>::type;

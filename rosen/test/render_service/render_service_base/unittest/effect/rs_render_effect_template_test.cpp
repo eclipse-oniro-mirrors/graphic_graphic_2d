@@ -199,6 +199,21 @@ HWTEST_F(RSNGRenderEffectTemplateTest, GetEffectTypeStringForGlassAndAtlasFrameT
 }
 
 /**
+ * @tc.name: GetEffectTypeStringForBlenderTypes
+ * @tc.desc: Verify GetEffectTypeString for blender types
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, GetEffectTypeStringForBlenderTypes, TestSize.Level1)
+{
+    EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER),
+        "ColorfulBrightnessBlender");
+    EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::BRIGHTNESS_BLENDER),
+        "BrightnessBlender");
+    EXPECT_EQ(
+        RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::HDR_DARKEN_BLENDER), "HdrDarkenBlender");
+}
+
+/**
  * @tc.name: CreateGEVisualEffectForValidTypes
  * @tc.desc: Verify CreateGEVisualEffect for valid types
  * @tc.type: FUNC

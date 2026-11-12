@@ -18,6 +18,10 @@
 
 #include "modifier_ng/rs_modifier_ng.h"
 
+namespace OHOS::Rosen {
+class RSNGBlenderBase;
+}
+
 namespace OHOS::Rosen::ModifierNG {
 class RSC_EXPORT RSBlendModifier : public RSModifier {
 public:
@@ -32,38 +36,10 @@ public:
 
     void SetColorBlendMode(RSColorBlendMode colorBlendMode);
     void SetColorBlendApplyType(RSColorBlendApplyType colorBlendApplyType);
-    void SetFgBrightnessRates(const Vector4f& rates);
-    void SetFgBrightnessSaturation(float saturation);
-    void SetFgBrightnessPosCoeff(const Vector4f& coeff);
-    void SetFgBrightnessNegCoeff(const Vector4f& coeff);
-    void SetFgBrightnessFract(float fract);
-    void SetFgBrightnessHdr(bool hdr);
-    void SetShadowBlenderParams(const std::optional<RSShadowBlenderPara>& params);
-    void SetHdrDarkenBlenderParams(const std::optional<RSHdrDarkenBlenderPara>& params);
-    void SetColorfulBrightnessDarkenWeight(float val);
-    void SetColorfulBrightnessFraction(float val);
-    void SetColorfulBrightnessCubicRate(float val);
-    void SetColorfulBrightnessQuadRate(float val);
-    void SetColorfulBrightnessLinearRate(float val);
-    void SetColorfulBrightnessDegree(float val);
-    void SetColorfulBrightnessSaturation(float val);
-    void SetColorfulBrightnessPositiveCoeff(const Vector3f& val);
-    void SetColorfulBrightnessNegativeCoeff(const Vector3f& val);
-    void SetColorfulBrightnessVibrancyStrength(float val);
-    void SetColorfulBrightnessLumaDiff(float val);
-    void SetColorfulBrightnessHdrEnabled(bool val);
-    void SetColorfulBrightnessTintedColorPercent(float val);
+    void SetNGBlenderBase(std::shared_ptr<RSNGBlenderBase> blender);
 
     RSColorBlendMode GetColorBlendMode() const;
     RSColorBlendApplyType GetColorBlendApplyType() const;
-    Vector4f GetFgBrightnessRates() const;
-    float GetFgBrightnessSaturation() const;
-    Vector4f GetFgBrightnessPosCoeff() const;
-    Vector4f GetFgBrightnessNegCoeff() const;
-    float GetFgBrightnessFract() const;
-    bool GetFgBrightnessHdr() const;
-    std::optional<RSShadowBlenderPara> GetShadowBlenderParams() const;
-    std::optional<RSHdrDarkenBlenderPara> GetHdrDarkenBlenderParams() const;
 };
 } // namespace OHOS::Rosen::ModifierNG
 #endif // RENDER_SERVICE_CLIENT_CORE_MODIFIER_NG_APPEARANCE_RS_BLEND_MODIFIER_H

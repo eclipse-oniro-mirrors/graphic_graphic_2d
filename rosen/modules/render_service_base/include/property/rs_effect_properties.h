@@ -44,6 +44,7 @@ namespace OHOS {
 namespace Rosen {
 class RSNGRenderFilterBase;
 class RSNGRenderShaderBase;
+class RSNGRenderBlenderBase;
 class RSPath;
 class RSShader;
 
@@ -133,10 +134,7 @@ struct ShaderEffectParams {
 };
 
 struct BlenderEffectParams {
-    std::optional<RSShadowBlenderPara> shadowBlenderParams_;
-    std::optional<RSHdrDarkenBlenderPara> hdrDarkenBlenderParams_;
-    std::unique_ptr<RSColorfulBrightnessBlenderPara> colorfulBrightnessBlenderParams_ = nullptr;
-    std::optional<RSDynamicBrightnessPara> fgBrightnessParams_;
+    std::shared_ptr<RSNGRenderBlenderBase> ngBlender_ = nullptr;
     std::optional<RSDynamicBrightnessPara> bgBrightnessParams_;
     int colorBlendMode_ = 0;
     int colorBlendApplyType_ = 0;
@@ -616,53 +614,6 @@ public:
     std::shared_ptr<RSNGRenderShaderBase> GetOverlayNGShader() const;
 
     // blender effect params
-    // shadowBlenderParams_
-    void SetShadowBlenderParams(const std::optional<RSShadowBlenderPara>& params);
-    std::optional<RSShadowBlenderPara> GetShadowBlenderParams() const;
-    bool IsShadowBlenderValid() const;
-    std::string GetShadowBlenderDescription() const;
-
-    // hdrDarkenBlenderParams_
-    void SetHdrDarkenBlenderParams(const std::optional<RSHdrDarkenBlenderPara>& params);
-    std::optional<RSHdrDarkenBlenderPara> GetHdrDarkenBlenderParams() const;
-    bool IsHdrDarkenBlenderValid() const;
-    std::string GetHdrDarkenBlenderDescription() const;
-
-    // colorfulBrightnessBlenderParams_
-    void SetColorfulBrightnessBlenderParams(std::unique_ptr<RSColorfulBrightnessBlenderPara> params);
-    const RSColorfulBrightnessBlenderPara* GetColorfulBrightnessBlenderParams() const;
-    bool IsColorfulBrightnessBlenderValid() const;
-    std::string GetColorfulBrightnessBlenderDescription() const;
-
-    template <typename T>
-    void SetColorfulBrightnessBlenderMember(T RSColorfulBrightnessBlenderPara::* member, const T& val)
-    {
-        auto& blender = GetBlenderEffect();
-        if (!blender.colorfulBrightnessBlenderParams_) {
-            blender.colorfulBrightnessBlenderParams_ = std::make_unique<RSColorfulBrightnessBlenderPara>();
-        }
-        (*blender.colorfulBrightnessBlenderParams_).*member = val;
-    }
-
-    // fgBrightnessParams_
-    void SetFgBrightnessRates(const Vector4f& rates);
-    void SetFgBrightnessSaturation(const float& saturation);
-    void SetFgBrightnessPosCoeff(const Vector4f& coeff);
-    void SetFgBrightnessNegCoeff(const Vector4f& coeff);
-    void SetFgBrightnessFract(const float& fraction);
-    void SetFgBrightnessHdr(bool enableHdr);
-    void SetFgBrightnessParams(const std::optional<RSDynamicBrightnessPara>& params);
-    std::optional<RSDynamicBrightnessPara> GetFgBrightnessParams() const;
-    bool IsFgBrightnessValid() const;
-    bool GetFgBrightnessEnableEDR() const;
-    std::string GetFgBrightnessDescription() const;
-    Vector4f GetFgBrightnessRates() const;
-    float GetFgBrightnessSaturation() const;
-    Vector4f GetFgBrightnessPosCoeff() const;
-    Vector4f GetFgBrightnessNegCoeff() const;
-    float GetFgBrightnessFract() const;
-    bool GetFgBrightnessHdr() const;
-
     // bgBrightnessParams_
     void SetBgBrightnessRates(const Vector4f& rates);
     void SetBgBrightnessSaturation(const float& saturation);

@@ -25,6 +25,8 @@
 #include "common/rs_vector4.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
+#include "effect/rs_render_blender_base.h"
+#include "modifier/rs_render_property.h"
 #include "property/rs_properties.h"
 #include "modifier_ng/appearance/rs_blend_render_modifier.h"
 
@@ -58,36 +60,56 @@ HWTEST_F(RSBlendRenderModifierNGTest, RSBlendRenderModifierTest, TestSize.Level1
     modifier.ResetProperties(properties);
     EXPECT_EQ(properties.GetColorBlendMode(), 0);
     EXPECT_EQ(properties.GetColorBlendApplyType(), 0);
-    EXPECT_EQ(properties.GetFgBrightnessRates(), Vector4f());
-    EXPECT_EQ(properties.GetFgBrightnessSaturation(), 0.0f);
-    EXPECT_EQ(properties.GetFgBrightnessPosCoeff(), Vector4f());
-    EXPECT_EQ(properties.GetFgBrightnessNegCoeff(), Vector4f());
-    EXPECT_EQ(properties.GetFgBrightnessFract(), 1.f);
-    EXPECT_EQ(properties.GetFgBrightnessHdr(), false);
-    EXPECT_EQ(properties.GetShadowBlenderParams(), std::nullopt);
-    EXPECT_EQ(properties.GetHdrDarkenBlenderParams(), std::nullopt);
-    // ResetProperties now also clears ColorfulBrightnessBlender params (added by ColorfulBrightnessBlender feature)
-    EXPECT_EQ(properties.GetColorfulBrightnessBlenderParams(), nullptr);
-    EXPECT_FALSE(properties.IsColorfulBrightnessBlenderValid());
+    // ResetProperties clears the NG blender object as well (added by the NG blender migration)
+    EXPECT_EQ(properties.GetNGBlender(), nullptr);
 }
 
 /**
- * @tc.name: RSBlendRenderModifierColorfulResetTest
- * @tc.desc: verify ResetProperties clears previously-set ColorfulBrightnessBlender params.
- *           Covers the SetColorfulBrightnessBlenderParams(std::nullopt) call added to ResetProperties.
+ * @tc.name: RSBlendRenderModifierNGBlenderTest
+ * @tc.desc: verify the FOREGROUND_NG_BLENDER applier stores the NG object (store-only, no unpacking)
+ *           and ResetProperties clears it.
  * @tc.type:FUNC
  */
-HWTEST_F(RSBlendRenderModifierNGTest, RSBlendRenderModifierColorfulResetTest, TestSize.Level1)
+HWTEST_F(RSBlendRenderModifierNGTest, RSBlendRenderModifierNGBlenderTest, TestSize.Level1)
 {
     RSBlendRenderModifier modifier;
     RSProperties properties;
-    // set colorful params, then reset and verify cleared
-    auto params = std::make_unique<RSColorfulBrightnessBlenderPara>(1.0f, 0.5f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f,
-        Vector3f(0.6f, 0.7f, 0.8f), Vector3f(0.9f, 0.1f, 0.2f), 0.33f, 0.88f);
-    properties.SetColorfulBrightnessBlenderParams(std::move(params));
-    EXPECT_TRUE(properties.IsColorfulBrightnessBlenderValid());
-    modifier.ResetProperties(properties);
-    EXPECT_EQ(properties.GetColorfulBrightnessBlenderParams(), nullptr);
-    EXPECT_FALSE(properties.IsColorfulBrightnessBlenderValid());
+    EXPECT_EQ(properties.GetNGBlender(), nullptr);
+
+    auto ngBlender = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(ngBlender, nullptr);
+    // apply via the NG applier entry: FOREGROUND_NG_BLENDER
+    properties.SetNGBlender(ngBlender);
+    EXPECT_EQ(properties.GetNGBlender(), ngBlender);
+
+    RSBlendRenderModifier resetModifier;
+    resetModifier.ResetProperties(properties);
+    EXPECT_EQ(properties.GetNGBlender(), nullptr);
+}
+
+/**
+ * @tc.name: RSBlendRenderModifierNGBlenderApplierTest
+ * @tc.desc: verify the FOREGROUND_NG_BLENDER applier of the LegacyPropertyApplierMap: a blender
+ *           property attached to the modifier is applied to RSProperties by ApplyLegacyProperty.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSBlendRenderModifierNGTest, RSBlendRenderModifierNGBlenderApplierTest, TestSize.Level1)
+{
+    RSBlendRenderModifier modifier;
+    auto ngBlender = RSNGRenderBlenderBase::Create(RSNGEffectType::HDR_DARKEN_BLENDER);
+    ASSERT_NE(ngBlender, nullptr);
+    auto property = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(ngBlender, 1);
+    modifier.AttachProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER, property);
+
+    RSProperties properties;
+    modifier.ApplyLegacyProperty(properties);
+    EXPECT_EQ(properties.GetNGBlender(), ngBlender);
+
+    // applying a null blender clears the stored NG object again
+    auto nullProperty = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(nullptr, 2);
+    modifier.DetachProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER);
+    modifier.AttachProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER, nullProperty);
+    modifier.ApplyLegacyProperty(properties);
+    EXPECT_EQ(properties.GetNGBlender(), nullptr);
 }
 } // namespace OHOS::Rosen

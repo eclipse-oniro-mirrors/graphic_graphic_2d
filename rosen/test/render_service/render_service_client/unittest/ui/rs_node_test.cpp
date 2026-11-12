@@ -4084,7 +4084,7 @@ HWTEST_F(RSNodeTest, SetVisualEffectWithInvalidBlenderType, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     auto effectObj = std::make_shared<VisualEffect>();
     auto para = std::make_shared<BackgroundColorEffectPara>();
-    para->SetBlender(std::make_shared<ShadowBlender>());
+    para->SetBlender(std::make_shared<HdrDarkenBlender>());
     effectObj->AddPara(para);
 
     rsNode->SetVisualEffect(effectObj.get());
@@ -6008,93 +6008,12 @@ HWTEST_F(RSNodeTest, SetBlender, TestSize.Level1)
     BrightnessBlender brightnessBlender;
     rsNode->SetBlender(&brightnessBlender);
     EXPECT_NE(rsNode, nullptr);
-    ShadowBlender shadowBlender;
-    rsNode->SetBlender(&shadowBlender);
-    EXPECT_NE(rsNode, nullptr);
-}
-
-/**
- * @tc.name: SetFgBrightnessParams
- * @tc.desc: test results of SetFgBrightnessParams
- * @tc.type: FUNC
- * @tc.require: issueI9KAZH
- */
-HWTEST_F(RSNodeTest, SetFgBrightnessParams, TestSize.Level1)
-{
-    auto rsNode = RSCanvasNode::Create();
-    RSDynamicBrightnessPara params;
-    rsNode->SetFgBrightnessParams(params);
-    EXPECT_NE(params.fraction_, 0.f);
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessRates
- * @tc.desc: test results of SetNGetFgBrightnessRates
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSNodeTest, SetNGetFgBrightnessRates, TestSize.Level1)
-{
-    auto rsNode = RSCanvasNode::Create();
-    Vector4f value {0.5f, 0.5f, 0.5f, 0.5f};
-    rsNode->SetFgBrightnessRates(value);
-    EXPECT_NE(value.x_, 0.f);
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessSaturation
- * @tc.desc: test results of SetNGetFgBrightnessSaturation
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSNodeTest, SetNGetFgBrightnessSaturation, TestSize.Level1)
-{
-    auto rsNode = RSCanvasNode::Create();
-    float value = 1.0;
-    rsNode->SetFgBrightnessSaturation(value);
-    EXPECT_NE(value, 0.f);
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessPosCoeff
- * @tc.desc: test results of SetNGetFgBrightnessPosCoeff
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSNodeTest, SetNGetFgBrightnessPosCoeff, TestSize.Level1)
-{
-    auto rsNode = RSCanvasNode::Create();
-    Vector4f value {0.5f, 0.5f, 0.5f, 0.5f};
-    rsNode->SetFgBrightnessPosCoeff(value);
-    EXPECT_NE(value.x_, 0.f);
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessNegCoeff
- * @tc.desc: test results of SetNGetFgBrightnessNegCoeff
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSNodeTest, SetNGetFgBrightnessNegCoeff, TestSize.Level1)
-{
-    auto rsNode = RSCanvasNode::Create();
-    Vector4f value {0.5f, 0.5f, 0.5f, 0.5f};
-    rsNode->SetFgBrightnessNegCoeff(value);
-    EXPECT_NE(value.x_, 0.f);
-}
-
-/**
- * @tc.name: SetFgBrightnessFract
- * @tc.desc: test results of SetFgBrightnessFract
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSNodeTest, SetFgBrightnessFract, TestSize.Level1)
-{
-    auto rsNode = RSCanvasNode::Create();
-    float value = 0.0;
-    rsNode->SetFgBrightnessFract(value);
-    EXPECT_NE(value, 1.f);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    // null input means "clear the current blender"
+    rsNode->SetBlender(nullptr);
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
 }
 
 /**

@@ -15,11 +15,14 @@
 
 #include "gtest/gtest.h"
 
+#include "drawable/rs_blender_drawable_utils.h"
 #include "drawable/rs_misc_drawable.h"
+#include "effect/rs_render_blender_base.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_render_node.h"
 #include "modifier_ng/foreground/rs_env_foreground_color_render_modifier.h"
+#include "property/rs_properties.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -302,38 +305,7 @@ HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable001, TestSize.Level1)
     RSRenderNode node(id);
     ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
 
-    std::optional<RSDynamicBrightnessPara> params = { RSDynamicBrightnessPara() };
-    node.GetMutableRenderProperties().SetFgBrightnessParams(params);
-    node.GetMutableRenderProperties().SetFgBrightnessFract(0.0f);
-    ASSERT_NE(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
-    
-    std::optional<RSDynamicBrightnessPara> paramsTwo = std::nullopt;
-    node.GetMutableRenderProperties().SetFgBrightnessParams(paramsTwo);
     node.GetMutableRenderProperties().SetColorBlendMode(12);
-    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
-        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
-    ASSERT_NE(drawable, nullptr);
-
-    drawable->OnSync();
-    ASSERT_FALSE(drawable->needSync_);
-    drawable->OnSync();
-    ASSERT_FALSE(drawable->needSync_);
-}
-
-/**
- * @tc.name: RSBeginBlenderDrawable002
- * @tc.desc: Test OnGenerate for shadow blender
- * @tc.type:FUNC
- * @tc.require: issueICLU4I
- */
-HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable002, TestSize.Level1)
-{
-    NodeId id = 1;
-    RSRenderNode node(id);
-    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
-
-    auto params = std::optional<RSShadowBlenderPara>({0, 0, 0, 0});
-    node.GetMutableRenderProperties().SetShadowBlenderParams(params);
     auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
         DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
     ASSERT_NE(drawable, nullptr);
@@ -370,112 +342,289 @@ HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable003, TestSize.Level1)
     EXPECT_NE(filterCanvas->envStack_.top().blender_, nullptr);
 }
 
-
 /**
- * @tc.name: RSBeginBlenderDrawable004
- * @tc.desc: Test OnGenerate for hdrDarken blender
+ * @tc.name: RSBeginBlenderDrawable008
+ * @tc.desc: Test OnGenerate/OnUpdate for the NG blender path. Covers the store-only NG object,
+ *           the RSBlenderDrawableUtils unpacking (MakeColorfulBrightnessFromNG), NG-over-legacy
+ *           priority in OnUpdate, and the NG EDR check in PostUpdate.
  * @tc.type:FUNC
- * @tc.require: issueICLU4I
+ * @tc.require:
  */
-HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable004, TestSize.Level1)
+HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable008, TestSize.Level1)
 {
     NodeId id = 1;
     RSRenderNode node(id);
     ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
 
-    auto params = std::optional<RSHdrDarkenBlenderPara>({ 1.0, { 0.299, 0.587, 0.114 } });
-    node.GetMutableRenderProperties().SetHdrDarkenBlenderParams(params);
+    auto ngBlender = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(ngBlender, nullptr);
+    auto colorfulBlender = std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(ngBlender);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderDarkenWeightRenderTag>(1.0f);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderFractionRenderTag>(0.5f);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderCubicRateRenderTag>(0.1f);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderQuadRateRenderTag>(0.2f);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderLinearRateRenderTag>(0.3f);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderDegreeRenderTag>(0.4f);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderSaturationRenderTag>(0.5f);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderPositiveCoeffRenderTag>(Vector3f(0.6f, 0.7f, 0.8f));
+    colorfulBlender->Setter<ColorfulBrightnessBlenderNegativeCoeffRenderTag>(Vector3f(0.9f, 0.1f, 0.2f));
+    colorfulBlender->Setter<ColorfulBrightnessBlenderVibrancyStrengthRenderTag>(0.33f);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderLumaDiffRenderTag>(0.88f);
+    // legacy flat params use hdrEnabled_ = false; NG uses true, so EDR can only come from the NG path
+    colorfulBlender->Setter<ColorfulBrightnessBlenderHdrEnabledRenderTag>(true);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderTintedColorPercentRenderTag>(0.66f);
+
+    node.GetMutableRenderProperties().SetNGBlender(ngBlender);
     auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
         DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
     ASSERT_NE(drawable, nullptr);
+    // NG EDR check: hdrEnabled_ is only true on the NG side
+    ASSERT_TRUE(drawable->GetEnableEDR());
+    drawable->OnSync();
+    ASSERT_FALSE(drawable->needSync_);
+    drawable->OnSync();
+    ASSERT_FALSE(drawable->needSync_);
 
-    drawable->OnSync();
-    ASSERT_FALSE(drawable->needSync_);
-    drawable->OnSync();
-    ASSERT_FALSE(drawable->needSync_);
+    // clear NG: no legacy flat fallback exists any more, the drawable must not regenerate
+    node.GetMutableRenderProperties().SetNGBlender(nullptr);
+    auto drawableLegacy = DrawableV2::RSBeginBlenderDrawable::OnGenerate(node);
+    ASSERT_EQ(drawableLegacy, nullptr);
 }
 
 /**
- * @tc.name: RSBeginBlenderDrawable005
- * @tc.desc: Test OnGenerate for hdrDarken blender
+ * @tc.name: RSBeginBlenderDrawable009
+ * @tc.desc: Test OnGenerate/OnUpdate for the NG BRIGHTNESS_BLENDER path. Covers the
+ *           RSBlenderDrawableUtils unpacking (MakeBrightnessFromNG packs 9 tags into
+ *           RSDynamicBrightnessPara) and the NG EDR check driven by the HdrEnabled tag.
  * @tc.type:FUNC
- * @tc.require: issueICLU4I
+ * @tc.require:
  */
-HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable005, TestSize.Level1)
-{
-    NodeId id = 2;
-    RSRenderNode node(id);
-    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
-
-    auto params = std::optional<RSHdrDarkenBlenderPara>({1.0});
-    node.GetMutableRenderProperties().SetHdrDarkenBlenderParams(params);
-    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
-        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
-    ASSERT_NE(drawable, nullptr);
-
-    auto params1 = node.GetMutableRenderProperties().GetHdrDarkenBlenderParams();
-    ASSERT_EQ(params1, params);
-    drawable->OnSync();
-    ASSERT_FALSE(drawable->needSync_);
-    drawable->OnSync();
-    ASSERT_FALSE(drawable->needSync_);
-}
-
-/**
- * @tc.name: RSBeginBlenderDrawable006
- * @tc.desc: Test OnGenerate for hdrDarken blender
- * @tc.type:FUNC
- * @tc.require: issueICLU4I
- */
-HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable006, TestSize.Level1)
-{
-    NodeId id = 2;
-    RSRenderNode node(id);
-    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
-
-    auto params = std::optional<RSHdrDarkenBlenderPara>({ 1.0, { 0.2, 0.5, 0.1 } });
-    node.GetMutableRenderProperties().SetHdrDarkenBlenderParams(params);
-    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
-        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
-    ASSERT_NE(drawable, nullptr);
-
-    auto params1 = node.GetMutableRenderProperties().GetHdrDarkenBlenderParams();
-    ASSERT_EQ(params1, params);
-    drawable->OnSync();
-    ASSERT_FALSE(drawable->needSync_);
-    drawable->OnSync();
-    ASSERT_FALSE(drawable->needSync_);
-}
-
-/**
- * @tc.name: RSBeginBlenderDrawable007
- * @tc.desc: Test OnGenerate/OnUpdate for colorful blender. Covers the new
- *           IsColorfulBrightnessBlenderValid() branch (E1) in OnUpdate. The debug-trace-level
- *           check (E2/E3) is environment-dependent and only one path is exercised.
- * @tc.type:FUNC
- * @tc.require: issueICLU4I
- */
-HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable007, TestSize.Level1)
+HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable009, TestSize.Level1)
 {
     NodeId id = 1;
     RSRenderNode node(id);
     ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
 
-    auto paramValue = RSColorfulBrightnessBlenderPara(1.0f, 0.5f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f,
-        Vector3f(0.6f, 0.7f, 0.8f), Vector3f(0.9f, 0.1f, 0.2f), 0.33f, 0.88f);
-    node.GetMutableRenderProperties().SetColorfulBrightnessBlenderParams(
-        std::make_unique<RSColorfulBrightnessBlenderPara>(paramValue));
+    auto ngBlender = RSNGRenderBlenderBase::Create(RSNGEffectType::BRIGHTNESS_BLENDER);
+    ASSERT_NE(ngBlender, nullptr);
+    auto brightnessBlender = std::static_pointer_cast<RSNGRenderBrightnessBlender>(ngBlender);
+    brightnessBlender->Setter<BrightnessBlenderFractionRenderTag>(0.5f);
+    brightnessBlender->Setter<BrightnessBlenderCubicRateRenderTag>(0.1f);
+    brightnessBlender->Setter<BrightnessBlenderQuadRateRenderTag>(0.2f);
+    brightnessBlender->Setter<BrightnessBlenderLinearRateRenderTag>(0.3f);
+    brightnessBlender->Setter<BrightnessBlenderDegreeRenderTag>(0.4f);
+    brightnessBlender->Setter<BrightnessBlenderSaturationRenderTag>(0.5f);
+    brightnessBlender->Setter<BrightnessBlenderPositiveCoeffRenderTag>(Vector3f(0.6f, 0.7f, 0.8f));
+    brightnessBlender->Setter<BrightnessBlenderNegativeCoeffRenderTag>(Vector3f(0.9f, 0.1f, 0.2f));
+    brightnessBlender->Setter<BrightnessBlenderHdrEnabledRenderTag>(true);
+
+    node.GetMutableRenderProperties().SetNGBlender(ngBlender);
     auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
         DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
     ASSERT_NE(drawable, nullptr);
+    // NG EDR check: hdrEnabled tag is true only on the NG side
+    ASSERT_TRUE(drawable->GetEnableEDR());
+    drawable->OnSync();
+    ASSERT_FALSE(drawable->needSync_);
 
-    const auto* params1 = node.GetMutableRenderProperties().GetColorfulBrightnessBlenderParams();
-    ASSERT_NE(params1, nullptr);
-    ASSERT_EQ(*params1, paramValue);
+    // clear NG: no legacy flat fallback for this node, drawable is not generated any more
+    node.GetMutableRenderProperties().SetNGBlender(nullptr);
+    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
+}
+
+/**
+ * @tc.name: RSBeginBlenderDrawable010
+ * @tc.desc: Test OnGenerate/OnUpdate for the NG HDR_DARKEN_BLENDER path. Covers the
+ *           RSBlenderDrawableUtils unpacking (MakeHdrDarkenFromNG builds RSHdrDarkenBlenderPara from
+ *           2 tags). HDR darken has no EDR switch, so GetEnableEDR stays false.
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable010, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSRenderNode node(id);
+    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
+
+    auto ngBlender = RSNGRenderBlenderBase::Create(RSNGEffectType::HDR_DARKEN_BLENDER);
+    ASSERT_NE(ngBlender, nullptr);
+    auto hdrDarkenBlender = std::static_pointer_cast<RSNGRenderHdrDarkenBlender>(ngBlender);
+    hdrDarkenBlender->Setter<HdrDarkenBlenderHdrBrightnessRatioRenderTag>(2.0f);
+    hdrDarkenBlender->Setter<HdrDarkenBlenderGrayscaleFactorRenderTag>(Vector3f(0.299f, 0.587f, 0.114f));
+
+    node.GetMutableRenderProperties().SetNGBlender(ngBlender);
+    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
+        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
+    ASSERT_NE(drawable, nullptr);
+    ASSERT_FALSE(drawable->GetEnableEDR());
     drawable->OnSync();
     ASSERT_FALSE(drawable->needSync_);
+
+    // clear NG: no legacy flat fallback for this node, drawable is not generated any more
+    node.GetMutableRenderProperties().SetNGBlender(nullptr);
+    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
+}
+
+/**
+ * @tc.name: RSBeginBlenderDrawable012
+ * @tc.desc: Test the invalid-parameter fallback of the NG BRIGHTNESS_BLENDER path:
+ *           fraction == 1.0 makes MakeBrightnessFromNG return nullptr (mirroring the
+ *           legacy IsFgBrightnessValid gate), OnUpdate falls back to the blendMode path.
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable012, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSRenderNode node(id);
+
+    auto ngBlender = RSNGRenderBlenderBase::Create(RSNGEffectType::BRIGHTNESS_BLENDER);
+    ASSERT_NE(ngBlender, nullptr);
+    auto brightnessBlender = std::static_pointer_cast<RSNGRenderBrightnessBlender>(ngBlender);
+    // fraction == 1.0 means no fg brightness effect
+    brightnessBlender->Setter<BrightnessBlenderFractionRenderTag>(1.0f);
+    node.GetMutableRenderProperties().SetNGBlender(ngBlender);
+    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
+
+    // with blendMode set, the invalid NG blender falls back to the blendMode path
+    node.GetMutableRenderProperties().SetColorBlendMode(12);
+    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
+        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
+    ASSERT_NE(drawable, nullptr);
+    ASSERT_FALSE(drawable->GetEnableEDR());
     drawable->OnSync();
     ASSERT_FALSE(drawable->needSync_);
+}
+
+/**
+ * @tc.name: RSBlenderDrawableUtilsMakeBlenderFromNG001
+ * @tc.desc: Test RSBlenderDrawableUtils::MakeBlenderFromNG entry checks and all registered types:
+ *           nullptr input returns nullptr, the 3 registered types return a non-null Drawing blender.
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBlenderDrawableUtilsMakeBlenderFromNG001, TestSize.Level1)
+{
+    // nullptr entry check (OnUpdate guards it, so it is only reachable via a direct call)
+    EXPECT_EQ(RSBlenderDrawableUtils::MakeBlenderFromNG(nullptr), nullptr);
+
+    EXPECT_NE(RSBlenderDrawableUtils::MakeBlenderFromNG(
+                  RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER)),
+        nullptr);
+    EXPECT_NE(RSBlenderDrawableUtils::MakeBlenderFromNG(
+                  RSNGRenderBlenderBase::Create(RSNGEffectType::BRIGHTNESS_BLENDER)),
+        nullptr);
+    EXPECT_NE(RSBlenderDrawableUtils::MakeBlenderFromNG(
+                  RSNGRenderBlenderBase::Create(RSNGEffectType::HDR_DARKEN_BLENDER)),
+        nullptr);
+}
+
+/**
+ * @tc.name: RSBlenderDrawableUtilsMakeBlenderFromNGUnknownType001
+ * @tc.desc: Test the unregistered-type branch of MakeBlenderFromNG: a blender whose GetType() has
+ *           no maker in the LUT falls back to nullptr (the caller then uses the blendMode path).
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBlenderDrawableUtilsMakeBlenderFromNGUnknownType001, TestSize.Level1)
+{
+    // test-local type without a registered maker (all shipped types are registered)
+    using RSNGRenderUnknownBlender = RSNGRenderBlenderTemplate<RSNGEffectType::NONE>;
+    auto unknownBlender = std::make_shared<RSNGRenderUnknownBlender>();
+    ASSERT_NE(unknownBlender, nullptr);
+    EXPECT_EQ(unknownBlender->GetType(), RSNGEffectType::NONE);
+    EXPECT_EQ(RSBlenderDrawableUtils::MakeBlenderFromNG(unknownBlender), nullptr);
+}
+
+/**
+ * @tc.name: RSBlenderDrawableUtilsGetNGBlenderEnableEDR001
+ * @tc.desc: Test all branches of RSBlenderDrawableUtils::GetNGBlenderEnableEDR: no blender,
+ *           colorful/brightness blenders driven by their HdrEnabled tag, and other types
+ *           (no EDR switch) returning false.
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBlenderDrawableUtilsGetNGBlenderEnableEDR001, TestSize.Level1)
+{
+    RSProperties properties;
+    // no NG blender stored
+    EXPECT_FALSE(RSBlenderDrawableUtils::GetNGBlenderEnableEDR(properties));
+
+    // colorful blender: EDR follows the HdrEnabled tag
+    auto colorfulBlender = std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(
+        RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER));
+    ASSERT_NE(colorfulBlender, nullptr);
+    properties.SetNGBlender(colorfulBlender);
+    EXPECT_FALSE(RSBlenderDrawableUtils::GetNGBlenderEnableEDR(properties));
+    colorfulBlender->Setter<ColorfulBrightnessBlenderHdrEnabledRenderTag>(true);
+    EXPECT_TRUE(RSBlenderDrawableUtils::GetNGBlenderEnableEDR(properties));
+
+    // brightness blender: EDR follows the HdrEnabled tag
+    auto brightnessBlender = std::static_pointer_cast<RSNGRenderBrightnessBlender>(
+        RSNGRenderBlenderBase::Create(RSNGEffectType::BRIGHTNESS_BLENDER));
+    ASSERT_NE(brightnessBlender, nullptr);
+    properties.SetNGBlender(brightnessBlender);
+    EXPECT_FALSE(RSBlenderDrawableUtils::GetNGBlenderEnableEDR(properties));
+    brightnessBlender->Setter<BrightnessBlenderHdrEnabledRenderTag>(true);
+    EXPECT_TRUE(RSBlenderDrawableUtils::GetNGBlenderEnableEDR(properties));
+
+    // other blender types have no EDR switch
+    properties.SetNGBlender(RSNGRenderBlenderBase::Create(RSNGEffectType::HDR_DARKEN_BLENDER));
+    EXPECT_FALSE(RSBlenderDrawableUtils::GetNGBlenderEnableEDR(properties));
+}
+
+/**
+ * @tc.name: RSBlenderDrawableUtilsMakeDynamicBrightnessBlender001
+ * @tc.desc: Test RSBlenderDrawableUtils::MakeDynamicBrightnessBlender branch selection by direct
+ *           calls: the linear case (rates.x==0 && rates.y==0 && fraction==0) with both swap
+ *           outcomes (minusSat>0 / minusSat<=0) and the non-linear case with enableHdr on/off.
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBlenderDrawableUtilsMakeDynamicBrightnessBlender001, TestSize.Level1)
+{
+    // linear case, minusSat > 0: posCoeff/negCoeff keep their order
+    RSDynamicBrightnessPara linearSwapFalse;
+    linearSwapFalse.rates_ = Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
+    linearSwapFalse.fraction_ = 0.0f;
+    linearSwapFalse.saturation_ = 0.5f;
+    EXPECT_NE(RSBlenderDrawableUtils::MakeDynamicBrightnessBlender(linearSwapFalse), nullptr);
+
+    // linear case, minusSat <= 0: posCoeff/negCoeff are swapped
+    RSDynamicBrightnessPara linearSwapTrue;
+    linearSwapTrue.rates_ = Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
+    linearSwapTrue.fraction_ = 0.0f;
+    linearSwapTrue.saturation_ = 1.5f;
+    EXPECT_NE(RSBlenderDrawableUtils::MakeDynamicBrightnessBlender(linearSwapTrue), nullptr);
+
+    // non-linear case, enableHdr off: headroom stays 1.0
+    RSDynamicBrightnessPara nonLinearHdrOff;
+    nonLinearHdrOff.rates_ = Vector4f(0.1f, 0.2f, 0.3f, 0.4f);
+    nonLinearHdrOff.fraction_ = 0.5f;
+    nonLinearHdrOff.saturation_ = 0.5f;
+    EXPECT_NE(RSBlenderDrawableUtils::MakeDynamicBrightnessBlender(nonLinearHdrOff), nullptr);
+
+    // non-linear case, enableHdr on: headroom becomes EFFECT_MAX_LUMINANCE
+    RSDynamicBrightnessPara nonLinearHdrOn;
+    nonLinearHdrOn.rates_ = Vector4f(0.1f, 0.2f, 0.3f, 0.4f);
+    nonLinearHdrOn.fraction_ = 0.5f;
+    nonLinearHdrOn.saturation_ = 0.5f;
+    nonLinearHdrOn.enableHdr_ = true;
+    EXPECT_NE(RSBlenderDrawableUtils::MakeDynamicBrightnessBlender(nonLinearHdrOn), nullptr);
+
+    // short-circuit arm of the linear condition: rates.x==0 with rates.y!=0 (second operand false)
+    RSDynamicBrightnessPara secondOperandFalse;
+    secondOperandFalse.rates_ = Vector4f(0.0f, 0.2f, 0.3f, 0.4f);
+    secondOperandFalse.fraction_ = 0.5f;
+    secondOperandFalse.saturation_ = 0.5f;
+    EXPECT_NE(RSBlenderDrawableUtils::MakeDynamicBrightnessBlender(secondOperandFalse), nullptr);
+
+    // short-circuit arm of the linear condition: rates.x==0 && rates.y==0 with fraction!=0 (third operand false)
+    RSDynamicBrightnessPara thirdOperandFalse;
+    thirdOperandFalse.rates_ = Vector4f(0.0f, 0.0f, 0.3f, 0.4f);
+    thirdOperandFalse.fraction_ = 0.5f;
+    thirdOperandFalse.saturation_ = 0.5f;
+    EXPECT_NE(RSBlenderDrawableUtils::MakeDynamicBrightnessBlender(thirdOperandFalse), nullptr);
 }
 
 /**
@@ -791,7 +940,7 @@ HWTEST_F(RSChildrenDrawableTest, RSCustomModifierDrawable_OnPurge003, TestSize.L
 
 /**
  * @tc.name: RSBeginBlenderDrawable_PostUpdate001
- * @tc.desc: Test PostUpdate sets enableEDREffect via FgBrightnessEnableEDR
+ * @tc.desc: Test PostUpdate sets enableEDREffect via the NG BRIGHTNESS_BLENDER HdrEnabled tag
  * @tc.type: FUNC
  */
 HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable_PostUpdate001, TestSize.Level1)
@@ -799,10 +948,11 @@ HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable_PostUpdate001, TestSize.
     NodeId id = 1;
     RSRenderNode node(id);
     node.screenNodeId_ = 42;
-    std::optional<RSDynamicBrightnessPara> params = { RSDynamicBrightnessPara() };
-    node.GetMutableRenderProperties().SetFgBrightnessParams(params);
-    node.GetMutableRenderProperties().SetFgBrightnessFract(0.0f);
-    node.GetMutableRenderProperties().SetFgBrightnessHdr(true);
+    auto ngBlender = RSNGRenderBlenderBase::Create(RSNGEffectType::BRIGHTNESS_BLENDER);
+    ASSERT_NE(ngBlender, nullptr);
+    auto brightnessBlender = std::static_pointer_cast<RSNGRenderBrightnessBlender>(ngBlender);
+    brightnessBlender->Setter<BrightnessBlenderHdrEnabledRenderTag>(true);
+    node.GetMutableRenderProperties().SetNGBlender(ngBlender);
     auto drawable = std::make_shared<DrawableV2::RSBeginBlenderDrawable>();
     drawable->PostUpdate(node);
     EXPECT_TRUE(drawable->enableEDREffect_);
@@ -811,7 +961,7 @@ HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable_PostUpdate001, TestSize.
 
 /**
  * @tc.name: RSBeginBlenderDrawable_PostUpdate002
- * @tc.desc: Test PostUpdate with ColorfulBrightnessBlenderEnableEDR
+ * @tc.desc: Test PostUpdate with the NG COLORFUL_BRIGHTNESS_BLENDER HdrEnabled tag
  * @tc.type: FUNC
  */
 HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable_PostUpdate002, TestSize.Level1)
@@ -819,10 +969,11 @@ HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawable_PostUpdate002, TestSize.
     NodeId id = 1;
     RSRenderNode node(id);
     node.screenNodeId_ = 99;
-    auto paramValue = RSColorfulBrightnessBlenderPara(1.0f, 0.5f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f,
-        Vector3f(0.6f, 0.7f, 0.8f), Vector3f(0.9f, 0.1f, 0.2f), 0.33f, 0.88f, true);
-    node.GetMutableRenderProperties().SetColorfulBrightnessBlenderParams(
-        std::make_unique<RSColorfulBrightnessBlenderPara>(paramValue));
+    auto ngBlender = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(ngBlender, nullptr);
+    auto colorfulBlender = std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(ngBlender);
+    colorfulBlender->Setter<ColorfulBrightnessBlenderHdrEnabledRenderTag>(true);
+    node.GetMutableRenderProperties().SetNGBlender(ngBlender);
     auto drawable = std::make_shared<DrawableV2::RSBeginBlenderDrawable>();
     drawable->PostUpdate(node);
     EXPECT_TRUE(drawable->enableEDREffect_);

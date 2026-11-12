@@ -16,7 +16,6 @@
 #define UIEFFECT_EFFECT_BACKGROUND_COLOR_EFFECT_PARA_H
 
 #include "brightness_blender.h"
-#include "shadow_blender.h"
 #include "hdr_darken_blender.h"
 #include "visual_effect_para.h"
 

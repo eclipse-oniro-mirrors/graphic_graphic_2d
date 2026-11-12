@@ -24,6 +24,7 @@
 #include "ui_effect/property/include/rs_ui_mask_base.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 #include "ui_effect/property/include/rs_ui_shape_base.h"
+#include "ui_effect/property/include/rs_ui_blender_base.h"
 
 #include "animation/rs_particle_field_collection.h"
 #include "command/rs_node_command.h"
@@ -70,10 +71,12 @@ std::mutex g_lastSentAtlasMutex;
 #define SHADER_PTR std::shared_ptr<RSNGShaderBase>
 #define MASK_PTR std::shared_ptr<RSNGMaskBase>
 #define SHAPE_PTR std::shared_ptr<RSNGShapeBase>
+#define BLENDER_PTR std::shared_ptr<RSNGBlenderBase>
 
 #include "modifier/rs_property_def.in"
 
 #undef SHAPE_PTR
+#undef BLENDER_PTR
 #undef MASK_PTR
 #undef SHADER_PTR
 #undef FILTER_PTR
@@ -409,6 +412,63 @@ RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNG
 // LCOV_EXCL_STOP
 
 template<>
+void RSProperty<std::shared_ptr<RSNGBlenderBase>>::OnAttach(RSNode& node,
+    std::weak_ptr<ModifierNG::RSModifier> modifier)
+{
+    if (stagingValue_) {
+        stagingValue_->Attach(node, modifier);
+    }
+}
+
+// LCOV_EXCL_START
+template<>
+void RSProperty<std::shared_ptr<RSNGBlenderBase>>::OnDetach()
+{
+    if (stagingValue_) {
+        stagingValue_->Detach();
+    }
+}
+// LCOV_EXCL_STOP
+
+template<>
+void RSProperty<std::shared_ptr<RSNGBlenderBase>>::Set(const std::shared_ptr<RSNGBlenderBase>& value,
+    bool affectsRendering)
+{
+    auto node = target_.lock();
+    if (node == nullptr) {
+        stagingValue_ = value;
+        return;
+    }
+    SetDrawNodeIfNeed(*node, affectsRendering);
+
+    // Incremental update for blender properties, return if success
+    if (stagingValue_ && stagingValue_->SetValue(value, *node, modifierNG_)) {
+        return;
+    }
+
+    // failed to update blender properties, fallback to replace operation
+    if (stagingValue_) {
+        stagingValue_->Detach();
+    }
+    stagingValue_ = value;
+    if (stagingValue_) {
+        stagingValue_->Attach(*node, modifierNG_);
+    }
+
+    MarkNodeDirty();
+    UpdateToRender(stagingValue_, UPDATE_TYPE_OVERWRITE);
+}
+
+// LCOV_EXCL_START
+template<>
+RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGBlenderBase>>::GetRenderProperty()
+{
+    std::shared_ptr<RSNGRenderBlenderBase> renderProp = stagingValue_ ? stagingValue_->GetRenderEffect() : nullptr;
+    return std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(renderProp, id_);
+}
+// LCOV_EXCL_STOP
+
+template<>
 void RSProperty<std::shared_ptr<RSNGShapeBase>>::OnAttach(RSNode& node, std::weak_ptr<ModifierNG::RSModifier> modifier)
 {
     if (stagingValue_) {
@@ -682,20 +742,6 @@ void RSProperty<std::shared_ptr<OHOS::Media::PixelMap>>::UpdateToRender(
 }
 
 template<>
-void RSProperty<RSShadowBlenderPara>::UpdateToRender(
-    const RSShadowBlenderPara& value, PropertyUpdateType type) const
-{
-    UPDATE_TO_RENDER(RSUpdatePropertyShadowBlenderPara, value, type);
-}
-
-template<>
-void RSProperty<RSHdrDarkenBlenderPara>::UpdateToRender(
-    const RSHdrDarkenBlenderPara& value, PropertyUpdateType type) const
-{
-    UPDATE_TO_RENDER(RSUpdatePropertyHdrDarkenBlenderPara, value, type);
-}
-
-template<>
 void RSProperty<Drawing::DrawCmdListPtr>::UpdateToRender(
     const Drawing::DrawCmdListPtr& value, PropertyUpdateType type) const
 {
@@ -770,6 +816,13 @@ void RSProperty<std::shared_ptr<RSNGShapeBase>>::UpdateToRender(
     const std::shared_ptr<RSNGShapeBase>& value, PropertyUpdateType type) const
 {
     UPDATE_TO_RENDER(RSUpdatePropertyNGShapeBase, value ? value->GetRenderEffect() : nullptr, type);
+}
+
+template<>
+void RSProperty<std::shared_ptr<RSNGBlenderBase>>::UpdateToRender(
+    const std::shared_ptr<RSNGBlenderBase>& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyNGBlenderBase, value ? value->GetRenderEffect() : nullptr, type);
 }
 
 template<>

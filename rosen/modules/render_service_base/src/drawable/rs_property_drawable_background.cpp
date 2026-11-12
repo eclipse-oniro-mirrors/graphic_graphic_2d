@@ -21,6 +21,7 @@
 #ifdef ROSEN_OHOS
 #include "common/rs_common_tools.h"
 #endif
+#include "drawable/rs_blender_drawable_utils.h"
 #include "drawable/rs_effect_drawable_utils.h"
 #include "drawable/rs_property_drawable_utils.h"
 #include "effect/rs_render_shape_base.h"
@@ -311,7 +312,7 @@ bool RSBackgroundColorDrawable::OnUpdate(const RSRenderNode& node)
         if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
             RSPropertyDrawable::stagingPropertyDescription_ = properties.GetBgBrightnessDescription();
         }
-        auto blender = RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
+        auto blender = RSBlenderDrawableUtils::MakeDynamicBrightnessBlender(
             properties.GetBgBrightnessParams().value());
         brush.SetBlender(blender);
     }

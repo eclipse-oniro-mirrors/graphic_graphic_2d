@@ -418,9 +418,6 @@ bool DoUpdateToRender005(const uint8_t* data, size_t size)
     auto pixelmap = std::make_shared<Media::PixelMap>();
     RSProperty rsPropertyPixelMap(pixelmap);
     rsPropertyPixelMap.UpdateToRender(pixelmap, EnumNumber);
-    RSShadowBlenderPara shadowBlenderPara;
-    RSProperty rsPropertyShadowBlenderPara(shadowBlenderPara);
-    rsPropertyShadowBlenderPara.UpdateToRender(shadowBlenderPara, EnumNumber);
     RSHdrDarkenBlenderPara hdrDarkenBlenderPara;
     RSProperty rsPropertyHdrDarkenBlenderPara(hdrDarkenBlenderPara);
     rsPropertyHdrDarkenBlenderPara.UpdateToRender(hdrDarkenBlenderPara, EnumNumber);

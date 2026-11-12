@@ -21,9 +21,10 @@
 #include "drawable/rs_property_drawable.h"
 #include "drawable/rs_property_drawable_background.h"
 #include "drawable/rs_property_drawable_foreground.h"
+#include "effect/rs_render_blender_base.h"
 #include "effect/rs_render_filter_base.h"
-#include "pipeline/rs_render_node.h"
 #include "pipeline/rs_effect_render_node.h"
+#include "pipeline/rs_render_node.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -160,9 +161,7 @@ HWTEST_F(RSDrawableTest, UpdateSaveRestore001, TestSize.Level1)
     auto path = std::make_shared<RSPath>();
     properties.SetClipBounds(path);
     properties.GetEffectProperties().GetBlenderEffect().colorBlendMode_ = 1;
-    properties.GetEffectProperties().GetBlenderEffect().fgBrightnessParams_ =
-        std::make_optional<RSDynamicBrightnessPara>();
-    properties.GetEffectProperties().GetBlenderEffect().fgBrightnessParams_->fraction_ = 0;
+    properties.SetNGBlender(RSNGRenderBlenderBase::Create(RSNGEffectType::BRIGHTNESS_BLENDER));
 
     drawableVecStatus = 49;
     RSDrawable::UpdateSaveRestore(node, drawableVec, drawableVecStatus);

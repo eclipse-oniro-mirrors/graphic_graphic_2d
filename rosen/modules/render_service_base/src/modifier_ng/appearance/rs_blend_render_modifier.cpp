@@ -15,93 +15,22 @@
 
 #include "modifier_ng/appearance/rs_blend_render_modifier.h"
 
+#include "effect/rs_render_blender_base.h"
+
 namespace OHOS::Rosen::ModifierNG {
 const RSBlendRenderModifier::LegacyPropertyApplierMap RSBlendRenderModifier::LegacyPropertyApplierMap_ = {
     { RSPropertyType::COLOR_BLEND_MODE, RSRenderModifier::PropertyApplyHelper<int, &RSProperties::SetColorBlendMode> },
     { RSPropertyType::COLOR_BLEND_APPLY_TYPE,
         RSRenderModifier::PropertyApplyHelper<int, &RSProperties::SetColorBlendApplyType> },
-    { RSPropertyType::FG_BRIGHTNESS_RATES,
-        RSRenderModifier::PropertyApplyHelper<Vector4f, &RSProperties::SetFgBrightnessRates> },
-    { RSPropertyType::FG_BRIGHTNESS_SATURATION,
-        RSRenderModifier::PropertyApplyHelper<float, &RSProperties::SetFgBrightnessSaturation> },
-    { RSPropertyType::FG_BRIGHTNESS_POSCOEFF,
-        RSRenderModifier::PropertyApplyHelper<Vector4f, &RSProperties::SetFgBrightnessPosCoeff> },
-    { RSPropertyType::FG_BRIGHTNESS_NEGCOEFF,
-        RSRenderModifier::PropertyApplyHelper<Vector4f, &RSProperties::SetFgBrightnessNegCoeff> },
-    { RSPropertyType::FG_BRIGHTNESS_FRACTION,
-        RSRenderModifier::PropertyApplyHelper<float, &RSProperties::SetFgBrightnessFract> },
-    { RSPropertyType::FG_BRIGHTNESS_HDR,
-        RSRenderModifier::PropertyApplyHelper<bool, &RSProperties::SetFgBrightnessHdr> },
-    { RSPropertyType::SHADOW_BLENDER_PARAMS,
-        RSRenderModifier::PropertyApplyHelper<RSShadowBlenderPara, &RSProperties::SetShadowBlenderParams> },
-    { RSPropertyType::HDR_DARKEN_BLENDER_PARAMS,
-        RSRenderModifier::PropertyApplyHelper<RSHdrDarkenBlenderPara, &RSProperties::SetHdrDarkenBlenderParams> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_DARKEN_WEIGHT,
-        RSRenderModifier::PropertyApplyHelper<float,
-            &RSProperties::SetColorfulBrightnessBlenderMember<float>,
-            &RSColorfulBrightnessBlenderPara::darkenWeight_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_FRACTION,
-        RSRenderModifier::PropertyApplyHelper<float,
-            &RSProperties::SetColorfulBrightnessBlenderMember<float>,
-            &RSColorfulBrightnessBlenderPara::fraction_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_CUBIC_RATE,
-        RSRenderModifier::PropertyApplyHelper<float,
-            &RSProperties::SetColorfulBrightnessBlenderMember<float>,
-            &RSColorfulBrightnessBlenderPara::cubicRate_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_QUAD_RATE,
-        RSRenderModifier::PropertyApplyHelper<float,
-            &RSProperties::SetColorfulBrightnessBlenderMember<float>,
-            &RSColorfulBrightnessBlenderPara::quadRate_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_LINEAR_RATE,
-        RSRenderModifier::PropertyApplyHelper<float,
-            &RSProperties::SetColorfulBrightnessBlenderMember<float>,
-            &RSColorfulBrightnessBlenderPara::linearRate_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_DEGREE,
-        RSRenderModifier::PropertyApplyHelper<float,
-            &RSProperties::SetColorfulBrightnessBlenderMember<float>,
-            &RSColorfulBrightnessBlenderPara::degree_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_SATURATION,
-        RSRenderModifier::PropertyApplyHelper<float,
-            &RSProperties::SetColorfulBrightnessBlenderMember<float>,
-            &RSColorfulBrightnessBlenderPara::saturation_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_POSITIVE_COEFF,
-        RSRenderModifier::PropertyApplyHelper<Vector3f,
-            &RSProperties::SetColorfulBrightnessBlenderMember<Vector3f>,
-            &RSColorfulBrightnessBlenderPara::positiveCoeff_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_NEGATIVE_COEFF,
-        RSRenderModifier::PropertyApplyHelper<Vector3f,
-            &RSProperties::SetColorfulBrightnessBlenderMember<Vector3f>,
-            &RSColorfulBrightnessBlenderPara::negativeCoeff_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_VIBRANCY_STRENGTH,
-        RSRenderModifier::PropertyApplyHelper<float,
-            &RSProperties::SetColorfulBrightnessBlenderMember<float>,
-            &RSColorfulBrightnessBlenderPara::vibrancyStrength_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_LUMA_DIFF,
-        RSRenderModifier::PropertyApplyHelper<float,
-            &RSProperties::SetColorfulBrightnessBlenderMember<float>,
-            &RSColorfulBrightnessBlenderPara::lumaDiff_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_HDR_ENABLED,
-        RSRenderModifier::PropertyApplyHelper<bool,
-            &RSProperties::SetColorfulBrightnessBlenderMember<bool>,
-            &RSColorfulBrightnessBlenderPara::hdrEnabled_> },
-    { RSPropertyType::COLORFUL_BRIGHTNESS_TINTED_COLOR_PERCENT,
-        RSRenderModifier::PropertyApplyHelper<float,
-            &RSProperties::SetColorfulBrightnessBlenderMember<float>,
-            &RSColorfulBrightnessBlenderPara::tintedColorPercent_> },
+    // NG blender: store the NG object only; unpacking happens in RSBeginBlenderDrawable.
+    { RSPropertyType::FOREGROUND_NG_BLENDER,
+        RSRenderModifier::PropertyApplyHelper<std::shared_ptr<RSNGRenderBlenderBase>, &RSProperties::SetNGBlender> },
 };
 
 void RSBlendRenderModifier::ResetProperties(RSProperties& properties)
 {
     properties.SetColorBlendMode(0);
     properties.SetColorBlendApplyType(0);
-    properties.SetFgBrightnessRates(Vector4f());
-    properties.SetFgBrightnessSaturation(0.f);
-    properties.SetFgBrightnessPosCoeff(Vector4f());
-    properties.SetFgBrightnessNegCoeff(Vector4f());
-    properties.SetFgBrightnessFract(1.f);
-    properties.SetFgBrightnessHdr(false);
-    properties.SetShadowBlenderParams(std::nullopt);
-    properties.SetHdrDarkenBlenderParams(std::nullopt);
-    properties.SetColorfulBrightnessBlenderParams(nullptr);
+    properties.SetNGBlender(nullptr);
 }
 } // namespace OHOS::Rosen::ModifierNG

@@ -65,7 +65,6 @@ void DoBlend(FuzzedDataProvider& fdp)
 {
     auto modifier = std::make_shared<ModifierNG::RSBlendRenderModifier>();
     RSProperties properties;
-    properties.SetFgBrightnessSaturation(fdp.ConsumeFloatingPoint<float>());
     modifier->ResetProperties(properties);
 }
 

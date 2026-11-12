@@ -56,6 +56,9 @@ HWTEST_F(RSModifierNGTypeTest, GetPropertyTypeString, TestSize.Level1)
         "Frame");
     EXPECT_EQ(ModifierNG::RSModifierTypeString::GetPropertyTypeString(ModifierNG::RSPropertyType::INVALID),
         "Invalid");
+    EXPECT_EQ(ModifierNG::RSModifierTypeString::GetPropertyTypeString(
+                  ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER),
+        "ForegroundNGBlender");
     EXPECT_EQ(ModifierNG::RSModifierTypeString::GetPropertyTypeString(static_cast<ModifierNG::RSPropertyType>(-1)),
         "Unknown");
     auto unknownType = static_cast<uint16_t>(ModifierNG::RSPropertyType::CHILDREN) + 1;

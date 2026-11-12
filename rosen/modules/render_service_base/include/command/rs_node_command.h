@@ -61,7 +61,7 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_NG_SHADER_BASE_PTR = 0X0122,
     UPDATE_MODIFIER_NG_MASK_BASE_PTR = 0X0123,
     UPDATE_MODIFIER_PIXEL_MAP = 0x0124,
-    UPDATE_MODIFIER_SHADOW_BLENDER_PARA = 0x0125,
+    // 0x0125 deleted, do not use this value never
     UPDATE_MODIFIER_VECTOR_VECTOR2F = 0x0126,
     UPDATE_MODIFIER_SHORT = 0x0127,
     UPDATE_MODIFIER_DRAW_CMD_LIST = 0x0128,
@@ -69,7 +69,7 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_VELOCITY_FIELD_PTR = 0x012A,
     UPDATE_MODIFIER_NG_SHAPE_BASE_PTR = 0x012B,
     UPDATE_MODIFIER_VECTOR_VECTOR4F = 0x012C,
-    UPDATE_MODIFIER_HDR_DARKEN_BLENDER_PARA = 0x012D,
+    // 0x012D deleted, do not use this value never
     UPDATE_MODIFIER_DEPTH_CAMERA_PARA = 0x012E,
     UPDATE_MODIFIER_DEPTH_LIGHT_PARA = 0x012F,
     // 0x0130 deleted, do not use this value never
@@ -77,6 +77,7 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_ATLAS_INFO = 0x0132,
     UPDATE_MODIFIER_ATLAS_FRAME_INDEX = 0x0133,
     UPDATE_MODIFIER_CLIP_SHAPE = 0x0134,
+    UPDATE_MODIFIER_NG_BLENDER_BASE_PTR = 0x0135,
 
     SET_FREEZE = 0x0200,
     SET_DRAW_REGION = 0x0201,
@@ -261,6 +262,10 @@ ADD_COMMAND(RSUpdatePropertyNGShapeBase,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_NG_SHAPE_BASE_PTR,
         RSNodeCommandHelper::UpdateProperty<std::shared_ptr<RSNGRenderShapeBase>>,
         NodeId, std::shared_ptr<RSNGRenderShapeBase>, PropertyId, PropertyUpdateType))
+ADD_COMMAND(RSUpdatePropertyNGBlenderBase,
+    ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_NG_BLENDER_BASE_PTR,
+        RSNodeCommandHelper::UpdateProperty<std::shared_ptr<RSNGRenderBlenderBase>>,
+        NodeId, std::shared_ptr<RSNGRenderBlenderBase>, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyImage,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_IMAGE_PTR,
         RSNodeCommandHelper::UpdateProperty<std::shared_ptr<RSImage>>,
@@ -355,15 +360,6 @@ ADD_COMMAND(RSUpdatePropertyPixelMap,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_PIXEL_MAP,
         RSNodeCommandHelper::UpdateProperty<std::shared_ptr<Media::PixelMap>>, NodeId,
         std::shared_ptr<Media::PixelMap>, PropertyId, PropertyUpdateType))
-ADD_COMMAND(RSUpdatePropertyShadowBlenderPara,
-    ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_SHADOW_BLENDER_PARA,
-        RSNodeCommandHelper::UpdateProperty<RSShadowBlenderPara>, NodeId,
-        RSShadowBlenderPara, PropertyId, PropertyUpdateType))
-
-ADD_COMMAND(RSUpdatePropertyHdrDarkenBlenderPara,
-    ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_HDR_DARKEN_BLENDER_PARA,
-        RSNodeCommandHelper::UpdateProperty<RSHdrDarkenBlenderPara>, NodeId,
-        RSHdrDarkenBlenderPara, PropertyId, PropertyUpdateType))
 
 ADD_COMMAND(RSUpdatePropertyShort,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_SHORT,

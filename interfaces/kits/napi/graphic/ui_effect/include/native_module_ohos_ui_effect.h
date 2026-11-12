@@ -15,6 +15,7 @@
 #ifndef OHOS_UIEFFECT_NATIVE_MODULE_OHOS_UI_EFFECT_H
 #define OHOS_UIEFFECT_NATIVE_MODULE_OHOS_UI_EFFECT_H
 
+#include "blender_napi.h"
 #include "effect_napi.h"
 #include "filter_napi.h"
 #include "mask_napi.h"
