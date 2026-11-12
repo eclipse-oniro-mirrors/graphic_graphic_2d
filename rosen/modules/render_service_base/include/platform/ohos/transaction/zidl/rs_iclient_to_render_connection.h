@@ -176,6 +176,11 @@ public:
 
     virtual void RemoveToken() = 0;
 
+    // Whether this is the construction-time connection to the main render service
+    // (RSRenderServiceConnectHub::renderConn_) rather than a dedicated render-process connection.
+    // Client-side local query only: it never crosses IPC, only the proxy overrides it.
+    virtual bool IsDefaultConnection() const { return false; }
+
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     virtual void RegisterCanvasCallback(sptr<RSICanvasSurfaceBufferCallback> callback) = 0;
 

@@ -85,16 +85,6 @@ void RSRenderPipelineClient::SetOnRenderProcessDiedCallback(const std::function<
 
 void RSRenderPipelineClient::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
 {
-#if defined(RS_MULTI_DISPLAY_FEATURES)
-    // Multi-display products pin the render-process topology at construction: an INVALID_TOKEN_MASK_ID
-    // here means the client never obtained a valid render connection, and any fallback path would
-    // restart the transaction index sequencing. Reject the submission instead of re-resolving.
-    if (tokenMaskId_ == INVALID_TOKEN_MASK_ID) {
-        RS_LOGE_LIMIT(__func__, __line__,
-            "RSRenderPipelineClient::CommitTransaction rejected, tokenMaskId_ is INVALID_TOKEN_MASK_ID");
-        return;
-    }
-#endif
     static bool isUniRender = RSSystemProperties::GetUniRenderEnabled();
     // Lazy re-resolution: clients constructed before the render process was registered keep
     // INVALID_TOKEN_MASK_ID cached in tokenMaskId_. Route them to the render process once it is
@@ -107,6 +97,17 @@ void RSRenderPipelineClient::CommitTransaction(std::unique_ptr<RSTransactionData
     }
 
     auto clientToRenderConnection = RSRenderServiceConnectHub::GetClientToRenderConnection(tokenMaskId_);
+
+#if defined(RS_MULTI_DISPLAY_FEATURES)
+    // Multi-display products pin the render-process topology at construction: an INVALID_TOKEN_MASK_ID
+    // here means the client never obtained a valid render connection, and any fallback path would
+    // restart the transaction index sequencing. Reject the submission instead of re-resolving.
+    if (clientToRenderConnection->IsDefaultConnection()) {
+        RS_LOGE_LIMIT(__func__, __line__,
+            "RSRenderPipelineClient::CommitTransaction rejected, no dedicated render connection");
+        return;
+    }
+#endif
     if (clientToRenderConnection != nullptr) {
         clientToRenderConnection->CommitTransaction(transactionData);
     } else {

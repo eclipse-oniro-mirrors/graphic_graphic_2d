@@ -353,6 +353,9 @@ bool RSRenderServiceConnectHub::Connect()
     renderService_ = renderService;
     conn_ = conn;
     renderConn_ = renderConn;
+    // Tag the construction-time default connection: multi-display products reject commits that
+    // would fall back to it (see RSRenderPipelineClient::CommitTransaction).
+    static_cast<RSClientToRenderConnectionProxy*>(renderConn_.GetRefPtr())->MarkAsDefaultConnection();
 
     OnConnectCallback callback;
     {
