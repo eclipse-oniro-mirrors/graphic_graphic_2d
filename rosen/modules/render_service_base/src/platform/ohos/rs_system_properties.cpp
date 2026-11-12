@@ -213,7 +213,7 @@ bool RSSystemProperties::GetBackgroundRebuildEnabled()
     uint8_t remoteValue = std::static_pointer_cast<RSRenderServiceClient>(
         RSIRenderClient::CreateRenderServiceClient())->GetBackgroundRebuildEnabled();
     isBackgroundRebuildEnabled_ = (remoteValue & 0xF0) != 0;
-    isCanvasDrawingNodeClientRenderEnabled_ = (remoteValue & 0x0F) != 0;
+    isCanvasDrawingNodeHybridRenderEnabled_ = (remoteValue & 0x0F) != 0;
     inited = true;
     ROSEN_LOGD("RSSystemProperties::GetBackgroundRebuildEnabled:%{public}d", isBackgroundRebuildEnabled_);
     return isBackgroundRebuildEnabled_;
@@ -651,6 +651,25 @@ HgmRefreshRateModes RSSystemProperties::GetHgmRefreshRateModesEnabled()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<HgmRefreshRateModes>(ConvertToInt(enable, 0));
+}
+
+bool RSSystemProperties::SetHgmRefreshRateModeList(const std::string& param)
+{
+    bool setOk = system::SetParameter("rosen.hgmRefreshRateModeList", param);
+    if (setOk) {
+        RS_LOGI("SetHgmRefreshRateModeList set to %{public}s", param.c_str());
+    } else {
+        RS_LOGE("SetHgmRefreshRateModeList set failed, param: %{public}s", param.c_str());
+    }
+    return setOk;
+}
+
+std::string RSSystemProperties::GetHgmRefreshRateModeList()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.hgmRefreshRateModeList", "");
+    int changed = 0;
+    const char *value = CachedParameterGetChanged(g_Handle, &changed);
+    return value == nullptr ? "" : value;
 }
 
 bool RSSystemProperties::GetHardCursorEnabled()
@@ -1629,7 +1648,7 @@ bool RSSystemProperties::GetHybridRenderCanvasEnabled()
             canvasEnabled = false;
         } else {
             GetBackgroundRebuildEnabled();
-            canvasEnabled = isCanvasDrawingNodeClientRenderEnabled_;
+            canvasEnabled = isCanvasDrawingNodeHybridRenderEnabled_;
         }
     }
     inited = true;
@@ -1645,9 +1664,9 @@ bool RSSystemProperties::GetHybridRenderCanvasEnabledWithoutCCM()
 
 bool RSSystemProperties::ViewDrawNodeType()
 {
-    static CachedHandle handle = CachedParameterCreate("persist.graphic.viewDrawNodeType", "0");
-    int32_t changed = 0;
-    return ConvertToInt(CachedParameterGetChanged(handle, &changed), 0) != 0;
+    static const bool viewDrawNodeTypeEnabled =
+        system::GetBoolParameter("persist.graphic.viewDrawNodeType", false);
+    return viewDrawNodeTypeEnabled;
 }
 
 void RSSystemProperties::SetBehindWindowFilterEnabled(bool enabled)
@@ -1905,6 +1924,14 @@ uint32_t RSSystemProperties::GetIpcSyncTimeoutMs()
         return DEFAULT_IPC_SYNC_TIMEOUT_MS;
     }
     return static_cast<uint32_t>(timeoutParam);
+}
+
+bool RSSystemProperties::GetUIFirstDirtyFrameControlEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.ui.first.dirty.frame.control.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
 }
 } // namespace Rosen
 } // namespace OHOS

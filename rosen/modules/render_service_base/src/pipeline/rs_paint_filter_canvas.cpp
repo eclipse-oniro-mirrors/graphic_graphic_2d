@@ -1805,7 +1805,8 @@ std::string RSPaintFilterCanvas::CachedEffectData::GetInfo() const
     std::string ss;
     ss += " cachedRect: " + cachedRect_.ToString() +
         ", CacheImageWidth: " + std::to_string(cachedImage_->GetWidth()) +
-        ", CacheImageHeight: " + std::to_string(cachedImage_->GetHeight());
+        ", CacheImageHeight: " + std::to_string(cachedImage_->GetHeight()) +
+        ", timestamp: " + std::to_string(timestamp_);
     return ss;
 }
 
@@ -1908,6 +1909,16 @@ void RSPaintFilterCanvas::SetScreenId(ScreenId screenId)
     screenId_ = screenId;
 }
 
+::pid_t RSPaintFilterCanvas::GetPid() const
+{
+    return pid_;
+}
+ 
+void RSPaintFilterCanvas::SetPid(::pid_t pid)
+{
+    pid_ = pid;
+}
+
 bool RSPaintFilterCanvas::GetHDREnabledVirtualScreen() const
 {
     return hdrProperties_.isHDREnabledVirtualScreen;
@@ -2001,6 +2012,16 @@ GraphicColorGamut RSPaintFilterCanvas::GetTargetColorGamut() const
 void RSPaintFilterCanvas::SetTargetColorGamut(GraphicColorGamut colorGamut)
 {
     targetColorGamut_ = colorGamut;
+}
+
+bool RSPaintFilterCanvas::GetSkipColorSpaceConversion() const
+{
+    return skipColorSpaceConversion_;
+}
+
+void RSPaintFilterCanvas::SetSkipColorSpaceConversion(bool skipColorSpaceConversion)
+{
+    skipColorSpaceConversion_ = skipColorSpaceConversion;
 }
 
 float RSPaintFilterCanvas::GetBrightnessRatio() const

@@ -137,6 +137,8 @@ public:
 
     void SetNewColorSpace(const GraphicColorGamut& newColorSpace);
     GraphicColorGamut GetNewColorSpace() const;
+    void SetDstColorSpace(const GraphicColorGamut& dstColorSpace);
+    GraphicColorGamut GetDstColorSpace() const;
     void SetNewPixelFormat(const GraphicPixelFormat& newPixelFormat);
     GraphicPixelFormat GetNewPixelFormat() const;
 
@@ -344,6 +346,7 @@ private:
     friend class RSUniRenderVisitor;
     friend class RSScreenRenderNode;
     GraphicColorGamut newColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    GraphicColorGamut dstColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     GraphicPixelFormat newPixelFormat_ = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888;
     Occlusion::Region drawnRegion_;
     bool forceFreeze_ = false;

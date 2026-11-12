@@ -21,6 +21,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_rect.h"
 #include "render/rs_filter.h"
+#include "feature/filter_cache_manager/rs_filter_cache_manager.h"
 #include "recording/draw_cmd_list.h"
 
 #include "drawable/rs_drawable.h"
@@ -113,6 +114,8 @@ private:
     RSClipToBoundsType stagingType_ = RSClipToBoundsType::INVALID;
     RSClipToBoundsType type_ = RSClipToBoundsType::INVALID;
     bool needSync_ = false;
+    std::shared_ptr<Drawing::GEVisualEffectContainer> stagingGeContainer_ = nullptr;
+    std::shared_ptr<Drawing::GEVisualEffectContainer> geContainer_ = nullptr;
     Drawing::Rect sdfDrawRect_;
     Drawing::Rect stagingSdfDrawRect_;
 };
@@ -175,6 +178,8 @@ public:
     RectI GetVisibleTotalRegion(const RectI& defaultValue) const;
     RectI GetVisibleSnapshotRegion(const RectI& defaultValue) const;
     RectI GetLastVisibleSnapshotRegion(const RectI& defaultValue) const;
+    RectI GetVisibleDrawRegion(const RectI& defaultValue) const;
+    RectI GetLastVisibleDrawRegion(const RectI& defaultValue) const;
 
     void PostUpdate(const RSRenderNode& node);
     void OnSync() override;
@@ -206,6 +211,7 @@ protected:
     struct FilterVisibleRectInfo {
         RectI snapshotRect_;
         RectI totalRect_;
+        RectI drawRect_;
     };
 
     bool needSync_ = false;
@@ -234,6 +240,7 @@ protected:
     RectI stagingDrawBehindWindowRegion_;
 
     std::unique_ptr<RectI> lastStagingVisibleSnapshotRect_;
+    std::unique_ptr<RectI> lastStagingVisibleDrawRect_;
     std::unique_ptr<FilterVisibleRectInfo> stagingVisibleRectInfo_;
     std::unique_ptr<FilterRectInfo> stagingRelativeRectInfo_;
     std::unique_ptr<FilterRectInfo> renderRelativeRectInfo_;

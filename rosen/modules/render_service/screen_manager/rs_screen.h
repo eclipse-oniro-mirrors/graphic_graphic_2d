@@ -43,6 +43,7 @@ struct VirtualScreenConfigs {
     int32_t flags = 0; // reserve flag.
     std::unordered_set<uint64_t> whiteList = {};
     std::vector<SurfaceRegionConfig> surfaceConfigs;
+    HDRMode hdrMode = HDRMode::NONE; // applied to the screen property on construction
 };
 
 class RSScreen : public std::enable_shared_from_this<RSScreen> {
@@ -113,6 +114,8 @@ public:
 
     int32_t SetScreenColorGamut(int32_t modeIdx);
     int32_t GetScreenColorGamut(ScreenColorGamut& mode) const;
+    int32_t SetVirtualScreenHDRMode(HDRMode mode);
+    int32_t GetVirtualScreenHDRMode(HDRMode& mode) const;
     int32_t GetScreenSupportedColorGamuts(std::vector<ScreenColorGamut>& mode) const;
     int32_t SetScreenGamutMap(ScreenGamutMap mode);
     int32_t GetScreenGamutMap(ScreenGamutMap& mode) const;
@@ -164,6 +167,9 @@ public:
     // type blacklist
     void SetTypeBlackList(const std::unordered_set<uint8_t>& typeBlackList);
 
+    // post processing shader
+    void SetPostProcessingShader(const std::vector<uint8_t>& param);
+
     // whitelist
     void SetWhiteList(const std::unordered_set<NodeId>& whiteList);
     std::unordered_set<NodeId> GetWhiteList() const;
@@ -178,6 +184,7 @@ public:
 
     void SetScreenOffset(int32_t offsetX, int32_t offsetY);
     void SetScreenFrameGravity(int32_t gravity);
+    void SetSkipColorSpaceConversion(bool skipColorSpaceConversion);
 
     void SetDisablePowerOffRenderControl(bool disable);
     void SetScreenSwitchStatus(bool status);
@@ -233,7 +240,10 @@ private:
     std::vector<ScreenHDRFormat> supportedPhysicalHDRFormats_;
     mutable std::mutex supportedPhysicalHDRFormatsMutex_;
     std::mutex surfaceConfigsMutex_;
-    std::atomic<bool> specialHDRFormatsInit_ = false;
+    // Serialize SetActiveMode to prevent concurrent mode switches from racing on
+    // HDI calls, supportedModes_ reads and property_ state transitions.
+    std::mutex activeModeMutex_;
+    bool specialHDRFormatsInit_ = false;
 
     static std::map<GraphicColorGamut, GraphicCM_ColorSpaceType> RS_TO_COMMON_COLOR_SPACE_TYPE_MAP;
     static std::map<GraphicCM_ColorSpaceType, GraphicColorGamut> COMMON_COLOR_SPACE_TYPE_TO_RS_MAP;

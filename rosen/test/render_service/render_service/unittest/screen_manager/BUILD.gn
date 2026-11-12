@@ -479,6 +479,7 @@ ohos_unittest("RSScreenTest") {
 
   sources = [
     "../pipeline/mock/mock_hdi_device.cpp",
+    "../pipeline/mock/mock_rs_luminance_control.cpp",
     "rs_screen_test.cpp",
   ]
 
@@ -488,6 +489,7 @@ ohos_unittest("RSScreenTest") {
     "$graphic_2d_root/rosen/modules/render_service/core",
     "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/feature_param",
     "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/feature_param/extend_feature",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
     "$graphic_2d_root/rosen/modules/render_service_client/core",
     "$graphic_2d_root/rosen/include",
@@ -601,6 +603,34 @@ ohos_unittest("DemoGetScreenCapabilityTest") {
   module_out_path = module_output_path
 
   sources = [ "demo_get_screen_capability.cpp" ]
+
+  include_dirs = [
+    "$graphic_2d_root/rosen/modules/render_service_client/core/transaction",
+    "$graphic_2d_root/rosen/modules/render_service_base/include/screen_manager",
+  ]
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-g3",
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
+
+##############################  DemoSkipColorSpaceConversionTest  ##################################
+ohos_unittest("DemoSkipColorSpaceConversionTest") {
+  module_out_path = module_output_path
+
+  sources = [ "demo_skip_color_space_conversion.cpp" ]
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_client/core/transaction",

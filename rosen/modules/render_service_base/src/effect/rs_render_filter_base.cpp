@@ -146,6 +146,22 @@ static std::unordered_map<RSNGEffectType, FilterCreator> creatorLUT = {
             return std::make_shared<RSNGRenderMotionBlurFilter>();
         }
     },
+    {RSNGEffectType::DISTORT_LIGHT, [] {
+            return std::make_shared<RSNGRenderDistortLightFilter>();
+        }
+    },
+    {RSNGEffectType::BINARIZATION, [] {
+            return std::make_shared<RSNGRenderBinarizationFilter>();
+        }
+    },
+    {RSNGEffectType::LIGHT_UP_EFFECT, [] {
+            return std::make_shared<RSNGRenderLightUpEffectFilter>();
+        }
+    },
+    {RSNGEffectType::DYNAMIC_DIM, [] {
+            return std::make_shared<RSNGRenderDynamicDimFilter>();
+        }
+    },
 };
 
 using FilterGetSnapshotRect = std::function<RectF(std::shared_ptr<RSNGRenderFilterBase>, RectF)>;

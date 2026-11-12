@@ -19,6 +19,7 @@
 #include <limits>
 #include <optional>
 #include <stack>
+#include <sys/types.h>
 #include <vector>
 
 #include "common/rs_color.h"
@@ -401,6 +402,8 @@ public:
         Drawing::Matrix cachedMatrix_ = Drawing::Matrix();
         float refractOut_ = 0.f;
         std::shared_ptr<IGECacheProvider> geCacheProvider_ = nullptr;
+        // Snapshot timestamp if this cache depends on a snapshot, 0 otherwise.
+        int64_t timestamp_ = 0;
 
         std::shared_ptr<Drawing::Image> GetProviderDataChecked();
     };
@@ -463,8 +466,12 @@ public:
     void SetOnMultipleScreen(bool multipleScreen);
     ScreenId GetScreenId() const;
     void SetScreenId(ScreenId screenId);
+    ::pid_t GetPid() const;
+    void SetPid(::pid_t pid);
     GraphicColorGamut GetTargetColorGamut() const;
     void SetTargetColorGamut(GraphicColorGamut colorGamut);
+    bool GetSkipColorSpaceConversion() const;
+    void SetSkipColorSpaceConversion(bool skipColorSpaceConversion);
     float GetHDRBrightness() const;
     void SetHDRBrightness(float hdrBrightness);
     float GetBrightnessRatio() const;
@@ -611,8 +618,10 @@ private:
     CacheType cacheType_ { RSPaintFilterCanvas::CacheType::UNDEFINED };
     std::atomic_bool isHighContrastEnabled_ { false };
     GraphicColorGamut targetColorGamut_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    bool skipColorSpaceConversion_ = false;
     float brightnessRatio_ = 1.0f; // Default 1.0f means no discount
     ScreenId screenId_ = INVALID_SCREEN_ID;
+    ::pid_t pid_ = -1;
     uint32_t threadIndex_ = UNI_RENDER_THREAD_INDEX; // default
     HDRProperties hdrProperties_;
     Drawing::Surface* surface_ = nullptr;

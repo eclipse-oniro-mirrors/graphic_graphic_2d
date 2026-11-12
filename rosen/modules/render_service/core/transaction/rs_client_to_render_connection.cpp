@@ -25,6 +25,7 @@
 #include "rs_frame_report.h"
 #include "rs_trace.h"
 #include "system/rs_system_parameters.h"
+#include "rs_profiler.h"
 
 #include "command/rs_command_verify_helper.h"
 #include "command/rs_display_node_command.h"
@@ -287,7 +288,7 @@ ErrCode RSClientToRenderConnection::CommitTransaction(std::unique_ptr<RSTransact
             "transaction dropped, hasData:%{public}d", transactionData != nullptr);
         return ERR_INVALID_VALUE;
     }
-    pid_t callingPid = GetCallingPid();
+    pid_t callingPid = RS_PROFILER_GET_CALLING_PID(this);
     bool isTokenTypeValid = true;
     bool isNonSystemAppCalling = false;
     RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemAppCalling);
@@ -357,7 +358,7 @@ ErrCode RSClientToRenderConnection::UnRegisterApplicationAgent()
     if (renderPipelineAgent_ == nullptr) {
         return ERR_INVALID_VALUE;
     }
-    auto pid = GetCallingPid();
+    auto pid = RS_PROFILER_GET_CALLING_PID(this);
     RS_LOGI("RSClientToRenderConnection::UnRegisterApplicationAgent pid=[%{public}d]", pid);
     // The agent is keyed on the client process pid on the server side, so resolve it by the calling pid.
     sptr<IApplicationAgent> app =
@@ -412,6 +413,16 @@ ErrCode RSClientToRenderConnection::GetPixelmap(NodeId id, const std::shared_ptr
         return ERR_INVALID_VALUE;
     }
     return renderPipelineAgent_->GetPixelmap(id, pixelmap, rect, drawCmdList, success);
+}
+
+ErrCode RSClientToRenderConnection::BlurPixelMap(std::shared_ptr<Media::PixelMap> pixelMap,
+    float blurRadius, std::shared_ptr<Media::PixelMap>& blurredPixelMap, bool& success)
+{
+    if (renderPipelineAgent_ == nullptr) {
+        success = false;
+        return ERR_INVALID_VALUE;
+    }
+    return renderPipelineAgent_->BlurPixelMap(pixelMap, blurRadius, blurredPixelMap, success);
 }
 
 ErrCode RSClientToRenderConnection::SetSystemAnimatedScenes(
@@ -666,7 +677,7 @@ uint32_t RSClientToRenderConnection::SetSurfaceWatermark(pid_t pid, const std::s
     auto isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
         RSIClientToRenderConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
         "::SET_SURFACE_WATERMARK");
-    if (!isSystemCalling && GetCallingPid() != pid) {
+    if (!isSystemCalling && RS_PROFILER_GET_CALLING_PID(this) != pid) {
         RS_LOGE("RSClientToRenderConnection::SetSurfaceWatermark %{public}s,"
             "callingPid != pid", name.c_str());
         return WATER_MARK_RS_CONNECTION_ERROR;
@@ -684,7 +695,7 @@ void RSClientToRenderConnection::ClearSurfaceWatermarkForNodes(pid_t pid, const 
     auto isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
         RSIClientToRenderConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
         "::CLEAR_SURFACE_WATERMARK_FOR_NODES");
-    if (!isSystemCalling && GetCallingPid() != pid) {
+    if (!isSystemCalling && RS_PROFILER_GET_CALLING_PID(this) != pid) {
         RS_LOGE("RSClientToRenderConnection::ClearSurfaceWatermarkForNodes %{public}s,"
             "callingPid != pid", name.c_str());
         return;
@@ -735,10 +746,7 @@ int32_t RSClientToRenderConnection::UnRegisterSurfaceOcclusionChangeCallback(Nod
 
 std::string RSClientToRenderConnection::GetBundleName(pid_t pid)
 {
-    if (!renderPipelineAgent_) {
-        return {};
-    }
-    return renderPipelineAgent_->GetBundleName(pid);
+    return RSMainThread::Instance()->QueryBundleName(pid);
 }
 
 int32_t RSClientToRenderConnection::SetLogicalCameraRotationCorrection(
@@ -943,6 +951,20 @@ bool RSClientToRenderConnection::UnRegisterSurfaceNodeBufferReleaseListener()
         return false;
     }
     return renderPipelineAgent_->UnRegisterSurfaceNodeBufferReleaseListener(remotePid_);
+}
+
+bool RSClientToRenderConnection::CleanDelegateModeBufferCmd(NodeId id)
+{
+    if (renderPipelineAgent_ == nullptr) {
+        return false;
+    }
+    if (ExtractPid(id) != remotePid_) {
+        RS_LOGE("DelegateModeDebugTag: CleanDelegateModeBufferCmd fail: node %{public}" PRIu64
+                " not owned by remote pid %{public}d",
+            id, remotePid_);
+        return false;
+    }
+    return renderPipelineAgent_->CleanDelegateModeBufferCmd(id, remotePid_);
 }
 } // namespace Rosen
 } // namespace OHOS

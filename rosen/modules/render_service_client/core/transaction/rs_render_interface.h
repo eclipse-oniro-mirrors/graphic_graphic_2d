@@ -235,6 +235,15 @@ public:
         const Drawing::Rect* rect, std::shared_ptr<Drawing::DrawCmdList> drawCmdList);
 
     /**
+     * @brief Add blur to the input pixelmap.
+     * @param pixelMap The input pixelmap.
+     * @param blurRadius The input radius of blur.
+     * @return Returns a shared pointer of the blurred pixelmap .
+     */
+    std::shared_ptr<Media::PixelMap> BlurPixelMap(
+        std::shared_ptr<Media::PixelMap> pixelMap, float blurRadius);
+
+    /**
      * @brief Set the process ID list requiring frame dropping. Next time RS triggers rending,
      * it will purge queued frames of corresponding self-rendering nodes in bufferQueue, and use the latest frame
      * buffer for screen display.
@@ -502,6 +511,12 @@ public:
      * @param isDelegateMode Indicates whether enable.
      */
     bool SetDelegateMode(NodeId id, bool isDelegateMode);
+
+    /**
+     * @brief Clean delegate mode buffer command by NodeId
+     * @param id nodeId.
+     */
+    bool CleanDelegateModeBufferCmd(NodeId id);
 private:
     RSRenderInterface();
     RSRenderInterface(sptr<IRemoteObject>& connectToRenderRemote);

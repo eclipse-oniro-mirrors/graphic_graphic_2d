@@ -23,6 +23,7 @@
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "render_service/core/transaction/rs_client_to_render_connection.h"
 #include "render_server/transaction/rs_client_to_service_connection.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 #include "pipeline/rs_test_util.h"
 #include "platform/ohos/rs_render_service_connect_hub.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
@@ -41,6 +42,24 @@ public:
     void OnBrightnessInfoChange(ScreenId screenId, const BrightnessInfo& brightnessInfo) override {}
 };
 } // namespace
+
+static ScreenId MakeVirtualScreen(const sptr<RSScreenManager>& sm, const std::string& name,
+    uint32_t width, uint32_t height, sptr<Surface> surface = nullptr,
+    ScreenId associatedScreenId = INVALID_SCREEN_ID, int32_t flags = 0,
+    std::vector<NodeId> whiteList = {})
+{
+    RSVirtualScreenOption option;
+    option.name = name;
+    option.width = width;
+    option.height = height;
+    option.surface = surface;
+    option.associatedScreenId = associatedScreenId;
+    option.flags = flags;
+    option.whiteList = std::move(whiteList);
+    int32_t errCode = StatusCode::SUCCESS;
+    return sm->CreateVirtualScreen(option, errCode);
+}
+
 class RSRenderServiceConnectionTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -331,7 +350,7 @@ HWTEST_F(RSRenderServiceConnectionTest, SetSurfaceCustomWatermarkTest001, TestSi
     auto producer = csurface->GetProducer();
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_NE(psurface, nullptr);
-    auto id = screenManager->CreateVirtualScreen(name, width, height, psurface);
+    auto id = MakeVirtualScreen(screenManager, name, width, height, psurface);
     ASSERT_NE(INVALID_SCREEN_ID, id);
 
     screenManager->defaultScreenId_ = id;
@@ -572,43 +591,35 @@ HWTEST_F(RSRenderServiceConnectionTest, RegisterTypefaceTest003, TestSize.Level1
 }
 
 /**
- * @tc.name: GetBundleNameTest001
- * @tc.desc: GetBundleName
+ * @tc.name: QueryBundleNameTest001
+ * @tc.desc: QueryBundleName with invalid pid returns empty
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderServiceConnectionTest, GetBundleNameTest001, TestSize.Level1)
+HWTEST_F(RSRenderServiceConnectionTest, QueryBundleNameTest001, TestSize.Level1)
 {
-    sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
-    sptr<RSScreenManagerAgent> screenManagerAgent_ = new RSScreenManagerAgent(CreateOrGetScreenManager());
-    auto rsRenderServiceConnection = new RSClientToServiceConnection(
-        0, nullptr, nullptr, screenManagerAgent_, token->AsObject(), nullptr);
-
-    constexpr pid_t testPid = 1234;
-    const std::string expectedBundleName = "com.example.app";
-    rsRenderServiceConnection->pidToBundleName_[testPid] = expectedBundleName;
-
-    std::string actualBundleName = rsRenderServiceConnection->GetBundleName(testPid);
-    EXPECT_EQ(actualBundleName, expectedBundleName);
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    constexpr pid_t testPid = -1;
+    const std::string bundleName = mainThread->QueryBundleName(testPid);
+    EXPECT_TRUE(bundleName.empty());
 }
 
 /**
- * @tc.name: GetBundleNameTest002
- * @tc.desc: GetBundleName
+ * @tc.name: RemoveBundleNameFromCacheTest001
+ * @tc.desc: RemoveBundleNameFromCache removes entry and QueryBundleName returns empty for invalid pid
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderServiceConnectionTest, GetBundleNameTest002, TestSize.Level1)
+HWTEST_F(RSRenderServiceConnectionTest, RemoveBundleNameFromCacheTest001, TestSize.Level1)
 {
-    sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
-    sptr<RSScreenManagerAgent> screenManagerAgent_ = new RSScreenManagerAgent(CreateOrGetScreenManager());
-    auto rsRenderServiceConnection = new RSClientToServiceConnection(
-        0, nullptr, nullptr, screenManagerAgent_, token->AsObject(), nullptr);
-
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
     constexpr pid_t testPid = -1;
-    const std::string bundleName = rsRenderServiceConnection->GetBundleName(testPid);
-    EXPECT_TRUE(bundleName.empty());
+    EXPECT_NO_FATAL_FAILURE(mainThread->RemoveBundleNameFromCache(testPid));
+    EXPECT_TRUE(mainThread->QueryBundleName(testPid).empty());
 }
+
 
 /**
  * @tc.name: CleanAllTest
@@ -711,13 +722,22 @@ HWTEST_F(RSRenderServiceConnectionTest, CreateVirtualScreen001, TestSize.Level2)
     uint32_t width = 100;
     uint32_t height = 100;
     std::vector<NodeId> whiteList(MAX_SPECIAL_LAYER_NUM + 1);
-    ScreenId screenId = rsRenderServiceConnection->CreateVirtualScreen(
-        name, width, height, nullptr, INVALID_SCREEN_ID, -1, whiteList);
+    RSVirtualScreenOption vsOption;
+    vsOption.name = name;
+    vsOption.width = width;
+    vsOption.height = height;
+    vsOption.surface = nullptr;
+    vsOption.associatedScreenId = INVALID_SCREEN_ID;
+    vsOption.flags = -1;
+    vsOption.whiteList = whiteList;
+    int32_t errorCode = StatusCode::SUCCESS;
+    ScreenId screenId = rsRenderServiceConnection->CreateVirtualScreen(vsOption, errorCode);
     ASSERT_EQ(screenId, INVALID_SCREEN_ID);
 
     // retry with empty whitelist
-    screenId = rsRenderServiceConnection->CreateVirtualScreen(
-        name, width, height, nullptr, INVALID_SCREEN_ID, -1, {});
+    vsOption.whiteList = {};
+    errorCode = StatusCode::SUCCESS;
+    screenId = rsRenderServiceConnection->CreateVirtualScreen(vsOption, errorCode);
     ASSERT_NE(screenId, INVALID_SCREEN_ID);
     // restore
     rsRenderServiceConnection->RemoveVirtualScreen(screenId);
@@ -902,7 +922,7 @@ HWTEST_F(RSRenderServiceConnectionTest, SetLogicalCameraRotationCorrectionTest00
     auto producer = csurface->GetProducer();
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_NE(psurface, nullptr);
-    auto screenId = screenManager->CreateVirtualScreen(name, width, height, psurface);
+    auto screenId = MakeVirtualScreen(screenManager, name, width, height, psurface);
     ASSERT_NE(INVALID_SCREEN_ID, screenId);
 
     NodeId nodeId = 0XFFFFFFFFFFFF1234;

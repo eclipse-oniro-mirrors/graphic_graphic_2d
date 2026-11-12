@@ -354,19 +354,6 @@ int32_t HdiLayer::SetLayerBlendType()
     return ret;
 }
 
-int32_t HdiLayer::SetDelegateModeLayerCrop()
-{
-    if (doLayerInfoCompare_ && Compare(rsLayer_->GetDelegateModeCropRect(), prevRSLayer_->GetDelegateModeCropRect())) {
-        return GRAPHIC_DISPLAY_SUCCESS;
-    }
-
-    GraphicIRect rect = rsLayer_->GetDelegateModeCropRect();
-    RS_TRACE_NAME_FMT("HdiLayer::SetDelegateModeLayerCrop, layerId=%u, [%d %d %d %d]",
-        layerId_, rect.x, rect.y, rect.w, rect.h);
-    int32_t ret = device_->SetLayerCrop(screenId_, layerId_, rect);
-    return ret;
-}
-
 int32_t HdiLayer::SetLayerCrop()
 {
     if (doLayerInfoCompare_ && Compare(rsLayer_->GetCropRect(), prevRSLayer_->GetCropRect())) {
@@ -542,12 +529,11 @@ int32_t HdiLayer::SetTunnelLayerProperty()
     if (layerType_ != GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL) {
         return GRAPHIC_DISPLAY_NOT_SUPPORT;
     }
-    uint32_t property = hasSetTunnel_ ? rsLayer_->GetTunnelLayerProperty() : 0;
-    if (hasSetTunnel_ && tunnelLayerProperty_ == property) {
+    uint32_t property = rsLayer_->GetTunnelLayerProperty();
+    if (tunnelLayerProperty_ == property) {
         return GRAPHIC_DISPLAY_SUCCESS;
     }
     tunnelLayerProperty_ = property;
-    hasSetTunnel_ = true;
 
     int32_t ret = device_->SetTunnelLayerProperty(screenId_, layerId_, property);
     if (ret != GRAPHIC_DISPLAY_SUCCESS) {
@@ -608,8 +594,8 @@ int32_t HdiLayer::SetHdiLayerInfo(bool isActiveRectSwitching)
     ret = SetLayerVisibleRegion();
     CheckRet(ret, "SetLayerVisibleRegion");
     // The crop needs to be set in the first order
-    ret = (rsLayer_->GetDelegateMode() ? SetDelegateModeLayerCrop() : SetLayerCrop());
-    CheckRet(ret, rsLayer_->GetDelegateMode() ? "SetDelegateModeLayerCrop" : "SetLayerCrop");
+    ret = SetLayerCrop();
+    CheckRet(ret, "SetLayerCrop");
     // The data space contained in the layerbuffer needs to be set in the second order
     ret = SetLayerBuffer();
     CheckRet(ret, "SetLayerBuffer");
@@ -691,11 +677,6 @@ void HdiLayer::UpdateRSLayer(const std::shared_ptr<RSLayer>& rsLayer)
 void HdiLayer::MarkPendingTunnelLayerCreated(uint64_t tunnelLayerGeneration)
 {
     pendingTunnelLayerCreatedGeneration_.store(tunnelLayerGeneration, std::memory_order_release);
-}
-
-bool HdiLayer::HasPendingTunnelLayerCreated() const
-{
-    return pendingTunnelLayerCreatedGeneration_.load(std::memory_order_acquire) != 0;
 }
 
 bool HdiLayer::TakePendingTunnelLayerCreated(uint64_t& tunnelLayerGeneration)
@@ -1047,12 +1028,14 @@ void HdiLayer::ClearBufferCache()
 
 int32_t HdiLayer::SetTunnelLayerParameters()
 {
-    if (rsLayer_ == nullptr) {
+    if (rsLayer_ == nullptr || rsLayer_->GetTunnelLayerProperty() == TUNNEL_PROP_INVALID ||
+        rsLayer_->GetType() != GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL) {
         return GRAPHIC_DISPLAY_FAILURE;
     }
-    if (rsLayer_->GetTunnelLayerId() == 0 && rsLayer_->GetTunnelLayerProperty() == TUNNEL_PROP_INVALID) {
+    if (rsLayer_->GetTunnelLayerId() == 0) {
         return GRAPHIC_DISPLAY_SUCCESS;
     }
+    setTunnelSuccess_ = false;
     int32_t tunnelLayerIdRet = SetTunnelLayerId();
     if (tunnelLayerIdRet != GRAPHIC_DISPLAY_SUCCESS) {
         CheckRet(tunnelLayerIdRet, "SetTunnelLayerId");
@@ -1063,6 +1046,7 @@ int32_t HdiLayer::SetTunnelLayerParameters()
         CheckRet(tunnelLayerPropertyRet, "SetTunnelLayerProperty");
         return tunnelLayerPropertyRet;
     }
+    setTunnelSuccess_ = true;
     return GRAPHIC_DISPLAY_SUCCESS;
 }
 
@@ -1073,6 +1057,11 @@ void HdiLayer::ResetBufferCache()
     if (rsLayer_ != nullptr && rsLayer_->GetBuffer() != nullptr) {
         currBuffer_ = rsLayer_->GetBuffer();
     }
+}
+
+bool HdiLayer::IsSetTunnelSuccess() const
+{
+    return setTunnelSuccess_;
 }
 } // namespace Rosen
 } // namespace OHOS

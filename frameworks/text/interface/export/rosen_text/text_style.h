@@ -118,6 +118,8 @@ struct RS_EXPORT RectStyle {
     double rightTopRadius = 0.0;
     double rightBottomRadius = 0.0;
     double leftBottomRadius = 0.0;
+    uint32_t borderColor = 0xFFFFFFFF; // default border color: white, only used when borderWidth > 0
+    double borderWidth = 0.0;          // 0.0 means no border
     bool operator ==(const RectStyle& rhs) const;
     bool operator !=(const RectStyle& rhs) const;
 };
@@ -159,6 +161,7 @@ struct RS_EXPORT TextStyle {
     TextStyle(const TextStyle& other) = default;
     TextStyle& operator=(const TextStyle& other) = default;
     bool operator ==(const TextStyle &rhs) const;
+
     bool EqualByFonts(const TextStyle &rhs) const;
     bool MatchOneAttribute(StyleType styleType, const TextStyle &rhs) const;
     void SetFontTypefaces(const std::vector<std::shared_ptr<Drawing::Typeface>>& typefaces);

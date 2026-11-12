@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <unordered_map>
+#include <fuzzer/FuzzedDataProvider.h>
 
 #include "accesstoken_kit.h"
 #ifdef SUPPORT_ACCESS_TOKEN
@@ -50,6 +51,7 @@
 #include "render_server/transaction/zidl/rs_client_to_service_connection_stub.h"
 #include "transaction/zidl/rs_client_to_render_connection_stub.h"
 #include "transaction/rs_transaction_proxy.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -349,7 +351,15 @@ bool DoCreateVirtualScreen()
     sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("DisplayNode");
     sptr<IBufferProducer> bp = cSurface->GetProducer();
     sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(bp);
-    rsToServiceConn_->CreateVirtualScreen("name", SCREEN_WIDTH, SCREEN_HEIGHT, pSurface, id, flags);
+    RSVirtualScreenOption option;
+    option.name = "name";
+    option.width = SCREEN_WIDTH;
+    option.height = SCREEN_HEIGHT;
+    option.surface = pSurface;
+    option.associatedScreenId = id;
+    option.flags = flags;
+    int32_t errorCode = 0;
+    rsToServiceConn_->CreateVirtualScreen(option, errorCode);
     rsToServiceConn_->SetVirtualScreenSurface(id, pSurface);
     rsToServiceConn_->RemoveVirtualScreen(id);
     return true;
@@ -988,6 +998,19 @@ bool DOGetScreenSupportedHDRFormats()
     return true;
 }
 
+bool DOVirtualScreenHDRMode()
+{
+    if (rsToServiceConn_ == nullptr) {
+        return false;
+    }
+    uint64_t id = GetData<uint64_t>();
+    uint32_t mode = GetData<uint32_t>();
+    rsToServiceConn_->SetVirtualScreenHDRMode(id, static_cast<HDRMode>(mode));
+    HDRMode mode1 = HDRMode::NONE;
+    rsToServiceConn_->GetVirtualScreenHDRMode(id, mode1);
+    return true;
+}
+
 bool DOGetScreenSupportedColorSpaces()
 {
     if (rsToServiceConn_ == nullptr) {
@@ -1439,14 +1462,17 @@ bool DoSetOverlayDisplayMode()
 
 bool DoSendVideoRateInfo()
 {
+#ifdef RS_ENABLE_TV_PQ_METADATA
     if (rsToServiceConn_ == nullptr) {
         return false;
     }
+    FuzzedDataProvider fdp(g_data, g_size);
+    std::string key = fdp.ConsumeRandomLengthString(64);
+    std::string value = fdp.ConsumeRandomLengthString(128);
     std::unordered_map<std::string, std::string> videoRateInfo;
-    std::string key = GetData<std::string>();
-    std::string value = GetData<std::string>();
     videoRateInfo[key] = value;
     rsToServiceConn_->SendVideoRateInfo(videoRateInfo);
+#endif
     return true;
 }
 
@@ -1692,6 +1718,7 @@ void DoFuzzerTest2()
     DoSetGlobalDarkColorMode();
     DoSetPixelFormat();
     DOGetScreenSupportedHDRFormats();
+    DOVirtualScreenHDRMode();
     DOGetScreenSupportedColorSpaces();
     DOSetVirtualScreenRefreshRate();
     DOSetSystemAnimatedScenes();

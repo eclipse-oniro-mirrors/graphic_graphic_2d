@@ -40,6 +40,7 @@
 #include "smart_cache_param.h"
 #include "spirv_cache_param.h"
 #include "vma_block_param.h"
+#include "ddgr_config_param.h"
 #include "render/rs_drawing_filter.h"
 #include "render/rs_skia_filter.h"
 
@@ -223,16 +224,12 @@ void RSBaseRenderEngine::Init(RenderEngineType type)
     skContext_ = renderContext_-> GetSharedDrGPUContext();
 #if defined(RS_ENABLE_VK)
     if (renderContext_->GetDrGPUContext()) {
-        renderContext_->GetDrGPUContext()->SetParam(
-            "IsSmartCacheEnabled", SmartCacheParam::IsEnabled());
-        renderContext_->GetDrGPUContext()->SetParam(
-            "SmartCacheUMDPoolSize", SmartCacheParam::GetUMDPoolSize());
-        renderContext_->GetDrGPUContext()->SetParam(
-            "SmartCacheTimeInterval", SmartCacheParam::GetTimeInterval());
-        renderContext_->GetDrGPUContext()->SetParam(
-            "IsVMABlockEnabled", VMABlockParam::IsEnabled());
-        renderContext_->GetDrGPUContext()->SetParam(
-            "SpirvCacheSize", SpirvCacheParam::GetSpirvCacheSize());
+        renderContext_->GetDrGPUContext()->SetParam("IsSmartCacheEnabled", SmartCacheParam::IsEnabled());
+        renderContext_->GetDrGPUContext()->SetParam("SmartCacheUMDPoolSize", SmartCacheParam::GetUMDPoolSize());
+        renderContext_->GetDrGPUContext()->SetParam("SmartCacheTimeInterval", SmartCacheParam::GetTimeInterval());
+        renderContext_->GetDrGPUContext()->SetParam("IsVMABlockEnabled", VMABlockParam::IsEnabled());
+        renderContext_->GetDrGPUContext()->SetParam("SpirvCacheSize", SpirvCacheParam::GetSpirvCacheSize());
+        renderContext_->GetDrGPUContext()->SetParam(DDGRConfigParam::GetParams());
     }
 #endif
 
@@ -329,7 +326,7 @@ std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(
         frameContextConfig.isProtected);
     RS_OPTIONAL_TRACE_END();
     if (surfaceFrame == nullptr) {
-        RS_LOGE("RSBaseRenderEngine::RequestFrame: request SurfaceFrame failed!");
+        RS_LOGE_LIMIT(__func__, __line__, "RSBaseRenderEngine::RequestFrame: request SurfaceFrame failed!");
         return nullptr;
     }
     return std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
@@ -1068,6 +1065,7 @@ bool RSBaseRenderEngine::NeedBilinearInterpolation(const BufferDrawParam& params
     auto scaleY = matrix.Get(Drawing::Matrix::SCALE_Y);
     auto skewX = matrix.Get(Drawing::Matrix::SKEW_X);
     auto skewY = matrix.Get(Drawing::Matrix::SKEW_Y);
+    auto translateX = matrix.Get(Drawing::Matrix::TRANS_X);
     auto translateY = matrix.Get(Drawing::Matrix::TRANS_Y);
     if (ROSEN_EQ(skewX, 0.0f) && ROSEN_EQ(skewY, 0.0f)) {
         if (!ROSEN_EQ(std::abs(scaleX), 1.0f) || !ROSEN_EQ(std::abs(scaleY), 1.0f)) {
@@ -1083,8 +1081,10 @@ bool RSBaseRenderEngine::NeedBilinearInterpolation(const BufferDrawParam& params
         // skew and/or non 90 degrees rotation
         return true;
     }
-    if (ROSEN_EQ(std::abs(translateY - std::floor(translateY)), HALF_PIXEL_OFFSET)) {
-        RS_LOGE("RSBaseRenderEngine::NeedBilinearInterpolation translateY=%{public}.2f", translateY);
+    if (ROSEN_EQ(std::abs(translateX - std::floor(translateX)), HALF_PIXEL_OFFSET) ||
+        ROSEN_EQ(std::abs(translateY - std::floor(translateY)), HALF_PIXEL_OFFSET)) {
+        RS_LOGI("RSBaseRenderEngine::NeedBilinearInterpolation translateX=%{public}.2f, translateY=%{public}.2f",
+            translateX, translateY);
         return true;
     }
     return false;

@@ -34,6 +34,7 @@
 #include "platform/ohos/transaction/zidl/rs_client_to_service_connection_proxy.h"
 #include "platform/ohos/transaction/zidl/rs_client_to_render_connection_proxy.h"
 #include "ipc_callbacks/rs_frame_rate_linker_expected_fps_update_callback_proxy.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -124,6 +125,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     ScreenColorGamut screenColorGamut = (ScreenColorGamut)width;
     ScreenGamutMap screenGamutMap = (ScreenGamutMap)width;
     ScreenHDRFormat screenHDRFormat = (ScreenHDRFormat)width;
+    HDRMode virtualScreenHDRMode = (HDRMode)width;
     SystemAnimatedScenes systemAnimatedScenes = (SystemAnimatedScenes)width;
     GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_BGRA_8888;
     FrameRateRange range;
@@ -214,7 +216,13 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsClientToServiceConnectionProxy.GetDefaultScreenId(screenId);
     rsClientToServiceConnectionProxy.GetActiveScreenId(screenId);
     rsClientToServiceConnectionProxy.GetAllScreenIds();
-    rsClientToServiceConnectionProxy.CreateVirtualScreen(name, width, height, surface);
+    RSVirtualScreenOption vsOption;
+    vsOption.name = name;
+    vsOption.width = width;
+    vsOption.height = height;
+    vsOption.surface = surface;
+    int32_t errorCode = 0;
+    rsClientToServiceConnectionProxy.CreateVirtualScreen(vsOption, errorCode);
     rsClientToServiceConnectionProxy.SetVirtualScreenSurface(id1, surface);
     rsClientToServiceConnectionProxy.RemoveVirtualScreen(id1);
     rsClientToServiceConnectionProxy.SetScreenChangeCallback(callback);
@@ -258,6 +266,8 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsClientToServiceConnectionProxy.GetScreenSupportedHDRFormats(id1, hdrFormats);
     rsClientToServiceConnectionProxy.GetScreenHDRFormat(id1, screenHDRFormat);
     rsClientToServiceConnectionProxy.SetScreenHDRFormat(id1, pid1);
+    rsClientToServiceConnectionProxy.SetVirtualScreenHDRMode(id1, virtualScreenHDRMode);
+    rsClientToServiceConnectionProxy.GetVirtualScreenHDRMode(id1, virtualScreenHDRMode);
     rsClientToServiceConnectionProxy.GetScreenSupportedColorSpaces(id1, colorSpaces);
     rsClientToServiceConnectionProxy.GetScreenColorSpace(id1, colorSpace);
     rsClientToServiceConnectionProxy.SetScreenColorSpace(id1, colorSpace);

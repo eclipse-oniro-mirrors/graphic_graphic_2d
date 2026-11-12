@@ -59,6 +59,7 @@
 #include "pipeline/rs_union_render_node.h"
 #include "property/rs_point_light_manager.h"
 #include "screen_manager/rs_screen.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -76,6 +77,22 @@ const OHOS::Rosen::RectI DEFAULT_SCREEN_RECT = { 0, 0, 1001, 1001 };
 } // namespace
 
 namespace OHOS::Rosen {
+static ScreenId MakeVirtualScreen(sptr<RSScreenManager>& sm, const std::string& name, uint32_t width, uint32_t height,
+    sptr<Surface> surface = nullptr, ScreenId associatedScreenId = INVALID_SCREEN_ID, int32_t flags = 0,
+    std::vector<NodeId> whiteList = {})
+{
+    RSVirtualScreenOption option;
+    option.name = name;
+    option.width = width;
+    option.height = height;
+    option.surface = surface;
+    option.associatedScreenId = associatedScreenId;
+    option.flags = flags;
+    option.whiteList = std::move(whiteList);
+    int32_t errCode = StatusCode::SUCCESS;
+    return sm->CreateVirtualScreen(option, errCode);
+}
+
 class RenderChildrenDrawableAdapter : public RSDrawable {
 public:
     RenderChildrenDrawableAdapter() = default;
@@ -166,7 +183,7 @@ ScreenId UniRenderVisitorTest::CreateVirtualScreen(sptr<RSScreenManager> screenM
     }
     std::vector<NodeId> whiteList = { 1 };
 
-    auto screenId = screenManager->CreateVirtualScreen(name, width, height, psurface, INVALID_SCREEN_ID, -1, whiteList);
+    auto screenId = MakeVirtualScreen(screenManager, name, width, height, psurface, INVALID_SCREEN_ID, -1, whiteList);
     if (screenId == INVALID_SCREEN_ID) {
         RS_LOGE("create virtual screen failed");
         return INVALID_SCREEN_ID;
@@ -238,9 +255,9 @@ HWTEST_F(UniRenderVisitorTest, ProcessFilterNodeObscured002, TestSize.Level1)
     nodeMap.RegisterRenderNode(filterNode3);
     filterNode1->visibleEffectChild_.clear();
     filterNode2->visibleEffectChild_.emplace(id);
-    filterNode1->renderProperties_.backgroundFilter_ = filter;
-    filterNode2->renderProperties_.backgroundFilter_ = filter;
-    filterNode3->renderProperties_.backgroundFilter_ = filter;
+    filterNode1->renderProperties_.GetEffectProperties().SetBackgroundFilter(filter);
+    filterNode2->renderProperties_.GetEffectProperties().SetBackgroundFilter(filter);
+    filterNode3->renderProperties_.GetEffectProperties().SetBackgroundFilter(filter);
     surfaceNode->visibleFilterChild_.push_back(filterNode1->GetId());
     surfaceNode->visibleFilterChild_.push_back(filterNode2->GetId());
     surfaceNode->visibleFilterChild_.push_back(filterNode3->GetId());
@@ -272,7 +289,7 @@ HWTEST_F(UniRenderVisitorTest, ProcessFilterNodeObscured, TestSize.Level1)
     auto rsContext = std::make_shared<RSContext>();
     rsUniRenderVisitor->curScreenNode_ = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
     ASSERT_NE(rsUniRenderVisitor->curScreenNode_, nullptr);
-    surfaceNode->renderProperties_.backgroundFilter_ = filter;
+    surfaceNode->renderProperties_.GetEffectProperties().SetBackgroundFilter(filter);
     Occlusion::Region extendRegion;
     Occlusion::Region region { Occlusion::Rect { 0, 0, 100, 100 } };
     surfaceNode->SetVisibleRegion(region);
@@ -294,9 +311,9 @@ HWTEST_F(UniRenderVisitorTest, ProcessFilterNodeObscured, TestSize.Level1)
     nodeMap.RegisterRenderNode(filterNode1);
     nodeMap.RegisterRenderNode(filterNode3);
     nodeMap.RegisterRenderNode(filterNode4);
-    filterNode1->renderProperties_.backgroundFilter_ = filter;
-    filterNode3->renderProperties_.backgroundFilter_ = filter;
-    filterNode4->renderProperties_.backgroundFilter_ = filter;
+    filterNode1->renderProperties_.GetEffectProperties().SetBackgroundFilter(filter);
+    filterNode3->renderProperties_.GetEffectProperties().SetBackgroundFilter(filter);
+    filterNode4->renderProperties_.GetEffectProperties().SetBackgroundFilter(filter);
     surfaceNode->visibleFilterChild_.push_back(filterNode1->GetId());
     surfaceNode->visibleFilterChild_.push_back(filterNode2->GetId());
     surfaceNode->visibleFilterChild_.push_back(filterNode3->GetId());
@@ -839,7 +856,7 @@ HWTEST_F(UniRenderVisitorTest, CalcDirtyRegionForFilterNode, TestSize.Level1)
     float blurRadiusX = 30.0f;
     float blurRadiusY = 30.0f;
     auto filter = RSFilter::CreateBlurFilter(blurRadiusX, blurRadiusY);
-    rsCanvasRenderNode->GetMutableRenderProperties().filter_ = filter;
+    rsCanvasRenderNode->GetMutableRenderProperties().GetEffectProperties().SetCompositingFilter(filter);
     rsDisplayRenderNode->AddChild(rsSurfaceRenderNode, -1);
     rsSurfaceRenderNode->AddChild(rsCanvasRenderNode, -1);
 
@@ -1054,7 +1071,7 @@ HWTEST_F(UniRenderVisitorTest, CheckMergeFilterDirtyWithPreDirty_003, TestSize.L
     NodeId id = 1;
     nodeMap.UnregisterRenderNode(id);
     auto filterNode1 = std::make_shared<RSRenderNode>(id);
-    filterNode1->GetMutableRenderProperties().backgroundFilter_ = std::make_shared<RSFilter>();
+    filterNode1->GetMutableRenderProperties().GetEffectProperties().SetBackgroundFilter(std::make_shared<RSFilter>());
     filterNode1->GetMutableRenderProperties().boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     filterNode1->GetMutableRenderProperties().boundsGeo_->absRect_ = DEFAULT_FILTER_RECT;
 
@@ -1094,10 +1111,11 @@ HWTEST_F(UniRenderVisitorTest, CheckMergeFilterDirtyWithPreDirty_002, TestSize.L
     NodeId id = 1;
     auto filterNode1 = std::make_shared<RSRenderNode>(++id);
     auto filterNode2 = std::make_shared<RSRenderNode>(++id);
-    filterNode1->GetMutableRenderProperties().GetEffect().materialFilter_ = std::make_shared<RSFilter>();
-    filterNode1->GetMutableRenderProperties().backgroundFilter_ = std::make_shared<RSFilter>();
-    filterNode2->GetMutableRenderProperties().GetEffect().needDrawBehindWindow_ = true;
-    filterNode2->GetMutableRenderProperties().filter_ = std::make_shared<RSFilter>();
+    filterNode1->GetMutableRenderProperties().GetEffectProperties().GetFilterEffect().materialFilter_
+        = std::make_shared<RSFilter>();
+    filterNode1->GetMutableRenderProperties().GetEffectProperties().SetBackgroundFilter(std::make_shared<RSFilter>());
+    filterNode2->GetMutableRenderProperties().GetEffectProperties().GetNodesEffect().needDrawBehindWindow_ = true;
+    filterNode2->GetMutableRenderProperties().GetEffectProperties().SetCompositingFilter(std::make_shared<RSFilter>());
 
     // register filter node
     nodeMap.RegisterRenderNode(filterNode1);

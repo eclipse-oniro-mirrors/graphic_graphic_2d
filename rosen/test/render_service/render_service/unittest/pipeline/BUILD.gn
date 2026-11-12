@@ -57,6 +57,7 @@ group("unittest") {
     ":RSVirtualScreenProcessorTest",
     ":RSRenderPipelineTest",
     ":RSRenderPipelineAgentTest",
+    ":RSRenderPipelineAgentCleanDelegateTest",
     ":RSOpincSplitNodeSelectorTest",
     ":RSOpincLayerSplitterPlannerTest",
     ":RSLayerSplitManagerTest",
@@ -297,6 +298,49 @@ ohos_unittest("RSRenderPipelineAgentTest") {
       "drivers_interface_display:libdisplay_commontype_proxy_1.0",
       "video_processing_engine:videoprocessingengine",
     ]
+  }
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-g3",
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
+
+## Build RSRenderPipelineAgentCleanDelegateTest
+ohos_unittest("RSRenderPipelineAgentCleanDelegateTest") {
+  module_out_path = module_output_path
+  sources = [
+    "main_thread/rs_render_pipeline_agent_clean_delegate_test.cpp",
+  ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "drivers_interface_display:display_commontype_idl_headers",
+    "egl:libEGL",
+    "eventhandler:libeventhandler",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "libxml2:libxml2",
+    "memmgr:memmgrclient",
+    "opengles:libGLES",
+    "samgr:samgr_proxy",
+    "skia:skia_canvaskit",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
   }
   cflags = [
     "-Wall",
@@ -1287,6 +1331,7 @@ ohos_unittest("RSRoundCornerDisplayTest") {
     "rs_round_corner_display_test.cpp",
     "rs_round_corner_display_test_common.cpp",
     "rs_round_corner_display_test_part2.cpp",
+    "rs_round_corner_display_test_part3.cpp",
   ]
 
   deps = [
@@ -2044,8 +2089,19 @@ ohos_unittest("RSSurfacePermissionTest") {
 config("rs_test_common_public_config") {
   defines = rs_common_define
   defines += gpu_defines
+  if (defined(global_parts_info) &&
+    defined(global_parts_info.resourceschedule_resource_schedule_service)) {
+    defines += [ "RES_SCHED_ENABLE" ]
+  }
   if (rs_enable_gpu) {
     defines += [ "RS_ENABLE_GPU" ]
+  }
+  if (accessibility_enable) {
+    defines += accessibility_defines
+  }
+  if (rosen_is_ohos && graphic_2d_feature_enable_vulkan &&
+    graphic_2d_feature_rs_modifiers_draw_enable) {
+    defines += [ "RS_MODIFIERS_DRAW_ENABLE" ]
   }
 
   include_dirs = [

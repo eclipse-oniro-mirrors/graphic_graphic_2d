@@ -48,6 +48,10 @@ namespace {
 constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
 constexpr NodeId DEFAULT_ID = 0xFFFF;
 constexpr float FLOAT_DATA_EPSILON = 1e-6f;
+constexpr uint32_t ROG_RENDER_WIDTH = 1080;
+constexpr uint32_t ROG_RENDER_HEIGHT = 2400;
+constexpr int32_t ROG_RATIO = 2;
+const RectI ROG_DAMAGE_RECT = { 200, 400, 100, 200 };
 }
 class RSLogicalDisplayRenderNodeDrawableTest : public testing::Test {
 public:
@@ -2470,6 +2474,41 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, UpdateSlrScale002, TestSize.Lev
 }
 
 /**
+ * @tc.name: UpdateSlrScale003
+ * @tc.desc: Test UpdateSlrScale when rotation is changed
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, UpdateSlrScale003, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto param = system::GetParameter("rosen.SLRScale.enabled", "");
+    const int32_t width = DEFAULT_CANVAS_SIZE * 2;
+    const int32_t height = DEFAULT_CANVAS_SIZE * 2;
+
+    RSScreenProperty screenProperty;
+    screenProperty.Set<ScreenPropertyType::RENDER_RESOLUTION>({DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE});
+    screenProperty.Set<ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE>({width, height, 1});
+    screenProperty.Set<ScreenPropertyType::SAMPLING_OPTION>({true, 0.f, 0.f, 1.f});
+    system::SetParameter("rosen.SLRScale.enabled", "1");
+    // rotation changed and scaleManager is nullptr
+    displayDrawable_->UpdateSlrScale(screenProperty, 0, 0, nullptr, true);
+    EXPECT_EQ(displayDrawable_->scaleManager_, nullptr);
+    // rotation changed and scaleManager is not nullptr
+    displayDrawable_->scaleManager_ = std::make_unique<RSSLRScaleFunction>(
+        width, height, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    displayDrawable_->UpdateSlrScale(screenProperty, 0, 0, nullptr, true);
+    EXPECT_EQ(displayDrawable_->scaleManager_, nullptr);
+    // rotation not changed, scaleManager is created
+    displayDrawable_->UpdateSlrScale(screenProperty, 0, 0, nullptr, false);
+    ASSERT_NE(displayDrawable_->scaleManager_, nullptr);
+    // sampling off, scaleManager is reset
+    screenProperty.Set<ScreenPropertyType::SAMPLING_OPTION>({false, 0.f, 0.f, 1.f});
+    displayDrawable_->UpdateSlrScale(screenProperty, 0, 0, nullptr, false);
+    EXPECT_EQ(displayDrawable_->scaleManager_, nullptr);
+    system::SetParameter("rosen.SLRScale.enabled", param);
+}
+
+/**
  * @tc.name: ScaleCanvasIfNeeded
  * @tc.desc: Test ScaleCanvasIfNeeded
  * @tc.type: FUNC
@@ -2776,6 +2815,163 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, PrepareOffscreenRenderTest010, 
     displayDrawable_->PrepareOffscreenRender(*displayDrawable_, false);
     EXPECT_NE(displayParams->GetAncestorScreenDrawable().lock(), nullptr);
     system::SetParameter("rosen.EDRCanvasReplace.enabled", param);
+}
+
+/**
+ * @tc.name: PrepareOffscreenRenderTest014
+ * @tc.desc: Test PrepareOffscreenRender, offscreen size uses fixed size when sampling is on, rotation is not
+ *           changed, composite type is UNI_RENDER_COMPOSITE and display is not mirror.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, PrepareOffscreenRenderTest014, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    constexpr int32_t fixedWidth = 80;
+    constexpr int32_t fixedHeight = 120;
+
+    displayParams->frameRect_ = { 0.f, 0.f, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE };
+    displayParams->fixedWidth_ = static_cast<float>(fixedWidth);
+    displayParams->fixedHeight_ = static_cast<float>(fixedHeight);
+    displayParams->SetNeedOffscreen(false);
+    displayParams->SetRotationChanged(false);
+    displayParams->compositeType_ = CompositeType::UNI_RENDER_COMPOSITE;
+    displayParams->displayMode_ = DisplayMode::INVALID;
+    screenParams->SetHDRPresent(false);
+    screenParams->screenProperty_.Set<ScreenPropertyType::SAMPLING_OPTION>({ true, 0.f, 0.f, 1.f });
+
+    auto surface = Drawing::Surface::MakeRasterN32Premul(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    displayDrawable_->curCanvas_->surface_ = surface.get();
+
+    displayDrawable_->PrepareOffscreenRender(*displayDrawable_, false, false);
+    ASSERT_NE(displayDrawable_->offscreenSurface_, nullptr);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_->Width(), fixedWidth);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_->Height(), fixedHeight);
+}
+
+/**
+ * @tc.name: PrepareOffscreenRenderTest015
+ * @tc.desc: Test PrepareOffscreenRender, offscreen size keeps frame size when sampling is off, even if other
+ *           wired screen conditions are met.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, PrepareOffscreenRenderTest015, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+
+    displayParams->frameRect_ = { 0.f, 0.f, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE };
+    displayParams->fixedWidth_ = 80.f;
+    displayParams->fixedHeight_ = 120.f;
+    displayParams->SetNeedOffscreen(false);
+    displayParams->SetRotationChanged(false);
+    displayParams->compositeType_ = CompositeType::UNI_RENDER_COMPOSITE;
+    displayParams->displayMode_ = DisplayMode::INVALID;
+    screenParams->SetHDRPresent(false);
+    screenParams->screenProperty_.Set<ScreenPropertyType::SAMPLING_OPTION>({ false, 0.f, 0.f, 1.f });
+
+    auto surface = Drawing::Surface::MakeRasterN32Premul(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    displayDrawable_->curCanvas_->surface_ = surface.get();
+
+    displayDrawable_->PrepareOffscreenRender(*displayDrawable_, false, false);
+    ASSERT_NE(displayDrawable_->offscreenSurface_, nullptr);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_->Width(), DEFAULT_CANVAS_SIZE);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_->Height(), DEFAULT_CANVAS_SIZE);
+}
+
+/**
+ * @tc.name: PrepareOffscreenRenderTest016
+ * @tc.desc: Test PrepareOffscreenRender, offscreen size keeps frame size when sampling is on but rotation is
+ *           changed, even if other wired screen conditions are met.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, PrepareOffscreenRenderTest016, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+
+    displayParams->frameRect_ = { 0.f, 0.f, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE };
+    displayParams->fixedWidth_ = 80.f;
+    displayParams->fixedHeight_ = 120.f;
+    displayParams->SetNeedOffscreen(false);
+    displayParams->SetRotationChanged(true);
+    displayParams->compositeType_ = CompositeType::UNI_RENDER_COMPOSITE;
+    displayParams->displayMode_ = DisplayMode::INVALID;
+    screenParams->SetHDRPresent(false);
+    screenParams->screenProperty_.Set<ScreenPropertyType::SAMPLING_OPTION>({ true, 0.f, 0.f, 1.f });
+
+    auto surface = Drawing::Surface::MakeRasterN32Premul(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    displayDrawable_->curCanvas_->surface_ = surface.get();
+
+    displayDrawable_->PrepareOffscreenRender(*displayDrawable_, false, false);
+    ASSERT_NE(displayDrawable_->offscreenSurface_, nullptr);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_->Width(), DEFAULT_CANVAS_SIZE);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_->Height(), DEFAULT_CANVAS_SIZE);
+}
+
+/**
+ * @tc.name: PrepareOffscreenRenderTest017
+ * @tc.desc: Test PrepareOffscreenRender, offscreen size keeps frame size when sampling is on and rotation is not
+ *           changed, but composite type is not UNI_RENDER_COMPOSITE.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, PrepareOffscreenRenderTest017, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+
+    displayParams->frameRect_ = { 0.f, 0.f, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE };
+    displayParams->fixedWidth_ = 80.f;
+    displayParams->fixedHeight_ = 120.f;
+    displayParams->SetNeedOffscreen(false);
+    displayParams->SetRotationChanged(false);
+    displayParams->compositeType_ = CompositeType::HARDWARE_COMPOSITE;
+    displayParams->displayMode_ = DisplayMode::INVALID;
+    screenParams->SetHDRPresent(false);
+    screenParams->screenProperty_.Set<ScreenPropertyType::SAMPLING_OPTION>({ true, 0.f, 0.f, 1.f });
+
+    auto surface = Drawing::Surface::MakeRasterN32Premul(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    displayDrawable_->curCanvas_->surface_ = surface.get();
+
+    displayDrawable_->PrepareOffscreenRender(*displayDrawable_, false, false);
+    ASSERT_NE(displayDrawable_->offscreenSurface_, nullptr);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_->Width(), DEFAULT_CANVAS_SIZE);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_->Height(), DEFAULT_CANVAS_SIZE);
+}
+
+/**
+ * @tc.name: PrepareOffscreenRenderTest018
+ * @tc.desc: Test PrepareOffscreenRender, offscreen size keeps frame size when sampling is on and rotation is not
+ *           changed, but display is mirror display.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, PrepareOffscreenRenderTest018, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+
+    displayParams->frameRect_ = { 0.f, 0.f, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE };
+    displayParams->fixedWidth_ = 80.f;
+    displayParams->fixedHeight_ = 120.f;
+    displayParams->SetNeedOffscreen(false);
+    displayParams->SetRotationChanged(false);
+    displayParams->compositeType_ = CompositeType::UNI_RENDER_COMPOSITE;
+    displayParams->displayMode_ = DisplayMode::MIRROR;
+    screenParams->SetHDRPresent(false);
+    screenParams->screenProperty_.Set<ScreenPropertyType::SAMPLING_OPTION>({ true, 0.f, 0.f, 1.f });
+
+    auto surface = Drawing::Surface::MakeRasterN32Premul(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    displayDrawable_->curCanvas_->surface_ = surface.get();
+
+    displayDrawable_->PrepareOffscreenRender(*displayDrawable_, false, false);
+    ASSERT_NE(displayDrawable_->offscreenSurface_, nullptr);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_->Width(), DEFAULT_CANVAS_SIZE);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_->Height(), DEFAULT_CANVAS_SIZE);
 }
 
 /**
@@ -3449,5 +3645,114 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnDrawRogScale, TestSize.Level1
     EXPECT_EQ(screenParams->screenProperty_.GetSamplingMode(), ScreenSamplingMode::DEVICE_GPU);
     EXPECT_NE(screenParams->screenProperty_.GetRogWidthRatio(), 1.0f);
     EXPECT_NE(screenParams->screenProperty_.GetRogHeightRatio(), 1.0f);
+}
+
+/**
+ * @tc.name: MapDamageRegionRectsDeviceGpu
+ * @tc.desc: test MapDamageRegionRects maps damage rects with inverse rog ratio when main screen is DEVICE_GPU
+ * @tc.type: FUNC
+ * @tc.require: issue25993
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, MapDamageRegionRectsDeviceGpu, TestSize.Level2)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    std::vector<RectI> damageRegionRects = { ROG_DAMAGE_RECT };
+    ScreenInfo mainScreenInfo;
+    mainScreenInfo.width = ROG_RENDER_WIDTH;
+    mainScreenInfo.height = ROG_RENDER_HEIGHT;
+    mainScreenInfo.phyWidth = ROG_RENDER_WIDTH * static_cast<uint32_t>(ROG_RATIO);
+    mainScreenInfo.phyHeight = ROG_RENDER_HEIGHT * static_cast<uint32_t>(ROG_RATIO);
+    mainScreenInfo.samplingMode = ScreenSamplingMode::DEVICE_GPU;
+    Occlusion::Region mappedDamageRegion;
+    Drawing::Matrix canvasMatrix;
+    displayDrawable_->MapDamageRegionRects(damageRegionRects, mainScreenInfo, mappedDamageRegion, canvasMatrix);
+    // damage rects in physical resolution are pre-scaled by 1/rogRatio into render resolution
+    RectI expectedRect(ROG_DAMAGE_RECT.left_ / ROG_RATIO, ROG_DAMAGE_RECT.top_ / ROG_RATIO,
+        ROG_DAMAGE_RECT.width_ / ROG_RATIO, ROG_DAMAGE_RECT.height_ / ROG_RATIO);
+    ASSERT_EQ(mappedDamageRegion.GetBound().ToRectI(), expectedRect);
+}
+
+/**
+ * @tc.name: MapDamageRegionRectsNotDeviceGpu
+ * @tc.desc: test MapDamageRegionRects keeps damage rects unchanged when sampling mode is not DEVICE_GPU
+ * @tc.type: FUNC
+ * @tc.require: issue25993
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, MapDamageRegionRectsNotDeviceGpu, TestSize.Level2)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    std::vector<RectI> damageRegionRects = { ROG_DAMAGE_RECT };
+    ScreenInfo mainScreenInfo;
+    Occlusion::Region mappedDamageRegion;
+    Drawing::Matrix canvasMatrix;
+    displayDrawable_->MapDamageRegionRects(damageRegionRects, mainScreenInfo, mappedDamageRegion, canvasMatrix);
+    ASSERT_EQ(mappedDamageRegion.GetBound().ToRectI(), ROG_DAMAGE_RECT);
+}
+
+/**
+ * @tc.name: MapDamageRegionRectsInvalidRatio
+ * @tc.desc: test MapDamageRegionRects skips rog pre-scale when rog ratio is invalid under DEVICE_GPU
+ * @tc.type: FUNC
+ * @tc.require: issue25993
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, MapDamageRegionRectsInvalidRatio, TestSize.Level2)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    std::vector<RectI> damageRegionRects = { ROG_DAMAGE_RECT };
+    ScreenInfo mainScreenInfo;
+    mainScreenInfo.width = ROG_RENDER_WIDTH;
+    mainScreenInfo.height = ROG_RENDER_HEIGHT;
+    // phyWidth/phyHeight are zero so both rog ratios are 0, which is invalid and skips pre-scale
+    mainScreenInfo.samplingMode = ScreenSamplingMode::DEVICE_GPU;
+    Occlusion::Region mappedDamageRegion;
+    Drawing::Matrix canvasMatrix;
+    displayDrawable_->MapDamageRegionRects(damageRegionRects, mainScreenInfo, mappedDamageRegion, canvasMatrix);
+    ASSERT_EQ(mappedDamageRegion.GetBound().ToRectI(), ROG_DAMAGE_RECT);
+}
+
+/**
+ * @tc.name: ScaleMatrixByInverseRogRatioDeviceGpu
+ * @tc.desc: Test ScaleMatrixByInverseRogRatio undoes rog scale for DEVICE_GPU and keeps matrix otherwise
+ * @tc.type: FUNC
+ * @tc.require: issue26347
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, ScaleMatrixByInverseRogRatioDeviceGpu, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    constexpr int32_t ROG_TEST_RATIO = 2;
+    constexpr int32_t RENDER_WIDTH = 100;
+    constexpr int32_t RENDER_HEIGHT = 200;
+    constexpr int32_t PHY_WIDTH = RENDER_WIDTH * ROG_TEST_RATIO;
+    constexpr int32_t PHY_HEIGHT = RENDER_HEIGHT * ROG_TEST_RATIO;
+    Drawing::Matrix canvasMatrix;
+    canvasMatrix.SetScaleTranslate(1.f, 1.f, static_cast<float>(RENDER_WIDTH), 0.f);
+
+    ScreenInfo mainScreenInfo;
+    mainScreenInfo.width = RENDER_WIDTH;
+    mainScreenInfo.height = RENDER_HEIGHT;
+    mainScreenInfo.phyWidth = PHY_WIDTH;
+    mainScreenInfo.phyHeight = PHY_HEIGHT;
+
+    // sampling mode is not DEVICE_GPU, canvas matrix keeps unchanged
+    mainScreenInfo.samplingMode = ScreenSamplingMode::DEVICE_DSS;
+    Drawing::Matrix unchangedMatrix = canvasMatrix;
+    displayDrawable_->ScaleMatrixByInverseRogRatio(unchangedMatrix, mainScreenInfo);
+    EXPECT_NEAR(unchangedMatrix.Get(Drawing::Matrix::SCALE_X), 1.0f, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(unchangedMatrix.Get(Drawing::Matrix::TRANS_X), static_cast<float>(RENDER_WIDTH), FLOAT_DATA_EPSILON);
+
+    // DEVICE_GPU, regions in physical resolution are mapped back by 1 / rogRatio in advance
+    mainScreenInfo.samplingMode = ScreenSamplingMode::DEVICE_GPU;
+    Drawing::Matrix scaledMatrix = canvasMatrix;
+    displayDrawable_->ScaleMatrixByInverseRogRatio(scaledMatrix, mainScreenInfo);
+    EXPECT_NEAR(scaledMatrix.Get(Drawing::Matrix::SCALE_X), 1.0f / ROG_TEST_RATIO, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(scaledMatrix.Get(Drawing::Matrix::TRANS_X), static_cast<float>(RENDER_WIDTH), FLOAT_DATA_EPSILON);
+    // the matrix held by caller is scaled in place, thus caller should pass its own copy
+    EXPECT_NEAR(canvasMatrix.Get(Drawing::Matrix::SCALE_X), 1.0f, FLOAT_DATA_EPSILON);
+
+    // DEVICE_GPU with invalid physical resolution, canvas matrix keeps unchanged
+    mainScreenInfo.phyWidth = 0;
+    Drawing::Matrix invalidRatioMatrix = canvasMatrix;
+    displayDrawable_->ScaleMatrixByInverseRogRatio(invalidRatioMatrix, mainScreenInfo);
+    EXPECT_NEAR(invalidRatioMatrix.Get(Drawing::Matrix::SCALE_X), 1.0f, FLOAT_DATA_EPSILON);
 }
 }

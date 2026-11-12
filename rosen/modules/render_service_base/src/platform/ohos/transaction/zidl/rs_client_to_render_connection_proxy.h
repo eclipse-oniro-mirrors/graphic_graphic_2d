@@ -36,6 +36,12 @@ public:
     bool FillParcelWithTransactionData(std::unique_ptr<RSTransactionData>& transactionData,
         std::shared_ptr<MessageParcel>& data);
 
+    // Number of transaction indices already issued by this proxy (uni-render mode).
+    uint32_t GetTransactionDataIndex() const;
+    // Seeds the index counter only while it still holds the default value, so a replacement
+    // connection can continue the index stream of the connection used before it.
+    bool SeedTransactionDataIndex(uint32_t value);
+
     ErrCode CreateDisplayNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId,
         bool& success) override;
 
@@ -59,6 +65,9 @@ public:
 
     ErrCode GetPixelmap(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap,
         const Drawing::Rect* rect, std::shared_ptr<Drawing::DrawCmdList> drawCmdList, bool& success) override;
+
+    ErrCode BlurPixelMap(std::shared_ptr<Media::PixelMap> pixelMap, float blurRadius,
+        std::shared_ptr<Media::PixelMap>& blurredPixelMap, bool& success) override;
 
     ErrCode SetSystemAnimatedScenes(
         SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation, bool& success) override;
@@ -200,6 +209,7 @@ public:
     bool UnRegisterSurfaceTransactionListener(uint64_t listenerId) override;
     bool RegisterSurfaceNodeBufferReleaseListener(sptr<RSISurfaceNodeBufferReleaseCallback> listener) override;
     bool UnRegisterSurfaceNodeBufferReleaseListener() override;
+    bool CleanDelegateModeBufferCmd(NodeId id) override;
 };
 } // namespace Rosen
 } // namespace OHOS

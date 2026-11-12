@@ -222,9 +222,27 @@ void HgmContext::RemoveScreenFromHgm(ScreenId screenId)
     });
 }
 
+void HgmContext::OnScreenPropertyChanged(ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property)
+{
+    if (type == ScreenPropertyType::RENDER_RESOLUTION) {
+        uint32_t width = 0;
+        uint32_t height = 0;
+        if (auto screenManager = hgmCore_.GetScreenManager(); screenManager != nullptr &&
+            screenManager->GetRogScreenResolution(id, width, height) == static_cast<int32_t>(StatusCode::SUCCESS)) {
+            HGM_LOGD("screenId: %{public}" PRIu64 " width: %{public}u height: %{public}u", id, width, height);
+            HgmTaskHandleThread::Instance().PostTask([this, id, width, height] {
+                RS_TRACE_NAME_FMT("%s id: %" PRIu64 " width: %u height: %u", __func__, id, width, height);
+                hgmCore_.UpdateScreenRenderResolution(id, width, height);
+            });
+        } else {
+            HGM_LOGW("get rog screen resolution failed, screenId: %{public}" PRIu64, id);
+        }
+    }
+}
+
 void HgmContext::CleanAllWhenServiceConnectionDie(pid_t remotePid)
 {
-    renderServiceHandler_->PostSyncTask([this, remotePid] {
+    renderServiceHandler_->PostTask([this, remotePid] {
         frameRateLinkerMap_.FilterFrameRateLinkerByPid(remotePid);
     });
 
@@ -323,20 +341,12 @@ void HgmContext::SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate
 void HgmContext::SetRefreshRateMode(int32_t refreshRateMode)
 {
     RS_TRACE_FUNC();
-    HgmTaskHandleThread::Instance().PostTask([this, refreshRateMode] {
-        int32_t setResult = hgmCore_.SetRefreshRateMode(refreshRateMode);
-        RSSystemProperties::SetHgmRefreshRateModesEnabled(std::to_string(refreshRateMode));
-        if (setResult != 0) {
-            RS_LOGW("SetRefreshRateMode mode %{public}d is not supported", refreshRateMode);
-        }
-    });
+    RSSystemProperties::SetHgmRefreshRateModesEnabled(std::to_string(refreshRateMode));
 }
 
 int32_t HgmContext::GetCurrentRefreshRateMode()
 {
-    return HgmTaskHandleThread::Instance().ScheduleTask([this] {
-        return hgmCore_.GetCurrentRefreshRateMode();
-    }).get();
+    return static_cast<int32_t>(RSSystemProperties::GetHgmRefreshRateModesEnabled());
 }
 
 std::vector<int32_t> HgmContext::GetScreenSupportedRefreshRates(ScreenId id)

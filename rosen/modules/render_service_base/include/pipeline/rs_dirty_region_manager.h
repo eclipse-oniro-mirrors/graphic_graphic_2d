@@ -51,7 +51,6 @@ enum DirtyRegionType {
 };
 
 class RSB_EXPORT RSDirtyRegionManager final {
-    friend class RSFilterCacheManager;
 public:
     static constexpr int32_t ALIGNED_BITS = 32;
     RSDirtyRegionManager();
@@ -311,6 +310,7 @@ public:
     {
         return hasUifirstChild_;
     }
+    void MergeUifirstDirtyRect(const RectI& rect);
 private:
     void UpdateMaxNumOfDirtyRectByState();
     void UpdateCurrentFrameAdvancedDirtyRegion(RectI rect);

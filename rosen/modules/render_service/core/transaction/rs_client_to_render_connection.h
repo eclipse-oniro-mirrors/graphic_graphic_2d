@@ -85,6 +85,9 @@ private:
     ErrCode GetPixelmap(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap,
         const Drawing::Rect* rect, std::shared_ptr<Drawing::DrawCmdList> drawCmdList, bool& success) override;
 
+    ErrCode BlurPixelMap(std::shared_ptr<Media::PixelMap> pixelMap, float blurRadius,
+        std::shared_ptr<Media::PixelMap>& blurredPixelMap, bool& success) override;
+
     ErrCode SetSystemAnimatedScenes(
         SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation, bool& success) override;
 
@@ -209,6 +212,7 @@ private:
     bool UnRegisterSurfaceNodeBufferReleaseListener() override;
     bool RegisterSurfaceTransactionListenerNew(sptr<RSISurfaceTransactionListener> listener,
         uint64_t listenerId, uint32_t pid, uint32_t tid) override;
+    bool CleanDelegateModeBufferCmd(NodeId id) override;
 
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;

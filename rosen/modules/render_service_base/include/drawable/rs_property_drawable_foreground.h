@@ -38,22 +38,6 @@ class GEVisualEffectContainer;
 } // namespace Drawing
 
 namespace DrawableV2 {
-class RSBinarizationDrawable : public RSDrawable {
-public:
-    RSBinarizationDrawable() = default;
-    ~RSBinarizationDrawable() override = default;
-
-    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
-    bool OnUpdate(const RSRenderNode& node) override;
-    void OnSync() override;
-    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
-
-private:
-    bool needSync_ = false;
-    std::optional<Vector4f> aiInvert_;
-    std::optional<Vector4f> stagingAiInvert_;
-};
-
 class RSColorFilterDrawable : public RSDrawable {
 public:
     RSColorFilterDrawable() = default;
@@ -68,38 +52,9 @@ private:
     bool needSync_ = false;
     std::shared_ptr<Drawing::ColorFilter> filter_;
     std::shared_ptr<Drawing::ColorFilter> stagingFilter_;
-};
-
-class RSLightUpEffectDrawable : public RSDrawable {
-public:
-    RSLightUpEffectDrawable() = default;
-    ~RSLightUpEffectDrawable() override = default;
-
-    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
-    bool OnUpdate(const RSRenderNode& node) override;
-    void OnSync() override;
-    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
-
-private:
-    bool needSync_ = false;
-    float lightUpEffectDegree_ = 1.0f;
-    float stagingLightUpEffectDegree_ = 1.0f;
-};
-
-class RSDynamicDimDrawable : public RSDrawable {
-public:
-    RSDynamicDimDrawable() = default;
-    ~RSDynamicDimDrawable() override = default;
-
-    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
-    bool OnUpdate(const RSRenderNode& node) override;
-    void OnSync() override;
-    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
-
-private:
-    bool needSync_ = false;
-    float dynamicDimDegree_ = 1.0f;
-    float stagingDynamicDimDegree_ = 1.0f;
+    std::shared_ptr<RSNGRenderFilterBase> stagingColorNGFilter_;
+    std::shared_ptr<RSNGRenderFilterBase> colorNGFilter_;
+    std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer_;
 };
 
 class RSCompositingFilterDrawable : public RSFilterDrawable {
@@ -130,6 +85,8 @@ private:
     bool needSync_ = false;
     RectF boundsRect_;
     RectF stagingBoundsRect_;
+    NodeId stagingNodeId_ = INVALID_NODEID;
+    NodeId renderNodeId_ = INVALID_NODEID;
 };
 
 class RSForegroundFilterRestoreDrawable : public RSDrawable {
@@ -152,6 +109,9 @@ private:
 
     std::unique_ptr<RectF> stagingDrawRect_ = nullptr;
     std::unique_ptr<RectF> drawRect_ = nullptr;
+
+    RectF stagingBoundsRect_;
+    RectF boundsRect_;
 };
 
 class RSForegroundColorDrawable : public RSPropertyDrawable {
@@ -164,31 +124,6 @@ public:
     bool OnUpdate(const RSRenderNode& node) override;
 
 private:
-};
-
-class RSForegroundShaderDrawable : public RSDrawable {
-public:
-    RSForegroundShaderDrawable() = default;
-    ~RSForegroundShaderDrawable() override = default;
-
-    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
-    void PostUpdate(const RSRenderNode& node);
-    bool OnUpdate(const RSRenderNode& node) override;
-    void OnSync() override;
-    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
-
-    bool GetEnableEDR() const override
-    {
-        return enableEDREffect_;
-    }
-
-private:
-    NodeId screenNodeId_ = INVALID_NODEID;
-
-    bool needSync_ = false;
-    bool enableEDREffect_ = false;
-    std::shared_ptr<RSNGRenderShaderBase> stagingShader_;
-    std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer_;
 };
 
 // ============================================================================

@@ -83,6 +83,7 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::BG_BRIGHTNESS_FRACTION, ThresholdType::COARSE },
     { RSPropertyType::FRAME_GRAVITY, ThresholdType::ZERO },
     { RSPropertyType::CLIP_RRECT, ThresholdType::MEDIUM },
+    { RSPropertyType::CLIP_SHAPE, ThresholdType::MEDIUM },
     { RSPropertyType::CLIP_BOUNDS, ThresholdType::ZERO },
     { RSPropertyType::CLIP_TO_BOUNDS, ThresholdType::ZERO },
     { RSPropertyType::CLIP_TO_FRAME, ThresholdType::ZERO },
@@ -98,7 +99,6 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::SHADOW_COLOR_STRATEGY, ThresholdType::ZERO },
     { RSPropertyType::MASK, ThresholdType::ZERO },
     { RSPropertyType::SPHERIZE, ThresholdType::MEDIUM },
-    { RSPropertyType::LIGHT_UP_EFFECT_DEGREE, ThresholdType::COARSE },
     { RSPropertyType::PIXEL_STRETCH_SIZE, ThresholdType::COARSE },
     { RSPropertyType::PIXEL_STRETCH_PERCENT, ThresholdType::FINE },
     { RSPropertyType::PIXEL_STRETCH_TILE_MODE, ThresholdType::ZERO },
@@ -113,7 +113,6 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::SATURATE, ThresholdType::COARSE },
     { RSPropertyType::SEPIA, ThresholdType::COARSE },
     { RSPropertyType::INVERT, ThresholdType::COARSE },
-    { RSPropertyType::AIINVERT, ThresholdType::COARSE },
     { RSPropertyType::SYSTEMBAREFFECT, ThresholdType::ZERO },
     { RSPropertyType::WATER_RIPPLE_PROGRESS, ThresholdType::COARSE },
     { RSPropertyType::WATER_RIPPLE_PARAMS, ThresholdType::ZERO },
@@ -155,7 +154,6 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::FLY_OUT_DEGREE, ThresholdType::COARSE },
     { RSPropertyType::FLY_OUT_PARAMS, ThresholdType::ZERO },
     { RSPropertyType::DISTORTION_K, ThresholdType::COARSE },
-    { RSPropertyType::DYNAMIC_DIM_DEGREE, ThresholdType::COARSE },
     { RSPropertyType::BACKGROUND_BLUR_RADIUS, ThresholdType::COARSE },
     { RSPropertyType::BACKGROUND_BLUR_SATURATION, ThresholdType::COARSE },
     { RSPropertyType::BACKGROUND_BLUR_BRIGHTNESS, ThresholdType::COARSE },
@@ -235,6 +233,7 @@ void RSModifier::AttachProperty(const std::shared_ptr<RSPropertyBase>& property)
         RS_LOGE("Failed to attach property, property is null.");
         return;
     }
+    affectsRendering_ = true;
     property->SetIsCustom(IsCustom());
     property->AttachModifier(shared_from_this());
     if (node_.expired()) {
@@ -252,7 +251,13 @@ void RSModifier::AttachProperty(RSPropertyType type, std::shared_ptr<RSPropertyB
         RS_LOGE("Failed to attach property with type %{public}d, property is null!", static_cast<int32_t>(type));
         return;
     }
+    AttachPropertyInner(type, property, !IsDefault(type, property));
+}
 
+void RSModifier::AttachPropertyInner(RSPropertyType type, const std::shared_ptr<RSPropertyBase>& property,
+    bool affectsRendering)
+{
+    affectsRendering_ |= affectsRendering;
     property->SetPropertyTypeNG(type);
     // replace existing property if any
     properties_[type] = property;
@@ -262,6 +267,10 @@ void RSModifier::AttachProperty(RSPropertyType type, std::shared_ptr<RSPropertyB
     if (!node) {
         // not attached yet
         return;
+    }
+    if (!node->GetIsDrawn() && affectsRendering_) {
+        node->SetDrawNode();
+        node->SetDrawNodeType(DrawNodeType::DrawPropertyType);
     }
     auto shouldSetOption = node->motionPathOption_ != nullptr && property->IsPathAnimatable();
     if (shouldSetOption) {
@@ -314,6 +323,10 @@ void RSModifier::SetPropertyThresholdType(RSPropertyType type, std::shared_ptr<R
 
 void RSModifier::OnAttach(RSNode& node)
 {
+    if (!node.GetIsDrawn() && affectsRendering_) {
+        node.SetDrawNode();
+        node.SetDrawNodeType(DrawNodeType::DrawPropertyType);
+    }
     node_ = node.weak_from_this();
     if (properties_.empty()) {
         return;

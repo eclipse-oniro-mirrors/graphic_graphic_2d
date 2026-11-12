@@ -26,6 +26,11 @@
 #include "ipc_callbacks/rs_canvas_surface_buffer_callback_stub.h"
 #include "platform/ohos/backend/surface_buffer_utils.h"
 #endif
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+#include "mock/mock_accesstoken_kit.h"
+#include "command/rs_node_showing_command.h"
 #include "common/rs_special_layer_manager.h"
 #include "feature/capture/rs_capture_pixelmap_manager.h"
 #include "feature/pointer_window_manager/rs_pointer_window_manager.h"
@@ -62,6 +67,8 @@
 #include "transaction/rs_occlusion_data.h"
 #include "transaction/rs_transaction_data.h"
 #include "transaction/zidl/rs_client_to_render_connection_stub.h"
+#include "transaction/rs_marshalling_helper.h"
+#include "pixel_map.h"
 using namespace testing;
 using namespace testing::ext;
 #if defined(RS_ENABLE_UNI_RENDER)
@@ -271,6 +278,10 @@ void g_WriteSurfaceCaptureConfigMock(RSSurfaceCaptureConfig& captureConfig, Mess
     data.WriteBool(captureConfig.useCurWindow);
     data.WriteUint8(static_cast<uint8_t>(captureConfig.captureType));
     data.WriteBool(captureConfig.isSync);
+    data.WriteBool(captureConfig.isHdrCapture);
+    data.WriteUint32(static_cast<uint32_t>(captureConfig.displayIntent));
+    data.WriteBool(captureConfig.needF16WindowCaptureForScRGB);
+    data.WriteBool(captureConfig.needErrorCode);
     data.WriteFloat(captureConfig.mainScreenRect.left_);
     data.WriteFloat(captureConfig.mainScreenRect.top_);
     data.WriteFloat(captureConfig.mainScreenRect.right_);
@@ -289,6 +300,7 @@ void g_WriteSurfaceCaptureConfigMock(RSSurfaceCaptureConfig& captureConfig, Mess
     data.WriteBool(captureConfig.dynamicRangeMode.second);
     data.WriteBool(captureConfig.isSyncRender);
     data.WriteBool(captureConfig.windowSync);
+    data.WriteUint32(static_cast<uint32_t>(captureConfig.pixelFormat));
 }
 
 /**
@@ -710,34 +722,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureWithAllWindowsTes
     ASSERT_EQ(callback != nullptr, true);
     data.WriteRemoteObject(callback->AsObject());
     RSSurfaceCaptureConfig captureConfig;
-    data.WriteFloat(captureConfig.scaleX);
-    data.WriteFloat(captureConfig.scaleY);
-    data.WriteBool(captureConfig.useDma);
-    data.WriteBool(captureConfig.useCurWindow);
-    data.WriteUint8(static_cast<uint8_t>(captureConfig.captureType));
-    data.WriteBool(captureConfig.isSync);
-    data.WriteBool(captureConfig.isHdrCapture);
-    data.WriteUint32(static_cast<uint32_t>(captureConfig.displayIntent));
-    data.WriteBool(captureConfig.needF16WindowCaptureForScRGB);
-    data.WriteBool(captureConfig.needErrorCode);
-    data.WriteFloat(captureConfig.mainScreenRect.left_);
-    data.WriteFloat(captureConfig.mainScreenRect.top_);
-    data.WriteFloat(captureConfig.mainScreenRect.right_);
-    data.WriteFloat(captureConfig.mainScreenRect.bottom_);
-    data.WriteUInt64Vector(captureConfig.blackList);
-    data.WriteUint64(captureConfig.uiCaptureInRangeParam.endNodeId);
-    data.WriteBool(captureConfig.uiCaptureInRangeParam.useBeginNodeSize);
-    data.WriteFloat(captureConfig.specifiedAreaRect.left_);
-    data.WriteFloat(captureConfig.specifiedAreaRect.top_);
-    data.WriteFloat(captureConfig.specifiedAreaRect.right_);
-    data.WriteFloat(captureConfig.specifiedAreaRect.bottom_);
-    data.WriteUint32(captureConfig.backGroundColor);
-    data.WriteUint32(captureConfig.colorSpace.first);
-    data.WriteBool(captureConfig.colorSpace.second);
-    data.WriteUint32(captureConfig.dynamicRangeMode.first);
-    data.WriteBool(captureConfig.dynamicRangeMode.second);
-    data.WriteBool(captureConfig.isSyncRender);
-    data.WriteBool(captureConfig.windowSync);
+    g_WriteSurfaceCaptureConfigMock(captureConfig, data);
     auto res = connectionStub_->OnRemoteRequest(code, data, reply, option);
 #ifdef RS_ENABLE_UNI_RENDER
     EXPECT_LE(res, ERR_PERMISSION_DENIED);
@@ -1352,6 +1337,111 @@ HWTEST_F(RSClientToRenderConnectionStubTest, GetPixelmap_ShareMemAlloc_RGBA8888,
 #endif
 
 /**
+ * @tc.name: BlurPixelMapStub001
+ * @tc.desc: Test BLUR_PIXEL_MAP with empty data (no pixelMap) returns ERR_INVALID_DATA
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, BlurPixelMapStub001, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::BLUR_PIXEL_MAP);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    auto ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: BlurPixelMapStub002
+ * @tc.desc: Test BLUR_PIXEL_MAP with valid pixelMap and blurRadius
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, BlurPixelMapStub002, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::BLUR_PIXEL_MAP);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    Media::InitializationOptions opts;
+    opts.size.width = 10;
+    opts.size.height = 10;
+    opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+    opts.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_OPAQUE;
+    opts.allocatorType = Media::AllocatorType::HEAP_ALLOC;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(pixelMap, nullptr);
+    ASSERT_TRUE(RSMarshallingHelper::Marshalling(data, pixelMap));
+    data.WriteFloat(5.0f);
+    auto ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_TRUE(ret == ERR_OK || ret == ERR_INVALID_REPLY);
+}
+
+/**
+ * @tc.name: BlurPixelMapStub003
+ * @tc.desc: Test BLUR_PIXEL_MAP with null agent returns ERR_INVALID_VALUE
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, BlurPixelMapStub003, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::BLUR_PIXEL_MAP);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    Media::InitializationOptions opts;
+    opts.size.width = 10;
+    opts.size.height = 10;
+    opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+    opts.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_OPAQUE;
+    opts.allocatorType = Media::AllocatorType::HEAP_ALLOC;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(pixelMap, nullptr);
+    ASSERT_TRUE(RSMarshallingHelper::Marshalling(data, pixelMap));
+    data.WriteFloat(5.0f);
+
+    auto savedAgent = connectionStub_->renderPipelineAgent_;
+    connectionStub_->renderPipelineAgent_ = nullptr;
+    auto ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(ret, ERR_INVALID_REPLY);
+    connectionStub_->renderPipelineAgent_ = savedAgent;
+}
+
+/**
+ * @tc.name: BlurPixelMapStub004
+ * @tc.desc: Test BLUR_PIXEL_MAP with valid pixelMap but missing blurRadius returns ERR_INVALID_DATA
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, BlurPixelMapStub004, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::BLUR_PIXEL_MAP);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    Media::InitializationOptions opts;
+    opts.size.width = 10;
+    opts.size.height = 10;
+    opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+    opts.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_OPAQUE;
+    opts.allocatorType = Media::AllocatorType::HEAP_ALLOC;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(pixelMap, nullptr);
+    ASSERT_TRUE(RSMarshallingHelper::Marshalling(data, pixelMap));
+    auto ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
  * @tc.name: SetSurfaceWatermarkSub001
  * @tc.desc: Test SetSurfaceWatermarkSub001
  * @tc.type: FUNC
@@ -1438,6 +1528,46 @@ HWTEST_F(RSClientToRenderConnectionStubTest, SetSurfaceWatermarkSub001, TestSize
     data6.WriteUint32(2);
     data6.WriteUint32(3);
     res = connectionStub_->OnRemoteRequest(code, data6, reply, option);
+
+    // non-system calling, callingPid == pid (condition false, proceed)
+    // MockTokenTypeWithSkip(false, 1): first GetTokenTypeFlag (security check) returns TOKEN_NATIVE,
+    // subsequent calls (IsSystemCalling in SetSurfaceWatermark) return TOKEN_INVALID
+    MockAccessTokenKit::MockTokenTypeWithSkip(false, 1);
+    {
+        MessageParcel data7;
+        MessageParcel reply7;
+        data7.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+        pid_t pid = getpid();
+        data7.WriteInt32(pid);
+        data7.WriteString(name);
+        data7.WriteBool(true);
+        data7.WriteParcelable(pixelmap.get());
+        data7.WriteUInt64Vector(nodeList);
+        data7.WriteUint8(static_cast<uint8_t>(0));
+        data7.WriteUint32(2);
+        data7.WriteUint32(3);
+        int ret = connectionStub_->OnRemoteRequest(code, data7, reply7, option);
+        EXPECT_EQ(ret, ERR_NONE);
+    }
+    // non-system calling, callingPid != pid (condition true, return error)
+    MockAccessTokenKit::MockTokenTypeWithSkip(false, 1);
+    {
+        MessageParcel data8;
+        MessageParcel reply8;
+        data8.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+        pid_t pid = getpid() + 1;
+        data8.WriteInt32(pid);
+        data8.WriteString(name);
+        data8.WriteBool(true);
+        data8.WriteParcelable(pixelmap.get());
+        data8.WriteUInt64Vector(nodeList);
+        data8.WriteUint8(static_cast<uint8_t>(0));
+        data8.WriteUint32(2);
+        data8.WriteUint32(3);
+        int ret = connectionStub_->OnRemoteRequest(code, data8, reply8, option);
+        EXPECT_EQ(ret, ERR_NONE);
+    }
+    MockAccessTokenKit::MockTokenType(true);
 }
 
 /**
@@ -1965,34 +2095,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureSoloTest001, Test
     data2.WriteUint64(nodeId);
 
     RSSurfaceCaptureConfig captureConfig;
-    data2.WriteFloat(captureConfig.scaleX);
-    data2.WriteFloat(captureConfig.scaleY);
-    data2.WriteBool(captureConfig.useDma);
-    data2.WriteBool(captureConfig.useCurWindow);
-    data2.WriteUint8(static_cast<uint8_t>(captureConfig.captureType));
-    data2.WriteBool(captureConfig.isSync);
-    data2.WriteBool(captureConfig.isHdrCapture);
-    data2.WriteUint32(static_cast<uint32_t>(captureConfig.displayIntent));
-    data2.WriteBool(captureConfig.needF16WindowCaptureForScRGB);
-    data2.WriteBool(captureConfig.needErrorCode);
-    data2.WriteFloat(captureConfig.mainScreenRect.left_);
-    data2.WriteFloat(captureConfig.mainScreenRect.top_);
-    data2.WriteFloat(captureConfig.mainScreenRect.right_);
-    data2.WriteFloat(captureConfig.mainScreenRect.bottom_);
-    data2.WriteUInt64Vector(captureConfig.blackList);
-    data2.WriteUint64(captureConfig.uiCaptureInRangeParam.endNodeId);
-    data2.WriteBool(captureConfig.uiCaptureInRangeParam.useBeginNodeSize);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.left_);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.top_);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.right_);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.bottom_);
-    data2.WriteUint32(captureConfig.backGroundColor);
-    data2.WriteUint32(captureConfig.colorSpace.first);
-    data2.WriteBool(captureConfig.colorSpace.second);
-    data2.WriteUint32(captureConfig.dynamicRangeMode.first);
-    data2.WriteBool(captureConfig.dynamicRangeMode.second);
-    data2.WriteBool(captureConfig.isSyncRender);
-    data2.WriteBool(captureConfig.windowSync);
+    g_WriteSurfaceCaptureConfigMock(captureConfig, data2);
 
     res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
     EXPECT_EQ(res, ERR_NONE);
@@ -2020,6 +2123,55 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureSoloTest002, Test
     // NOT writing captureConfig - should fail here
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     EXPECT_EQ(res, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: ReadSurfaceCaptureConfigTest001
+ * @tc.desc: Test ReadSurfaceCaptureConfig
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, ReadSurfaceCaptureConfigTest001, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+
+    {
+        MessageParcel data;
+        RSSurfaceCaptureConfig captureConfig;
+        g_WriteSurfaceCaptureConfigMock(captureConfig, data);
+        EXPECT_TRUE(connectionStub_->ReadSurfaceCaptureConfig(captureConfig, data));
+    }
+
+    {
+        MessageParcel data;
+        RSSurfaceCaptureConfig captureConfig;
+        EXPECT_FALSE(connectionStub_->ReadSurfaceCaptureConfig(captureConfig, data));
+    }
+
+    {
+        constexpr size_t OVERSIZED_BLACK_LIST_SIZE = 1025;
+        MessageParcel data;
+        RSSurfaceCaptureConfig captureConfig;
+        captureConfig.blackList.assign(OVERSIZED_BLACK_LIST_SIZE, 0);
+        g_WriteSurfaceCaptureConfigMock(captureConfig, data);
+        EXPECT_FALSE(connectionStub_->ReadSurfaceCaptureConfig(captureConfig, data));
+    }
+
+    {
+        MessageParcel data;
+        RSSurfaceCaptureConfig captureConfig;
+        captureConfig.captureType = SurfaceCaptureType::SURFACE_CAPTURE_TYPE_BUTT;
+        g_WriteSurfaceCaptureConfigMock(captureConfig, data);
+        EXPECT_FALSE(connectionStub_->ReadSurfaceCaptureConfig(captureConfig, data));
+    }
+
+    {
+        MessageParcel data;
+        RSSurfaceCaptureConfig captureConfig;
+        captureConfig.pixelFormat = Media::PixelFormat::EXTERNAL_MAX;
+        g_WriteSurfaceCaptureConfigMock(captureConfig, data);
+        EXPECT_FALSE(connectionStub_->ReadSurfaceCaptureConfig(captureConfig, data));
+    }
 }
 
 /**
@@ -2051,34 +2203,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSelfSurfaceCaptureTest001, Test
     data2.WriteRemoteObject(callback->AsObject());
 
     RSSurfaceCaptureConfig captureConfig;
-    data2.WriteFloat(captureConfig.scaleX);
-    data2.WriteFloat(captureConfig.scaleY);
-    data2.WriteBool(captureConfig.useDma);
-    data2.WriteBool(captureConfig.useCurWindow);
-    data2.WriteUint8(static_cast<uint8_t>(captureConfig.captureType));
-    data2.WriteBool(captureConfig.isSync);
-    data2.WriteBool(captureConfig.isHdrCapture);
-    data2.WriteUint32(static_cast<uint32_t>(captureConfig.displayIntent));
-    data2.WriteBool(captureConfig.needF16WindowCaptureForScRGB);
-    data2.WriteBool(captureConfig.needErrorCode);
-    data2.WriteFloat(captureConfig.mainScreenRect.left_);
-    data2.WriteFloat(captureConfig.mainScreenRect.top_);
-    data2.WriteFloat(captureConfig.mainScreenRect.right_);
-    data2.WriteFloat(captureConfig.mainScreenRect.bottom_);
-    data2.WriteUInt64Vector(captureConfig.blackList);
-    data2.WriteUint64(captureConfig.uiCaptureInRangeParam.endNodeId);
-    data2.WriteBool(captureConfig.uiCaptureInRangeParam.useBeginNodeSize);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.left_);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.top_);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.right_);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.bottom_);
-    data2.WriteUint32(captureConfig.backGroundColor);
-    data2.WriteUint32(captureConfig.colorSpace.first);
-    data2.WriteBool(captureConfig.colorSpace.second);
-    data2.WriteUint32(captureConfig.dynamicRangeMode.first);
-    data2.WriteBool(captureConfig.dynamicRangeMode.second);
-    data2.WriteBool(captureConfig.isSyncRender);
-    data2.WriteBool(captureConfig.windowSync);
+    g_WriteSurfaceCaptureConfigMock(captureConfig, data2);
     res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
     EXPECT_EQ(res, ERR_NONE);
 }
@@ -2259,34 +2384,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, SetWindowFreezeImmediatelyTest001, 
     data3.WriteRemoteObject(callback->AsObject());
 
     RSSurfaceCaptureConfig captureConfig;
-    data3.WriteFloat(captureConfig.scaleX);
-    data3.WriteFloat(captureConfig.scaleY);
-    data3.WriteBool(captureConfig.useDma);
-    data3.WriteBool(captureConfig.useCurWindow);
-    data3.WriteUint8(static_cast<uint8_t>(captureConfig.captureType));
-    data3.WriteBool(captureConfig.isSync);
-    data3.WriteBool(captureConfig.isHdrCapture);
-    data3.WriteUint32(static_cast<uint32_t>(captureConfig.displayIntent));
-    data3.WriteBool(captureConfig.needF16WindowCaptureForScRGB);
-    data3.WriteBool(captureConfig.needErrorCode);
-    data3.WriteFloat(captureConfig.mainScreenRect.left_);
-    data3.WriteFloat(captureConfig.mainScreenRect.top_);
-    data3.WriteFloat(captureConfig.mainScreenRect.right_);
-    data3.WriteFloat(captureConfig.mainScreenRect.bottom_);
-    data3.WriteUInt64Vector(captureConfig.blackList);
-    data3.WriteUint64(captureConfig.uiCaptureInRangeParam.endNodeId);
-    data3.WriteBool(captureConfig.uiCaptureInRangeParam.useBeginNodeSize);
-    data3.WriteFloat(captureConfig.specifiedAreaRect.left_);
-    data3.WriteFloat(captureConfig.specifiedAreaRect.top_);
-    data3.WriteFloat(captureConfig.specifiedAreaRect.right_);
-    data3.WriteFloat(captureConfig.specifiedAreaRect.bottom_);
-    data3.WriteUint32(captureConfig.backGroundColor);
-    data3.WriteUint32(captureConfig.colorSpace.first);
-    data3.WriteBool(captureConfig.colorSpace.second);
-    data3.WriteUint32(captureConfig.dynamicRangeMode.first);
-    data3.WriteBool(captureConfig.dynamicRangeMode.second);
-    data3.WriteBool(captureConfig.isSyncRender);
-    data3.WriteBool(captureConfig.windowSync);
+    g_WriteSurfaceCaptureConfigMock(captureConfig, data3);
     // Write blurParam
     data3.WriteBool(false); // isNeedBlur
     data3.WriteFloat(0.0f); // blurRadius
@@ -2370,27 +2468,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, SetWindowFreezeImmediatelyTest004, 
     data.WriteRemoteObject(callback->AsObject());
 
     RSSurfaceCaptureConfig captureConfig;
-    data.WriteFloat(captureConfig.scaleX);
-    data.WriteFloat(captureConfig.scaleY);
-    data.WriteBool(captureConfig.useDma);
-    data.WriteBool(captureConfig.useCurWindow);
-    data.WriteUint8(static_cast<uint8_t>(captureConfig.captureType));
-    data.WriteBool(captureConfig.isSync);
-    data.WriteBool(captureConfig.isHdrCapture);
-    data.WriteUint32(static_cast<uint32_t>(captureConfig.displayIntent));
-    data.WriteBool(captureConfig.needF16WindowCaptureForScRGB);
-    data.WriteFloat(captureConfig.mainScreenRect.left_);
-    data.WriteFloat(captureConfig.mainScreenRect.top_);
-    data.WriteFloat(captureConfig.mainScreenRect.right_);
-    data.WriteFloat(captureConfig.mainScreenRect.bottom_);
-    data.WriteUInt64Vector(captureConfig.blackList);
-    data.WriteUint64(captureConfig.uiCaptureInRangeParam.endNodeId);
-    data.WriteBool(captureConfig.uiCaptureInRangeParam.useBeginNodeSize);
-    data.WriteFloat(captureConfig.specifiedAreaRect.left_);
-    data.WriteFloat(captureConfig.specifiedAreaRect.top_);
-    data.WriteFloat(captureConfig.specifiedAreaRect.right_);
-    data.WriteFloat(captureConfig.specifiedAreaRect.bottom_);
-    data.WriteUint32(captureConfig.backGroundColor);
+    g_WriteSurfaceCaptureConfigMock(captureConfig, data);
     // Not writing blurParam when isFreeze is true - should return ERR_INVALID_DATA
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     EXPECT_EQ(res, ERR_INVALID_DATA);
@@ -2425,34 +2503,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeUICaptureInRangeTest001, TestSi
     data2.WriteRemoteObject(callback->AsObject());
 
     RSSurfaceCaptureConfig captureConfig;
-    data2.WriteFloat(captureConfig.scaleX);
-    data2.WriteFloat(captureConfig.scaleY);
-    data2.WriteBool(captureConfig.useDma);
-    data2.WriteBool(captureConfig.useCurWindow);
-    data2.WriteUint8(static_cast<uint8_t>(captureConfig.captureType));
-    data2.WriteBool(captureConfig.isSync);
-    data2.WriteBool(captureConfig.isHdrCapture);
-    data2.WriteUint32(static_cast<uint32_t>(captureConfig.displayIntent));
-    data2.WriteBool(captureConfig.needF16WindowCaptureForScRGB);
-    data2.WriteBool(captureConfig.needErrorCode);
-    data2.WriteFloat(captureConfig.mainScreenRect.left_);
-    data2.WriteFloat(captureConfig.mainScreenRect.top_);
-    data2.WriteFloat(captureConfig.mainScreenRect.right_);
-    data2.WriteFloat(captureConfig.mainScreenRect.bottom_);
-    data2.WriteUInt64Vector(captureConfig.blackList);
-    data2.WriteUint64(captureConfig.uiCaptureInRangeParam.endNodeId);
-    data2.WriteBool(captureConfig.uiCaptureInRangeParam.useBeginNodeSize);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.left_);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.top_);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.right_);
-    data2.WriteFloat(captureConfig.specifiedAreaRect.bottom_);
-    data2.WriteUint32(captureConfig.backGroundColor);
-    data2.WriteUint32(captureConfig.colorSpace.first);
-    data2.WriteBool(captureConfig.colorSpace.second);
-    data2.WriteUint32(captureConfig.dynamicRangeMode.first);
-    data2.WriteBool(captureConfig.dynamicRangeMode.second);
-    data2.WriteBool(captureConfig.isSyncRender);
-    data2.WriteBool(captureConfig.windowSync);
+    g_WriteSurfaceCaptureConfigMock(captureConfig, data2);
     res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
     EXPECT_EQ(res, ERR_NONE);
 }
@@ -2732,6 +2783,36 @@ HWTEST_F(RSClientToRenderConnectionStubTest, ClearSurfaceWatermarkTest002, TestS
 
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     EXPECT_EQ(res, ERR_NONE);
+
+    // non-system calling, callingPid == pid (condition false, proceed)
+    // MockTokenTypeWithSkip(false, 1): first GetTokenTypeFlag (security check) returns TOKEN_NATIVE,
+    // subsequent calls (IsSystemCalling in ClearSurfaceWatermarkForNodes) return TOKEN_INVALID
+    MockAccessTokenKit::MockTokenTypeWithSkip(false, 1);
+    {
+        MessageParcel data2;
+        MessageParcel reply2;
+        data2.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+        pid_t pid = getpid();
+        data2.WriteInt32(pid);
+        data2.WriteString(name);
+        data2.WriteUInt64Vector(nodeList);
+        int ret = connectionStub_->OnRemoteRequest(code, data2, reply2, option);
+        EXPECT_EQ(ret, ERR_NONE);
+    }
+    // non-system calling, callingPid != pid (condition true, return early)
+    MockAccessTokenKit::MockTokenTypeWithSkip(false, 1);
+    {
+        MessageParcel data3;
+        MessageParcel reply3;
+        data3.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+        pid_t pid = getpid() + 1;
+        data3.WriteInt32(pid);
+        data3.WriteString(name);
+        data3.WriteUInt64Vector(nodeList);
+        int ret = connectionStub_->OnRemoteRequest(code, data3, reply3, option);
+        EXPECT_EQ(ret, ERR_NONE);
+    }
+    MockAccessTokenKit::MockTokenType(true);
 }
 
 /**
@@ -3354,6 +3435,104 @@ HWTEST_F(RSClientToRenderConnectionStubTest, ExecuteSynchronousTaskTest006, Test
 }
 
 /**
+ * @tc.name: ExecuteSynchronousTaskTest007
+ * @tc.desc: Test stub skips Marshalling when ExecuteSynchronousTask times out
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, ExecuteSynchronousTaskTest007, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto blockDone = std::make_shared<std::promise<void>>();
+    auto blockFuture = blockDone->get_future();
+    mainThread_->handler_->PostTask([blockDone]() {
+        blockDone->set_value();
+        usleep(200000);
+    });
+    blockFuture.wait();
+
+    pid_t callingPid = connectionStub_->GetCallingPid();
+    NodeId nodeId = MakeNodeId(callingPid, 1);
+    auto task = std::make_shared<RSNodeGetShowingPropertyAndCancelAnimation>(nodeId, nullptr, 1);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    ASSERT_TRUE(task->Marshalling(data));
+
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::EXECUTE_SYNCHRONOUS_TASK);
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_NE(res, ERR_OK);
+    EXPECT_EQ(reply.GetDataSize(), 0);
+}
+
+/**
+ * @tc.name: ExecuteSynchronousTaskTest008
+ * @tc.desc: Test ExecuteSynchronousTask returns ERR_INVALID_VALUE when task is null
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, ExecuteSynchronousTaskTest008, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto ret = connectionStub_->ExecuteSynchronousTask(nullptr);
+    EXPECT_NE(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: ExecuteSynchronousTaskTest009
+ * @tc.desc: Test stub calls Marshalling and returns ERR_OK when task completes successfully
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, ExecuteSynchronousTaskTest009, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    pid_t callingPid = connectionStub_->GetCallingPid();
+    NodeId nodeId = MakeNodeId(callingPid, 1);
+    constexpr uint64_t timeoutNS = 1000000000; // 1s
+    auto task = std::make_shared<RSNodeGetShowingPropertyAndCancelAnimation>(nodeId, nullptr, timeoutNS);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    ASSERT_TRUE(task->Marshalling(data));
+
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::EXECUTE_SYNCHRONOUS_TASK);
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(res, ERR_OK);
+    EXPECT_GT(reply.GetDataSize(), 0);
+}
+
+/**
+ * @tc.name: ExecuteSynchronousTaskTest010
+ * @tc.desc: Test stub sets ERR_INVALID_STATE when task completes but Marshalling fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, ExecuteSynchronousTaskTest010, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    constexpr size_t parcelMaxCapacity = 204800; // Parcel DEFAULT_CPACITY
+    std::vector<uint8_t> filler(parcelMaxCapacity, 0);
+    MessageParcel reply;
+    ASSERT_TRUE(reply.WriteBuffer(filler.data(), filler.size()));
+
+    pid_t callingPid = connectionStub_->GetCallingPid();
+    NodeId nodeId = MakeNodeId(callingPid, 1);
+    constexpr uint64_t timeoutNS = 1000000000; // 1s
+    auto task = std::make_shared<RSNodeGetShowingPropertyAndCancelAnimation>(nodeId, nullptr, timeoutNS);
+    MessageParcel data;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    ASSERT_TRUE(task->Marshalling(data));
+
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::EXECUTE_SYNCHRONOUS_TASK);
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(res, ERR_INVALID_STATE);
+}
+
+/**
  * @tc.name: ReportJankStats_NullPipeline
  * @tc.desc: Test ReportJankStats with null rsRenderPipeline_
  * @tc.type: FUNC
@@ -3832,37 +4011,10 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureBlackListOverLimi
     data.WriteRemoteObject(callback->AsObject());
 
     RSSurfaceCaptureConfig captureConfig;
-    data.WriteFloat(captureConfig.scaleX);
-    data.WriteFloat(captureConfig.scaleY);
-    data.WriteBool(captureConfig.useDma);
-    data.WriteBool(captureConfig.useCurWindow);
-    data.WriteUint8(static_cast<uint8_t>(captureConfig.captureType));
-    data.WriteBool(captureConfig.isSync);
-    data.WriteBool(captureConfig.isHdrCapture);
-    data.WriteUint32(static_cast<uint32_t>(captureConfig.displayIntent));
-    data.WriteBool(captureConfig.needF16WindowCaptureForScRGB);
-    data.WriteBool(captureConfig.needErrorCode);
-    data.WriteFloat(captureConfig.mainScreenRect.left_);
-    data.WriteFloat(captureConfig.mainScreenRect.top_);
-    data.WriteFloat(captureConfig.mainScreenRect.right_);
-    data.WriteFloat(captureConfig.mainScreenRect.bottom_);
-    data.WriteUint64(captureConfig.uiCaptureInRangeParam.endNodeId);
-    data.WriteBool(captureConfig.uiCaptureInRangeParam.useBeginNodeSize);
-    data.WriteFloat(captureConfig.specifiedAreaRect.left_);
-    data.WriteFloat(captureConfig.specifiedAreaRect.top_);
-    data.WriteFloat(captureConfig.specifiedAreaRect.right_);
-    data.WriteFloat(captureConfig.specifiedAreaRect.bottom_);
     // one over the cap; MAX_CAPTURE_BLACK_LIST_SIZE == 1024 in the stub under test
     constexpr size_t OVERSIZED_BLACK_LIST_SIZE = 1025;
-    std::vector<uint64_t> overLimitBlackList(OVERSIZED_BLACK_LIST_SIZE, 0);
-    data.WriteUInt64Vector(overLimitBlackList);
-    data.WriteUint32(captureConfig.backGroundColor);
-    data.WriteUint32(captureConfig.colorSpace.first);
-    data.WriteBool(captureConfig.colorSpace.second);
-    data.WriteUint32(captureConfig.dynamicRangeMode.first);
-    data.WriteBool(captureConfig.dynamicRangeMode.second);
-    data.WriteBool(captureConfig.isSyncRender);
-    data.WriteBool(captureConfig.windowSync);
+    captureConfig.blackList.assign(OVERSIZED_BLACK_LIST_SIZE, 0);
+    g_WriteSurfaceCaptureConfigMock(captureConfig, data);
 
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     EXPECT_EQ(res, ERR_INVALID_DATA);
@@ -5394,22 +5546,6 @@ HWTEST_F(RSClientToRenderConnectionStubTest, SetLogicalCameraRotationCorrectionT
 }
 
 /**
- * @tc.name: GetBundleNameTest001
- * @tc.desc: GetBundleName
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSClientToRenderConnectionStubTest, GetBundleNameTest001, TestSize.Level1)
-{
-    constexpr pid_t testPid = 1234;
-    const std::string expectedBundleName = "com.example.app";
-    connectionStub_->renderPipelineAgent_->pidToBundleName_[testPid] = expectedBundleName;
-
-    std::string actualBundleName = connectionStub_->GetBundleName(testPid);
-    EXPECT_EQ(actualBundleName, expectedBundleName);
-}
-
-/**
  * @tc.name: GetBundleNameTest002
  * @tc.desc: GetBundleName
  * @tc.type: FUNC
@@ -5523,5 +5659,217 @@ HWTEST_F(RSClientToRenderConnectionStubTest, UpdateFrameStabilityDetectionTest00
     EXPECT_EQ(res, ERR_INVALID_REPLY);
 }
 
+/**
+ * @tc.name: SetSurfaceWatermarkBranchCoverage001
+ * @tc.desc: Test SET_SURFACE_WATERMARK with isSystemCalling=true (Branch 0: !isSystemCalling=false)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, SetSurfaceWatermarkBranchCoverage001, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::string name = "watermark";
+    int width = 10;
+    int height = 10;
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    std::shared_ptr<Media::PixelMap> pixelmap = Media::PixelMap::Create(opts);
+    std::vector<NodeId> nodeList;
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SURFACE_WATERMARK);
+
+    // system calling (isSystemCalling=true), !isSystemCalling=false -> Branch 0
+    MockAccessTokenKit::MockTokenType(true);
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    data.WriteInt32(getpid());
+    data.WriteString(name);
+    data.WriteBool(true);
+    data.WriteParcelable(pixelmap.get());
+    data.WriteUInt64Vector(nodeList);
+    data.WriteUint8(static_cast<uint8_t>(0));
+    data.WriteUint32(2);
+    data.WriteUint32(3);
+    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_NONE);
+    MockAccessTokenKit::MockTokenType(true);
+}
+
+/**
+ * @tc.name: SetSurfaceWatermarkBranchCoverage002
+ * @tc.desc: Test SET_SURFACE_WATERMARK with isSystemCalling=false and callingPid!=pid (Branch 2)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, SetSurfaceWatermarkBranchCoverage002, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::string name = "watermark";
+    int width = 10;
+    int height = 10;
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    std::shared_ptr<Media::PixelMap> pixelmap = Media::PixelMap::Create(opts);
+    std::vector<NodeId> nodeList;
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SURFACE_WATERMARK);
+
+    // non-system calling, pid=999999 guarantees callingPid != pid -> Branch 2
+    // MockTokenTypeWithSkip(false, 1): first GetTokenTypeFlag (security check) returns TOKEN_NATIVE,
+    // subsequent calls (IsSystemCalling in SetSurfaceWatermark) return TOKEN_INVALID
+    MockAccessTokenKit::MockTokenTypeWithSkip(false, 1);
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    constexpr int32_t mismatchPid = 999999;
+    data.WriteInt32(mismatchPid);
+    data.WriteString(name);
+    data.WriteBool(true);
+    data.WriteParcelable(pixelmap.get());
+    data.WriteUInt64Vector(nodeList);
+    data.WriteUint8(static_cast<uint8_t>(0));
+    data.WriteUint32(2);
+    data.WriteUint32(3);
+    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_NONE);
+    MockAccessTokenKit::MockTokenType(true);
+}
+
+/**
+ * @tc.name: ClearSurfaceWatermarkForNodesBranchCoverage001
+ * @tc.desc: Test CLEAR_SURFACE_WATERMARK_FOR_NODES with isSystemCalling=true (Branch 0)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, ClearSurfaceWatermarkForNodesBranchCoverage001, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAR_SURFACE_WATERMARK_FOR_NODES);
+
+    // system calling (isSystemCalling=true), !isSystemCalling=false -> Branch 0
+    MockAccessTokenKit::MockTokenType(true);
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    data.WriteInt32(getpid());
+    data.WriteString("testWatermark");
+    std::vector<NodeId> nodeList = {10001, 10002};
+    data.WriteUInt64Vector(nodeList);
+    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_NONE);
+    MockAccessTokenKit::MockTokenType(true);
+}
+
+/**
+ * @tc.name: ClearSurfaceWatermarkForNodesBranchCoverage002
+ * @tc.desc: Test CLEAR_SURFACE_WATERMARK_FOR_NODES with isSystemCalling=false and callingPid!=pid (Branch 2)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, ClearSurfaceWatermarkForNodesBranchCoverage002, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAR_SURFACE_WATERMARK_FOR_NODES);
+
+    // non-system calling, pid=999999 guarantees callingPid != pid -> Branch 2
+    // MockTokenTypeWithSkip(false, 1): first GetTokenTypeFlag (security check) returns TOKEN_NATIVE,
+    // subsequent calls (IsSystemCalling in ClearSurfaceWatermarkForNodes) return TOKEN_INVALID
+    MockAccessTokenKit::MockTokenTypeWithSkip(false, 1);
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    constexpr int32_t mismatchPid = 999999;
+    data.WriteInt32(mismatchPid);
+    data.WriteString("testWatermark");
+    std::vector<NodeId> nodeList = {10001, 10002};
+    data.WriteUInt64Vector(nodeList);
+    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_NONE);
+    MockAccessTokenKit::MockTokenType(true);
+}
+
+/**
+ * @tc.name: CleanDelegateModeBufferCmdTest001
+ * @tc.desc: Test CLEAN_DELEGATE_BUFFER_CMD with parcel read fail and pid mismatch
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, CleanDelegateModeBufferCmdTest001, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAN_DELEGATE_BUFFER_CMD);
+
+    // case 1: no node id in parcel, ReadUint64 fails
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(res, IPC_STUB_INVALID_DATA_ERR);
+
+    // case 2: node id not owned by remote pid (remotePid_ = 0, node pid = 1)
+    MessageParcel data2;
+    data2.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    NodeId foreignNodeId = (static_cast<NodeId>(1) << 32) | 1;
+    data2.WriteUint64(foreignNodeId);
+    res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
+    ASSERT_EQ(res, IPC_STUB_INVALID_DATA_ERR);
+    EXPECT_FALSE(connectionStub_->CleanDelegateModeBufferCmd(foreignNodeId));
+}
+
+/**
+ * @tc.name: CleanDelegateModeBufferCmdTest002
+ * @tc.desc: Test CLEAN_DELEGATE_BUFFER_CMD with null pipeline agent
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, CleanDelegateModeBufferCmdTest002, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAN_DELEGATE_BUFFER_CMD);
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    NodeId nodeId = 10086;
+    data.WriteUint64(nodeId);
+
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(res, IPC_STUB_INVALID_DATA_ERR);
+    EXPECT_FALSE(connectionStub_->CleanDelegateModeBufferCmd(nodeId));
+}
+
+/**
+ * @tc.name: CleanDelegateModeBufferCmdTest003
+ * @tc.desc: Test CLEAN_DELEGATE_BUFFER_CMD with node id owned by the remote pid
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, CleanDelegateModeBufferCmdTest003, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAN_DELEGATE_BUFFER_CMD);
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    // remotePid_ = 0, node id keeps pid 0 in high 32 bits
+    NodeId nodeId = 10087;
+    data.WriteUint64(nodeId);
+
+    ASSERT_NE(connectionStub_->renderPipelineAgent_, nullptr);
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+#ifdef RS_ENABLE_DELEGATE_COMPOSITE
+    // agent posts main thread task and returns true even if node is missing
+    ASSERT_EQ(res, ERR_NONE);
+    EXPECT_TRUE(connectionStub_->CleanDelegateModeBufferCmd(nodeId));
+#else
+    // feature disabled: agent always returns false
+    ASSERT_EQ(res, IPC_STUB_INVALID_DATA_ERR);
+    EXPECT_FALSE(connectionStub_->CleanDelegateModeBufferCmd(nodeId));
+#endif
+}
 } // namespace OHOS::Rosen
 #endif

@@ -47,7 +47,6 @@ void GetExtraTextStyleAttributes(const skt::TextStyle& skStyle, TextStyle& textS
     textStyle.lineHeightStyle = static_cast<OHOS::Rosen::LineHeightStyle>(skStyle.getLineHeightStyle());
     textStyle.fontEdging = skStyle.getFontEdging();
     textStyle.isFakeBoldEnabled = skStyle.isFakeBoldEnabled();
-    textStyle.fontTypefaces = skStyle.getFontTypefaces();
     const auto& fontArgs = skStyle.getFontArguments();
     if (fontArgs.has_value()) {
         const std::vector<uint32_t>& nListIndex = fontArgs->getNormalizationListIndex();
@@ -58,6 +57,7 @@ void GetExtraTextStyleAttributes(const skt::TextStyle& skStyle, TextStyle& textS
             textStyle.fontVariations.SetAxisValue(SkFourByteTagToString(coord.axis), coord.value, isNormalization);
         }
     }
+    textStyle.fontTypefaces = skStyle.getFontTypefaces();
 }
 
 TextStyle SkStyleToSPTextStyle(const skia::textlayout::TextStyle& skStyle,
@@ -90,7 +90,8 @@ TextStyle SkStyleToSPTextStyle(const skia::textlayout::TextStyle& skStyle,
     txt.locale = skStyle.getLocale().c_str();
     txt.backgroundRect = { skStyle.getBackgroundRect().color, skStyle.getBackgroundRect().leftTopRadius,
         skStyle.getBackgroundRect().rightTopRadius, skStyle.getBackgroundRect().rightBottomRadius,
-        skStyle.getBackgroundRect().leftBottomRadius };
+        skStyle.getBackgroundRect().leftBottomRadius, skStyle.getBackgroundRect().borderColor,
+        skStyle.getBackgroundRect().borderWidth };
     if (skStyle.hasBackground()) {
         PaintID backgroundId = std::get<PaintID>(skStyle.getBackgroundPaintOrID());
         if ((0 <= backgroundId) && (backgroundId < static_cast<int>(paints.size()))) {

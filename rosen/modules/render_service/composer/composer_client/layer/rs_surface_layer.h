@@ -159,6 +159,7 @@ public:
     void SetBufferOwnerCount(const std::shared_ptr<RSSurfaceHandler::BufferOwnerCount>& bufferOwnerCount,
         bool needUpdate) override;
     std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> PopBufferOwnerCountById(uint64_t bufferId) override;
+    bool HasBufferOwnerCountById(uint64_t bufferId) const override;
     std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> GetBufferOwnerCount() const override;
     void SetSolidColorLayerProperty(GraphicSolidColorLayerProperty solidColorLayerProperty) override;
     GraphicSolidColorLayerProperty GetSolidColorLayerProperty() const override;
@@ -185,8 +186,8 @@ public:
     void SetSplitLayerTag(bool splitLayerTag) override;
     bool GetSplitLayerTag() const override;
 
-    void SetDelegateModeCropRect(const GraphicIRect& crop) override;
-    GraphicIRect GetDelegateModeCropRect() override;
+    void SetDelegateSrcRect(const GraphicIRect& crop) override;
+    GraphicIRect GetDelegateSrcRect() override;
     void SetAlphaType(GraphicAlphaType alphaType) override;
     GraphicAlphaType GetAlphaType() const override;
 
@@ -210,7 +211,7 @@ private:
     std::vector<GraphicIRect> visibleRegions_;
     std::vector<GraphicIRect> dirtyRegions_;
     GraphicIRect cropRect_ = {0};
-    GraphicIRect delegateModeCropRect_ = {0};
+    GraphicIRect delegateSrcRect_ = {0};
     GraphicMatrix matrix_ = {0.0}; // matrix used for uni render redraw
     int32_t gravity_ = 0; // used for uni render redraw
     bool isUniRender_ = false; // true for uni render layer (DisplayNode)

@@ -46,7 +46,10 @@
 
 ### 虚拟屏幕管理
 
-- **创建**：`CreateVirtualScreen` → `CreateAndRegisterVirtualScreen`，支持多 Surface 配置
+- **创建**：`CreateVirtualScreen`（`RSVirtualScreenOption` 携带 `HDRMode`，`RSScreen` 构造时写入
+  `SetVirtualScreenHDRMode`，首帧即生效；`HDRMode::HDR_STATIC` 在多屏关 HDR 的产品
+  （`RSLuminanceControl::IsCloseHdrWhenMultiDisplaysOn`判断）上创建失败，
+  错误码 `HDR_NOT_SUPPORT`）→ `CreateAndRegisterVirtualScreen`，支持多 Surface 配置
 - **销毁**：`RemoveVirtualScreen`，回收 ID
 - **ID 管理**：`GenerateVirtualScreenId` / `freeVirtualScreenIds_`，复用已释放 ID
 - **多 Surface**：`AddVirtualScreenSurface` / `RemoveVirtualScreenSurface` 支持多 Surface 虚拟屏
@@ -210,9 +213,12 @@ struct SurfaceRegionConfig {
 
 ### 创建流程
 
-`CreateVirtualScreen` → `ValidateVirtualScreenLimits` → 构建 `SurfaceRegionConfig` →
-`CreateAndRegisterVirtualScreen` → `GenerateVirtualScreenId` → `new RSScreen(configs)` →
-注册到 `screens_` → `NotifyVirtualScreenConnected` → 返回新 ID。
+`CreateVirtualScreen(RSVirtualScreenOption)` → `ValidateVirtualScreenLimits` →
+HDR_STATIC 多屏关 HDR 检查（`RSLuminanceControl::IsCloseHdrWhenMultiDisplaysOn`，命中返回
+`HDR_NOT_SUPPORT`）→ 构建 `SurfaceRegionConfig` →
+`CreateAndRegisterVirtualScreen` → `GenerateVirtualScreenId` → `new RSScreen(configs)`（构造时
+`SetVirtualScreenHDRMode(configs.mode)`）→ 注册到 `screens_` → `NotifyVirtualScreenConnected` →
+返回新 ID。
 
 ## ScreenConstraintType
 
@@ -314,6 +320,7 @@ else
 
 3. 类型黑名单（typeBlackList）
    └─ 按节点类型（uint8_t）过滤，仅影响特定虚拟屏
+   └─ RSScreenManager::SetVirtualScreenTypeBlackList 仅保留 CURSOR_NODE，其它类型静默丢弃（RS_LOGW），返回码契约不变
 
 4. 白名单（whiteList）
    └─ 明确允许在特定虚拟屏上渲染的节点，按 NodeId

@@ -105,6 +105,7 @@ public:
             case RSNGEffectType::SDF_PIXELMAP_SHAPE: return "SDFPixelmapShape";
             case RSNGEffectType::SDF_TRANSFORM_SHAPE: return "SDFTransformShape";
             case RSNGEffectType::SDF_EMPTY_SHAPE: return "SDFEmptyShape";
+            case RSNGEffectType::SDF_UBER_SHAPE: return "SdfUber";
             case RSNGEffectType::SDF_DISTORT_OP_SHAPE: return "SDFDistortOpShape";
             case RSNGEffectType::SDF_SUB_OP_SHAPE: return "SDFSubOpShape";
             case RSNGEffectType::SDF_SMOOTH_SUB_OP_SHAPE: return "SDFSmoothSubOpShape";
@@ -135,6 +136,15 @@ public:
             case RSNGEffectType::FRACTAL_GLASS_MASK: return "FractalGlassMask";
             case RSNGEffectType::BINOCULAR_MASK: return "BinocularMask";
             case RSNGEffectType::SWEEP_REFRACTION_MASK: return "SweepRefractionMask";
+            case RSNGEffectType::GLASS_EFFECT: return "GlassEffect";
+            case RSNGEffectType::ATLAS_FRAME_MASK: return "AtlasFrameMask";
+            case RSNGEffectType::DISTORT_LIGHT: return "DistortLight";
+            case RSNGEffectType::POINT_LIGHT: return "PointLight";
+            case RSNGEffectType::COSMOS_RING: return "CosmosRing";
+            case RSNGEffectType::COSMOS_RING_SHADOW: return "CosmosRingShadow";
+            case RSNGEffectType::BINARIZATION: return "Binarization";
+            case RSNGEffectType::LIGHT_UP_EFFECT: return "LightUpEffect";
+            case RSNGEffectType::DYNAMIC_DIM: return "DynamicDim";
             default: return "UNKNOWN";
         }
     }
@@ -195,6 +205,9 @@ private:
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
         const std::string& desc, std::shared_ptr<RSPath> value);
 
+    static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+        const std::string& desc, const AtlasInfo& value);
+
     static void CalculatePropTagHashImpl(uint32_t& hash, int value);
 
     static void CalculatePropTagHashImpl(uint32_t& hash, float value);
@@ -229,6 +242,8 @@ private:
 
     static void CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<RSPath> value);
 
+    static void CalculatePropTagHashImpl(uint32_t& hash, const AtlasInfo& value);
+
 #ifdef USE_M133_SKIA
     static constexpr auto hashFunc_ = SkChecksum::Hash32;
 #else
@@ -262,6 +277,11 @@ public:
             current = current->nextEffect_.get();
         }
         return false;
+    }
+
+    std::shared_ptr<Derived> GetNext() const
+    {
+        return nextEffect_;
     }
 
 protected:

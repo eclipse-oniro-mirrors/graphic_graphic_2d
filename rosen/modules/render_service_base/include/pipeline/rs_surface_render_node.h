@@ -35,6 +35,7 @@
 #include "ipc_callbacks/buffer_clear_callback.h"
 #include "ipc_callbacks/surface_capture_callback.h"
 #include "memory/rs_memory_track.h"
+#include "params/rs_surface_render_params.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_buffer_interface.h"
@@ -64,6 +65,7 @@ class RSCommand;
 class RSDirtyRegionManager;
 class RSOcclusionHandler;
 class RSSurfaceHandler;
+class RSTunnelRuntimeState;
 
 // Used for control-level occlusion culling scene info and culled nodes transmission.
 // Maintained by the Dirty Regions feature team.
@@ -178,6 +180,16 @@ public:
     bool IsRosenWeb() const
     {
         return GetName().find("RosenWeb") != std::string::npos;
+    }
+
+    bool IsDelegateChild() const
+    {
+        return GetName() == "delegate_child";
+    }
+
+    bool IsBufferReclaimNode()
+    {
+        return IsRosenWeb() || (GetDelegateMode() && IsDelegateChild());
     }
 
     bool IsSubHighPriorityType() const
@@ -301,6 +313,22 @@ public:
         dynamicHardwareEnable_ = dynamicHardwareEnable;
     }
 
+    void SetSolidLayerEnabled(bool isEnabled)
+    {
+        isSolidLayerEnabled_ = isEnabled;
+    }
+
+    bool GetSolidLayerEnabled() const
+    {
+        return isSolidLayerEnabled_;
+    }
+
+#ifndef ROSEN_CROSS_PLATFORM
+    // Calculate src/dst rects for SolidLayer: src uses bounds size, dst uses absRect (absolute position)
+    void CalcSolidLayerRects(GraphicIRect& src, GraphicIRect& dst) const;
+    void UpdateSolidLayerRects(RSLayerInfo& layer, const sptr<SurfaceBuffer>& buffer);
+#endif
+
     void SetForceHardwareAndFixRotation(bool flag);
     bool GetFixRotationByUser() const
     {
@@ -342,8 +370,11 @@ public:
     {
         return hasSubNodeShouldPaint_;
     }
-
 #ifndef ROSEN_CROSS_PLATFORM
+    void UpdateTunnelBufferInfo(const sptr<SurfaceBuffer>& buffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect,
+        const sptr<SyncFence>& acquireFence, const sptr<SurfaceBuffer>& preBuffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount);
     void UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer,
         std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect,
         const sptr<SyncFence>& acquireFence, const sptr<SurfaceBuffer>& preBuffer,
@@ -592,6 +623,8 @@ public:
     {
         return bundleName_;
     }
+
+    void SetBundleName(const std::string& bundleName);
 
     void SetOffSetX(int32_t offset)
     {
@@ -880,6 +913,18 @@ public:
     RSSurfaceRenderNode* AsRSSurfaceRenderNode() override { return this; }
     // Set the buffer srcRect of the anco node. Only used on anco nodes.
     void SetAncoSrcCrop(const Rect& srcCrop);
+
+    // Tunnel runtime state lives on the node (lazy-created). Callers obtain a shared_ptr via
+    // GetTunnelRuntimeState() and invoke RSTunnelRuntimeState methods directly; node does not
+    // re-wrap the state API. TryGetTunnelRuntimeState() returns null for non-tunnel surfaces.
+    //
+    // Usage constraint: GetTunnelRuntimeState() lazy-creates the state and is the sole write
+    // entrypoint — only RSRenderServiceListener::OnTunnelLayerInfoChanged may call it to attach
+    // tunnel state to a node that did not have one. All other call sites (read or write-after-
+    // creation) MUST use TryGetTunnelRuntimeState() and early-return on nullptr, so non-tunnel
+    // nodes never get a state object allocated spuriously.
+    std::shared_ptr<RSTunnelRuntimeState> GetTunnelRuntimeState();
+    std::shared_ptr<RSTunnelRuntimeState> TryGetTunnelRuntimeState() const;
 
     bool OnBufferAvailable() override;
     void OnTunnelHandleChange() override;
@@ -1467,14 +1512,6 @@ public:
         return isFilterCacheStatusChanged_;
     }
 
-    void ResetFilterNodes()
-    {
-        filterNodes_.clear();
-    }
-    void UpdateFilterNodes(const std::shared_ptr<RSRenderNode>& nodePtr);
-    // update static node's back&front-ground filter cache status
-    void UpdateFilterCacheStatusWithVisible(bool visible);
-    void UpdateFilterCacheStatusIfNodeStatic(const RectI& clipRect, bool isRotationChanged);
     void UpdateDrawingCacheNodes(const std::shared_ptr<RSRenderNode>& nodePtr);
 
     void SetNotifyRTBufferAvailable(bool isNotifyRTBufferAvailable);
@@ -1578,6 +1615,10 @@ public:
 
     void SetUifirstChildrenDirtyRectParam(RectI rect);
 
+    void SetUifirstDisabledByAnimationOverlap(bool disabled);
+
+    bool GetUifirstDisabledByAnimationOverlap() const;
+
     void SetUifirstStartTime(int64_t startTime)
     {
         uifirstState_.uifirstStartTime = startTime;
@@ -1652,6 +1693,11 @@ public:
     {
         return needDrawFocusChange_;
     }
+
+    const bool& GetNodeAbsRectChanged() const { return nodeAbsRectChanged_; }
+    void SetNodeAbsRectChanged(const bool& nodeAbsRectChanged) { nodeAbsRectChanged_ = nodeAbsRectChanged; }
+    void SetLastFrameAbsDrawRect(const RectI& rectI) { lastFrameAbsDrawRect_ = rectI; }
+    const RectI& GetLastFrameAbsDrawRect() const { return lastFrameAbsDrawRect_; }
 
     bool HasWindowCorner()
     {
@@ -2052,10 +2098,10 @@ public:
     void SetHDRType(uint32_t hdrType);
     uint32_t GetHDRType() const;
 
-    void SetDelegateDstRect(float positionX, float positionY, float positionZ, float positionW);
-    Vector4f GetDelegateDstRect();
-    void SetDelegateSrcRect(float positionX, float positionY, float positionZ, float positionW);
-    Vector4f GetDelegateSrcRect();
+    void SetDelegateDstRect(const RectF& delegateDstRect);
+    RectF GetDelegateDstRect();
+    void SetDelegateSrcRect(const RectF& delegateSrcRect);
+    RectF GetDelegateSrcRect();
     void SetDelegateMode(bool isSetDelegateMode);
     bool IsDelegateModeNodeWithBuffer();
     bool GetDelegateMode() override;
@@ -2164,6 +2210,7 @@ private:
     bool isNodeDirty_ = true;
     // used for hardware enabled nodes
     bool isHardwareEnabledNode_ = false;
+    bool isSolidLayerEnabled_ = false;
     bool dynamicHardwareEnable_ = true;
     bool isFixRotationByUser_ = false;
     bool isInFixedRotation_ = false;
@@ -2196,6 +2243,8 @@ private:
     bool isParentScaling_ = false;
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
+    RectI lastFrameAbsDrawRect_; // last frame node's abs draw rects
+    bool nodeAbsRectChanged_ = false; // node's abs draw rects changed or not
 
     // mark if this self-drawing node do not consume buffer when gpu -> hwc
     bool hwcDelayDirtyFlag_ = false;
@@ -2316,6 +2365,10 @@ private:
     std::shared_ptr<RSDirtyRegionManager> dirtyManager_ = nullptr;
     std::shared_ptr<RSDirtyRegionManager> cacheSurfaceDirtyManager_ = nullptr;
     std::shared_ptr<RSSurfaceHandler> surfaceHandler_;
+    // Lazily-created tunnel runtime state owned by the node. Non-tunnel surfaces keep this null.
+    // Guarded by tunnelStateMutex_ for check-then-create atomicity in GetTunnelRuntimeState().
+    std::shared_ptr<RSTunnelRuntimeState> tunnelRuntimeState_;
+    mutable std::mutex tunnelStateMutex_;
 #ifdef USE_SURFACE_TEXTURE
     std::shared_ptr<RSSurfaceTexture> surfaceTexture_ {};
     std::function<std::shared_ptr<Media::PixelMap>()> surfaceCaptureCallback_ = nullptr;
@@ -2381,8 +2434,6 @@ private:
 
     Occlusion::Region containerRegion_;
     std::unordered_set<NodeId> abilityNodeIds_;
-    // valid filter nodes within, including itself
-    std::vector<std::shared_ptr<RSRenderNode>> filterNodes_;
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> drawingCacheNodes_;
     int32_t appWindowZOrder_ = 0;
 

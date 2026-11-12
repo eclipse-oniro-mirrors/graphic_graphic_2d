@@ -46,7 +46,6 @@
 #include "feature/pointer_window_manager/rs_pointer_window_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "feature/round_corner_display/rs_rcd_render_manager.h"
-#include "feature/round_corner_display/rs_message_bus.h"
 #ifdef RS_ENABLE_TV_SHUTTER_3D
 #include "feature/video_3d/rs_tv_shutter_3d_manager.h"
 #endif
@@ -77,7 +76,7 @@
 #include "rs_frame_report.h"
 #include "platform/common/rs_log.h"
 #include "platform/ohos/rs_jank_stats_helper.h"
-#include "render/rs_filter_cache_memory_controller.h"
+#include "feature/filter_cache_manager/rs_filter_cache_memory_controller.h"
 #include "render/rs_pixel_map_util.h"
 // dfx
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
@@ -358,7 +357,7 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
     RS_TRACE_NAME("ScreenNode skip");
     GpuDirtyRegionCollection::GetInstance().AddSkipProcessFramesNumberForDFX(RSBaseRenderUtil::GetLastSendingPid());
 #ifdef OHOS_PLATFORM
-    RSJankStatsRenderFrameHelper::GetInstance().SetSkipJankAnimatorFrame(true);
+    RSJankStatsRenderFrameHelper::GetInstance().SetSkipJankAnimatorFrame(params.GetScreenId(), true);
 #endif
     bool hasHardCursor = RSPointerWindowManager::Instance().GetHardCursorDrawable(GetId()) != nullptr;
     bool hardCursorNeedCommit = RSPointerWindowManager::Instance().GetHardCursorNeedCommit(GetId());
@@ -394,6 +393,13 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
         if (drawable->GetRenderParams()->GetHardwareEnabled()) {
             auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(drawable);
             auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
+            // SolidLayerEnabled node without buffer: create solid color layer directly, skip buffer logic
+            if (surfaceParams->GetSolidLayerEnabled() && surfaceParams->GetBuffer() == nullptr) {
+                RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: CheckScreenNodeSkip create solid color layer, "
+                    "name:%s id:%" PRIu64, surfaceDrawable->GetName().c_str(), surfaceDrawable->GetId());
+                processor->CreateSolidColorLayerDirectForRenderThread(*surfaceDrawable);
+                continue;
+            }
             // record surface current frame refresh area to frame stability manager
             std::vector<RectI> tempRefreshRects;
             auto rect = surfaceParams->GetLayerInfo().dstRect;
@@ -832,6 +838,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     params->GetLayerSkipContext().Reset();
     SetScreenNodeSkipFlag(*uniParam, false);
     RSMainThread::Instance()->SetFrameIsRender(true);
+#ifdef OHOS_PLATFORM
+    RSJankStatsRenderFrameHelper::GetInstance().SetSkipJankAnimatorFrame(params->GetScreenId(), false);
+#endif
 
     const auto& screenProperty = params->GetScreenProperty();
     auto screenInfo = screenProperty.GetScreenInfo();
@@ -944,6 +953,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     curCanvas_->SetDrawnRegion(params->GetDrawnRegion());
     curCanvas_->SetTargetColorGamut(params->GetNewColorSpace());
     curCanvas_->SetScreenId(curDisplayScreenId_);
+    curCanvas_->SetSkipColorSpaceConversion(params->GetScreenProperty().GetSkipColorSpaceConversion());
     curCanvas_->SetHdrOn(isHdrOn);
     curCanvas_->SetDisableFilterCache(params->GetZoomed());
     if (uniParam->IsPartialRenderEnabled() && (!uniParam->IsRegionDebugEnabled())) {
@@ -1114,6 +1124,13 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
         if (drawable->GetRenderParams()->GetHardwareEnabled()) {
             auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
+            // SolidLayerEnabled node without buffer: create solid color layer directly, skip buffer logic
+            if (surfaceParams->GetSolidLayerEnabled() && surfaceParams->GetBuffer() == nullptr) {
+                RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: CommitLayer create solid color layer, "
+                    "name:%s id:%" PRIu64, surfaceDrawable->GetName().c_str(), surfaceDrawable->GetId());
+                processor->CreateSolidColorLayerDirectForRenderThread(*surfaceDrawable);
+                continue;
+            }
             // hpae_offline: wait task and create layer
             if (surfaceParams->GetLayerInfo().useDeviceOffline &&
                 ProcessOfflineSurfaceDrawable(processor, surfaceDrawable, true)) {

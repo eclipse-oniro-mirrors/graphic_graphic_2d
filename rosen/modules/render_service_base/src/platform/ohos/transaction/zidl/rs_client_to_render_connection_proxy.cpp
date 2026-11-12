@@ -44,42 +44,12 @@ static constexpr int MAX_VOTER_SIZE = 100; // SetWindowExpectedRefreshRate map s
 static constexpr int ZERO = 0; // empty map size
 constexpr uint32_t MAX_DROP_FRAME_PID_LIST_SIZE = 1024;
 
-// Synchronous interfaces whose reply carries binder objects / fds / ashmem (e.g. Surface,
-// PixelMap) must stay on the direct path: such replies cannot be cloned back safely by the
-// timeout executor. Calls carrying binder objects/fds in the input parcel are filtered at
-// runtime via GetOffsetsSize() in the SendRequest wrapper.
-// EXECUTE_SYNCHRONOUS_TASK is deliberately not listed: current RSSyncTask subclasses reply
-// with plain data only, and the call is a prime beneficiary of timeout protection (it waits
-// on the RS main thread). If a future sync task ever replies with objects, the executor's
-// reply offsets guard fails safe with UNKNOWN_ERROR instead of corrupting the caller.
-bool IsReplyNotClonable(uint32_t code)
+// Only GET_SCREEN_HDR_STATUS is routed through ExecuteSyncWithTimeout; all other synchronous
+// IPCs use the direct in-thread SendRequest without timeout protection.
+bool ShouldUseTimeoutProtection(uint32_t code)
 {
-    switch (static_cast<RSIClientToRenderConnectionInterfaceCode>(code)) {
-        case RSIClientToRenderConnectionInterfaceCode::CREATE_NODE_AND_SURFACE:
-#ifdef RS_MODIFIERS_DRAW_ENABLE
-        case RSIClientToRenderConnectionInterfaceCode::CREATE_CANVAS_DRAWING_NODE_SURFACE:
-#endif
-        case RSIClientToRenderConnectionInterfaceCode::GET_BITMAP:
-        case RSIClientToRenderConnectionInterfaceCode::GET_PIXELMAP:
-        case RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_SOLO:
-            return true;
-        default:
-            return false;
-    }
-}
-
-// Synchronous interfaces exempt from timeout protection.
-// Direct in-thread send restores the pre-offload behavior for these calls.
-bool IsTimeoutProtectionExempt(uint32_t code)
-{
-    switch (static_cast<RSIClientToRenderConnectionInterfaceCode>(code)) {
-#if defined(RS_ENABLE_VK)
-        case RSIClientToRenderConnectionInterfaceCode::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER:
-            return true;
-#endif
-        default:
-            return false;
-    }
+    return static_cast<RSIClientToRenderConnectionInterfaceCode>(code) ==
+        RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_HDR_STATUS;
 }
 }
 
@@ -94,18 +64,13 @@ int32_t RSClientToRenderConnectionProxy::SendRequest(
     if (!Remote()) {
         return static_cast<int32_t>(RSInterfaceErrorCode::NULLPTR_ERROR);
     }
-    // Async calls, calls with binder objects/fds in the input parcel, calls whose reply
-    // cannot be cloned, and timeout-exempt calls keep the direct in-thread SendRequest
-    // without timeout protection.
-    bool isAsync =
-        (static_cast<uint32_t>(option.GetFlags()) & static_cast<uint32_t>(MessageOption::TF_ASYNC)) != 0;
-    bool needDirectSend =
-        isAsync || data.GetOffsetsSize() > 0 || IsReplyNotClonable(code) || IsTimeoutProtectionExempt(code);
-    if (needDirectSend) {
-        return Remote()->SendRequest(code, data, reply, option);
+    // Only GET_SCREEN_HDR_STATUS is routed through ExecuteSyncWithTimeout; all other
+    // synchronous IPCs use the direct in-thread SendRequest without timeout protection.
+    if (ShouldUseTimeoutProtection(code)) {
+        return RSSIpcSyncExecutor::GetInstance().ExecuteSyncWithTimeout(
+            Remote(), code, data, reply, option, RSSystemProperties::GetIpcSyncTimeoutMs());
     }
-    return RSSIpcSyncExecutor::GetInstance().ExecuteSyncWithTimeout(
-        Remote(), code, data, reply, option, RSSystemProperties::GetIpcSyncTimeoutMs());
+    return Remote()->SendRequest(code, data, reply, option);
 }
 
 ErrCode RSClientToRenderConnectionProxy::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
@@ -168,6 +133,19 @@ ErrCode RSClientToRenderConnectionProxy::CommitTransaction(std::unique_ptr<RSTra
         } while (err != NO_ERROR);
     }
     return ERR_OK;
+}
+
+uint32_t RSClientToRenderConnectionProxy::GetTransactionDataIndex() const
+{
+    return transactionDataIndex_.load(std::memory_order_relaxed);
+}
+
+bool RSClientToRenderConnectionProxy::SeedTransactionDataIndex(uint32_t value)
+{
+    // only succeeds while the counter still holds the default value, otherwise the connection
+    // has already issued indices of its own and must not be renumbered
+    uint32_t expected = 0;
+    return transactionDataIndex_.compare_exchange_strong(expected, value, std::memory_order_relaxed);
 }
 
 bool RSClientToRenderConnectionProxy::FillParcelWithTransactionData(
@@ -642,6 +620,51 @@ ErrCode RSClientToRenderConnectionProxy::GetPixelmap(NodeId id, std::shared_ptr<
     return ERR_OK;
 }
 
+ErrCode RSClientToRenderConnectionProxy::BlurPixelMap(std::shared_ptr<Media::PixelMap> pixelMap,
+    float blurRadius, std::shared_ptr<Media::PixelMap>& blurredPixelMap, bool& success)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("BlurPixelMap: WriteInterfaceToken GetDescriptor err.");
+        success = false;
+        return ERR_INVALID_VALUE;
+    }
+    RSMarshallingHelper::MarshallingTransactionVer(data);
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!RSMarshallingHelper::Marshalling(data, pixelMap)) {
+        ROSEN_LOGE("BlurPixelMap: Marshalling pixelMap err.");
+        success = false;
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteFloat(blurRadius)) {
+        ROSEN_LOGE("BlurPixelMap: WriteFloat blurRadius err.");
+        success = false;
+        return ERR_INVALID_VALUE;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::BLUR_PIXEL_MAP);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("BlurPixelMap: SendRequest err=%{public}d", err);
+        success = false;
+        return ERR_INVALID_VALUE;
+    }
+    bool result{false};
+    if (!reply.ReadBool(result)) {
+        ROSEN_LOGE("BlurPixelMap: ReadBool result err.");
+        success = false;
+        return READ_PARCEL_ERR;
+    }
+    if (!result || !RSMarshallingHelper::Unmarshalling(reply, blurredPixelMap)) {
+        ROSEN_LOGE("BlurPixelMap: Unmarshalling blurredPixelMap err.");
+        success = false;
+        return ERR_INVALID_VALUE;
+    }
+    success = true;
+    return ERR_OK;
+}
+
 ErrCode RSClientToRenderConnectionProxy::SetSystemAnimatedScenes(
     SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation, bool& success)
 {
@@ -1105,7 +1128,8 @@ bool RSClientToRenderConnectionProxy::WriteSurfaceCaptureConfig(
         !data.WriteUint32(captureConfig.dynamicRangeMode.first) ||
         !data.WriteBool(captureConfig.dynamicRangeMode.second) ||
         !data.WriteBool(captureConfig.isSyncRender) ||
-        !data.WriteBool(captureConfig.windowSync)) {
+        !data.WriteBool(captureConfig.windowSync) ||
+        !data.WriteUint32(static_cast<uint32_t>(captureConfig.pixelFormat))) {
         ROSEN_LOGE("WriteSurfaceCaptureConfig: WriteSurfaceCaptureConfig captureConfig err.");
         return false;
     }
@@ -2348,5 +2372,28 @@ bool RSClientToRenderConnectionProxy::UnRegisterSurfaceNodeBufferReleaseListener
     return true;
 }
 
+bool RSClientToRenderConnectionProxy::CleanDelegateModeBufferCmd(NodeId id)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("DelegateModeDebugTag:CleanDelegateModeBufferCmd: WriteInterfaceToken GetDescriptor err.");
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("DelegateModeDebugTag:CleanDelegateModeBufferCmd: Write data err.");
+        return false;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAN_DELEGATE_BUFFER_CMD);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("DelegateModeDebugTag:CleanDelegateModeBufferCmd: Send Request err.");
+        return false;
+    }
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS

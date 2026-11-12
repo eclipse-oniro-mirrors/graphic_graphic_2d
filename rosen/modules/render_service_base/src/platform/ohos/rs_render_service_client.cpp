@@ -136,6 +136,17 @@ std::vector<MemoryGraphic> RSRenderServiceClient::GetMemoryGraphics()
     return memoryGraphics;
 }
 
+std::vector<MemoryGraphic> RSRenderServiceClient::GetMemoryGraphicsByRenderPid(int32_t renderPid)
+{
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        RS_LOGE("RSRenderServiceClient::GetMemoryGraphicsByRenderPid clientToService is nullptr");
+        return {};
+    }
+    std::vector<MemoryGraphic> memoryGraphics = clientToService->GetMemoryGraphicsByRenderPid(renderPid);
+    return memoryGraphics;
+}
+
 bool RSRenderServiceClient::GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -272,22 +283,17 @@ std::vector<ScreenId> RSRenderServiceClient::GetAllScreenIds()
     return clientToService->GetAllScreenIds();
 }
 
-ScreenId RSRenderServiceClient::CreateVirtualScreen(
-    const std::string &name,
-    uint32_t width,
-    uint32_t height,
-    sptr<Surface> surface,
-    ScreenId associatedScreenId,
-    int32_t flags,
-    std::vector<NodeId> whiteList)
+ScreenId RSRenderServiceClient::CreateVirtualScreen(const RSVirtualScreenOption& option, int32_t& errorCode)
 {
+    errorCode = StatusCode::SUCCESS;
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
     if (clientToService == nullptr) {
         RS_LOGE("RSRenderServiceClient::%{public}s clientToService is null!", __func__);
+        errorCode = StatusCode::RENDER_SERVICE_NULL;
         return INVALID_SCREEN_ID;
     }
 
-    return clientToService->CreateVirtualScreen(name, width, height, surface, associatedScreenId, flags, whiteList);
+    return clientToService->CreateVirtualScreen(option, errorCode);
 }
 
 int32_t RSRenderServiceClient::SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList)
@@ -307,7 +313,7 @@ int32_t RSRenderServiceClient::SetVirtualScreenTypeBlackList(ScreenId id, std::v
     if (clientToService == nullptr) {
         return RENDER_SERVICE_NULL;
     }
-    int32_t repCode;
+    int32_t repCode = SUCCESS;
     clientToService->SetVirtualScreenTypeBlackList(id, typeBlackListVector, repCode);
     return repCode;
 }
@@ -319,7 +325,7 @@ int32_t RSRenderServiceClient::AddVirtualScreenBlackList(ScreenId id, const std:
         RS_LOGE("RSRenderServiceClient::%{public}s clientToService is null!", __func__);
         return RENDER_SERVICE_NULL;
     }
-    int32_t repCode;
+    int32_t repCode = SUCCESS;
     clientToService->AddVirtualScreenBlackList(id, blackList, repCode);
     return repCode;
 }
@@ -331,7 +337,7 @@ int32_t RSRenderServiceClient::RemoveVirtualScreenBlackList(ScreenId id, const s
         RS_LOGE("RSRenderServiceClient::%{public}s clientToService is null!", __func__);
         return RENDER_SERVICE_NULL;
     }
-    int32_t repCode;
+    int32_t repCode = SUCCESS;
     clientToService->RemoveVirtualScreenBlackList(id, blackList, repCode);
     return repCode;
 }
@@ -343,7 +349,7 @@ int32_t RSRenderServiceClient::AddVirtualScreenWhiteList(ScreenId id, const std:
         RS_LOGE("RSRenderServiceClient::%{public}s clientToService is null!", __func__);
         return RENDER_SERVICE_NULL;
     }
-    int32_t repCode;
+    int32_t repCode = SUCCESS;
     clientToService->AddVirtualScreenWhiteList(id, whiteList, repCode);
     return repCode;
 }
@@ -355,7 +361,7 @@ int32_t RSRenderServiceClient::RemoveVirtualScreenWhiteList(ScreenId id, const s
         RS_LOGE("RSRenderServiceClient::%{public}s clientToService is null!", __func__);
         return RENDER_SERVICE_NULL;
     }
-    int32_t repCode;
+    int32_t repCode = SUCCESS;
     clientToService->RemoveVirtualScreenWhiteList(id, whiteList, repCode);
     return repCode;
 }
@@ -654,6 +660,17 @@ void RSRenderServiceClient::SyncFrameRateRange(FrameRateLinkerId id,
     }
 
     return clientToService->SyncFrameRateRange(id, range, animatorExpectedFrameRate);
+}
+
+void RSRenderServiceClient::SetThermalFrameRateLimit(uint32_t frameRate)
+{
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        ROSEN_LOGW("RSRenderServiceClient clientToService == nullptr!");
+        return;
+    }
+ 
+    clientToService->SetThermalFrameRateLimit(frameRate);
 }
 
 void RSRenderServiceClient::UnregisterFrameRateLinker(FrameRateLinkerId id)
@@ -1048,6 +1065,24 @@ int32_t RSRenderServiceClient::SetScreenColorGamut(ScreenId id, int32_t modeIdx)
     return clientToService->SetScreenColorGamut(id, modeIdx);
 }
 
+int32_t RSRenderServiceClient::SetVirtualScreenHDRMode(ScreenId id, HDRMode mode)
+{
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return clientToService->SetVirtualScreenHDRMode(id, mode);
+}
+
+int32_t RSRenderServiceClient::GetVirtualScreenHDRMode(ScreenId id, HDRMode& mode)
+{
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return clientToService->GetVirtualScreenHDRMode(id, mode);
+}
+
 int32_t RSRenderServiceClient::SetScreenGamutMap(ScreenId id, ScreenGamutMap mode)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1064,6 +1099,16 @@ int32_t RSRenderServiceClient::SetScreenCorrection(ScreenId id, ScreenRotation s
         return RENDER_SERVICE_NULL;
     }
     return clientToService->SetScreenCorrection(id, screenRotation);
+}
+
+int32_t RSRenderServiceClient::SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param)
+{
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::SetPostProcessingShader: clientToService is nullptr");
+        return RENDER_SERVICE_NULL;
+    }
+    return clientToService->SetPostProcessingShader(id, param);
 }
 
 bool RSRenderServiceClient::SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation)
@@ -1345,6 +1390,15 @@ void RSRenderServiceClient::SetScreenFrameGravity(ScreenId id, int32_t gravity)
         return;
     }
     clientToService->SetScreenFrameGravity(id, gravity);
+}
+
+void RSRenderServiceClient::SetSkipColorSpaceConversion(ScreenId id, bool skipColorSpaceConversion)
+{
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        return;
+    }
+    clientToService->SetSkipColorSpaceConversion(id, skipColorSpaceConversion);
 }
 
 class CustomHgmConfigChangeCallback : public RSHgmConfigChangeCallbackStub

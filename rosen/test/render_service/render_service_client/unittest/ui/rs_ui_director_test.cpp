@@ -19,6 +19,7 @@
 #include "surface.h"
 
 #include "animation/rs_render_animation.h"
+#include "animation/rs_interactive_implict_animator.h"
 #include "modifier/rs_modifier_manager.h"
 #include "transaction/rs_interfaces.h"
 #include "pipeline/rs_node_map.h"
@@ -1781,6 +1782,45 @@ HWTEST_F(RSUIDirectorTest, ReleaseRenderNodeTest003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ExecuteGoDestroyCallsDestroyModifiersDrawTest
+ * @tc.desc: Test ExecuteGoDestroy calls DestroyModifiersDraw when skipDestroyUIContext_ is false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUIDirectorTest, ExecuteGoDestroyCallsDestroyModifiersDrawTest, TestSize.Level1)
+{
+    auto director = CreateRSUIDirector();
+    ASSERT_NE(director, nullptr);
+    ASSERT_NE(director->rsUIContext_, nullptr);
+    director->skipDestroyUIContext_ = false;
+    if (RSSystemProperties::GetHybridRenderCanvasEnabled()) {
+        ASSERT_NE(director->rsUIContext_->modifiersDrawAgent_, nullptr);
+    }
+    director->ExecuteGoDestroy(false);
+    ASSERT_EQ(director->rsUIContext_, nullptr);
+    ASSERT_NE(director, nullptr);
+}
+
+/**
+ * @tc.name: ExecuteGoDestroySkipDestroyUIContextTest
+ * @tc.desc: Test ExecuteGoDestroy skips DestroyModifiersDraw when skipDestroyUIContext_ is true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUIDirectorTest, ExecuteGoDestroySkipDestroyUIContextTest, TestSize.Level1)
+{
+    auto director = CreateRSUIDirector();
+    ASSERT_NE(director, nullptr);
+    ASSERT_NE(director->rsUIContext_, nullptr);
+    auto savedContext = director->rsUIContext_;
+    director->skipDestroyUIContext_ = true;
+    director->ExecuteGoDestroy(false);
+    ASSERT_EQ(director->rsUIContext_, nullptr);
+    if (RSSystemProperties::GetHybridRenderCanvasEnabled()) {
+        ASSERT_NE(savedContext->modifiersDrawAgent_, nullptr);
+    }
+    ASSERT_NE(director, nullptr);
+}
+
+/**
  * @tc.name: ReleaseRenderNodeAncoNodeSkipTest
  * @tc.desc: Test RSUIDirector::ReleaseRenderNode; covers branch:
  *   SURFACE_NODE with IS_ANCO_NODE flag -> skip release (state stays ACTIVE)
@@ -1854,6 +1894,46 @@ HWTEST_F(RSUIDirectorTest, RebuildNodeTreeTest003, TestSize.Level1)
     ctx->SetRebuildState(RebuildState::Rebuilding);
     director->RebuildNodeTree();
     EXPECT_EQ(ctx->GetRebuildState(), RebuildState::Normal);
+}
+
+/**
+ * @tc.name: ReleaseRenderNodeSkipGroupAnimationNode
+ * @tc.desc: Verify ReleaseRenderNode skips nodes that are in groupAnimNodeIds
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUIDirectorTest, ReleaseRenderNodeSkipGroupAnimationNode, TestSize.Level1)
+{
+    auto director = CreateRSUIDirector();
+    ASSERT_NE(director, nullptr);
+    sptr<IRemoteObject> emptyRemote;
+    director->rsUIContext_ = std::make_shared<RSUIContext>(1, emptyRemote);
+    director->skipDestroyUIContext_ = false;
+
+    // Create a canvas node and register it in the context's node map
+    auto canvasNode = RSCanvasNode::Create(false, false, director->GetRSUIContext());
+    ASSERT_NE(canvasNode, nullptr);
+    canvasNode->hasCreateRenderNodeInRS_ = true;
+    NodeId nodeId = canvasNode->GetId();
+
+    // Inject a group animator with infinite repeat + animation entry for this node
+    RSAnimationTimingProtocol timingProtocol;
+    timingProtocol.SetDuration(1000);
+    timingProtocol.SetRepeatCount(-1);
+    RSAnimationTimingCurve timingCurve;
+    auto animator = std::make_shared<RSInteractiveImplictAnimator>(
+        director->GetRSUIContext(), timingProtocol, timingCurve, true);
+    animator->animations_.emplace_back(std::weak_ptr<RSAnimation>(), nodeId);
+    director->GetRSUIContext()->AddInteractiveImplictAnimator(animator);
+
+    // Verify the node ID is in groupAnimNodeIds
+    auto groupAnimNodeIds = director->GetRSUIContext()->GetGroupAnimationNodeIds();
+    EXPECT_GT(groupAnimNodeIds.count(nodeId), static_cast<size_t>(0));
+
+    // ReleaseRenderNode should skip this node (groupAnimNodeIds contains its ID)
+    auto stateBefore = canvasNode->GetNodeState();
+    director->ReleaseRenderNode();
+    // Node should NOT be released: state unchanged
+    EXPECT_EQ(canvasNode->GetNodeState(), stateBefore);
 }
 
 } // namespace OHOS::Rosen

@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <limits>
 #include <numeric>
 #include <vector>
@@ -380,6 +381,7 @@ std::string RSNode::GetFrameNodeTag()
 void RSNode::AddKeyFrame(const std::shared_ptr<RSUIContext> rsUIContext, float fraction,
     const RSAnimationTimingCurve& timingCurve, const PropertyCallback& propertyCallback)
 {
+    RS_TRACE_NAME_FMT("AddKeyFrame fraction[%f]", fraction);
     if (rsUIContext == nullptr) {
         ROSEN_LOGE("RSNode::AddKeyFrame, rsUIContext is null!");
         return;
@@ -398,6 +400,7 @@ void RSNode::AddKeyFrame(const std::shared_ptr<RSUIContext> rsUIContext, float f
 void RSNode::AddKeyFrame(
     const std::shared_ptr<RSUIContext> rsUIContext, float fraction, const PropertyCallback& propertyCallback)
 {
+    RS_TRACE_NAME_FMT("AddKeyFrame fraction[%f]", fraction);
     if (rsUIContext == nullptr) {
         ROSEN_LOGE("RSNode::AddKeyFrame, rsUIContext is null!");
         return;
@@ -416,6 +419,7 @@ void RSNode::AddKeyFrame(
 void RSNode::AddDurationKeyFrame(const std::shared_ptr<RSUIContext> rsUIContext, int duration,
     const RSAnimationTimingCurve& timingCurve, const PropertyCallback& propertyCallback)
 {
+    RS_TRACE_NAME_FMT("AddDurationKeyFrame duration[%d]", duration);
     if (rsUIContext == nullptr) {
         ROSEN_LOGE("RSNode::AddDurationKeyFrame, rsUIContext is null!");
         return;
@@ -841,10 +845,6 @@ void RSNode::SetUIFilterPropertyNG(T value)
 void RSNode::SetAlpha(float alpha)
 {
     SetPropertyNG<ModifierNG::RSAlphaModifier, &ModifierNG::RSAlphaModifier::SetAlpha>(alpha);
-    if (alpha < 1) {
-        SetDrawNode();
-        SetDrawNodeType(DrawNodeType::DrawPropertyType);
-    }
     OnAlphaValueChanged();
 }
 
@@ -879,10 +879,6 @@ void RSNode::SetBoundsAndFrame(const Vector4f& bounds, const Vector4f& frame)
     }
 
     OnBoundsSizeChanged();
-    if (bounds.x_ != 0 || bounds.y_ != 0 || frame.x_ != 0 || frame.y_ != 0) {
-        SetDrawNode();
-        SetDrawNodeType(DrawNodeType::MergeableType);
-    }
 }
 
 // Bounds
@@ -911,10 +907,6 @@ void RSNode::SetBounds(const Vector4f& bounds)
     }
     SetPropertyNG<ModifierNG::RSBoundsModifier, &ModifierNG::RSBoundsModifier::SetBounds>(bounds);
     OnBoundsSizeChanged();
-    if (bounds.x_ != 0 || bounds.y_ != 0) {
-        SetDrawNode();
-        SetDrawNodeType(DrawNodeType::MergeableType);
-    }
 }
 
 void RSNode::SetBounds(float positionX, float positionY, float width, float height)
@@ -989,10 +981,6 @@ void RSNode::SetFrameInner(const Vector4f& frame)
 void RSNode::SetFrame(const Vector4f& bounds)
 {
     SetPropertyNG<ModifierNG::RSFrameModifier, &ModifierNG::RSFrameModifier::SetFrame>(bounds);
-    if (bounds.x_ != 0 || bounds.y_ != 0) {
-        SetDrawNode();
-        SetDrawNodeType(DrawNodeType::MergeableType);
-    }
 }
 
 void RSNode::SetFrame(float positionX, float positionY, float width, float height)
@@ -1021,8 +1009,6 @@ void RSNode::SetFramePositionX(float positionX)
     auto frame = property->Get();
     frame.x_ = positionX;
     property->Set(frame);
-    SetDrawNode();
-    SetDrawNodeType(DrawNodeType::MergeableType);
 }
 
 void RSNode::SetFramePositionY(float positionY)
@@ -1046,8 +1032,6 @@ void RSNode::SetFramePositionY(float positionY)
     auto frame = property->Get();
     frame.y_ = positionY;
     property->Set(frame);
-    SetDrawNode();
-    SetDrawNodeType(DrawNodeType::MergeableType);
 }
 
 void RSNode::SetSandBox(std::optional<Vector2f> parentPosition)
@@ -1749,10 +1733,6 @@ void RSNode::SetBackgroundColor(RSColor color)
 #endif
     SetPropertyNG<ModifierNG::RSBackgroundColorModifier, &ModifierNG::RSBackgroundColorModifier::SetBackgroundColor>(
         color);
-    if (color.GetAlpha() > 0) {
-        SetDrawNode();
-        SetDrawNodeType(DrawNodeType::DrawPropertyType);
-    }
 }
 
 void RSNode::SetBackgroundShader(const std::shared_ptr<RSShader>& shader)
@@ -2112,7 +2092,7 @@ void ReportSetUIXXFilterCascade(SetUIXXFilterCascadeParams& params)
 
     std::lock_guard<std::mutex> lock(sRateMutex);
     int64_t nowMs =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
             .count();
     if (sWindowStartMsHour == 0 || nowMs - sWindowStartMsHour >= kHourMs) {
         sWindowStartMsHour = nowMs;
@@ -2405,7 +2385,8 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
             visualEffectPara->GetParaType() == VisualEffectPara::COLOR_GRADIENT_EFFECT ||
             visualEffectPara->GetParaType() == VisualEffectPara::HARMONIUM_EFFECT ||
             visualEffectPara->GetParaType() == VisualEffectPara::FROSTED_GLASS_EFFECT ||
-            visualEffectPara->GetParaType() == VisualEffectPara::SPATIAL_GLASS_EFFECT) {
+            visualEffectPara->GetParaType() == VisualEffectPara::SPATIAL_GLASS_EFFECT ||
+            visualEffectPara->GetParaType() == VisualEffectPara::GLASS_EFFECT) {
             SetBackgroundNGShader(RSNGShaderBase::Create(visualEffectPara));
         }
 
@@ -2951,6 +2932,12 @@ void RSNode::SetShadowDisableSDFBlur(bool option)
         &ModifierNG::RSShadowModifier::SetShadowDisableSDFBlur>(option);
 }
 
+void RSNode::SetShadowClipType(int clipType)
+{
+    SetPropertyNG<ModifierNG::RSShadowModifier,
+        &ModifierNG::RSShadowModifier::SetClipType>(clipType);
+}
+
 void RSNode::SetFrameGravity(Gravity gravity)
 {
     SetPropertyNG<ModifierNG::RSFrameClipModifier, &ModifierNG::RSFrameClipModifier::SetFrameGravity>(gravity);
@@ -2964,6 +2951,12 @@ void RSNode::SetClipRRect(const Vector4f& clipRect, const Vector4f& clipRadius)
 void RSNode::SetClipRRect(const std::shared_ptr<RRect>& rrect)
 {
     SetPropertyNG<ModifierNG::RSBoundsClipModifier, &ModifierNG::RSBoundsClipModifier::SetClipRRect>(rrect);
+}
+
+void RSNode::SetClipShape(const RRect& shape)
+{
+    SetPropertyNG<ModifierNG::RSBoundsClipModifier,
+        &ModifierNG::RSBoundsClipModifier::SetClipShape>(shape);
 }
 
 void RSNode::SetClipBounds(const std::shared_ptr<RSPath>& path)
@@ -3168,9 +3161,6 @@ void RSNode::SetNodeName(const std::string& nodeName)
         return;
     }
     nodeName_ = nodeName;
-    if (!GetIsDrawn() && RSFrameRatePolicy::GetInstance()->IsAppBufferNode(nodeName)) {
-        SetDrawNode();
-    }
     SetRSCmdProperty<NodeNameCmdModifier>(NodeNameCmdParam{
         nodeName
     });
@@ -3788,12 +3778,6 @@ void RSNode::MarkNodeGroup(bool isNodeGroup, bool isForced, bool includeProperty
     SetRSCmdProperty<NodeGroupCmdModifier>(NodeGroupCmdParam{
         isNodeGroup, isForced, includeProperty
     });
-    if (isNodeGroup_) {
-        SetDrawNode();
-        if (GetParent()) {
-            GetParent()->SetDrawNode();
-        }
-    }
 }
 
 void RSNode::ExcludedFromNodeGroup(bool isExcluded)
@@ -3832,12 +3816,6 @@ void RSNode::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
     SetRSCmdProperty<MarkOpincNodeCmdModifier>(MarkOpincNodeCmdParam{
         isOpincNode, isNeedCalculate
     });
-    if (isSuggestOpincNode_) {
-        SetDrawNode();
-        if (GetParent()) {
-            GetParent()->SetDrawNode();
-        }
-    }
 }
 
 void RSNode::MarkLayerPartRender(bool isLayerPartRender)
@@ -3856,12 +3834,6 @@ void RSNode::MarkLayerPartRender(bool isLayerPartRender)
     SetRSCmdProperty<LayerPartRenderCmdModifier>(LayerPartRenderCmdParam{
         isLayerPartRender
     });
-    if (isLayerPartRender_) {
-        SetDrawNode();
-        if (GetParent()) {
-            GetParent()->SetDrawNode();
-        }
-    }
 }
 
 void RSNode::MarkUifirstNode(bool isUifirstNode)
@@ -3889,24 +3861,6 @@ void RSNode::MarkUifirstNode(bool isForceFlag, bool isUifirstEnable)
     });
 }
 
-void RSNode::SetDrawNode()
-{
-    LoadRenderNodeIfNeed();
-    if (isDrawNode_) {
-        return;
-    }
-    isDrawNode_ = true;
-    if (drawNodeChangeCallback_) {
-        drawNodeChangeCallback_(shared_from_this(), false);
-    }
-}
-
-bool RSNode::GetIsDrawn()
-{
-    return isDrawNode_;
-}
-
-
 /**
  * @brief Sets the drawing type of RSnode
  *
@@ -3924,7 +3878,7 @@ void RSNode::SetDrawNodeType(DrawNodeType nodeType)
         return;
     }
     drawNodeType_ = nodeType;
-    if (RSSystemProperties::ViewDrawNodeType()) {
+    if (UNLIKELY(RSSystemProperties::ViewDrawNodeType())) {
         SyncDrawNodeType(nodeType);
     }
 }
@@ -3951,6 +3905,22 @@ void RSNode::SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch)
     SetRSCmdProperty<UIFirstSwitchCmdModifier>(UIFirstSwitchCmdParam{
         uiFirstSwitch
     });
+}
+
+void RSNode::SetCoverageNGShader(const std::shared_ptr<RSNGShaderBase>& coverageShader)
+{
+    if (!coverageShader) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::COVERAGE_NG_SHADER);
+        if (modifier == nullptr || !modifier->HasProperty(ModifierNG::RSPropertyType::COVERAGE_NG_SHADER)) {
+            return;
+        }
+        modifier->DetachProperty(ModifierNG::RSPropertyType::COVERAGE_NG_SHADER);
+        return;
+    }
+    SetPropertyNG<ModifierNG::RSCoverageNGShaderModifier,
+        &ModifierNG::RSCoverageNGShaderModifier::SetCoverageNGShader>(coverageShader);
 }
 
 void RSNode::SetLightIntensity(float lightIntensity)
@@ -4012,8 +3982,10 @@ void RSNode::SetOverlayNGShader(const std::shared_ptr<RSNGShaderBase>& overlaySh
 void RSNode::SetAiInvert(const Vector4f& aiInvert)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
-    SetPropertyNG<ModifierNG::RSCompositingFilterModifier, &ModifierNG::RSCompositingFilterModifier::SetAiInvert>(
-        aiInvert);
+    auto filter = RSNGFilterHelper::CreateNGBinarizationFilter(
+        aiInvert.x_, aiInvert.y_, aiInvert.z_, aiInvert.w_);
+    SetPropertyNG<ModifierNG::RSCompositingFilterModifier,
+        &ModifierNG::RSCompositingFilterModifier::SetColorNGFilter>(filter);
 }
 
 void RSNode::SetGrayScale(float grayScale)
@@ -4074,15 +4046,17 @@ void RSNode::SetColorBlend(uint32_t colorValue)
 void RSNode::SetLightUpEffectDegree(float lightUpEffectDegree)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+    auto filter = RSNGFilterHelper::CreateNGLightUpEffectFilter(lightUpEffectDegree);
     SetPropertyNG<ModifierNG::RSCompositingFilterModifier,
-        &ModifierNG::RSCompositingFilterModifier::SetLightUpEffectDegree>(lightUpEffectDegree);
+        &ModifierNG::RSCompositingFilterModifier::SetColorNGFilter>(filter);
 }
 
 void RSNode::SetDynamicDimDegree(const float dimDegree)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+    auto filter = RSNGFilterHelper::CreateNGDynamicDimFilter(dimDegree);
     SetPropertyNG<ModifierNG::RSCompositingFilterModifier,
-        &ModifierNG::RSCompositingFilterModifier::SetDynamicDimDegree>(dimDegree);
+        &ModifierNG::RSCompositingFilterModifier::SetColorNGFilter>(filter);
 }
 
 void RSNode::SetSystemBarEffect()
@@ -5015,6 +4989,7 @@ std::string RSNode::DumpNode(int depth) const
     ss << "]";
     ss << " lazyLoad[" << std::to_string(lazyLoad_) << "]";
     ss << " nodeState[" << DumpNodeState() << "]";
+    ss << " isDrawNode[" << GetIsDrawn() << "]";
 
     {
         std::unique_lock<std::recursive_mutex> lock(animationMutex_);
@@ -5154,15 +5129,6 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
         auto modifierType = modifier->GetType();
         if (modifierType == ModifierNG::RSModifierType::NODE_MODIFIER) {
             return;
-        }
-        if (modifierType != ModifierNG::RSModifierType::BOUNDS && modifierType != ModifierNG::RSModifierType::FRAME &&
-            modifierType != ModifierNG::RSModifierType::BACKGROUND_COLOR &&
-            modifierType != ModifierNG::RSModifierType::ALPHA) {
-            SetDrawNode();
-            SetDrawNodeType(DrawNodeType::DrawPropertyType);
-            if (modifierType == ModifierNG::RSModifierType::TRANSFORM) {
-                SetDrawNodeType(DrawNodeType::GeometryPropertyType);
-            }
         }
         NotifyPageNodeChanged();
         modifiersNG_.emplace(modifier->GetId(), modifier);

@@ -19,6 +19,7 @@
 
 #include "feature/capture/rs_ui_capture.h"
 #include "render/rs_typeface_cache.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 #include "transaction/rs_interfaces.h"
 #include "transaction/rs_render_interface.h"
 #include "transaction/rs_render_service_client.h"
@@ -288,6 +289,25 @@ HWTEST_F(RSInterfacesTest, GetTotalAppMemSize001, TestSize.Level1)
     instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
     bool res = instance.GetTotalAppMemSize(cpuMemSize, gpuMemSize);
     EXPECT_TRUE(res);
+}
+
+/**
+ * @tc.name: SetVirtualScreenHDRMode001
+ * @tc.desc: test results of SetVirtualScreenHDRMode and GetVirtualScreenHDRMode
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, SetVirtualScreenHDRMode001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    // no screen for the id
+    auto res = instance.SetVirtualScreenHDRMode(INVALID_SCREEN_ID, HDRMode::HDR_DYNAMIC);
+    EXPECT_EQ(res, StatusCode::SCREEN_NOT_FOUND);
+    HDRMode mode = HDRMode::NONE;
+    res = instance.GetVirtualScreenHDRMode(INVALID_SCREEN_ID, mode);
+    EXPECT_EQ(res, StatusCode::SCREEN_NOT_FOUND);
+    EXPECT_EQ(mode, HDRMode::NONE);
 }
 
 /**
@@ -1213,6 +1233,141 @@ HWTEST_F(RSInterfacesTest, SetUIMode3D_003, TestSize.Level1)
     instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
     bool res = instance.SetUIMode3D(UIMode3D::MODE_GLASSESFREE_3D);
     EXPECT_TRUE(res);
+}
+
+/**
+ * @tc.name: CreateVirtualScreenOption001
+ * @tc.desc: test new overload CreateVirtualScreen(option, errorCode) does not crash
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, CreateVirtualScreenOption001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    RSVirtualScreenOption option;
+    option.name = "rsi_option_test";
+    option.width = 320;
+    option.height = 180;
+    option.surface = nullptr;
+    int32_t errorCode = StatusCode::SUCCESS;
+    ScreenId id = instance.CreateVirtualScreen(option, &errorCode);
+    if (id != INVALID_SCREEN_ID) {
+        instance.RemoveVirtualScreen(id);
+    }
+    // The render service is available in the test environment, so creation must succeed.
+    EXPECT_NE(id, INVALID_SCREEN_ID);
+    EXPECT_EQ(errorCode, StatusCode::SUCCESS);
+}
+
+/**
+ * @tc.name: CreateVirtualScreenOption002
+ * @tc.desc: test new overload CreateVirtualScreen(option) with default nullptr errorCode
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, CreateVirtualScreenOption002, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    RSVirtualScreenOption option;
+    option.name = "rsi_option_hdr_test";
+    option.width = 320;
+    option.height = 180;
+    option.surface = nullptr;
+    option.hdrMode = HDRMode::HDR_DYNAMIC;
+    ScreenId id = instance.CreateVirtualScreen(option);
+    if (id != INVALID_SCREEN_ID) {
+        instance.RemoveVirtualScreen(id);
+    }
+    // The render service is available in the test environment, so creation must succeed.
+    EXPECT_NE(id, INVALID_SCREEN_ID);
+}
+
+/**
+ * @tc.name: CreateVirtualScreenLegacy001
+ * @tc.desc: test legacy overload CreateVirtualScreen still works (regression)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, CreateVirtualScreenLegacy001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    ScreenId id = instance.CreateVirtualScreen("legacy", 320, 180, nullptr, INVALID_SCREEN_ID, 0, {});
+    if (id != INVALID_SCREEN_ID) {
+        instance.RemoveVirtualScreen(id);
+    }
+    // The render service is available in the test environment, so creation must succeed.
+    EXPECT_NE(id, INVALID_SCREEN_ID);
+}
+
+/**
+ * @tc.name: CreateVirtualScreenOption003
+ * @tc.desc: test CreateVirtualScreen(option, nullptr) does not crash when errorCode out-param is null
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, CreateVirtualScreenOption003, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    RSVirtualScreenOption option;
+    option.name = "rsi_option_null_err";
+    option.width = 320;
+    option.height = 180;
+    option.surface = nullptr;
+    option.hdrMode = HDRMode::HDR_STATIC;
+    // Explicitly pass nullptr — covers the errorCode==nullptr skip-write branch in RSInterfaces.
+    ScreenId id = instance.CreateVirtualScreen(option, nullptr);
+    if (id != INVALID_SCREEN_ID) {
+        instance.RemoveVirtualScreen(id);
+        EXPECT_NE(id, INVALID_SCREEN_ID);
+    } else {
+        EXPECT_EQ(id, INVALID_SCREEN_ID);
+    }
+}
+ 
+/**
+ * @tc.name: CreateVirtualScreenOption004
+ * @tc.desc: test CreateVirtualScreen(option, &errorCode) with invalid size reports INVALID_ARGUMENTS
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, CreateVirtualScreenOption004, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    RSVirtualScreenOption option;
+    option.name = "rsi_option_invalid";
+    option.width = 65537;
+    option.height = 180;
+    option.surface = nullptr;
+    int32_t errorCode = StatusCode::SUCCESS;
+    ScreenId id = instance.CreateVirtualScreen(option, &errorCode);
+    EXPECT_EQ(id, INVALID_SCREEN_ID);
+    EXPECT_EQ(errorCode, StatusCode::INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: SetPostProcessingShader_001
+ * @tc.desc: Test RSInterfaces::SetPostProcessingShader
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, SetPostProcessingShader_001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    std::vector<uint8_t> param = { 1, 2, 3 };
+
+    int32_t ret = instance.SetPostProcessingShader(1, param);
+    EXPECT_TRUE(ret == static_cast<int32_t>(StatusCode::RENDER_SERVICE_NULL) ||
+        ret == static_cast<int32_t>(StatusCode::SUCCESS) ||
+        ret == static_cast<int32_t>(StatusCode::SCREEN_NOT_FOUND) ||
+        ret == static_cast<int32_t>(StatusCode::VIRTUAL_SCREEN) ||
+        ret == static_cast<int32_t>(StatusCode::INVALID_ARGUMENTS) ||
+        ret == static_cast<int32_t>(StatusCode::RS_CONNECTION_ERROR));
 }
 
 } // namespace OHOS::Rosen

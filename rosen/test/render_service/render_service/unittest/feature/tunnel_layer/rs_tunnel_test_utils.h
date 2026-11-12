@@ -60,27 +60,6 @@ inline void ClearRecordingComposerLayers()
     GetRecordingComposerLayers().clear();
 }
 
-inline std::unordered_set<NodeId>& GetTrackedTunnelTestNodeIds()
-{
-    static std::unordered_set<NodeId> nodeIds;
-    return nodeIds;
-}
-
-inline void TrackTunnelTestNode(NodeId nodeId)
-{
-    RSTunnelRuntimeStore::Erase(nodeId);
-    GetTrackedTunnelTestNodeIds().emplace(nodeId);
-}
-
-inline void ClearTrackedTunnelRuntimeStates()
-{
-    auto& nodeIds = GetTrackedTunnelTestNodeIds();
-    for (auto nodeId : nodeIds) {
-        RSTunnelRuntimeStore::Erase(nodeId);
-    }
-    nodeIds.clear();
-}
-
 inline TunnelLayerInfo MakeTunnelLayerInfo(TunnelTypeMask tunnelType = TUNNEL_TYPE_STYLUS)
 {
     TunnelLayerInfo info;
@@ -153,21 +132,33 @@ public:
     void OnBufferAvailable() override {}
 };
 
+class TunnelLayerParamTestAccess : public TunnelLayerParam {
+public:
+    static void SetNewTunnelEnabled(bool isEnable)
+    {
+        TunnelLayerParam::SetNewTunnelEnabled(isEnable);
+    }
+};
+
 class ScopedNewTunnelSwitch {
 public:
     explicit ScopedNewTunnelSwitch(bool enabled)
     {
         oldValue_ = system::GetParameter("persist.rosen.debug.new_tunnel", "0") == "1";
         system::SetParameter("persist.rosen.debug.new_tunnel", enabled ? "1" : "0");
+        oldTunnelParamEnabled_ = TunnelLayerParam::IsNewTunnelEnabled();
+        TunnelLayerParamTestAccess::SetNewTunnelEnabled(enabled);
     }
 
     ~ScopedNewTunnelSwitch()
     {
         system::SetParameter("persist.rosen.debug.new_tunnel", oldValue_ ? "1" : "0");
+        TunnelLayerParamTestAccess::SetNewTunnelEnabled(oldTunnelParamEnabled_);
     }
 
 private:
-    bool oldValue_;
+    bool oldValue_ = false;
+    bool oldTunnelParamEnabled_ = false;
 };
 
 class RecordingRenderToComposerConnection final : public RSRenderToComposerConnectionStub {
@@ -233,6 +224,11 @@ public:
         (void)activeRect;
     }
 
+    void SetSkipDelay(bool skipDelay) override
+    {
+        (void)skipDelay;
+    }
+
     bool commitTunnelCalled = false;
     uint32_t commitTunnelCallCount = 0;
     int32_t commitTunnelResult = GRAPHIC_DISPLAY_SUCCESS;
@@ -293,7 +289,6 @@ inline TunnelTestContext CreateTunnelTestContext(bool withProducer)
     if (context.node == nullptr) {
         return context;
     }
-    TrackTunnelTestNode(context.node->GetId());
     context.surfaceHandler = context.node->GetMutableRSSurfaceHandler();
     if (context.surfaceHandler == nullptr) {
         return context;

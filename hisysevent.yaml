@@ -209,6 +209,10 @@ RENDER_MEMORY_OVER_WARNING:
   CPU_MEMORY: {type: UINT64, desc: cpu memory of the application}
   GPU_MEMORY: {type: UINT64, desc: gpu memory of the application}
   TOTAL_MEMORY: {type: UINT64, desc: total memory of the application}
+  TYPE: {type: STRING, desc: 'over limit type, FD or FD_WARNING'}
+  FD_THRESHOLD: {type: INT32, desc: fd count limit that triggers the fd report}
+  FD_NUM: {type: INT32, desc: fd count of the pid in the fd report}
+  FILEPATH: {type: STRING, desc: path of the fd memory info file}
 
 RENDER_MEMORY_OVER_ERROR:
   __BASE: {type: STATISTIC, level: MINOR, desc: error of the memory applied by an application exceeds the threshold}
@@ -274,3 +278,11 @@ RS_SERVER_XXFILTER_CASCADE:
   HDRUIBRIGHTNESS_COUNT: {type: UINT16, desc: HDRUIBRIGHTNESS count}
   FG_NGFILTER_COUNT: {type: UINT16, desc: FG_NGFILTER count}
   COLORADAPTIVE_COUNT: {type: UINT16, desc: COLORADAPTIVE count}
+
+RS_CMD_OVER_THRESHOLD:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: RS CMD OVER THRESHOLD}
+  PID: {type: INT32, desc: app pid}
+  BUNDLE_NAME: {type: STRING, desc: app bundle name}
+  CMD_TYPE: {type: STRING, desc: cmd type}
+  CMD_COUNT: {type: INT32, desc: cmd count}
+  THRESHOLD: {type: INT32, desc: threshold}

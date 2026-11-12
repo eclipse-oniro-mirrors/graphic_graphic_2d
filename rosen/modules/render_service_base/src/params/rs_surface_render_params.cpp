@@ -177,6 +177,20 @@ bool RSSurfaceRenderParams::GetHardwareEnabled() const
     return isHardwareEnabled_;
 }
 
+void RSSurfaceRenderParams::SetSolidLayerEnabled(bool enabled)
+{
+    if (isSolidLayerEnabled_ == enabled) {
+        return;
+    }
+    isSolidLayerEnabled_ = enabled;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::GetSolidLayerEnabled() const
+{
+    return isSolidLayerEnabled_;
+}
+
 void RSSurfaceRenderParams::SetNeedMakeImage(bool enabled)
 {
     if (needMakeImage_ == enabled) {
@@ -669,6 +683,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->oldDirtyInSurface_ = oldDirtyInSurface_;
     targetSurfaceParams->transparentRegion_ = transparentRegion_;
     targetSurfaceParams->isHardwareEnabled_ = isHardwareEnabled_;
+    targetSurfaceParams->isSolidLayerEnabled_ = isSolidLayerEnabled_;
     targetSurfaceParams->needMakeImage_ = needMakeImage_;
     targetSurfaceParams->isHardCursor_ = isHardCursor_;
     targetSurfaceParams->isLastFrameHardwareEnabled_ = isLastFrameHardwareEnabled_;
@@ -763,9 +778,16 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->glassFree3D_ = glassFree3D_;
     targetSurfaceParams->uifirstParams_.leashAllEnabled = uifirstParams_.leashAllEnabled;
     targetSurfaceParams->uifirstParams_.isPartialSynced = uifirstParams_.isPartialSynced;
+    targetSurfaceParams->uifirstParams_.uifirstDisabledByAnimationOverlap =
+        uifirstParams_.uifirstDisabledByAnimationOverlap;
     targetSurfaceParams->isWebProxyComposerNode_ = isWebProxyComposerNode_;
     targetSurfaceParams->delegateDstRect_ = delegateDstRect_;
     targetSurfaceParams->delegateSrcRect_ = delegateSrcRect_;
+    targetSurfaceParams->tunnelState_ = tunnelState_;
+    targetSurfaceParams->tunnelLayerId_ = tunnelLayerId_;
+    targetSurfaceParams->tunnelLayerProperty_ = tunnelLayerProperty_;
+    targetSurfaceParams->tunnelLayerGeneration_ = tunnelLayerGeneration_;
+    targetSurfaceParams->isLppTunnel_ = isLppTunnel_;
     RSRenderParams::OnSync(target);
 }
 
@@ -778,7 +800,11 @@ bool RSSurfaceRenderParams::GetScreenInfoIfNeedRogScale(ScreenInfo& screenInfo) 
     if (screenNode == nullptr) {
         return false;
     }
-    screenInfo = screenNode->GetScreenProperty().GetScreenInfo();
+    const auto& screenProperty = screenNode->GetScreenProperty();
+    if (ROSEN_LE(screenProperty.GetRogWidthRatio(), 0.f) || ROSEN_LE(screenProperty.GetRogHeightRatio(), 0.f)) {
+        return false;
+    }
+    screenInfo = screenProperty.GetScreenInfo();
     return screenInfo.samplingMode == ScreenSamplingMode::DEVICE_GPU;
 }
 
@@ -952,6 +978,20 @@ bool RSSurfaceRenderParams::IsPartialSynced() const
     return uifirstParams_.isPartialSynced;
 }
 
+void RSSurfaceRenderParams::SetUifirstDisabledByAnimationOverlap(bool disabled)
+{
+    if (uifirstParams_.uifirstDisabledByAnimationOverlap == disabled) {
+        return;
+    }
+    uifirstParams_.uifirstDisabledByAnimationOverlap = disabled;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::GetUifirstDisabledByAnimationOverlap() const
+{
+    return uifirstParams_.uifirstDisabledByAnimationOverlap;
+}
+
 void RSSurfaceRenderParams::SetCompositionType(CompositionType type)
 {
     if (compositionType_ == type) {
@@ -1015,7 +1055,7 @@ bool RSSurfaceRenderParams::GetDelegateMode() const
     return isWebProxyComposerNode_;
 }
 
-void RSSurfaceRenderParams::SetDelegateDstRect(const RectI& rect)
+void RSSurfaceRenderParams::SetDelegateDstRect(const RectF& rect)
 {
     if (delegateDstRect_ == rect) {
         return;
@@ -1024,12 +1064,12 @@ void RSSurfaceRenderParams::SetDelegateDstRect(const RectI& rect)
     needSync_ = true;
 }
 
-const RectI& RSSurfaceRenderParams::GetDelegateDstRect() const
+const RectF& RSSurfaceRenderParams::GetDelegateDstRect() const
 {
     return delegateDstRect_;
 }
 
-void RSSurfaceRenderParams::SetDelegateSrcRect(const RectI& rect)
+void RSSurfaceRenderParams::SetDelegateSrcRect(const RectF& rect)
 {
     if (delegateSrcRect_ == rect) {
         return;
@@ -1038,7 +1078,7 @@ void RSSurfaceRenderParams::SetDelegateSrcRect(const RectI& rect)
     needSync_ = true;
 }
 
-const RectI& RSSurfaceRenderParams::GetDelegateSrcRect() const
+const RectF& RSSurfaceRenderParams::GetDelegateSrcRect() const
 {
     return delegateSrcRect_;
 }

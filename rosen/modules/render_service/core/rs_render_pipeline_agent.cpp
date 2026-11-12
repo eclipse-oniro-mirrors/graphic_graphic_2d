@@ -30,7 +30,6 @@
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #ifdef RS_ENABLE_GPU
 #include "gpuComposition/rs_gpu_cache_manager.h"
-#include "feature/round_corner_display/rs_message_bus.h"
 #include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
@@ -80,6 +79,8 @@
 #include "pipeline/rs_render_node_gc.h"
 #include "app_mgr_client.h"
 #include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
+#include "feature/capture/rs_blur_pixelmap.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #undef LOG_TAG
 #define LOG_TAG "RSRenderPipelineAgent"
 
@@ -112,17 +113,10 @@ void RSRenderPipelineAgent::ConfigureForceTunnelLayer(
     TunnelLayerInfo info;
     info.tunnelTypeMask = TUNNEL_TYPE_VIDEO;
     if (surface->SetTunnelLayerInfo(info) != GSERROR_OK) {
-        RS_TRACE_NAME_FMT("TUNNEL_DEBUG %s set tunnel layer failed, nodeId=%" PRIu64 ", name=%s",
-            __func__, config.id, config.name.c_str());
         RS_LOGW("RSRenderPipeline::CreateNodeAndSurface set tunnel layer info failed, name:%{public}s",
             config.name.c_str());
         return;
     }
-    RS_TRACE_NAME_FMT("TUNNEL_DEBUG %s force tunnel layer, nodeId=%" PRIu64 ", name=%s, bundle=%s",
-        __func__, config.id, config.name.c_str(), config.bundleName.c_str());
-    RS_LOGD("TUNNEL_DEBUG %s force tunnel layer, nodeId:%{public}" PRIu64
-        ", name:%{public}s, bundle:%{public}s", __func__, config.id, config.name.c_str(),
-        config.bundleName.c_str());
 }
 
 bool ValidateTargetId(const RSRenderNodeMap& nodeMap, uint64_t id)
@@ -164,16 +158,15 @@ ErrCode RSRenderPipelineAgent::CommitTransaction(pid_t callingPid, bool isTokenT
         RS_LOGW("RSRenderPipelineAgent::%{public}s, pipeline is nullptr", __func__);
         return ERR_INVALID_VALUE;
     }
-#if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
-    RsDelegateCompositeCallbackManager::GetInstance().PrepareDelegateCompositeCommand(transactionData);
-#endif
-
     bool shouldDrop = RSUnmarshalThread::Instance().ReportTransactionDataStatistics(
         callingPid, transactionData.get(), isNonSystemAppCalling);
     if (shouldDrop) {
         RS_LOGW("CommitTransaction data droped");
         return ERR_INVALID_VALUE;
     }
+#if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
+    RsDelegateCompositeCallbackManager::GetInstance().PrepareDelegateCompositeCommand(transactionData);
+#endif
     if (transactionData && transactionData->GetDVSyncUpdate()) {
         pipeline->GetMainThread()->DVSyncUpdate(
             transactionData->GetDVSyncTime(), transactionData->GetTimestamp());
@@ -234,15 +227,19 @@ ErrCode RSRenderPipelineAgent::ExecuteSynchronousTask(const std::shared_ptr<RSSy
     // After a synchronous task times out, it will no longer be executed.
     auto canExecute = std::make_shared<std::atomic<bool>>(true);
     std::chrono::nanoseconds span(std::min(task->GetTimeout(), MAX_TIME_OUT_NS));
-    pipeline->ScheduleMainThreadTask([task, mainThread = pipeline->GetMainThread(), canExecute] {
+    auto future = pipeline->ScheduleMainThreadTask([task, mainThread = pipeline->GetMainThread(), canExecute] {
         if (mainThread == nullptr) {
             return;
         }
         if (canExecute->exchange(false)) {
             task->Process(mainThread->GetContext());
         }
-    }).wait_for(span);
-    canExecute->exchange(false);
+    });
+    if (future.wait_for(span) != std::future_status::ready) {
+        canExecute->exchange(false);
+        RS_LOGW("ExecuteSynchronousTask timed out, skip Marshalling to avoid data race with Process");
+        return ERR_TIMED_OUT;
+    }
     return ERR_OK;
 }
 
@@ -1030,10 +1027,11 @@ int32_t RSRenderPipelineAgent::SetGlobalBlackList(const std::vector<NodeId>& bla
         RS_LOGE("RSRenderPipelineAgent:%{public}s rsRenderPipeline is nullptr.", __func__);
         return ERR_INVALID_VALUE;
     }
-    auto task = [blackList, mainThread = pipeline->GetMainThread()]() {
+    auto task = [blackList, mainThread = pipeline->GetMainThread(), func = __func__]() {
         ScreenSpecialLayerInfo::SetGlobalBlackList(
             std::unordered_set<NodeId>(blackList.begin(), blackList.end()));
         RSSpecialLayerUtils::UpdateInfoWithGlobalBlackList(mainThread->GetContext().GetNodeMap());
+        RSSpecialLayerUtils::DumpGlobalBlackList(func);
     };
     pipeline->PostMainThreadTask(task);
     return ERR_OK;
@@ -1050,9 +1048,10 @@ int32_t RSRenderPipelineAgent::AddGlobalBlackList(const std::vector<NodeId>& bla
         RS_LOGE("RSRenderPipelineAgent:%{public}s rsRenderPipeline is nullptr.", __func__);
         return ERR_INVALID_VALUE;
     }
-    auto task = [blackList, mainThread = pipeline->GetMainThread()]() {
+    auto task = [blackList, mainThread = pipeline->GetMainThread(), func = __func__]() {
         ScreenSpecialLayerInfo::AddGlobalBlackList(blackList);
         RSSpecialLayerUtils::UpdateInfoWithGlobalBlackList(mainThread->GetContext().GetNodeMap());
+        RSSpecialLayerUtils::DumpGlobalBlackList(func);
     };
     pipeline->PostMainThreadTask(task);
     return ERR_OK;
@@ -1069,9 +1068,10 @@ int32_t RSRenderPipelineAgent::RemoveGlobalBlackList(const std::vector<NodeId>& 
         RS_LOGE("RSRenderPipelineAgent:%{public}s rsRenderPipeline is nullptr.", __func__);
         return ERR_INVALID_VALUE;
     }
-    auto task = [blackList, mainThread = pipeline->GetMainThread()]() {
+    auto task = [blackList, mainThread = pipeline->GetMainThread(), func = __func__]() {
         ScreenSpecialLayerInfo::RemoveGlobalBlackList(blackList);
         RSSpecialLayerUtils::UpdateInfoWithGlobalBlackList(mainThread->GetContext().GetNodeMap());
+        RSSpecialLayerUtils::DumpGlobalBlackList(func);
     };
     pipeline->PostMainThreadTask(task);
     return ERR_OK;
@@ -1276,6 +1276,95 @@ ErrCode RSRenderPipelineAgent::GetPixelmap(NodeId id, const std::shared_ptr<Medi
     pipeline->PostMainThreadTask(getPixelMapTask);
 #endif
     success = future.get();
+    return ERR_OK;
+}
+
+void RSRenderPipelineAgent::PostBlurTaskToBackground(
+    std::shared_ptr<Media::PixelMap> pixelMap, float blurRadius,
+    std::shared_ptr<std::shared_ptr<Media::PixelMap>> blurredResult,
+    std::shared_ptr<std::promise<bool>> promise)
+{
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+    auto& bgThread = RSBackgroundThread::Instance();
+    auto bgRenderContext = bgThread.GetRenderContext();
+    auto bgGpuContext = bgThread.GetShareGPUContext();
+    if (bgRenderContext == nullptr || bgGpuContext == nullptr) {
+        return;
+    }
+    auto bgBlurTask = [pixelMap, blurRadius, blurredResult, promise,
+                          bgGpuContext, bgRenderContext]() {
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+        bool ret = BlurPixelMapImpl(pixelMap, blurRadius, *blurredResult,
+            bgGpuContext.get(), bgRenderContext.get());
+#else
+        bool ret = false;
+#endif
+        promise->set_value(ret);
+    };
+    bgThread.PostTask(bgBlurTask);
+#else
+    promise->set_value(false);
+#endif
+}
+
+void RSRenderPipelineAgent::PostBlurTaskToRenderThread(
+    std::shared_ptr<Media::PixelMap> pixelMap, float blurRadius,
+    std::shared_ptr<std::shared_ptr<Media::PixelMap>> blurredResult,
+    std::shared_ptr<std::promise<bool>> promise, RSUniRenderThread* renderThread)
+{
+    auto blurTask = [pixelMap, blurRadius, blurredResult, promise]() {
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+        bool ret = BlurPixelMapOnRenderThread(pixelMap, blurRadius, *blurredResult);
+#else
+        bool ret = false;
+#endif
+        promise->set_value(ret);
+    };
+    renderThread->PostTask(blurTask);
+}
+
+ErrCode RSRenderPipelineAgent::BlurPixelMap(std::shared_ptr<Media::PixelMap> pixelMap,
+    float blurRadius, std::shared_ptr<Media::PixelMap>& blurredPixelMap, bool& success)
+{
+    RS_LOGI("RSRenderPipelineAgent::BlurPixelMap start, blurRadius:%{public}f", blurRadius);
+    if (pixelMap == nullptr) {
+        RS_LOGE("RSRenderPipelineAgent::BlurPixelMap: pixelMap is nullptr");
+        success = false;
+        return ERR_INVALID_VALUE;
+    }
+    auto pipeline = rsRenderPipeline_.lock();
+    if (pipeline == nullptr) {
+        RS_LOGE("RSRenderPipelineAgent::BlurPixelMap: pipeline is nullptr");
+        success = false;
+        return ERR_INVALID_VALUE;
+    }
+    auto promise = std::make_shared<std::promise<bool>>();
+    std::future<bool> future = promise->get_future();
+    auto blurredResult = std::make_shared<std::shared_ptr<Media::PixelMap>>();
+    bool useBackground = false;
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+    auto bgRenderContext = RSBackgroundThread::Instance().GetRenderContext();
+    auto bgGpuContext = RSBackgroundThread::Instance().GetShareGPUContext();
+    useBackground = (bgRenderContext != nullptr && bgGpuContext != nullptr);
+#endif
+    if (useBackground) {
+        PostBlurTaskToBackground(pixelMap, blurRadius, blurredResult, promise);
+    } else {
+        RS_LOGW("RSRenderPipelineAgent::BlurPixelMap: fallback to render thread");
+        PostBlurTaskToRenderThread(pixelMap, blurRadius, blurredResult, promise,
+            pipeline->GetUniRenderThread());
+    }
+    constexpr auto BLUR_TIMEOUT = std::chrono::milliseconds(166);
+    if (future.wait_for(BLUR_TIMEOUT) != std::future_status::ready) {
+        RS_LOGE("RSRenderPipelineAgent::BlurPixelMap: timeout waiting for blur task");
+        success = false;
+        return ERR_INVALID_VALUE;
+    }
+    success = future.get();
+    if (success) {
+        blurredPixelMap = *blurredResult;
+    }
+    RS_LOGI("RSRenderPipelineAgent::BlurPixelMap end, success:%{public}d", success);
     return ERR_OK;
 }
 
@@ -1736,33 +1825,34 @@ ErrCode RSRenderPipelineAgent::GetTotalAppMemSize(float& cpuMemSize, float& gpuM
 ErrCode RSRenderPipelineAgent::GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics)
 {
     auto pipeline = rsRenderPipeline_.lock();
-    if (pipeline != nullptr) {
-        const auto& nodeMap = pipeline->GetMainThread()->GetContext().GetNodeMap();
-        std::vector<pid_t> pids;
-        nodeMap.TraverseSurfaceNodes([&pids](const std::shared_ptr<RSSurfaceRenderNode>& node) {
-            auto pid = ExtractPid(node->GetId());
-            if (std::find(pids.begin(), pids.end(), pid) == pids.end()) {
-                pids.emplace_back(pid);
-            }
-        });
-
-        bool enable = RSUniRenderJudgement::IsUniRender();
-        if (pipeline->GetUniRenderThread()->GetRenderEngine() == nullptr ||
-            pipeline->GetUniRenderThread()->GetRenderEngine()->GetRenderContext() == nullptr) {
-            return ERR_INVALID_VALUE;
-        }
-
-        auto context =
-            pipeline->GetUniRenderThread()->GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
-        if (enable) {
-            pipeline->PostUniRenderThreadSyncTask(
-                [&context, &memoryGraphics, &pids] { MemoryManager::CountMemory(pids, context, memoryGraphics); });
-            return ERR_OK;
-        } else {
-            return ERR_INVALID_VALUE;
-        }
+    if (pipeline == nullptr) {
+        return ERR_INVALID_VALUE;
     }
-    return ERR_INVALID_VALUE;
+    std::unordered_map<pid_t, MemorySnapshotInfo> snapshotMap;
+    MemorySnapshot::Instance().GetMemorySnapshot(snapshotMap);
+    std::vector<pid_t> pids;
+    pid_t selfPid = getpid();
+    for (const auto& [pid, info] : snapshotMap) {
+        if (pid == 0 || pid == selfPid) {
+            continue;
+        }
+        pids.emplace_back(pid);
+    }
+
+    bool enable = RSUniRenderJudgement::IsUniRender();
+    if (pipeline->GetUniRenderThread()->GetRenderEngine() == nullptr ||
+        pipeline->GetUniRenderThread()->GetRenderEngine()->GetRenderContext() == nullptr) {
+        return ERR_INVALID_VALUE;
+    }
+
+    auto context = pipeline->GetUniRenderThread()->GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+    if (enable) {
+        pipeline->PostUniRenderThreadSyncTask(
+            [&context, &memoryGraphics, &pids] { MemoryManager::CountMemory(pids, context, memoryGraphics); });
+        return ERR_OK;
+    } else {
+        return ERR_INVALID_VALUE;
+    }
 }
 
 void RSRenderPipelineAgent::CollectSurfaceBuffersByProcessId(
@@ -2346,13 +2436,10 @@ void RSRenderPipelineAgent::Clean(pid_t pid, bool forRefresh)
                 return;
             }
             mainThread->CleanResources(pid, forRefresh);
+            mainThread->RemoveBundleNameFromCache(pid);
         }).wait();
     RSSurfaceBufferCallbackManager::Instance().UnregisterSurfaceBufferCallback(pid);
     RSTypefaceCache::Instance().RemoveDrawingTypefacesByPid(pid);
-    {
-        std::lock_guard<std::mutex> lock(pidToBundleMutex_);
-        pidToBundleName_.clear();
-    }
     pipeline->PostUniRenderThreadSyncTask([pid]() {
         RSFrameStabilityManager::GetInstance().CleanResourcesByPid(pid);
     });
@@ -2571,9 +2658,10 @@ void RSRenderPipelineAgent::OnGlobalBlacklistChanged(const std::unordered_set<No
         RS_LOGE("RSRenderPipelineAgent:%{public}s rsRenderPipeline is nullptr.", __func__);
         return;
     }
-    auto task = [globalBlackList, mainThread = pipeline->GetMainThread()]() {
+    auto task = [globalBlackList, mainThread = pipeline->GetMainThread(), func = __func__]() {
         ScreenSpecialLayerInfo::SetGlobalBlackList(globalBlackList);
         RSSpecialLayerUtils::UpdateInfoWithGlobalBlackList(mainThread->GetContext().GetNodeMap());
+        RSSpecialLayerUtils::DumpGlobalBlackList(func);
     };
     pipeline->PostMainThreadTask(task);
 }
@@ -2629,31 +2717,6 @@ void RSRenderPipelineAgent::SetCacheEnabledForRotation(bool enabled)
         return;
     }
     RSSystemProperties::SetCacheEnabledForRotation(enabled);
-}
-
-std::string RSRenderPipelineAgent::GetBundleName(pid_t pid)
-{
-    std::lock_guard<std::mutex> lock(pidToBundleMutex_);
-    if (auto it = pidToBundleName_.find(pid); it != pidToBundleName_.end()) {
-        return it->second;
-    }
-
-    static const auto appMgrClient = std::make_shared<AppExecFwk::AppMgrClient>();
-    if (appMgrClient == nullptr) {
-        RS_LOGE("GetBundleName get appMgrClient fail.");
-        return {};
-    }
-
-    std::string bundleName{};
-    int32_t uid{0};
-    int32_t ret = appMgrClient->GetBundleNameByPid(pid, bundleName, uid);
-    if ((ret != ERR_OK) || bundleName.empty()) {
-        RS_LOGE("GetBundleName failed, ret=%{public}d.", ret);
-        return {};
-    }
-
-    pidToBundleName_.emplace(pid, bundleName);
-    return bundleName;
 }
 
 void RSRenderPipelineAgent::AddTransactionDataPidInfo(pid_t remotePid)
@@ -2958,6 +3021,40 @@ bool RSRenderPipelineAgent::UnRegisterSurfaceNodeBufferReleaseListener(pid_t pid
 #if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
     RsDelegateCompositeCallbackManager::GetInstance().UnRegisterSurfaceNodeBufferReleaseListener(pid);
     return true;
+#else
+    return false;
+#endif
+}
+
+bool RSRenderPipelineAgent::CleanDelegateModeBufferCmd(NodeId nodeId, pid_t pid)
+{
+#if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
+    RS_TRACE_NAME_FMT("RSRenderPipelineAgent::CleanDelegateModeBufferCmd: NodeId=%" PRIu64 ", pid=%u",
+        nodeId, pid);
+    auto pipeline = rsRenderPipeline_.lock();
+    if (!pipeline) {
+        RS_LOGW("RSRenderPipelineAgent::%{public}s, pipeline is nullptr", __func__);
+        return false;
+    }
+    bool repCode = false;
+    auto task = [renderPipeline = pipeline, nodeId, pid, &repCode]() -> void {
+        if (!renderPipeline) {
+            return;
+        }
+        auto mainThd = renderPipeline->GetMainThread();
+        if (!mainThd) {
+            return;
+        }
+        auto node = mainThd->GetContext().GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId);
+        if (!node || !node->GetDelegateMode()) {
+            return;
+        }
+        RsDelegateCompositeCallbackManager::GetInstance().CleanDelegateCompositeCommand(
+            node->GetUIContextToken(), nodeId, pid);
+        repCode = true;
+    };
+    pipeline->PostMainThreadSyncTask(task);
+    return repCode;
 #else
     return false;
 #endif

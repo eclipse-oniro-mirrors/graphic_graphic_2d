@@ -120,6 +120,9 @@ public:
     bool GetPixelmap(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap,
         const Drawing::Rect* rect, std::shared_ptr<Drawing::DrawCmdList> drawCmdList);
 
+    std::shared_ptr<Media::PixelMap> BlurPixelMap(
+        std::shared_ptr<Media::PixelMap> pixelMap, float blurRadius);
+
     bool SetSystemAnimatedScenes(
         SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation);
 
@@ -242,6 +245,7 @@ public:
     bool UnRegisterSurfaceTransactionListener(uint64_t listenerId);
     bool RegisterSurfaceNodeBufferReleaseListener(sptr<RSISurfaceNodeBufferReleaseCallback> listener);
     bool UnRegisterSurfaceNodeBufferReleaseListener();
+    bool CleanDelegateModeBufferCmd(NodeId id);
 private:
     void TriggerSurfaceCaptureCallback(NodeId id, const RSSurfaceCaptureConfig& captureConfig,
         std::shared_ptr<Media::PixelMap> pixelmap, CaptureError captureErrorCode,

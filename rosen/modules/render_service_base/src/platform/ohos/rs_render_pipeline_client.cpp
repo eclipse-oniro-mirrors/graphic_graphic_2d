@@ -85,6 +85,17 @@ void RSRenderPipelineClient::SetOnRenderProcessDiedCallback(const std::function<
 
 void RSRenderPipelineClient::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
 {
+    static bool isUniRender = RSSystemProperties::GetUniRenderEnabled();
+    // Lazy re-resolution: clients constructed before the render process was registered keep
+    // INVALID_TOKEN_MASK_ID cached in tokenMaskId_. Route them to the render process once it is
+    // the only connection (normal apps), so their transaction index stream stays continuous on
+    // the sequencer that consumes it. With multiple render processes (foundation process) keep
+    // the guarantee fallback instead of picking an arbitrary one.
+    if (isUniRender && tokenMaskId_ == INVALID_TOKEN_MASK_ID) {
+        tokenMaskId_ = RSRenderServiceConnectHub::GetDefaultTokenMaskId();
+        RSRenderServiceConnectHub::SeedTransactionDataIndex(tokenMaskId_);
+    }
+
     auto clientToRenderConnection = RSRenderServiceConnectHub::GetClientToRenderConnection(tokenMaskId_);
     if (clientToRenderConnection != nullptr) {
         clientToRenderConnection->CommitTransaction(transactionData);
@@ -337,6 +348,24 @@ bool RSRenderPipelineClient::GetPixelmap(NodeId id, std::shared_ptr<Media::Pixel
     bool success;
     clientToRenderConnection->GetPixelmap(id, pixelmap, rect, drawCmdList, success);
     return success;
+}
+
+std::shared_ptr<Media::PixelMap> RSRenderPipelineClient::BlurPixelMap(
+    std::shared_ptr<Media::PixelMap> pixelMap, float blurRadius)
+{
+    auto clientToRenderConnection = RSRenderServiceConnectHub::GetClientToRenderConnection(tokenMaskId_);
+    if (clientToRenderConnection == nullptr) {
+        ROSEN_LOGE("RSRenderPipelineClient::BlurPixelMap: clientToRenderConnection is nullptr");
+        return nullptr;
+    }
+    std::shared_ptr<Media::PixelMap> blurredPixelMap;
+    bool success = false;
+    clientToRenderConnection->BlurPixelMap(pixelMap, blurRadius, blurredPixelMap, success);
+    if (!success || blurredPixelMap == nullptr) {
+        ROSEN_LOGE("RSRenderPipelineClient::BlurPixelMap: BlurPixelMap failed");
+        return nullptr;
+    }
+    return blurredPixelMap;
 }
 
 bool RSRenderPipelineClient::SetGlobalDarkColorMode(bool isDark)
@@ -1257,6 +1286,16 @@ bool RSRenderPipelineClient::UnRegisterSurfaceNodeBufferReleaseListener()
         return false;
     }
     return renderPipeline->UnRegisterSurfaceNodeBufferReleaseListener();
+}
+
+bool RSRenderPipelineClient::CleanDelegateModeBufferCmd(NodeId nodeId)
+{
+    auto renderPipeline = RSRenderServiceConnectHub::GetClientToRenderConnection(tokenMaskId_);
+    if (renderPipeline == nullptr) {
+        ROSEN_LOGE("DelegateModeDebugTag:CleanDelegateModeBufferCmd renderPipeline == nullptr!");
+        return false;
+    }
+    return renderPipeline->CleanDelegateModeBufferCmd(nodeId);
 }
 } // namespace Rosen
 } // namespace OHOS

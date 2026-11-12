@@ -51,6 +51,7 @@
 #include "screen_manager/rs_screen_hdr_capability.h"
 #include "screen_manager/rs_screen_mode_info.h"
 #include "screen_manager/rs_surface_region_config.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 #include "screen_manager/rs_virtual_screen_resolution.h"
 #include "transaction/rs_transaction_data.h"
 #include "ivsync_connection.h"
@@ -96,13 +97,8 @@ public:
     virtual std::vector<ScreenId> GetAllScreenIds() = 0;
 
     virtual ScreenId CreateVirtualScreen(
-        const std::string &name,
-        uint32_t width,
-        uint32_t height,
-        sptr<Surface> surface,
-        ScreenId associatedScreenId = 0,
-        int32_t flags = 0,
-        std::vector<NodeId> whiteList = {}) = 0;
+        const RSVirtualScreenOption& option,
+        int32_t& errorCode) = 0;
 
     // Multi-surface virtual screen dynamic surface management
     virtual int32_t AddVirtualScreenSurface(
@@ -159,6 +155,8 @@ public:
     virtual void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate) = 0;
 
     virtual void SetRefreshRateMode(int32_t refreshRateMode) = 0;
+
+    virtual void SetThermalFrameRateLimit(uint32_t frameRate) = 0;
 
     virtual void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
         int32_t animatorExpectedFrameRate) = 0;
@@ -225,6 +223,8 @@ public:
 
     virtual ErrCode GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics) = 0;
 
+    virtual std::vector<MemoryGraphic> GetMemoryGraphicsByRenderPid(int32_t renderPid) = 0;
+
     virtual ErrCode GetScreenBacklight(uint64_t id, int32_t& level) = 0;
 
     virtual void SetScreenBacklight(const RsScreenBrightnessData& brightnessData) = 0;
@@ -242,9 +242,15 @@ public:
 
     virtual int32_t SetScreenColorGamut(ScreenId id, int32_t modeIdx) = 0;
 
+    virtual int32_t SetVirtualScreenHDRMode(ScreenId id, HDRMode mode) = 0;
+
+    virtual int32_t GetVirtualScreenHDRMode(ScreenId id, HDRMode& mode) = 0;
+
     virtual int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) = 0;
 
     virtual int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation) = 0;
+
+    virtual int32_t SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param) = 0;
 
     virtual bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation) = 0;
 
@@ -289,6 +295,8 @@ public:
     virtual void SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY) = 0;
 
     virtual void SetScreenFrameGravity(ScreenId id, int32_t gravity) = 0;
+
+    virtual void SetSkipColorSpaceConversion(ScreenId id, bool skipColorSpaceConversion) = 0;
 
     virtual int32_t RegisterHgmConfigChangeCallback(sptr<RSIHgmConfigChangeCallback> callback) = 0;
 

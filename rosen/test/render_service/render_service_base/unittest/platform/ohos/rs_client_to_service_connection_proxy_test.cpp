@@ -34,6 +34,7 @@
 #include "ipc_callbacks/rs_exposed_event_callback_stub.h"
 #include "platform/ohos/transaction/zidl/rs_client_to_service_connection_proxy.h"
 #include "platform/ohos/rs_render_service_connect_hub.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_node_showing_command.h"
 #include "iconsumer_surface.h"
@@ -285,8 +286,16 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, CreateVirtualScreen, TestSize.Lev
     ScreenId mirrorId = 1;
     int32_t flags = 1;
     std::vector<NodeId> whiteList;
-    EXPECT_EQ(proxy->CreateVirtualScreen(name, width, height, surface, mirrorId, flags, whiteList),
-        INVALID_SCREEN_ID);
+    RSVirtualScreenOption option;
+    option.name = name;
+    option.width = width;
+    option.height = height;
+    option.surface = surface;
+    option.associatedScreenId = mirrorId;
+    option.flags = flags;
+    option.whiteList = whiteList;
+    int32_t errorCode = StatusCode::SUCCESS;
+    EXPECT_EQ(proxy->CreateVirtualScreen(option, errorCode), INVALID_SCREEN_ID);
 }
 
 /**
@@ -509,6 +518,32 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetScreenRefreshRate, TestSize.Le
     int32_t rate = 1;
     proxy->SetScreenRefreshRate(id, sceneId, rate);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
+}
+
+/**
+ * @tc.name: SetThermalFrameRateLimit Test
+ * @tc.desc: SetThermalFrameRateLimit Test (30fps limit)
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetThermalFrameRateLimit, TestSize.Level0)
+{
+    uint32_t frameRate = 30;
+    proxy->SetThermalFrameRateLimit(frameRate);
+    ASSERT_NE(proxy->transactionDataIndex_, 5);
+}
+ 
+/**
+ * @tc.name: SetThermalFrameRateLimitClear Test
+ * @tc.desc: SetThermalFrameRateLimit Test (clear limit with 0)
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetThermalFrameRateLimitClear, TestSize.Level0)
+{
+    uint32_t frameRate = 0;
+    proxy->SetThermalFrameRateLimit(frameRate);
+    ASSERT_NE(proxy->transactionDataIndex_, 5);
 }
 
 /**
@@ -1073,6 +1108,135 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenColorGamut, TestSize.Lev
 }
 
 /**
+ * @tc.name: SetVirtualScreenHDRMode001
+ * @tc.desc: Test SetVirtualScreenHDRMode when SendRequest fails or the reply is empty
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetVirtualScreenHDRMode001, TestSize.Level1)
+{
+    ScreenId id = 1;
+    // SendRequest fails
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(1));
+    EXPECT_EQ(mockproxy->SetVirtualScreenHDRMode(id, HDRMode::HDR_DYNAMIC), StatusCode::RS_CONNECTION_ERROR);
+
+    // reply is empty, ReadInt32 fails
+    sptr<IRemoteObjectMock> remoteObjectEmptyReply = new IRemoteObjectMock;
+    auto mockproxyEmptyReply = std::make_shared<RSClientToServiceConnectionProxy>(remoteObjectEmptyReply);
+    EXPECT_CALL(*remoteObjectEmptyReply, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_EQ(mockproxyEmptyReply->SetVirtualScreenHDRMode(id, HDRMode::HDR_DYNAMIC), StatusCode::READ_PARCEL_ERR);
+
+    // result read from the reply
+    sptr<IRemoteObjectMock> remoteObjectResult = new IRemoteObjectMock;
+    auto mockproxyResult = std::make_shared<RSClientToServiceConnectionProxy>(remoteObjectResult);
+    EXPECT_CALL(*remoteObjectResult, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteInt32(StatusCode::SCREEN_NOT_FOUND);
+                return 0;
+            }));
+    EXPECT_EQ(mockproxyResult->SetVirtualScreenHDRMode(id, HDRMode::HDR_DYNAMIC), StatusCode::SCREEN_NOT_FOUND);
+
+    // request through the fixture proxy: the remote is unreachable in the test environment
+    EXPECT_EQ(proxy->SetVirtualScreenHDRMode(id, HDRMode::HDR_DYNAMIC), StatusCode::RS_CONNECTION_ERROR);
+}
+
+/**
+ * @tc.name: GetVirtualScreenHDRMode001
+ * @tc.desc: Test GetVirtualScreenHDRMode for the error replies of the service
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetVirtualScreenHDRMode001, TestSize.Level1)
+{
+    ScreenId id = 1;
+    HDRMode mode = HDRMode::NONE;
+
+    // SendRequest fails
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(1));
+    EXPECT_EQ(mockproxy->GetVirtualScreenHDRMode(id, mode), StatusCode::RS_CONNECTION_ERROR);
+
+    // reply is empty, ReadInt32 fails
+    sptr<IRemoteObjectMock> remoteObjectEmptyReply = new IRemoteObjectMock;
+    auto mockproxyEmptyReply = std::make_shared<RSClientToServiceConnectionProxy>(remoteObjectEmptyReply);
+    EXPECT_CALL(*remoteObjectEmptyReply, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_EQ(mockproxyEmptyReply->GetVirtualScreenHDRMode(id, mode), StatusCode::READ_PARCEL_ERR);
+
+    // result is SUCCESS but mode is missing
+    sptr<IRemoteObjectMock> remoteObjectNoMode = new IRemoteObjectMock;
+    auto mockproxyNoMode = std::make_shared<RSClientToServiceConnectionProxy>(remoteObjectNoMode);
+    EXPECT_CALL(*remoteObjectNoMode, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteInt32(StatusCode::SUCCESS);
+                return 0;
+            }));
+    EXPECT_EQ(mockproxyNoMode->GetVirtualScreenHDRMode(id, mode), StatusCode::READ_PARCEL_ERR);
+
+    // result is not SUCCESS: mode is not read and keeps unchanged
+    sptr<IRemoteObjectMock> remoteObjectErrorResult = new IRemoteObjectMock;
+    auto mockproxyErrorResult = std::make_shared<RSClientToServiceConnectionProxy>(remoteObjectErrorResult);
+    EXPECT_CALL(*remoteObjectErrorResult, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteInt32(StatusCode::SCREEN_NOT_FOUND);
+                return 0;
+            }));
+    mode = HDRMode::NONE;
+    EXPECT_EQ(mockproxyErrorResult->GetVirtualScreenHDRMode(id, mode), StatusCode::SCREEN_NOT_FOUND);
+    EXPECT_EQ(mode, HDRMode::NONE);
+}
+
+/**
+ * @tc.name: GetVirtualScreenHDRMode002
+ * @tc.desc: Test GetVirtualScreenHDRMode for the mode of a successful reply
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetVirtualScreenHDRMode002, TestSize.Level1)
+{
+    ScreenId id = 1;
+    HDRMode mode = HDRMode::NONE;
+
+    // result is SUCCESS and mode is out of range
+    sptr<IRemoteObjectMock> remoteObjectInvalidMode = new IRemoteObjectMock;
+    auto mockproxyInvalidMode = std::make_shared<RSClientToServiceConnectionProxy>(remoteObjectInvalidMode);
+    EXPECT_CALL(*remoteObjectInvalidMode, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteInt32(StatusCode::SUCCESS);
+                reply.WriteUint32(static_cast<uint32_t>(HDRMode::HDR_MODE_BUTT));
+                return 0;
+            }));
+    mode = HDRMode::NONE;
+    EXPECT_EQ(mockproxyInvalidMode->GetVirtualScreenHDRMode(id, mode), StatusCode::READ_PARCEL_ERR);
+    EXPECT_EQ(mode, HDRMode::NONE);
+
+    // result is SUCCESS and mode is read from the reply
+    sptr<IRemoteObjectMock> remoteObjectValidMode = new IRemoteObjectMock;
+    auto mockproxyValidMode = std::make_shared<RSClientToServiceConnectionProxy>(remoteObjectValidMode);
+    EXPECT_CALL(*remoteObjectValidMode, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteInt32(StatusCode::SUCCESS);
+                reply.WriteUint32(static_cast<uint32_t>(HDRMode::HDR_STATIC));
+                return 0;
+            }));
+    mode = HDRMode::NONE;
+    EXPECT_EQ(mockproxyValidMode->GetVirtualScreenHDRMode(id, mode), StatusCode::SUCCESS);
+    EXPECT_EQ(mode, HDRMode::HDR_STATIC);
+
+    // request through the fixture proxy: the remote is unreachable, mode keeps unchanged
+    mode = HDRMode::NONE;
+    EXPECT_EQ(proxy->GetVirtualScreenHDRMode(id, mode), StatusCode::RS_CONNECTION_ERROR);
+    EXPECT_EQ(mode, HDRMode::NONE);
+}
+
+/**
  * @tc.name: GetScreenGamutMap Test
  * @tc.desc: GetScreenGamutMap Test
  * @tc.type:FUNC
@@ -1085,6 +1249,57 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenGamutMap, TestSize.Level
     proxy->SetScreenGamutMap(id, mode);
     proxy->SetScreenCorrection(id, ScreenRotation::ROTATION_90);
     ASSERT_EQ(proxy->GetScreenGamutMap(id, mode), 2);
+}
+
+/**
+ * @tc.name: SetPostProcessingShader_001
+ * @tc.desc: Test SetPostProcessingShader with valid reply
+ * @tc.type: FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetPostProcessingShader_001, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(
+        testing::Invoke([](uint32_t, MessageParcel&, MessageParcel& reply, MessageOption&) {
+            return reply.WriteInt32(static_cast<int32_t>(StatusCode::SUCCESS)) ? 0 : -1;
+        }));
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    std::vector<uint8_t> param = { 1, 2, 3 };
+    EXPECT_EQ(mockProxy->SetPostProcessingShader(1, param), static_cast<int32_t>(StatusCode::SUCCESS));
+}
+
+/**
+ * @tc.name: SetPostProcessingShader_002
+ * @tc.desc: Test SetPostProcessingShader when SendRequest fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetPostProcessingShader_002, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+
+    std::vector<uint8_t> param = { 1, 2, 3 };
+    EXPECT_EQ(mockProxy->SetPostProcessingShader(1, param), static_cast<int32_t>(RS_CONNECTION_ERROR));
+}
+
+/**
+ * @tc.name: SetPostProcessingShader_003
+ * @tc.desc: Test SetPostProcessingShader when reply parcel ReadInt32 fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetPostProcessingShader_003, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+
+    std::vector<uint8_t> param = { 1, 2, 3 };
+    EXPECT_EQ(mockProxy->SetPostProcessingShader(1, param), static_cast<int32_t>(READ_PARCEL_ERR));
 }
 
 /**
@@ -1972,6 +2187,19 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetRefreshInfoByPidAndUniqueIdTes
 }
 
 /**
+ * @tc.name: SetSkipColorSpaceConversion Test
+ * @tc.desc: SetSkipColorSpaceConversion Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetSkipColorSpaceConversion, TestSize.Level1)
+{
+    ScreenId id = 100;
+    proxy->SetSkipColorSpaceConversion(id, false);
+    ASSERT_NE(proxy->transactionDataIndex_, 5);
+}
+
+/**
  * @tc.name: ReportGameStateData Test
  * @tc.desc: ReportGameStateData Test
  * @tc.type.type:FUNC
@@ -2470,33 +2698,6 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SendRequestAsyncDirect, TestSize.
 }
 
 /**
- * @tc.name: SendRequestSyncOffloaded
- * @tc.desc: Sync plain-data calls run on the executor worker and the reply is cloned back.
- * @tc.type: FUNC
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, SendRequestSyncOffloaded, TestSize.Level1)
-{
-    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock();
-    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
-    auto callerTid = std::this_thread::get_id();
-    std::thread::id sendTid;
-    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
-        .WillOnce([&](uint32_t, MessageParcel&, MessageParcel& reply, MessageOption&) {
-            sendTid = std::this_thread::get_id();
-            reply.WriteInt32(1);
-            return NO_ERROR;
-        });
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    ASSERT_EQ(mockProxy->SendRequest(0, data, reply, option), NO_ERROR);
-    ASSERT_NE(sendTid, callerTid); // offloaded to the timeout executor worker
-    int32_t value = 0;
-    ASSERT_TRUE(reply.ReadInt32(value));
-    ASSERT_EQ(value, 1);
-}
-
-/**
  * @tc.name: SendRequestSyncWithFdDirect
  * @tc.desc: Sync calls whose input parcel carries fds/binder objects stay on the direct path.
  * @tc.type: FUNC
@@ -2604,6 +2805,197 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterTypefaceDirectPath, TestS
     uint64_t globalUniqueId = 1;
     mockProxy->RegisterTypeface(globalUniqueId, typeface);
     ASSERT_EQ(sendTid, callerTid);
+}
+
+/**
+ * @tc.name: CreateVirtualScreen_WriteHdrModeAndReadErrorCode
+ * @tc.desc: Verify the proxy writes hdrMode after whiteList and reads id+errorCode from reply
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, CreateVirtualScreen_WriteHdrModeAndReadErrorCode, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+
+    const ScreenId expectedId = 12345;
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillOnce([&](uint32_t, MessageParcel& data, MessageParcel& reply, MessageOption&) {
+            // consume interfaceToken, name, width, height and the surface block
+            data.ReadInterfaceToken();  // interfaceToken (strictModePolicy + workSource + string16)
+            data.ReadString();  // name
+            data.ReadUint32(); // width
+            data.ReadUint32(); // height
+            bool useSurface = data.ReadBool();
+            if (useSurface) {
+                data.ReadRemoteObject();
+            }
+            data.ReadUint64(); // associatedScreenId
+            data.ReadInt32(); // flags
+            std::vector<uint64_t> whiteList;
+            data.ReadUInt64Vector(&whiteList);
+            uint32_t hdrMode = 0;
+            EXPECT_TRUE(data.ReadUint32(hdrMode));
+            EXPECT_EQ(hdrMode, static_cast<uint32_t>(HDRMode::HDR_STATIC));
+            reply.WriteUint64(expectedId);
+            reply.WriteInt32(StatusCode::SUCCESS);
+            return NO_ERROR;
+        });
+
+    RSVirtualScreenOption option;
+    option.name = "name";
+    option.width = 1;
+    option.height = 1;
+    option.associatedScreenId = 1;
+    option.flags = 1;
+    option.hdrMode = HDRMode::HDR_STATIC;
+    int32_t errorCode = StatusCode::SUCCESS;
+    auto id = mockProxy->CreateVirtualScreen(option, errorCode);
+    EXPECT_EQ(id, expectedId);
+    EXPECT_EQ(errorCode, StatusCode::SUCCESS);
+}
+
+/**
+ * @tc.name: CreateVirtualScreen_ReadErrorCodeFailed
+ * @tc.desc: Verify errorCode is set to READ_PARCEL_ERR when reply lacks errorCode
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, CreateVirtualScreen_ReadErrorCodeFailed, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+
+    const ScreenId expectedId = 67890;
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillOnce([&](uint32_t, MessageParcel&, MessageParcel& reply, MessageOption&) {
+            // only write id, omit errorCode to make ReadInt32 fail
+            reply.WriteUint64(expectedId);
+            return NO_ERROR;
+        });
+
+    RSVirtualScreenOption option;
+    option.name = "name";
+    option.width = 1;
+    option.height = 1;
+    option.hdrMode = HDRMode::HDR_DYNAMIC;
+    int32_t errorCode = StatusCode::SUCCESS;
+    auto id = mockProxy->CreateVirtualScreen(option, errorCode);
+    EXPECT_EQ(id, INVALID_SCREEN_ID);
+    EXPECT_EQ(errorCode, StatusCode::READ_PARCEL_ERR);
+}
+
+/**
+ * @tc.name: CreateVirtualScreen_SendRequestFailed
+ * @tc.desc: Verify errorCode is set to RS_CONNECTION_ERROR when SendRequest fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, CreateVirtualScreen_SendRequestFailed, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillOnce(testing::Return(-1));
+
+    RSVirtualScreenOption option;
+    option.name = "name";
+    option.width = 1;
+    option.height = 1;
+    option.hdrMode = HDRMode::HDR_STATIC;
+    int32_t errorCode = StatusCode::SUCCESS;
+    auto id = mockProxy->CreateVirtualScreen(option, errorCode);
+    EXPECT_EQ(id, INVALID_SCREEN_ID);
+    EXPECT_EQ(errorCode, StatusCode::RS_CONNECTION_ERROR);
+}
+
+/**
+ * @tc.name: CreateVirtualScreen_ReadIdFailed
+ * @tc.desc: Verify errorCode is set to READ_PARCEL_ERR when reply lacks the id field
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, CreateVirtualScreen_ReadIdFailed, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+ 
+    // reply is empty, ReadUint64(id) fails before reaching ReadInt32(errorCode)
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillOnce([&](uint32_t, MessageParcel&, MessageParcel& reply, MessageOption&) {
+            return NO_ERROR;
+        });
+ 
+    RSVirtualScreenOption option;
+    option.name = "name";
+    option.width = 1;
+    option.height = 1;
+    option.hdrMode = HDRMode::HDR_DYNAMIC;
+    int32_t errorCode = StatusCode::SUCCESS;
+    auto id = mockProxy->CreateVirtualScreen(option, errorCode);
+    EXPECT_EQ(id, INVALID_SCREEN_ID);
+    EXPECT_EQ(errorCode, StatusCode::READ_PARCEL_ERR);
+}
+ 
+/**
+ * @tc.name: CreateVirtualScreen_WriteHdrModeWithSurface
+ * @tc.desc: Verify proxy writes surface (WriteBool(true)+WriteRemoteObject) when surface is non-null
+ *          and reads back id+errorCode successfully
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, CreateVirtualScreen_WriteHdrModeWithSurface, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+ 
+    auto csurface = IConsumerSurface::Create("ProxySurfaceTest");
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+ 
+    const ScreenId expectedId = 99999;
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillOnce([&](uint32_t, MessageParcel& data, MessageParcel& reply, MessageOption&) {
+            data.ReadInterfaceToken();
+            data.ReadString();  // name
+            data.ReadUint32(); // width
+            data.ReadUint32(); // height
+            bool useSurface = data.ReadBool();
+            EXPECT_TRUE(useSurface);
+            if (useSurface) {
+                data.ReadRemoteObject();
+            }
+            data.ReadUint64(); // associatedScreenId
+            data.ReadInt32(); // flags
+            std::vector<uint64_t> whiteList;
+            data.ReadUInt64Vector(&whiteList);
+            uint32_t hdrMode = 0;
+            EXPECT_TRUE(data.ReadUint32(hdrMode));
+            EXPECT_EQ(hdrMode, static_cast<uint32_t>(HDRMode::HDR_DYNAMIC));
+            reply.WriteUint64(expectedId);
+            reply.WriteInt32(StatusCode::SUCCESS);
+            return NO_ERROR;
+        });
+ 
+    RSVirtualScreenOption option;
+    option.name = "withSurface";
+    option.width = 100;
+    option.height = 100;
+    option.surface = psurface;
+    option.associatedScreenId = 1;
+    option.flags = 0;
+    option.hdrMode = HDRMode::HDR_DYNAMIC;
+    int32_t errorCode = StatusCode::SUCCESS;
+    auto id = mockProxy->CreateVirtualScreen(option, errorCode);
+    EXPECT_EQ(id, expectedId);
+    EXPECT_EQ(errorCode, StatusCode::SUCCESS);
 }
 } // namespace Rosen
 } // namespace OHOS

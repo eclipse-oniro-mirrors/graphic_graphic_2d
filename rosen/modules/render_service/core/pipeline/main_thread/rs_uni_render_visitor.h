@@ -286,7 +286,8 @@ void ProcessGpuOfflineForTopLayer(
     void CheckMergeDisplayDirtyByAttractionChanged(RSSurfaceRenderNode& surfaceNode) const;
     void CheckMergeDisplayDirtyBySurfaceChanged() const;
     void CheckMergeDisplayDirtyByAttraction(RSSurfaceRenderNode& surfaceNode) const;
-    void CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
+    void CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
+        bool transparentNotSkip) const;
     void CheckMergeDisplayDirtyByTransparentRegions(RSSurfaceRenderNode& surfaceNode) const;
     void CheckMergeFilterDirtyWithPreDirty(const std::shared_ptr<RSDirtyRegionManager>& dirtyManager,
         Occlusion::Region accumulatedDirtyRegion, FilterDirtyType filterDirtyType);
@@ -311,6 +312,7 @@ void ProcessGpuOfflineForTopLayer(
     void CheckColorSpaceWithSelfDrawingNode(RSSurfaceRenderNode& node);
     void UpdateColorSpaceAfterHwcCalc(RSScreenRenderNode& node);
     void HandleColorGamuts(RSScreenRenderNode& node);
+    void HandleSkipColorSpaceConversion(RSScreenRenderNode& node, bool skipColorSpaceConversion);
     void CheckPixelFormat(RSSurfaceRenderNode& node);
     void HandlePixelFormat(RSScreenRenderNode& node);
     bool IsHardwareComposerEnabled();
@@ -419,8 +421,6 @@ void ProcessGpuOfflineForTopLayer(
      */
     void PrepareColorPickers();
 
-    void UpdateHardWareForcedDisabledStateForDelegateMode(
-        std::shared_ptr<RSSurfaceRenderNode> hwcNodePtr, std::optional<bool>& isHardwareForcedDisabled);
     void CollectVirtualScreenNodeId(RSScreenRenderNode& node);
 
     friend class RSUniHwcVisitor;
@@ -454,7 +454,6 @@ void ProcessGpuOfflineForTopLayer(
     std::unordered_map<NodeId, std::vector<std::pair<NodeId, Rect>>> transparntHwcCleanFilter_;
     // map of surface node color gamut collected in CheckColorSpace
     std::unordered_map<NodeId, GraphicColorGamut> surfaceColorGamutMap_;
-    RSRenderThreadParams::TunnelLayerSnapshotMap tunnelLayerSnapshots_;
     // record nodes which ......
     std::unordered_map<NodeId, std::vector<std::pair<NodeId, Rect>>> transparntHwcDirtyFilter_;
     // record DRM nodes
@@ -535,6 +534,9 @@ void ProcessGpuOfflineForTopLayer(
     bool isVirtualExpandScreenDirtyEnabled_ = false;
     bool needRequestNextVsync_ = true;
     bool isTargetUIFirstDfxEnabled_ = false;
+
+    // check if subthread process done node swaped
+    bool isSubthreadProcessDoneNodeSwaped_ = false;
 #ifdef SUBTREE_PARALLEL_ENABLE
     bool isInFocusSurface_ = false;
 #endif

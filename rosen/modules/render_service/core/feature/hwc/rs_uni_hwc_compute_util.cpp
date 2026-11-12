@@ -114,12 +114,6 @@ Drawing::Rect RSUniHwcComputeUtil::CalcSrcRectByBufferRotation(const SurfaceBuff
 
 void RSUniHwcComputeUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix)
 {
-    if (node.GetDelegateMode()) {
-        RS_TRACE_NAME("use webNodeFrame for delegate mode");
-        const Vector4f& frameRect = node.GetDelegateSrcRect();
-        node.SetSrcRect({frameRect.x_, frameRect.y_, frameRect.z_, frameRect.w_});
-        return;
-    }
     auto surfaceHandler = node.GetRSSurfaceHandler();
     if (!surfaceHandler) {
         return;
@@ -131,12 +125,13 @@ void RSUniHwcComputeUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const D
     }
     float bufferWidth = buffer->GetSurfaceBufferWidth();
     float bufferHeight = buffer->GetSurfaceBufferHeight();
-    const float boundsWidth = node.GetRenderProperties().GetBoundsWidth();
-    const float boundsHeight = node.GetRenderProperties().GetBoundsHeight();
+    float boundsWidth = node.GetRenderProperties().GetBoundsWidth();
+    float boundsHeight = node.GetRenderProperties().GetBoundsHeight();
     const Gravity frameGravity = node.GetRenderProperties().GetFrameGravity();
     const GraphicTransformType consumerTransformType = node.GetFixRotationByUser() ?
         GetRotateTransformForRotationFixed(node, consumer) : GetConsumerTransform(node, buffer, consumer);
     CheckForceHardwareAndUpdateDstRect(node);
+    UpdateRectInfoForDelegateMode(node, bufferWidth, bufferHeight, boundsWidth, boundsHeight);
     if (consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_90 ||
         consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_270) {
         std::swap(bufferWidth, bufferHeight);
@@ -167,6 +162,7 @@ void RSUniHwcComputeUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const D
     Drawing::Rect newSrcRect;
     inverseTotalMatrix.MapRect(newSrcRect, newDstRect);
     inverseGravityMatrix.MapRect(newSrcRect, newSrcRect);
+    UpdateLeftAndTopForDelegateMode(node, newSrcRect);
     if (consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_90 ||
         consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_270) {
         std::swap(newSrcRect.left_, newSrcRect.top_);
@@ -296,9 +292,6 @@ void RSUniHwcComputeUtil::DealWithScalingMode(RSSurfaceRenderNode& node, const D
 void RSUniHwcComputeUtil::LayerCrop(RSSurfaceRenderNode& node, const RSScreenProperty& screenProperty)
 {
     if (node.GetHwcGlobalPositionEnabled()) {
-        return;
-    }
-    if (node.GetDelegateMode()) {
         return;
     }
     auto dstRect = node.GetDstRect();
@@ -585,6 +578,9 @@ void RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(const std::shared_ptr<RSSurfaceR
     if (hwcNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
         return;
     }
+    if (hwcNode->IsHardwareForcedDisabled()) {
+        return;
+    }
     if (hwcNode->GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)) {
         return;
     }
@@ -833,10 +829,9 @@ bool RSUniHwcComputeUtil::IsBlendNeedChildNode(RSRenderNode& node)
         property.GetForegroundFilterCache() != nullptr ||
         property.GetMask() != nullptr ||
         property.GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
-        property.GetFilter() != nullptr ||
-        property.IsLightUpEffectValid() ||
+        property.GetCompositingFilter() != nullptr ||
+        property.GetColorNGFilter() != nullptr ||
         property.GetLinearGradientBlurPara() != nullptr ||
-        property.IsDynamicDimValid() ||
         property.IsFgBlenderEffectValid() ||
         property.IsWaterRippleValid() ||
         property.GetColorFilter() != nullptr;
@@ -883,6 +878,28 @@ float RSUniHwcComputeUtil::GetMaxAbsoluteRatioFromMatrix(const Drawing::Matrix& 
         std::abs(matrix.Get(Drawing::Matrix::SKEW_X)), std::abs(matrix.Get(Drawing::Matrix::SKEW_Y))});
 }
 
+void RSUniHwcComputeUtil::UpdateRectInfoForDelegateMode(RSSurfaceRenderNode& node,
+    float& bufferWidth, float& bufferHeight, float& boundsWidth, float& boundsHeight)
+{
+    if (node.GetDelegateMode()) {
+        auto delegateDstRect = node.GetDelegateDstRect();
+        auto delegateSrcRect = node.GetDelegateSrcRect();
+        bufferWidth = delegateSrcRect.GetWidth();
+        bufferHeight = delegateSrcRect.GetHeight();
+        boundsWidth = delegateDstRect.GetWidth();
+        boundsHeight = delegateDstRect.GetHeight();
+    }
+}
+
+void RSUniHwcComputeUtil::UpdateLeftAndTopForDelegateMode(RSSurfaceRenderNode& node, Drawing::Rect &srcRect)
+{
+    if (node.GetDelegateMode()) {
+        auto delegateSrcRect = node.GetDelegateSrcRect();
+        Drawing::Matrix delegatematTranslateMatrix;
+        delegatematTranslateMatrix.PostTranslate(delegateSrcRect.GetLeft(), delegateSrcRect.GetTop());
+        delegatematTranslateMatrix.MapRect(srcRect, srcRect);
+    }
+}
 #undef CHECK_NULL_VOID
 } // namespace Rosen
 } // namespace OHOS

@@ -24,7 +24,6 @@
 #include "platform/ohos/transaction/zidl/rs_iconnect_to_render_process.h"
 namespace OHOS {
 namespace Rosen {
-using OnConnectCallback = std::function<void(sptr<RSIClientToRenderConnection>&)>;
 class RSRenderServiceConnectHub;
 
 class RSConnectRenderProcessDeathRecipient final : public IRemoteObject::DeathRecipient {
@@ -69,7 +68,7 @@ public:
     static std::map<uint64_t, RenderProcessInfo> GetAllClientToRenderConnections();
     static uint64_t GetDefaultTokenMaskId();
     static uint64_t GetRenderProcessTokenMaskId(sptr<IRemoteObject>& connectToRenderRemote);
-    static void SetOnConnectCallback(OnConnectCallback cb);
+    static void SeedTransactionDataIndex(uint64_t tokenMaskId);
 
     static sptr<RSRenderServiceConnectHub> GetConnectHubInstance()
     {
@@ -111,6 +110,11 @@ private:
     };
 
     std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> GetRenderServiceConnection();
+    // Seeds the index counter of a newly created render-process connection with the counter of the
+    // guarantee connection used by INVALID-tokenMaskId clients before it, so the transaction index
+    // stream stays consecutive when traffic switches over. Only seeds while the new counter still
+    // holds the default value.
+    void SeedTransactionDataIndexInner(uint64_t tokenMaskId);
     void CleanConnectRenderProcess();
     void RemoveRenderProcessDeathRecipient(uint64_t tokenMaskId, sptr<RSIConnectToRenderProcess> renderProcess);
     bool Connect();
@@ -127,8 +131,6 @@ private:
 
     static std::once_flag flag_;
     static sptr<RSRenderServiceConnectHub> instance_;
-    static OnConnectCallback onConnectCallback_;
-    static std::mutex onConnectCallbackMutex_;
     friend class RSRenderPipelineClient;
 };
 } // namespace Rosen

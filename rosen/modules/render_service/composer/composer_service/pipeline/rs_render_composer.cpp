@@ -98,6 +98,8 @@ constexpr int64_t NS_MS_UNIT_CONVERSION = 1000000;
 constexpr int64_t UNI_RENDER_VSYNC_OFFSET_DELAY_MODE = 3300000; // 3.3ms
 constexpr uint32_t MAX_TOTAL_SURFACE_NAME_LENGTH = 320;
 constexpr uint32_t MAX_SINGLE_SURFACE_NAME_LENGTH = 20;
+constexpr uint32_t MAX_SWITCH_INTERVAL = 4;
+constexpr uint32_t MIN_SWITCH_INTERVAL = 2;
 // Threshold for abnormal time in the composer pipeline
 constexpr int COMPOSER_TIMEOUT = 800;
 // The number of exceptions in the composer pipeline required to achieve render_service reset
@@ -164,6 +166,12 @@ void RSRenderComposer::CreateAndInitComposer(const std::shared_ptr<HdiOutput>& o
         return this->Redraw(surface, layers, output);
     };
     hgmHardwareUtils_ = std::make_shared<HgmHardwareUtils>();
+    // if composer autoswitch param enabled set the inteval
+    int autoSwitchInterval = std::atoi((system::GetParameter("rs.composer.autoswitch.interval", "0")).c_str());
+    if (autoSwitchInterval >= MIN_SWITCH_INTERVAL && autoSwitchInterval <= MAX_SWITCH_INTERVAL) {
+        RSUniRenderUtil::SetComposerAutoSwitch(true);
+        RSUniRenderUtil::SetAutoSwitchInterval(autoSwitchInterval);
+    }
 
     if (handler_) {
         ScheduleTask([this]() {
@@ -246,6 +254,10 @@ void RSRenderComposer::ClearRefreshRateCounts(std::string& dumpString)
 void RSRenderComposer::HandlePowerStatus(ScreenPowerStatus status)
 {
     RS_TRACE_NAME_FMT("%s: screenId: %" PRIu64 " PowerStatus: %d", __func__, screenId_, status);
+    screenPowerStatus_.store(status);
+    if (status == ScreenPowerStatus::POWER_STATUS_OFFING) {
+        return;
+    }
     PostTask([this, status]() { hgmHardwareUtils_->ResetRetryCount(status); });
 }
 
@@ -270,7 +282,7 @@ void PrintHiperfSurfaceLog(const std::string& counterContext, uint64_t counter, 
 void RSRenderComposer::ComposerPrepare(uint32_t& currentRate, int64_t& delayTime, const PipelineParam& pipelineParam)
 {
 #ifdef RES_SCHED_ENABLE
-    ResschedEventListener::GetInstance()->ReportFrameToRSS();
+    ResschedEventListener::GetInstance()->ReportFrameToRSS(screenId_);
 #endif
     unExecuteTaskNum_++;
     if (setHardwareTaskNumCb_ != nullptr) {
@@ -285,6 +297,7 @@ void RSRenderComposer::ComposerPrepare(uint32_t& currentRate, int64_t& delayTime
 void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const PipelineParam& pipelineParam)
 {
     RS_TRACE_NAME_FMT("%s screenId:%" PRIu64, __func__, screenId_);
+    int64_t idealPeriod = OHOS::Rosen::HgmCore::Instance().GetIdealPeriod(currentRate);
     std::string threadName = "CompThread_" + std::to_string(screenId_);
     RSTimer timer(threadName.c_str(), COMPOSER_TIMEOUT);
     auto layers = rsRenderComposerContext_->GetNeedCompositionLayersVec();
@@ -328,7 +341,8 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
         lppLayerCollector_.AddLppLayerId(layers);
     }
     ResetScreenRCDRedrawState(layers);
-    bool doRepaint = hdiOutput_->IsDeviceValid() && !shouldDropFrame && !isHwcDead_;
+    bool isPowerOffing = (screenPowerStatus_.load() == ScreenPowerStatus::POWER_STATUS_OFFING);
+    bool doRepaint = hdiOutput_->IsDeviceValid() && !shouldDropFrame && !isHwcDead_ && !isPowerOffing;
     if (doRepaint) {
 #ifdef RS_ENABLE_TV_PQ_METADATA
         RSTvMetadataUtil::CombineMetadataForAllLayers(layers);
@@ -372,11 +386,24 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
     }
     PrintHiperfSurfaceLog(TAG_VSYNC_ID_E, pipelineParam.vsyncId);
     EndCheck(timer);
+    if (RSUniRenderUtil::GetComposerAutoSwitch()) {
+        SetFrameTimeInterval(idealPeriod, pipelineParam.actualTimestamp);
+    }
     if (isDisconnected_ && unExecuteTaskNum_ == 0) {
         RS_TRACE_NAME_FMT("Clear output, screenId : %" PRIu64, screenId_);
+        std::lock_guard<std::mutex> lock(hdiOutputMutex_);
         ClearFrameBuffersInner();
         rsRenderComposerContext_ = nullptr;
         hdiOutput_ = nullptr;
+    }
+}
+
+void RSRenderComposer::SetFrameTimeInterval(const int64_t idealPeriod, const int64_t actualTimestamp)
+{
+    if (idealPeriod != 0) {
+        RSUniRenderUtil::SetFrameTimeInterval(static_cast<int32_t>((SystemTime() - actualTimestamp) / idealPeriod));
+    } else {
+        RSUniRenderUtil::SetFrameTimeInterval(0);
     }
 }
 
@@ -558,6 +585,11 @@ std::string RSRenderComposer::GetSurfaceNameInLayersForTrace(const std::vector<s
 
 bool RSRenderComposer::IsDelayRequired(HgmCore& hgmCore, const PipelineParam& pipelineParam)
 {
+    if (skipDelay_.load()) {
+        RS_LOGD_IF(DEBUG_COMPOSER, "CommitAndReleaseLayers skip delay, skipDelay_ is true");
+        RS_TRACE_NAME("CommitAndReleaseLayers skip delay");
+        return false;
+    }
     if (pipelineParam.isForceRefresh) {
         RS_LOGD_IF(DEBUG_COMPOSER, "CommitAndReleaseLayers in Force Refresh");
         RS_TRACE_NAME("CommitAndReleaseLayers in Force Refresh");
@@ -690,6 +722,7 @@ void RSRenderComposer::PreAllocateProtectedBuffer(sptr<SurfaceBuffer> buffer)
             return;
         }
     }
+    std::lock_guard<std::mutex> lock(hdiOutputMutex_);
     if (hdiOutput_ == nullptr) {
         RS_LOGE("hdiOutput_ is NULL");
         return;
@@ -1245,7 +1278,10 @@ void RSRenderComposer::ReInit(const std::shared_ptr<HdiOutput>& output,
     if (hdiOutput_ != nullptr && hdiOutput_ != output) {
         hdiOutput_->ClearLayerCreatedCallback();
     }
-    hdiOutput_ = output;
+    {
+        std::lock_guard<std::mutex> lock(hdiOutputMutex_);
+        hdiOutput_ = output;
+    }
     GraphicIRect damageRect {
         0, 0, static_cast<int32_t>(property->GetWidth()), static_cast<int32_t>(property->GetHeight())
     };
@@ -1276,6 +1312,7 @@ void RSRenderComposer::OnScreenDisconnected()
     ClearLayerCreatedCallbackFromOutput();
     if (unExecuteTaskNum_ == 0) {
         RS_TRACE_NAME_FMT("%s Clear output, screenId : %" PRIu64, __func__, screenId_);
+        std::lock_guard<std::mutex> lock(hdiOutputMutex_);
         ClearFrameBuffersInner();
         rsRenderComposerContext_ = nullptr;
         hdiOutput_ = nullptr;
@@ -1492,6 +1529,7 @@ void RSRenderComposer::MarkTunnelSurfaceInvalid(uint64_t surfaceId)
 int32_t RSRenderComposer::CommitTunnelLayerBySurfaceId(uint64_t surfaceId, uint64_t tunnelLayerId,
     const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence, sptr<SyncFence>& releaseFence)
 {
+    std::lock_guard<std::mutex> lock(hdiOutputMutex_);
     if (hdiOutput_ == nullptr) {
         RS_LOGE("%{public}s output is nullptr, screenId:%{public}" PRIu64, __func__, screenId_);
         return GRAPHIC_DISPLAY_FAILURE;
@@ -1569,6 +1607,11 @@ void RSRenderComposer::SetScreenLinearMatrix(const std::vector<float>& matrix)
 int64_t RSRenderComposer::GetDelayTime() const
 {
     return delayTime_.load();
+}
+
+void RSRenderComposer::SetSkipDelay(bool skipDelay)
+{
+    skipDelay_.store(skipDelay);
 }
 
 void RSRenderComposer::SetVsyncManagerCallbacks(const SetHardwareTaskNumCallback& setHardwareTaskNumCb,

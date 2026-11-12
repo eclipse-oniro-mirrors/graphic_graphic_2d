@@ -84,12 +84,23 @@ void RSRenderPropertyAnimation::AttachRenderProperty(const std::shared_ptr<RSRen
         return;
     }
     InitValueEstimator();
+    OnSetPropertyOnAdd();
 }
 
 void RSRenderPropertyAnimation::SetPropertyValue(const std::shared_ptr<RSRenderPropertyBase>& value)
 {
     if (property_ != nullptr) {
         property_->SetValue(value);
+    }
+}
+
+void RSRenderPropertyAnimation::OnRestart()
+{
+    if (originValue_ != nullptr) {
+        lastValue_ = originValue_->Clone();
+    }
+    if (valueEstimator_ != nullptr) {
+        valueEstimator_->ResetLastValue(GetAdditive());
     }
 }
 
@@ -217,7 +228,7 @@ void RSRenderPropertyAnimation::DumpFraction(float fraction, int64_t time)
 {
     RSAnimationTraceUtils::GetInstance().AddAnimationFrameTrace(GetTarget(), GetTargetId(), GetTargetName(),
         GetAnimationId(), GetPropertyId(), fraction, GetPropertyValue(), time, GetDuration(), GetRepeatCount(),
-        GetFrameRateRange());
+        GetFrameRateRange(), animationFraction_.GetRunningTime());
 }
 } // namespace Rosen
 } // namespace OHOS

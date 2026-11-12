@@ -199,6 +199,12 @@ bool RSLuminanceControl::IsHdrPictureOn()
         rSLuminanceControlInterface_->IsHdrPictureOn() : false;
 }
 
+bool RSLuminanceControl::IsHdrPicEnable(ScreenId screenId)
+{
+    return (rSLuminanceControlInterface_ != nullptr) ?
+        rSLuminanceControlInterface_->IsHdrPicEnable(screenId) : false;
+}
+
 bool RSLuminanceControl::IsForceCloseHdr()
 {
     return (rSLuminanceControlInterface_ != nullptr) ?
@@ -210,6 +216,12 @@ void RSLuminanceControl::ForceCloseHdr(uint32_t closeHdrSceneId, bool forceClose
     if (rSLuminanceControlInterface_ != nullptr) {
         rSLuminanceControlInterface_->ForceCloseHdr(closeHdrSceneId, forceCloseHdr);
     }
+}
+
+bool RSLuminanceControl::IsCloseHdrWhenMultiDisplaysOn()
+{
+    return (rSLuminanceControlInterface_ != nullptr) ?
+        rSLuminanceControlInterface_->IsCloseHdrWhenMultiDisplaysOn() : false;
 }
 
 bool RSLuminanceControl::IsScreenNoHeadroom(ScreenId screenId) const

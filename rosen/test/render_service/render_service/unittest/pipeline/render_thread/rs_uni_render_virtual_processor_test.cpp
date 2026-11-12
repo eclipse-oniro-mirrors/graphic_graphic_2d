@@ -40,6 +40,7 @@
 #include "platform/ohos/backend/rs_surface_frame_ohos_raster.h"
 #include "platform/ohos/backend/rs_surface_ohos_gl.h"
 #include "platform/ohos/backend/rs_surface_ohos_raster.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 #include "surface_buffer_impl.h"
 
 using namespace testing;
@@ -55,6 +56,22 @@ constexpr NodeId DEFAULT_ID = 0xFFFF;
 constexpr int32_t DEFAULT_BUFFER_AGE = 10;
 #endif
 const HDI::Display::Graphic::Common::V1_0::BufferHandleMetaRegion DEFAULT_META_REGION {0, 0, 100, 100};
+}
+static ScreenId MakeVirtualScreen(const sptr<RSScreenManager>& sm, const std::string& name,
+    uint32_t width, uint32_t height, sptr<Surface> surface = nullptr,
+    ScreenId associatedScreenId = INVALID_SCREEN_ID, int32_t flags = 0,
+    std::vector<NodeId> whiteList = {})
+{
+    RSVirtualScreenOption option;
+    option.name = name;
+    option.width = width;
+    option.height = height;
+    option.surface = surface;
+    option.associatedScreenId = associatedScreenId;
+    option.flags = flags;
+    option.whiteList = std::move(whiteList);
+    int32_t errCode = StatusCode::SUCCESS;
+    return sm->CreateVirtualScreen(option, errCode);
 }
 BufferRequestConfig requestConfig = {
     .width = 0x100,
@@ -165,6 +182,7 @@ void RSUniRenderVirtualProcessorTest::TearDown()
 {
     // Clean up per-test resources to prevent crash
     virtualProcessor_->surfaceFrames_.clear();
+    virtualProcessor_->canvas_ = nullptr;
     virtualProcessor_ = nullptr;
     processor_ = nullptr;
     drawingCanvas_ = nullptr;
@@ -455,7 +473,7 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, UniScale, TestSize.Level2)
 {
     auto surface = Surface::CreateSurfaceAsConsumer("test_surface");
     ASSERT_NE(surface, nullptr);
-    auto screenId = screenManager_->CreateVirtualScreen("virtual_screen", 10, 10, surface, 0UL, 0, {});
+    auto screenId = MakeVirtualScreen(screenManager_, "virtual_screen", 10, 10, surface, 0UL, 0, {});
 
     NodeId mainNodeId = 1;
     NodeId virtualNodeId = 2;
@@ -560,14 +578,16 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, ProcessScreenSurfaceTest, TestSize.Lev
     auto processor = std::make_shared<RSUniRenderVirtualProcessor>();
     ASSERT_NE(processor, nullptr);
     processor->ProcessScreenSurface(*screenRenderNode);
-    Drawing::Canvas canvas;
-    processor->canvas_ = std::make_unique<RSPaintFilterCanvas>(&canvas);
+    auto drawingCanvas = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
+    processor->canvas_ = std::make_unique<RSPaintFilterCanvas>(drawingCanvas.get());
     auto screenDrawable =
         static_cast<RSScreenRenderNodeDrawable*>(RSScreenRenderNodeDrawable::OnGenerate(screenRenderNode));
     auto surfaceHandler = screenDrawable->GetRSSurfaceHandlerOnDraw();
     surfaceHandler->buffer_.buffer = OHOS::SurfaceBuffer::Create();
     processor->ProcessScreenSurface(*screenRenderNode);
     EXPECT_FALSE(processor->forceCPU_);
+    processor->canvas_ = nullptr;
+    drawingCanvas = nullptr;
 }
 
 /**
@@ -872,7 +892,7 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode, TestS
 {
     auto surface = Surface::CreateSurfaceAsConsumer("test_surface");
     ASSERT_NE(surface, nullptr);
-    auto screenId = screenManager_->CreateVirtualScreen("virtual_screen", 10, 10, surface, 0UL, 0, {});
+    auto screenId = MakeVirtualScreen(screenManager_, "virtual_screen", 10, 10, surface, 0UL, 0, {});
 
     NodeId mainNodeId = 1;
     NodeId virtualNodeId = 2;
@@ -953,7 +973,7 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, ScaleMirrorIfNeedTest001, TestSize.Lev
 #ifdef RS_ENABLE_VK
     auto surface = Surface::CreateSurfaceAsConsumer("test_surface");
     ASSERT_NE(surface, nullptr);
-    auto screenId = screenManager_->CreateVirtualScreen("virtual_scVirtualScreenen", 10, 10, surface, 0UL, 0, {});
+    auto screenId = MakeVirtualScreen(screenManager_, "virtual_scVirtualScreenen", 10, 10, surface, 0UL, 0, {});
 
     NodeId mainNodeId = 1;
     NodeId virtualNodeId = 2;
@@ -1016,7 +1036,7 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, FillTest001, TestSize.Level2)
 #ifdef RS_ENABLE_VK
     auto surface = Surface::CreateSurfaceAsConsumer("test_surface");
     ASSERT_NE(surface, nullptr);
-    auto screenId = screenManager_->CreateVirtualScreen("virtual_screen", 10, 10, surface, 0UL, 0, {});
+    auto screenId = MakeVirtualScreen(screenManager_, "virtual_screen", 10, 10, surface, 0UL, 0, {});
 
     NodeId mainNodeId = 1;
     NodeId virtualNodeId = 2;
@@ -1701,9 +1721,9 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_Enable
 {
     ASSERT_NE(virtualProcessor_, nullptr);
 
-    // Set up canvas using proper shared_ptr with explicit cast to resolve constructor ambiguity
-    Drawing::Canvas drawCanvas;
-    auto canvas = std::make_shared<RSPaintFilterCanvas>(&drawCanvas);
+    // Set up canvas
+    auto drawingCanvas = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
+    auto canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
     virtualProcessor_->canvas_ = canvas;
 
     // Set scaleMode to UNISCALE_MODE
@@ -1727,6 +1747,9 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_Enable
 
     // Should clip region with visibleRect when enableVisibleRect_ and drawMirrorCopy_ are true
     EXPECT_NO_FATAL_FAILURE(virtualProcessor_->CanvasClipRegionForUniscaleMode(matrix, isSamplingOn));
+
+    // Release the canvas to avoid double-free
+    virtualProcessor_->canvas_ = nullptr;
 }
 
 /**
@@ -1741,9 +1764,9 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_Enable
 {
     ASSERT_NE(virtualProcessor_, nullptr);
 
-    // Set up canvas using proper shared_ptr with explicit canvas object
-    Drawing::Canvas drawCanvas;
-    auto canvas = std::make_shared<RSPaintFilterCanvas>(&drawCanvas);
+    // Set up canvas
+    auto drawingCanvas = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
+    auto canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
     virtualProcessor_->canvas_ = canvas;
 
     // Set scaleMode to UNISCALE_MODE
@@ -1769,6 +1792,9 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_Enable
 
     // Should clip region with visibleRect when enableVisibleRect_ is true and drawMirrorCopy_ is false
     EXPECT_NO_FATAL_FAILURE(virtualProcessor_->CanvasClipRegionForUniscaleMode(matrix, isSamplingOn));
+
+    // Release the canvas to avoid double-free
+    virtualProcessor_->canvas_ = nullptr;
 }
 
 /**
@@ -1783,9 +1809,9 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_Enable
 {
     ASSERT_NE(virtualProcessor_, nullptr);
 
-    // Set up canvas using proper shared_ptr with explicit canvas object
-    Drawing::Canvas drawCanvas;
-    auto canvas = std::make_shared<RSPaintFilterCanvas>(&drawCanvas);
+    // Set up canvas
+    auto drawingCanvas = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
+    auto canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
     virtualProcessor_->canvas_ = canvas;
 
     // Set scaleMode to UNISCALE_MODE
@@ -1823,6 +1849,9 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_Enable
 
     // Restore original SLRScale state
     system::SetParameter("rosen.SLRScale.enabled", param);
+
+    // Release the canvas to avoid double-free
+    virtualProcessor_->canvas_ = nullptr;
 }
 
 /**
@@ -1836,9 +1865,9 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_Disabl
 {
     ASSERT_NE(virtualProcessor_, nullptr);
 
-    // Set up canvas using proper shared_ptr with explicit canvas object
-    Drawing::Canvas drawCanvas;
-    auto canvas = std::make_shared<RSPaintFilterCanvas>(&drawCanvas);
+    // Set up canvas
+    auto drawingCanvas = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
+    auto canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
     virtualProcessor_->canvas_ = canvas;
 
     // Set scaleMode to UNISCALE_MODE
@@ -1858,6 +1887,9 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_Disabl
 
     // Should clip region with default rect when enableVisibleRect_ is false
     EXPECT_NO_FATAL_FAILURE(virtualProcessor_->CanvasClipRegionForUniscaleMode(matrix, isSamplingOn));
+
+    // Release the canvas to avoid double-free
+    virtualProcessor_->canvas_ = nullptr;
 }
 
 /**
@@ -2214,8 +2246,8 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThreadTest001, TestSize.L
 
     // when surfaceFrames_[0].frame is nullptr
     SurfaceFrameConfig config2;
-    Drawing::Canvas canvas2;
-    config2.canvas = std::make_shared<RSPaintFilterCanvas>(&canvas2);
+    auto drawingCanvas2 = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
+    config2.canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas2.get());
     virtualProcessor_->surfaceFrames_.push_back(std::move(config2));
     result = virtualProcessor_->InitForRenderThread(*screenDrawable_, engine);
     EXPECT_TRUE(result);
@@ -2225,8 +2257,8 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThreadTest001, TestSize.L
     SurfaceFrameConfig config3;
     auto rasterFrame3 = std::make_unique<RSSurfaceFrameOhosRaster>(1, 1);
     config3.frame = std::make_unique<RSRenderFrame>(nullptr, std::move(rasterFrame3));
-    Drawing::Canvas canvas3;
-    config3.canvas = std::make_shared<RSPaintFilterCanvas>(&canvas3);
+    auto drawingCanvas3 = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
+    config3.canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas3.get());
     virtualProcessor_->surfaceFrames_.push_back(std::move(config3));
     result = virtualProcessor_->InitForRenderThread(*screenDrawable_, engine);
     EXPECT_TRUE(result);

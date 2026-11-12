@@ -554,7 +554,7 @@ napi_value JsParagraph::OnGetGlyphPositionAtCoordinate(napi_env env, napi_callba
     double dx = 0.0;
     double dy = 0.0;
     if (!(argv[0] != nullptr && ConvertFromJsValue(env, argv[0], dx) && argv[1] != nullptr &&
-        ConvertFromJsValue(env, argv[1], dy))) {
+         ConvertFromJsValue(env, argv[1], dy))) {
         TEXT_LOGE("Failed to convert");
         return NapiGetUndefined(env);
     }
@@ -1099,7 +1099,6 @@ napi_value JsParagraph::OnLayoutAsync(napi_env env, napi_callback_info info)
         double width = 0.0;
     };
     sptr<ConcreteContext> context = sptr<ConcreteContext>::MakeSptr();
-    NAPI_CHECK_AND_THROW_ERROR(context != nullptr, TextErrorCode::ERROR_NO_MEMORY, "Failed to make context");
     auto inputParser = [env, context](size_t argc, napi_value* argv) {
         TEXT_ERROR_CHECK(argv, return, "Argv is null");
         NAPI_CHECK_ARGS(context, context->status == napi_ok, napi_invalid_arg,

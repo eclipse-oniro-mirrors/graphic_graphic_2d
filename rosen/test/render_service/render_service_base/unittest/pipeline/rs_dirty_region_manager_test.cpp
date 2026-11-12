@@ -30,6 +30,7 @@ namespace {
 const RectI DEFAULT_RECT = { 0, 0, 100, 100 };
 const int32_t MAX_DIRTY_RECT_LIMITATION_PER_NODE = 10;
 const int MIN_DIRTY_RECT_LIMITATION = 1;
+constexpr int32_t ROG_SCALE = 2;
 } // namespace
 class RSDirtyRegionManagerTest : public testing::Test {
 public:
@@ -1558,5 +1559,120 @@ HWTEST_F(RSDirtyRegionManagerTest, UpdateMaxNumOfDirtyRectByStateMultipleCalls, 
     dirtyManager.SetAdvancedDirtyRegionType(AdvancedDirtyRegionType::DISABLED);
     dirtyManager.UpdateMaxNumOfDirtyRectByState();
     EXPECT_EQ(dirtyManager.maxNumOfDirtyRects_, MIN_DIRTY_RECT_LIMITATION);
+}
+
+/**
+ * @tc.name: Scale001
+ * @tc.desc: test Scale skips scaling when scaleX is not positive
+ * @tc.type: FUNC
+ * @tc.require: issue25993
+ */
+HWTEST_F(RSDirtyRegionManagerTest, Scale001, TestSize.Level2)
+{
+    RSDirtyRegionManager dirtyManager;
+    dirtyManager.SetCurrentFrameDirtyRect(DEFAULT_RECT);
+
+    dirtyManager.Scale(0.f, ROG_SCALE);
+    ASSERT_EQ(dirtyManager.GetCurrentFrameDirtyRegion(), DEFAULT_RECT);
+    dirtyManager.Scale(ROG_SCALE, 0.f);
+    ASSERT_EQ(dirtyManager.GetCurrentFrameDirtyRegion(), DEFAULT_RECT);
+}
+
+
+/**
+ * @tc.name: Scale002
+ * @tc.desc: test Scale scales every rect of currentFrameAdvancedDirtyRegion_
+ * @tc.type: FUNC
+ * @tc.require: issue25993
+ */
+HWTEST_F(RSDirtyRegionManagerTest, Scale002, TestSize.Level2)
+{
+    RSDirtyRegionManager dirtyManager;
+    dirtyManager.MergeDirtyRect(DEFAULT_RECT);
+    dirtyManager.Scale(ROG_SCALE, ROG_SCALE);
+
+    auto advancedDirtyRegion = dirtyManager.GetCurrentFrameAdvancedDirtyRegion();
+    RectI expectedRect(0, 0, DEFAULT_RECT.GetWidth() * ROG_SCALE, DEFAULT_RECT.GetHeight() * ROG_SCALE);
+    ASSERT_FALSE(advancedDirtyRegion.empty());
+    ASSERT_EQ(advancedDirtyRegion[0], expectedRect);
+}
+
+/**
+ * @tc.name: ScaleSyncedFilterRegions
+ * @tc.desc: test Scale scales current frame dirty region and the filter regions synced to render
+ *           thread, so that render thread consumes them in one coordinate space
+ * @tc.type: FUNC
+ * @tc.require: issue26347
+ */
+HWTEST_F(RSDirtyRegionManagerTest, ScaleSyncedFilterRegions, TestSize.Level1)
+{
+    RSDirtyRegionManager dirtyManager;
+    dirtyManager.SetCurrentFrameDirtyRect(DEFAULT_RECT);
+    Occlusion::Region filterRegion { Occlusion::Rect(DEFAULT_RECT) };
+    FilterDirtyRegionInfo filterInfo = {
+        .intersectRegion_ = filterRegion,
+        .filterDirty_ = filterRegion,
+    };
+    dirtyManager.GetFilterCollector().CollectFilterDirtyRegionInfo(filterInfo, true);
+
+    constexpr float scale = 2.f;
+    constexpr int32_t scaleInt = 2;
+    const RectI scaledRect = {0, 0, DEFAULT_RECT.width_ * scaleInt, DEFAULT_RECT.height_ * scaleInt};
+    dirtyManager.Scale(scale, scale);
+    ASSERT_EQ(dirtyManager.GetCurrentFrameDirtyRegion(), scaledRect);
+    auto& filterList = dirtyManager.GetFilterCollector().GetFilterDirtyRegionInfoList(true);
+    ASSERT_EQ(filterList.size(), 1);
+    ASSERT_EQ(filterList.front().intersectRegion_.GetBound().ToRectI(), scaledRect);
+    ASSERT_EQ(filterList.front().filterDirty_.GetBound().ToRectI(), scaledRect);
+
+    // invalid scale keeps both dirty region and filter regions unchanged
+    dirtyManager.Scale(0.f, scale);
+    ASSERT_EQ(dirtyManager.GetCurrentFrameDirtyRegion(), scaledRect);
+    ASSERT_EQ(filterList.front().filterDirty_.GetBound().ToRectI(), scaledRect);
+}
+
+/**
+ * @tc.name: MergeUifirstDirtyRect001
+ * @tc.desc: Test MergeUifirstDirtyRect with empty rect
+ * @tc.type:FUNC
+ * @tc.require: issueI9NVOG
+ */
+HWTEST_F(RSDirtyRegionManagerTest, MergeUifirstDirtyRect001, TestSize.Level1)
+{
+    RSDirtyRegionManager dirtyManager;
+    RectI emptyRect;
+    dirtyManager.MergeUifirstDirtyRect(emptyRect);
+    EXPECT_TRUE(dirtyManager.GetUifirstFrameDirtyRegion().IsEmpty());
+}
+
+/**
+ * @tc.name: MergeUifirstDirtyRect002
+ * @tc.desc: Test MergeUifirstDirtyRect with valid rect
+ * @tc.type:FUNC
+ * @tc.require: issueI9NVOG
+ */
+HWTEST_F(RSDirtyRegionManagerTest, MergeUifirstDirtyRect002, TestSize.Level1)
+{
+    RSDirtyRegionManager dirtyManager;
+    RectI rect1 = {10, 20, 100, 100};
+    dirtyManager.MergeUifirstDirtyRect(rect1);
+    EXPECT_EQ(dirtyManager.GetUifirstFrameDirtyRegion(), rect1);
+}
+
+/**
+ * @tc.name: MergeUifirstDirtyRect003
+ * @tc.desc: Test MergeUifirstDirtyRect with multiple rects
+ * @tc.type:FUNC
+ * @tc.require: issueI9NVOG
+ */
+HWTEST_F(RSDirtyRegionManagerTest, MergeUifirstDirtyRect003, TestSize.Level1)
+{
+    RSDirtyRegionManager dirtyManager;
+    RectI rect1 = {10, 20, 100, 100};
+    RectI rect2 = {50, 60, 150, 150};
+    dirtyManager.MergeUifirstDirtyRect(rect1);
+    dirtyManager.MergeUifirstDirtyRect(rect2);
+    RectI expected = rect1.JoinRect(rect2);
+    EXPECT_EQ(dirtyManager.GetUifirstFrameDirtyRegion(), expected);
 }
 } // namespace OHOS::Rosen

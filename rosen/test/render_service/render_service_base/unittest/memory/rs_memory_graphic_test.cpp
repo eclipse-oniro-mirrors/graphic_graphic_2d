@@ -115,4 +115,51 @@ HWTEST_F(RSMemoryGraphicTest, GetGpuMemorySizeTest, testing::ext::TestSize.Level
     ret = memoryGraphic.GetTotalMemorySize();
     ASSERT_EQ(ret, 2.0);
 }
+
+/**
+ * @tc.name: GetRenderPidTest
+ * @tc.desc: test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryGraphicTest, GetRenderPidTest, testing::ext::TestSize.Level1)
+{
+    MemoryGraphic memoryGraphic;
+    memoryGraphic.SetRenderPid(100);
+    auto ret = memoryGraphic.GetRenderPid();
+    ASSERT_EQ(ret, 100);
+}
+
+/**
+ * @tc.name: MarshallingWithRenderPidTest
+ * @tc.desc: test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryGraphicTest, MarshallingWithRenderPidTest, testing::ext::TestSize.Level1)
+{
+    MemoryGraphic memoryGraphic;
+    memoryGraphic.SetRenderPid(200);
+    Parcel parcel;
+    ASSERT_TRUE(memoryGraphic.Marshalling(parcel));
+
+    auto mem = memoryGraphic.Unmarshalling(parcel);
+    ASSERT_NE(mem, nullptr);
+    EXPECT_EQ(mem->GetRenderPid(), 200);
+}
+
+/**
+ * @tc.name: OperatorPlusEqualTest
+ * @tc.desc: test MemoryGraphic operator+=
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryGraphicTest, OperatorPlusEqualTest, testing::ext::TestSize.Level1)
+{
+    MemoryGraphic mg1(1, 10.0f, 20.0f);
+    MemoryGraphic mg2(2, 30.0f, 40.0f);
+    mg1 += mg2;
+    EXPECT_EQ(mg1.GetCpuMemorySize(), 40.0f);
+    EXPECT_EQ(mg1.GetGpuMemorySize(), 60.0f);
+}
 } // namespace OHOS::Rosen

@@ -16,7 +16,6 @@
 #include "rs_surface_layer.h"
 #include <memory>
 #include "feature/tunnel_layer/rs_tunnel_layer_utils.h"
-#include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
 #include "rs_composer_context.h"
 #include "rs_layer_parcel.h"
 #include "rs_surface_layer_parcel.h"
@@ -30,14 +29,12 @@ namespace {
 bool ShouldNotifyTunnelLayerDestroyed(const sptr<IConsumerSurface>& surface, uint64_t tunnelLayerId,
     uint32_t property, NodeId nodeId)
 {
+    (void)nodeId;
     if (!IsNewTunnelEnabled()) {
         return false;
     }
     if (surface == nullptr) {
         return false;
-    }
-    if (tunnelLayerId == 0 && nodeId != 0) {
-        RSTunnelRuntimeStore::GetLayerInfoIfPresent(nodeId, tunnelLayerId, property);
     }
     return tunnelLayerId != 0;
 }
@@ -338,22 +335,22 @@ const GraphicIRect& RSSurfaceLayer::GetCropRect() const
     return cropRect_;
 }
 
-void RSSurfaceLayer::SetDelegateModeCropRect(const GraphicIRect& crop)
+void RSSurfaceLayer::SetDelegateSrcRect(const GraphicIRect& crop)
 {
-    if (delegateModeCropRect_ == crop) {
+    if (delegateSrcRect_ == crop) {
         return;
     }
-    RS_OPTIONAL_TRACE_NAME_FMT("SetDelegateModeCropRect in layerId=%" PRIu64 ", %d %d %d %d",
+    RS_OPTIONAL_TRACE_NAME_FMT("SetDelegateSrcRect in layerId=%" PRIu64 ", %d %d %d %d",
         rsLayerId_, crop.x, crop.y, crop.w, crop.h);
-    delegateModeCropRect_ = crop;
-    SetRSLayerCmd<RSRenderLayerDelegateModeCropRectCmd>(crop);
+    delegateSrcRect_ = crop;
+    SetRSLayerCmd<RSRenderLayerDelegateSrcRectCmd>(crop);
 }
 
-GraphicIRect RSSurfaceLayer::GetDelegateModeCropRect()
+GraphicIRect RSSurfaceLayer::GetDelegateSrcRect()
 {
-    RS_OPTIONAL_TRACE_NAME_FMT("GetDelegateModeCropRect in layerId=%" PRIu64 ", %d %d %d %d",
-        rsLayerId_, delegateModeCropRect_.x, delegateModeCropRect_.y, delegateModeCropRect_.w, delegateModeCropRect_.h);
-    return delegateModeCropRect_;
+    RS_OPTIONAL_TRACE_NAME_FMT("GetDelegateSrcRect in layerId=%" PRIu64 ", %d %d %d %d",
+        rsLayerId_, delegateSrcRect_.x, delegateSrcRect_.y, delegateSrcRect_.w, delegateSrcRect_.h);
+    return delegateSrcRect_;
 }
 
 void RSSurfaceLayer::SetPreMulti(bool preMulti)
@@ -1168,6 +1165,12 @@ std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceLayer::PopBufferOwn
         return bufferOwnerCount;
     }
     return nullptr;
+}
+
+bool RSSurfaceLayer::HasBufferOwnerCountById(uint64_t bufferId) const
+{
+    std::lock_guard<std::mutex> lockGuard(ownerCountMutex_);
+    return bufferOwnerCounts_.find(bufferId) != bufferOwnerCounts_.end();
 }
 
 std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceLayer::GetBufferOwnerCount() const

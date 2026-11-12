@@ -44,7 +44,12 @@ DECLARE_FILTER(SoundWave, SOUND_WAVE,
     ADD_PROPERTY_TAG(SoundWave, AlphaB),
     ADD_PROPERTY_TAG(SoundWave, ProgressA),
     ADD_PROPERTY_TAG(SoundWave, ProgressB),
-    ADD_PROPERTY_TAG(SoundWave, TotalAlpha)
+    ADD_PROPERTY_TAG(SoundWave, TotalAlpha),
+    ADD_PROPERTY_TAG(SoundWave, LightMode),
+    ADD_PROPERTY_TAG(SoundWave, CircleCenter),
+    ADD_PROPERTY_TAG(SoundWave, CircleRadius),
+    ADD_PROPERTY_TAG(SoundWave, LightIntensity),
+    ADD_PROPERTY_TAG(SoundWave, SmoothUnionThreshold)
 );
 
 DECLARE_FILTER(EdgeLight, EDGE_LIGHT,
@@ -195,7 +200,8 @@ DECLARE_FILTER(FrostedGlass, FROSTED_GLASS,
     ADD_PROPERTY_TAG(FrostedGlass, DarkModeBgKBS),
     ADD_PROPERTY_TAG(FrostedGlass, DarkModeBgPos),
     ADD_PROPERTY_TAG(FrostedGlass, DarkModeBgNeg),
-    ADD_PROPERTY_TAG(FrostedGlass, SkipFrameEnable)
+    ADD_PROPERTY_TAG(FrostedGlass, SkipFrameEnable),
+    ADD_PROPERTY_TAG(FrostedGlass, AntiAlias)
 );
 
 DECLARE_FILTER(GridWarp, GRID_WARP,
@@ -293,4 +299,28 @@ DECLARE_FILTER(MotionBlur, MOTION_BLUR,
 DECLARE_FILTER(MapColorByBrightness, MAP_COLOR_BY_BRIGHTNESS,
     ADD_PROPERTY_TAG(MapColorByBrightness, Colors),
     ADD_PROPERTY_TAG(MapColorByBrightness, Positions)
+);
+
+DECLARE_FILTER(DistortLight, DISTORT_LIGHT,
+    ADD_PROPERTY_TAG(DistortLight, DistortMask),
+    ADD_PROPERTY_TAG(DistortLight, LightFactor),
+    ADD_PROPERTY_TAG(DistortLight, HighLightFactor),
+    ADD_PROPERTY_TAG(DistortLight, HighLightWidth),
+    ADD_PROPERTY_TAG(DistortLight, HighLightSoft),
+    ADD_PROPERTY_TAG(DistortLight, HighLightColor)
+);
+
+DECLARE_FILTER(Binarization, BINARIZATION,
+    ADD_PROPERTY_TAG(Binarization, Low),
+    ADD_PROPERTY_TAG(Binarization, High),
+    ADD_PROPERTY_TAG(Binarization, Threshold),
+    ADD_PROPERTY_TAG(Binarization, ThresholdRange)
+);
+
+DECLARE_FILTER(LightUpEffect, LIGHT_UP_EFFECT,
+    ADD_PROPERTY_TAG(LightUpEffect, Value)
+);
+
+DECLARE_FILTER(DynamicDim, DYNAMIC_DIM,
+    ADD_PROPERTY_TAG(DynamicDim, Value)
 );

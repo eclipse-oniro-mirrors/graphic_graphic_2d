@@ -130,6 +130,7 @@ bool RSRenderInterface::TakeSurfaceCaptureWithBlur(std::shared_ptr<RSSurfaceNode
     RSSurfaceCaptureBlurParam blurParam;
     blurParam.isNeedBlur = true;
     blurParam.blurRadius = blurRadius;
+    captureConfig.windowSync = true;
 #ifdef RS_MODIFIERS_DRAW_ENABLE
     PrepareSyncCaptureIfNeeded(node, captureConfig);
 #endif // RS_MODIFIERS_DRAW_ENABLE
@@ -185,9 +186,13 @@ bool RSRenderInterface::TakeSurfaceCaptureForUIWithConfig(std::shared_ptr<RSNode
 #endif // RS_MODIFIERS_DRAW_ENABLE
         captureConfig.isSync = true;
     }
+#ifndef ROSEN_CROSS_PLATFORM
+    // Cross-platform (arkui-x) does not support synchronous capture, flushing cached modifiers
+    // and forcing isSync there causes stale content during drag, so skip it entirely.
     if (node->FlushCachedModifiersRecursively()) {
         captureConfig.isSync = true;
     }
+#endif
     captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
     // textureExportNode process cmds in renderThread of application, isSync is unnecessary.
     if (node->IsTextureExportNode()) {
@@ -375,6 +380,20 @@ bool RSRenderInterface::GetPixelmap(NodeId id, std::shared_ptr<Media::PixelMap> 
         return false;
     }
     return renderPipelineClient_->GetPixelmap(id, pixelmap, rect, drawCmdList);
+}
+
+std::shared_ptr<Media::PixelMap> RSRenderInterface::BlurPixelMap(
+    std::shared_ptr<Media::PixelMap> pixelMap, float blurRadius)
+{
+    if (renderPipelineClient_ == nullptr) {
+        RS_LOGE("RSRenderInterface::BlurPixelMap renderPipelineClient_ == nullptr!");
+        return nullptr;
+    }
+    if (pixelMap == nullptr) {
+        RS_LOGE("RSRenderInterface::BlurPixelMap pixelMap is nullptr!");
+        return nullptr;
+    }
+    return renderPipelineClient_->BlurPixelMap(pixelMap, blurRadius);
 }
 
 bool RSRenderInterface::FreezeScreen(std::shared_ptr<RSDisplayNode> node, bool isFreeze, bool needSync)
@@ -783,6 +802,11 @@ void RSRenderInterface::SetOnRenderProcessDiedCallback(const std::function<void(
 bool RSRenderInterface::SetDelegateMode(NodeId id, bool isDelegateMode)
 {
     return renderPipelineClient_->SetDelegateMode(id, isDelegateMode, getpid());
+}
+
+bool RSRenderInterface::CleanDelegateModeBufferCmd(NodeId id)
+{
+    return renderPipelineClient_->CleanDelegateModeBufferCmd(id);
 }
 }
 }

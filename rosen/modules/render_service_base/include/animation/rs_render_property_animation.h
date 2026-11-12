@@ -68,6 +68,8 @@ protected:
 
     void OnRemoveOnCompletion() override;
 
+    void OnRestart() override;
+
     void RecordLastAnimateValue() override;
 
     void UpdateAnimateVelocity(double frameInterval) override;
@@ -75,6 +77,8 @@ protected:
     void ProcessAnimateVelocityUnderAngleRotation(double frameInterval) override;
 
     virtual void InitValueEstimator() {}
+
+    virtual void OnSetPropertyOnAdd() {}
 
     void DumpFraction(float fraction, int64_t time) override;
 

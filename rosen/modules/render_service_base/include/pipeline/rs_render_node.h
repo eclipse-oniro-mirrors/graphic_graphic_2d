@@ -75,6 +75,7 @@ class RSContext;
 class RSNodeVisitor;
 class RSCommand;
 class RSLayer;
+class RSEffectUtils;
 namespace NativeBufferUtils {
 class VulkanCleanupHelper;
 }
@@ -567,6 +568,14 @@ public:
         return shouldPaint_;
     }
 
+    // Whether the node was visible (ShouldPaint() == true) in the last frame.
+    // Used to detect visible→invisible transitions so that the dirty region can
+    // still be generated to clear the previous content from the surface buffer.
+    inline bool IsLastVisible() const
+    {
+        return isLastVisible_;
+    }
+
     inline RectI GetInnerAbsDrawRect() const noexcept
     {
         return innerAbsDrawRect_;
@@ -670,6 +679,7 @@ public:
     void ResetGeoUpdateDelay();
     bool GetGeoUpdateDelay() const;
     bool HasAnimation() const;
+    bool HasInfiniteGroupAnimationChild() const;
     bool GetCurFrameHasAnimation() const
     {
         return curFrameHasAnimation_;
@@ -1119,7 +1129,7 @@ public:
     std::shared_ptr<DrawableV2::RSColorPickerDrawable> GetColorPickerDrawable() const;
     // Called every frame to handle state transitions and sync
     // return true if current state is COLOR_PICK and need to transition back to PREPARING
-    bool PrepareColorPicker(bool darkMode);
+    bool PrepareColorPicker(bool darkMode, bool restoreEnabled = false);
     // returns true if node only has ColorPickerDrawable without any real filter
     bool IsColorPickerOnlyNode() const;
 
@@ -1179,6 +1189,12 @@ protected:
     void MoveUIExtensionChild(SharedPtr child);
     void RemoveUIExtensionChild(SharedPtr child);
     bool NeedRoutedBasedOnUIExtension(SharedPtr child);
+    // Inner child list operations without UIExtension routing. AddChild/MoveChild/RemoveChild make the
+    // routing decision only once, and the *UIExtensionChild helpers must call these inner versions
+    // instead of the public ones, otherwise the two sides can recurse into each other infinitely.
+    void AddChildInner(SharedPtr child, int index);
+    void MoveChildInner(SharedPtr child, int index);
+    void RemoveChildInner(SharedPtr child, bool skipTransition);
 
     bool IsNodeParentHasUIFirstCache();
 
@@ -1314,6 +1330,8 @@ private:
     bool isParentTreeDirty_ = false;
     // marks the node as "on the traversal path"
     bool inTraversalPath_ = false;
+    // marks the node as "on the parent chain traversal path" to detect cycles
+    mutable bool inParentChainTraversal_ = false;
     DrawNodeType drawNodeType_ = DrawNodeType::PureContainerType;
     std::atomic<bool> isTunnelHandleChange_ = false;
     std::atomic<bool> commandExecuted_ = false;
@@ -1440,6 +1458,7 @@ private:
 
     void SetParent(WeakPtr parent);
     void ResetParent();
+    bool RecordHardCursorOffTreeRegion();
     void UpdateSrcOrClipedAbsDrawRectChangeState(const RectI& clipRect);
     virtual void OnResetParent() {}
 
@@ -1503,6 +1522,7 @@ private:
     friend class ModifierNG::RSForegroundFilterRenderModifier;
     friend class ModifierNG::RSBackgroundFilterRenderModifier;
     friend class RSDynamicLayerSkipController;
+    friend class RSEffectUtils;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif

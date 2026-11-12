@@ -43,7 +43,6 @@ public:
         TAG_WINDOW_SURFACE_CACHE,
         TAG_UNTAGGED,
         TAG_CAPTURE,
-        TAG_COLOR_PICKER_SNAPSHOT,
     };
     enum SOURCETYPE : uint32_t {
         SOURCE_OTHER,
@@ -70,9 +69,13 @@ public:
         SOURCE_INITCACHEDSURFACE,
         SOURCE_DRAWRENDERCONTENT,
         SOURCE_FILTERCACHEENABLEVMA = 100,
+        SOURCE_BEHINDWOENABLEVQMA = 101,
+        SOURCE_RSWINDOWKEYFRAMEENABLEVQMA = 102,
     };
     RSTagTracker(const std::shared_ptr<Drawing::GPUContext>& gpuContext, RSTagTracker::TAGTYPE tagType);
     RSTagTracker(const std::shared_ptr<Drawing::GPUContext>& gpuContext, RSTagTracker::SOURCETYPE sourceType);
+    RSTagTracker(
+        const std::shared_ptr<Drawing::GPUContext>& gpuContext, RSTagTracker::SOURCETYPE sourceType, NodeId nodeId);
     RSTagTracker(const std::shared_ptr<Drawing::GPUContext>& gpuContext, NodeId nodeId,
         RSTagTracker::TAGTYPE tagType, const std::string& name);
     RSTagTracker(const std::shared_ptr<Drawing::GPUContext>& gpuContext, Drawing::GPUResourceTag& tag);

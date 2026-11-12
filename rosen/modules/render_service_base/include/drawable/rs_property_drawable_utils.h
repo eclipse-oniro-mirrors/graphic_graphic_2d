@@ -47,10 +47,14 @@ namespace Drawing {
 class GEVisualEffectContainer;
 }
 
+class RSDrawingFilter;
+class RSFilterCacheManager;
+
 class RSPropertyDrawableUtils {
 public:
     static Drawing::RoundRect RRect2DrawingRRect(const RRect& rr);
     static Drawing::Rect Rect2DrawingRect(const RectF& r);
+    static Vector4f Rect2Vector4f(const RectF& r);
     static RectI DrawingRectI2RectI(const Drawing::RectI& r);
     static RRect GetRRectForDrawingBorder(
         const RSProperties& properties, const std::shared_ptr<RSBorder>& border, const bool& isOutline);
@@ -76,7 +80,7 @@ public:
     /**
      * @brief Start offscreen rendering by creating a MakeSurface, swapping the canvas,
      * and pushing the offscreen stack. Pair with EndOffscreen to snapshot and restore
-     * the canvas, then composite the result back (see DrawForegroundFilter/DrawSdfClip).
+     * the canvas, then composite the result back (see DrawForegroundFilter).
      */
     static void BeginOffscreen(RSPaintFilterCanvas& canvas, const RectF& bounds);
     /**
@@ -92,14 +96,6 @@ public:
      */
     static void DrawForegroundFilter(RSPaintFilterCanvas& canvas,
         const std::shared_ptr<RSFilter>& rsFilter, std::optional<RectF> drawRect = std::nullopt);
-    /**
-     * @brief Restore the offscreen started by BeginOffscreen for SDF clip: snapshot
-     * the offscreen content, restore the canvas, and composite through an SDF-clipped
-     * SaveLayer. frameRect is the drawable's OnDraw rect.
-     */
-    static void DrawSdfClip(RSPaintFilterCanvas& canvas,
-        const std::shared_ptr<Drawing::GEVisualEffectContainer>& geContainer,
-        const Drawing::Rect& sdfDrawRect, const Drawing::Rect* frameRect);
     static void DrawFilter(Drawing::Canvas* canvas, const std::shared_ptr<RSFilter>& rsFilter,
         const std::unique_ptr<RSFilterCacheManager>& cacheManager, NodeId id, const bool isForegroundFilter,
         const std::optional<Drawing::RectI>& snapshotRect = std::nullopt,
@@ -108,14 +104,6 @@ public:
         NodeId filterId, const std::unique_ptr<RSFilterCacheManager>& cacheManager,
         Drawing::RectI& bounds, bool behindWindow = false);
     static void DrawColorFilter(Drawing::Canvas* canvas, const std::shared_ptr<Drawing::ColorFilter>& colorFilter);
-    static void DrawLightUpEffect(Drawing::Canvas* canvas, const float lightUpEffectDegree);
-    static std::shared_ptr<Drawing::ShaderEffect> MakeLightUpShader(float lightUpDeg,
-        std::shared_ptr<Drawing::ShaderEffect> imageShader);
-    static void DrawDynamicDim(Drawing::Canvas* canvas, const float dynamicDimDegree);
-    static std::shared_ptr<Drawing::ShaderEffect> MakeDynamicDimShader(float dynamicDimDeg,
-        std::shared_ptr<Drawing::ShaderEffect> imageShader);
-    static std::shared_ptr<Drawing::ShaderEffect> MakeBinarizationShader(float low, float high, float thresholdLow,
-        float thresholdHigh, std::shared_ptr<Drawing::ShaderEffect> imageShader);
     static std::shared_ptr<Drawing::RuntimeBlenderBuilder> MakeDynamicBrightnessBuilder();
     static std::shared_ptr<Drawing::RuntimeBlenderBuilder> MakeDynamicBrightnessLinearBuilder();
     static std::shared_ptr<Drawing::Blender> MakeDynamicBrightnessBlender(const RSDynamicBrightnessPara& params);
@@ -123,15 +111,15 @@ public:
     static std::shared_ptr<Drawing::Blender> MakeHdrDarkenBlender(const RSHdrDarkenBlenderPara& params);
     static std::shared_ptr<Drawing::Blender> MakeColorfulBrightnessBlender(
         const RSColorfulBrightnessBlenderPara& params);
-    static void DrawBinarization(Drawing::Canvas* canvas, const std::optional<Vector4f>& aiInvert);
     static void DrawPixelStretch(Drawing::Canvas* canvas, const std::optional<Vector4f>& pixelStretch,
         const RectF& boundsRect, const bool boundsGeoValid, const Drawing::TileMode pixelStretchTileMode);
     static Drawing::Path CreateShadowPath(const std::shared_ptr<RSPath> rsPath,
         const std::shared_ptr<RSPath>& clipBounds, const RRect& rrect);
     static void DrawShadow(Drawing::Canvas* canvas, Drawing::Path& path, const float& offsetX, const float& offsetY,
-        const float& elevation, const bool& isFilled, Color spotColor);
+        const float& elevation, const bool& isFilled, Color spotColor, const bool& useBoundsClip, const RRect& bounds);
     static void DrawShadowMaskFilter(Drawing::Canvas* canvas, Drawing::Path& path, const float& offsetX,
-        const float& offsetY, const float& radius, const bool& isFilled, Color spotColor, bool disableSDFBlur);
+        const float& offsetY, const float& radius, const bool& isFilled, Color spotColor, bool disableSDFBlur,
+        const bool& useBoundsClip, const RRect& bounds);
     static void DrawUseEffect(RSPaintFilterCanvas* canvas, UseEffectType useEffectType);
 
     static bool IsDangerousBlendMode(int blendMode, int blendApplyType);
@@ -148,9 +136,6 @@ public:
     static bool RSFilterSetPixelStretch(const RSProperties& property, const std::shared_ptr<RSFilter>& filter);
     static void RSFilterRemovePixelStretch(const std::shared_ptr<RSFilter>& filter);
     static void DrawFilterWithDRM(Drawing::Canvas* canvas, bool isDark);
-    static void DrawColorUsingSDFWithDRM(Drawing::Canvas* canvas, const Drawing::Rect* rect, bool isDark,
-        const std::shared_ptr<Drawing::GEVisualEffectContainer>& filterGEContainer, const std::string& filterTag,
-        const std::string& shapeTag);
 
     static std::shared_ptr<Drawing::Image> DrawDepthOcclusion(Drawing::Canvas* canvas,
         const std::shared_ptr<Drawing::Image>& snapshot, const std::shared_ptr<Drawing::Image>& depthMap,
@@ -167,21 +152,15 @@ public:
         const Drawing::Rect& rect, RoundingStrategyType roundingStrategy);
     static void ApplySDFShapeToFilter(const RSProperties& properties,
         const std::shared_ptr<RSDrawingFilter>& drawingFilter, NodeId nodeId);
-    static void ApplySDFShapeToEffect(const RSProperties& properties,
-        const std::shared_ptr<RSNGRenderShaderBase>& shader, NodeId nodeId);
     static std::shared_ptr<RSNGRenderShapeBase> GetResolvedSDFShape(const RSProperties& properties);
-    static std::shared_ptr<RSNGRenderShapeBase> CreateDefaultRRectShape(const RRect& sdfRRect, NodeId nodeId);
     static void ApplySDFShapeToMagnifier(const RSProperties& properties,
         const std::shared_ptr<RSNGRenderFilterBase>& shader, NodeId nodeId);
 
 private:
     static std::shared_ptr<Drawing::ColorFilter> GenerateMaterialColorFilter(float sat, float brt);
     inline static void ClipVisibleRect(RSPaintFilterCanvas* canvas);
-    static std::shared_ptr<Drawing::RuntimeEffect> binarizationShaderEffect_;
-    static std::shared_ptr<Drawing::RuntimeEffect> dynamicDimShaderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> dynamicBrightnessBlenderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> dynamicBrightnessLinearBlenderEffect_;
-    static std::shared_ptr<Drawing::RuntimeEffect> lightUpShaderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> shadowBlenderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> hdrDarkenBlenderEffect_;
     inline static std::atomic<int> g_blurCnt = 0;

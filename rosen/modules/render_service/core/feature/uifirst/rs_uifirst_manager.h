@@ -49,7 +49,8 @@ public:
         std::set<NodeId> disableNodes;
     };
 
-    void AddProcessDoneNode(NodeId id);
+    void AddProcessDoneNode(NodeId id, MultiThreadCacheType type);
+    bool GetUIFirstDirtyFrameControlEnabled();
     void AddPurgedNode(NodeId id);
     void AddProcessSkippedNode(NodeId id);
     void AddFirstFrameCacheGeneratedNode(NodeId id);
@@ -140,14 +141,9 @@ public:
         return isRecentTaskScene_.load();
     }
 
-    bool IsMissionCenterScene() const
+    bool IsInMissionCenterState() const
     {
-        return isMissionCenterScene_.load();
-    }
-
-    bool IsSplitScreenScene() const
-    {
-        return isSplitScreenScene_.load();
+        return isInMissionCenterState_.load();
     }
 
     bool IsSnapshotRotationScene() const
@@ -198,7 +194,7 @@ public:
     {
         return systemDoWindowAnimate_;
     }
-    
+
     void SetTopLeashWindowId(NodeId id)
     {
         topLeashWindowId_ = id;
@@ -256,6 +252,10 @@ public:
     {
         return subthreadProcessingNode_.count(id) > 0;
     }
+    bool UifirstCacheUpdate(NodeId id);
+    bool UifirstCacheUpdated(std::shared_ptr<RSSurfaceRenderNode>& node);
+    void SwapProcessDoneNodes(bool& isDoneNodesSwaped);
+
 private:
     bool IsRebuildForceDisable(const RSSurfaceRenderNode& node) const;
     struct NodeDataBehindWindow {
@@ -340,6 +340,7 @@ private:
     CacheProcessStatus& GetUifirstCachedState(NodeId id);
 
     bool IsToSubByAppAnimation() const;
+    bool IsAnimationOverlapRecordScene() const;
     bool QuerySubAssignable(RSSurfaceRenderNode& node, bool isRotation);
     bool GetSubNodeIsTransparent(RSSurfaceRenderNode& node, std::string& dfxMsg);
     bool CheckHasTransAndFilter(const RSSurfaceRenderNode& node);
@@ -355,25 +356,32 @@ private:
 
     bool IsContentAppWindow(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
     void CheckAndBlockFirstFrameCallback(RSSurfaceRenderNode& surfaceNode) const;
+    void HandleAppWindowChildrenDirty(const std::shared_ptr<RSSurfaceRenderNode>& node);
+    bool HandleUIFirstDirtyFrameControl(const std::shared_ptr<RSSurfaceRenderNode>& node);
 
     bool rotationChanged_ = false;
     bool isUiFirstOn_ = false;
     bool isUiFirstSupportFlag_ = false;
     bool purgeEnable_ = false;
     bool isCardUiFirstOn_ = false;
+    bool isUIFirstFrameControlEnable_ = false;
     UiFirstCcmType uifirstType_ = UiFirstCcmType::SINGLE;
     bool isFreeMultiWindowEnabled_ = false;
     // for recents scene
     std::atomic<bool> isRecentTaskScene_ = false;
-    std::atomic<bool> isMissionCenterScene_ = false;
-    std::atomic<bool> isSplitScreenScene_ = false;
+    // tracks the whole mission center state (enter animation + steady + exit animation)
+    std::atomic<bool> isInMissionCenterState_ = false;
+    std::atomic<bool> isExitingMissionCenter_ = false;
     std::atomic<bool> isSnapshotRotationScene_ = false;
-    static constexpr int CLEAR_RES_THRESHOLD = 3; // 3 frames  to clear resource
+    static constexpr int CLEAR_RES_THRESHOLD = 3; // 3 frames to clear resource
     static constexpr int BEHIND_WINDOW_TIME_THRESHOLD = 3;
     // Minimum frame drop time in behind window condition
     static constexpr int BEHIND_WINDOW_RELEASE_TIME = 33;
     // the max Delivery time in behind window condition
     static constexpr int PURGE_BEHIND_WINDOW_TIME = BEHIND_WINDOW_RELEASE_TIME - BEHIND_WINDOW_TIME_THRESHOLD;
+
+    // Maximum frame rate at which the UI First dirty frame control feature is enabled.
+    static constexpr uint32_t UI_FIRST_DIRTY_FRAME_CONTROL_MAX_FPS = 60;
     std::atomic<int> noUifirstNodeFrameCount_ = 0;
     NodeId entryViewNodeId_ = INVALID_NODEID; // desktop surfaceNode ID
     NodeId negativeScreenNodeId_ = INVALID_NODEID; // negativeScreen surfaceNode ID
@@ -398,6 +406,8 @@ private:
     // use in RT & subThread
     std::mutex childrenDrawableMutex_;
     std::vector<NodeId> subthreadProcessDoneNode_;
+    std::set<NodeId> subthreadProcessDoneNodeAhead_;
+    std::set<NodeId> subthreadProcessDoneNodeStaging_;
     std::mutex skippedNodeMutex_;
     std::unordered_set<NodeId> subthreadProcessSkippedNode_;
     std::mutex purgedNodeMutex_;

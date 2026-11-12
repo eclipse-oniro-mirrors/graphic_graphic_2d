@@ -15,6 +15,7 @@
 
 #include "rs_screen_manager.h"
 
+#include <algorithm>
 #include <parameter.h>
 #include <parameters.h>
 #include <sstream>
@@ -41,6 +42,7 @@ constexpr uint32_t MAX_VIRTUAL_SCREEN_WIDTH = 65536;
 constexpr uint32_t MAX_VIRTUAL_SCREEN_HEIGHT = 65536;
 constexpr uint32_t MAX_VIRTUAL_SCREEN_REFRESH_RATE = 120;
 constexpr uint32_t ORIGINAL_FOLD_SCREEN_AMOUNT = 2;
+constexpr size_t MAX_POST_PROCESSING_SHADER_SIZE = 8 * 1024; // 8 KB
 } // namespace
 using namespace HiviewDFX;
 
@@ -161,6 +163,7 @@ void RSScreenManager::ProcessPendingConnections()
         }
         if (backLightLevel != INVALID_BACKLIGHT_VALUE) {
             screen->SetScreenBacklight(RsScreenBrightnessData(id, backLightLevel));
+            callbackMgr_->NotifyScreenRefresh(id);
         }
     }
 }
@@ -503,45 +506,51 @@ ScreenId RSScreenManager::CreateAndRegisterVirtualScreen(VirtualScreenConfigs& c
     return newId;
 }
 
-ScreenId RSScreenManager::CreateVirtualScreen(
-    const std::string& name,
-    uint32_t width,
-    uint32_t height,
-    sptr<Surface> surface,
-    ScreenId associatedScreenId,
-    int32_t flags,
-    std::vector<NodeId> whiteList)
+ScreenId RSScreenManager::CreateVirtualScreen(const RSVirtualScreenOption& vsOption, int32_t& errorCode)
 {
-    if (!ValidateVirtualScreenLimits(width, height)) {
+    errorCode = StatusCode::SUCCESS;
+    if (!ValidateVirtualScreenLimits(vsOption.width, vsOption.height)) {
+        errorCode = StatusCode::INVALID_ARGUMENTS;
+        return INVALID_SCREEN_ID;
+    }
+    // HDR_STATIC requires a stable HDR output during recording/casting, which cannot be provided
+    // when the product force-closes HDR with multiple displays on, so reject it at creation.
+    if (vsOption.hdrMode == HDRMode::HDR_STATIC && RSLuminanceControl::Get().IsCloseHdrWhenMultiDisplaysOn()) {
+        RS_LOGE("%{public}s: HDR is closed when multi displays on, name[%{public}s] with HDR_STATIC"
+            " create virtualScreen failed!", __func__, vsOption.name.c_str());
+        errorCode = StatusCode::HDR_NOT_SUPPORT;
         return INVALID_SCREEN_ID;
     }
 
     std::vector<SurfaceRegionConfig> surfaceConfigs;
     std::lock_guard<std::mutex> lock(virtualScreenSurfaceMutex_);
-    if (surface != nullptr) {
+    if (vsOption.surface != nullptr) {
         auto usedSurfaceIds = CollectVirtualScreenSurfaceIds();
-        if (!usedSurfaceIds.insert(surface->GetUniqueId()).second) {
+        if (!usedSurfaceIds.insert(vsOption.surface->GetUniqueId()).second) {
             RS_LOGE("%{public}s: Surface[%{public}" PRIu64 "] is already used by another screen, "
-                "create virtualScreen failed!", __func__, surface->GetUniqueId());
+                "create virtualScreen failed!", __func__, vsOption.surface->GetUniqueId());
+            errorCode = StatusCode::SURFACE_NOT_UNIQUE;
             return INVALID_SCREEN_ID;
         }
-        surfaceConfigs.emplace_back(SurfaceRegionConfig{
-            surface, RectI{0, 0, static_cast<int32_t>(width), static_cast<int32_t>(height)}});
+        surfaceConfigs.emplace_back(SurfaceRegionConfig{vsOption.surface,
+            RectI{0, 0, static_cast<int32_t>(vsOption.width), static_cast<int32_t>(vsOption.height)}});
     }
 
     VirtualScreenConfigs configs;
-    configs.associatedScreenId = associatedScreenId;
-    configs.name = name;
-    configs.width = width;
-    configs.height = height;
-    configs.flags = flags;
-    configs.whiteList = std::unordered_set<NodeId>(whiteList.begin(), whiteList.end());
+    configs.associatedScreenId = vsOption.associatedScreenId;
+    configs.name = vsOption.name;
+    configs.width = vsOption.width;
+    configs.height = vsOption.height;
+    configs.flags = vsOption.flags;
+    configs.whiteList = std::unordered_set<NodeId>(vsOption.whiteList.begin(), vsOption.whiteList.end());
     configs.surfaceConfigs = surfaceConfigs;
+    configs.hdrMode = vsOption.hdrMode;
 
-    ScreenId newId = CreateAndRegisterVirtualScreen(configs, associatedScreenId);
+    ScreenId newId = CreateAndRegisterVirtualScreen(configs, vsOption.associatedScreenId);
     RS_LOGI("%{public}s: name[%{public}s], screenId[%{public}" PRIu64 "], width[%{public}u], height[%{public}u], "
-        "hasSurface[%{public}d], associatedScreenId[%{public}" PRIu64 "], flags[%{public}d]",
-        __func__, name.c_str(), newId, width, height, surface != nullptr, associatedScreenId, flags);
+        "hasSurface[%{public}d], associatedScreenId[%{public}" PRIu64 "], flags[%{public}d], hdrMode[%{public}u]",
+        __func__, vsOption.name.c_str(), newId, vsOption.width, vsOption.height, vsOption.surface != nullptr,
+        vsOption.associatedScreenId, vsOption.flags, static_cast<uint32_t>(vsOption.hdrMode));
     RSSpecialLayerUtils::DumpScreenSpecialLayer(__func__, SpecialLayerType::IS_WHITE_LIST, newId, configs.whiteList);
     return newId;
 }
@@ -605,14 +614,41 @@ int32_t RSScreenManager::SetVirtualScreenBlackList(ScreenId id, const std::vecto
 
 int32_t RSScreenManager::SetVirtualScreenTypeBlackList(ScreenId id, const std::vector<uint8_t>& typeBlackList)
 {
-    std::unordered_set<NodeType> screenTypeBlackList(typeBlackList.begin(), typeBlackList.end());
     auto virtualScreen = GetScreen(id);
     if (virtualScreen == nullptr) {
         RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
         return SCREEN_NOT_FOUND;
     }
+    // Only CURSOR_NODE is allowed in the type blacklist, other node types are dropped.
+    constexpr NodeType CURSOR_NODE_TYPE = static_cast<NodeType>(RSSurfaceNodeType::CURSOR_NODE);
+    if (std::find(typeBlackList.cbegin(), typeBlackList.cend(), CURSOR_NODE_TYPE) == typeBlackList.cend()) {
+        virtualScreen->SetTypeBlackList({});
+        RS_LOGI("%{public}s: no CURSOR_NODE in %{public}zu types, clear typeblacklist for id %{public}" PRIu64,
+            __func__, typeBlackList.size(), id);
+        return SUCCESS;
+    }
     RS_LOGI("%{public}s: Record typeblacklist for id %{public}" PRIu64, __func__, id);
-    virtualScreen->SetTypeBlackList(screenTypeBlackList);
+    virtualScreen->SetTypeBlackList({CURSOR_NODE_TYPE});
+    return SUCCESS;
+}
+
+int32_t RSScreenManager::SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param)
+{
+    if (param.empty() || param.size() > MAX_POST_PROCESSING_SHADER_SIZE) {
+        RS_LOGW("%{public}s: invalid post processing shader param, size: %{public}zu", __func__, param.size());
+        return INVALID_ARGUMENTS;
+    }
+    auto screen = GetScreen(id);
+    if (screen == nullptr) {
+        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
+        return SCREEN_NOT_FOUND;
+    }
+    if (screen->IsVirtual()) {
+        RS_LOGW("%{public}s: screen %{public}" PRIu64 " is virtual, only physical screen is supported", __func__, id);
+        return VIRTUAL_SCREEN;
+    }
+    screen->SetPostProcessingShader(param);
+    RS_LOGI("%{public}s: set post processing shader for id %{public}" PRIu64, __func__, id);
     return SUCCESS;
 }
 
@@ -1354,6 +1390,28 @@ int32_t RSScreenManager::SetScreenColorGamut(ScreenId id, int32_t modeIdx)
     return screen->SetScreenColorGamut(modeIdx);
 }
 
+int32_t RSScreenManager::SetVirtualScreenHDRMode(ScreenId id, HDRMode mode)
+{
+    auto screen = GetScreen(id);
+    if (screen == nullptr) {
+        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSScreenManager::%s, id:[%" PRIu64 "].", __func__, id);
+    return screen->SetVirtualScreenHDRMode(mode);
+}
+
+int32_t RSScreenManager::GetVirtualScreenHDRMode(ScreenId id, HDRMode& mode) const
+{
+    auto screen = GetScreen(id);
+    if (screen == nullptr) {
+        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSScreenManager::%s, id:[%" PRIu64 "].", __func__, id);
+    return screen->GetVirtualScreenHDRMode(mode);
+}
+
 int32_t RSScreenManager::SetScreenGamutMap(ScreenId id, ScreenGamutMap mode)
 {
     auto screen = GetScreen(id);
@@ -1643,6 +1701,16 @@ void RSScreenManager::SetScreenFrameGravity(ScreenId id, int32_t gravity)
         return;
     }
     screen->SetScreenFrameGravity(gravity);
+}
+
+void RSScreenManager::SetSkipColorSpaceConversion(ScreenId id, bool skipColorSpaceConversion)
+{
+    auto screen = GetScreen(id);
+    if (screen == nullptr) {
+        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
+        return;
+    }
+    screen->SetSkipColorSpaceConversion(skipColorSpaceConversion);
 }
 
 bool RSScreenManager::AnyScreenFits(std::function<bool(const ScreenNode&)> func) const

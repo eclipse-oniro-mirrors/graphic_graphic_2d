@@ -88,6 +88,12 @@ bool RSRenderPipelineClient::GetPixelmap(NodeId id, const std::shared_ptr<Media:
     return {};
 }
 
+std::shared_ptr<Media::PixelMap> RSRenderPipelineClient::BlurPixelMap(
+    std::shared_ptr<Media::PixelMap> pixelMap, float blurRadius)
+{
+    return nullptr;
+}
+
 bool RSRenderPipelineClient::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation)
 {
     return {};
@@ -333,6 +339,11 @@ bool RSRenderPipelineClient::RegisterSurfaceNodeBufferReleaseListener(
 }
 
 bool RSRenderPipelineClient::UnRegisterSurfaceNodeBufferReleaseListener()
+{
+    return false;
+}
+
+bool RSRenderPipelineClient::CleanDelegateModeBufferCmd(NodeId id)
 {
     return false;
 }

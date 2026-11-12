@@ -37,6 +37,7 @@
 #include "ge_visual_effect.h"
 #include "ge_visual_effect_container.h"
 #include "memory/rs_tag_tracker.h"
+#include "params/rs_render_params.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_base_render_node.h"
@@ -48,6 +49,7 @@
 #include "platform/drawing/rs_surface.h"
 #include "render/rs_drawing_filter.h"
 #include "render/rs_effect_luminance_manager.h"
+#include "render/rs_pixel_map_util.h"
 #include "render/rs_render_mesa_blur_filter.h"
 #include "render/rs_skia_filter.h"
 #include "pipeline/rs_logical_display_render_node.h"
@@ -58,6 +60,31 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr uint32_t ALPHA_MASK = 0xFF000000;
+
+std::vector<std::pair<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr, bool>>
+MarkResolvedBlacklistAncestorCacheRoots(const std::vector<NodeId>& ancestorNodeIds)
+{
+    std::vector<std::pair<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr, bool>> flaggedDrawables;
+    for (NodeId nodeId : ancestorNodeIds) {
+        auto drawable = DrawableV2::RSRenderNodeDrawableAdapter::GetDrawableById(nodeId);
+        if (drawable == nullptr) {
+            continue;
+        }
+        const auto& params = drawable->GetRenderParams();
+        // Frozen nodes may retain a cache when drawing cache is disabled.
+        if (params == nullptr ||
+            (params->GetDrawingCacheType() == RSDrawingCacheType::DISABLED_CACHE && !params->GetRSFreezeFlag())) {
+            continue;
+        }
+        flaggedDrawables.emplace_back(drawable, params->NodeGroupHasChildInBlacklist());
+        params->SetNodeGroupHasChildInBlacklist(true);
+    }
+    if (!flaggedDrawables.empty()) {
+        RS_TRACE_NAME_FMT("MarkResolvedBlacklistAncestorCacheRoots flagged:%zu", flaggedDrawables.size());
+    }
+    return flaggedDrawables;
+}
+
 #ifdef RS_ENABLE_GPU
 inline void DrawCapturedImg(Drawing::Image& image,
     Drawing::Surface& surface, const Drawing::BackendTexture& backendTexture,
@@ -143,7 +170,6 @@ void RSSurfaceCaptureTaskParallel::Capture(
             "RSSurfaceCaptureTaskParallel::Capture nodeId:[%{public}" PRIu64 "], callback is nullptr", captureParam.id);
         return;
     }
-
     std::shared_ptr<RSSurfaceCaptureTaskParallel> captureHandle =
         std::make_shared<RSSurfaceCaptureTaskParallel>(captureParam.id, captureParam.config);
     if (!captureHandle->CreateResources()) {
@@ -173,6 +199,31 @@ void RSSurfaceCaptureTaskParallel::Capture(
     RSUniRenderThread::Instance().PostSyncTask(captureTask);
 }
 
+void RSSurfaceCaptureTaskParallel::ResolveBlacklistAncestorNodeIds()
+{
+    blacklistAncestorNodeIds_.clear();
+    if (captureConfig_.blackList.empty()) {
+        return;
+    }
+    std::unordered_set<NodeId> visited;
+    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+    // Parent links only exist on RenderNode, and the render thread must not read RSRenderNodeMap or
+    // RenderNode, so the whole chain is resolved here and only node ids cross to the render thread.
+    // Only node ids are matched: an entry carrying a LeashPersistentId is not resolved.
+    for (NodeId blackId : captureConfig_.blackList) {
+        auto node = nodeMap.GetRenderNode(blackId);
+        if (node == nullptr) {
+            continue;
+        }
+        for (auto cur = node; cur != nullptr; cur = cur->GetParent().lock()) {
+            if (!visited.insert(cur->GetId()).second) {
+                break;
+            }
+            blacklistAncestorNodeIds_.push_back(cur->GetId());
+        }
+    }
+}
+
 void RSSurfaceCaptureTaskParallel::ClearCacheImageByFreeze(NodeId id)
 {
     auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(id);
@@ -189,7 +240,6 @@ void RSSurfaceCaptureTaskParallel::ClearCacheImageByFreeze(NodeId id)
         RSUniRenderThread::Instance().PostTask(clearCacheTask);
     }
 }
-
 
 bool RSSurfaceCaptureTaskParallel::CreateResources()
 {
@@ -213,6 +263,12 @@ bool RSSurfaceCaptureTaskParallel::CreateResources()
 
     if (auto surfaceNode = node->ReinterpretCastTo<RSSurfaceRenderNode>()) {
         surfaceNode_ = surfaceNode;
+        if (!surfaceNode->IsAppWindow() && !surfaceNode->IsLeashWindow()) {
+            RS_LOGW("RSSurfaceCaptureTaskParallel::CreateResources: surfaceNode is not appWindow or"
+                " leashWindow, nodeType:%{public}u nodeName:%{public}s",
+                static_cast<uint8_t>(surfaceNode->GetSurfaceNodeType()),
+                surfaceNode->GetNodeName().c_str());
+        }
         auto curNode = surfaceNode;
         if (!captureConfig_.useCurWindow) {
             auto parentNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(surfaceNode->GetParent().lock());
@@ -226,8 +282,43 @@ bool RSSurfaceCaptureTaskParallel::CreateResources()
             RS_LOGW("RSSurfaceCaptureTaskParallel::CreateResources: curNode should not paint!");
             return false;
         }
-        if (curNode->GetSortedChildren()->size() == 0) {
-            RS_LOGW("RSSurfaceCaptureTaskParallel::CreateResources: curNode has no childrenList!");
+
+        auto contentNode = curNode;
+        if (curNode->IsLeashWindow()) {
+            const auto& leashChildren = curNode->GetSortedChildren();
+            if (leashChildren != nullptr && !leashChildren->empty()) {
+                auto firstChild = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(leashChildren->front());
+                if (firstChild && firstChild->IsAppWindow()) {
+                    contentNode = firstChild;
+                } else {
+                    RS_LOGE("RSSurfaceCaptureTaskParallel::CreateResources: leashWindow id:%{public}" PRIu64
+                        " has no appWindow child, firstChild id:%{public}" PRIu64,
+                        curNode->GetId(), firstChild ? firstChild->GetId() : 0);
+                }
+            } else {
+                RS_LOGE("RSSurfaceCaptureTaskParallel::CreateResources: leashWindow id:%{public}" PRIu64
+                    " has no child to drill down", curNode->GetId());
+            }
+        }
+        bool hasNoChild = contentNode->GetSortedChildren()->size() == 0;
+        RS_LOGI("RSSurfaceCaptureTaskParallel::CreateResources hasNoChild check: useCurWindow:%{public}d,"
+            " surfaceNode[id:%{public}" PRIu64 " isAppWindow:%{public}d isLeashWindow:%{public}d],"
+            " curNode[id:%{public}" PRIu64 " isAppWindow:%{public}d isLeashWindow:%{public}d],"
+            " contentNode[id:%{public}" PRIu64 " isAppWindow:%{public}d isLeashWindow:%{public}d"
+            " childSize:%{public}zu abilityState:%{public}d hasDestoryRebuild:%{public}d],"
+            " hasNoChild:%{public}d",
+            captureConfig_.useCurWindow,
+            surfaceNode->GetId(), surfaceNode->IsAppWindow(), surfaceNode->IsLeashWindow(),
+            curNode->GetId(), curNode->IsAppWindow(), curNode->IsLeashWindow(),
+            contentNode->GetId(), contentNode->IsAppWindow(), contentNode->IsLeashWindow(),
+            contentNode->GetSortedChildren()->size(),
+            static_cast<uint8_t>(contentNode->GetAbilityState()), contentNode->HasDestoryRebuild(),
+            hasNoChild);
+
+        if (hasNoChild) {
+            RS_LOGE("RSSurfaceCaptureTaskParallel::CreateResources: curNode has no childrenList!");
+            errorCode_ = CaptureError::WINDOW_CAPTURE_NO_CHILD;
+            return false;
         }
         surfaceNodeDrawable_ = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(
             DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(curNode));
@@ -262,6 +353,9 @@ bool RSSurfaceCaptureTaskParallel::CreateResources()
     if (pixelMap_ == nullptr) {
         RS_LOGE("RSSurfaceCaptureTaskParallel::CreateResources: pixelMap_ is nullptr!");
         return false;
+    }
+    if (displayNodeDrawable_ != nullptr) {
+        ResolveBlacklistAncestorNodeIds();
     }
     return true;
 }
@@ -552,14 +646,17 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
     finalRotationAngle_ = CalPixelMapRotation();
     uint32_t pixmapWidth = static_cast<uint32_t>(node->GetFixedWidth());
     uint32_t pixmapHeight = static_cast<uint32_t>(node->GetFixedHeight());
-    auto bounds = node->GetRenderProperties().GetBoundsGeometry();
-    boundsX_ = bounds->GetX();
-    boundsY_ = bounds->GetY();
     const Rect& contentRect = node->GetDisplayContentRect();
     if (contentRect.w > 0 && contentRect.h > 0) {
+        RS_LOGI("RSSurfaceCaptureTaskParallel::CreatePixelMapByDisplayNode: contentRect valid,"
+            "width: %{public}d, height: %{public}d", contentRect.w, contentRect.h);
         pixmapWidth = static_cast<uint32_t>(contentRect.w);
         pixmapHeight = static_cast<uint32_t>(contentRect.h);
     }
+
+    auto bounds = node->GetRenderProperties().GetBoundsGeometry();
+    boundsX_ = bounds->GetX();
+    boundsY_ = bounds->GetY();
 
     const Drawing::Rect& rect = captureConfig_.mainScreenRect;
     float rectWidth = rect.GetWidth();
@@ -571,17 +668,35 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
 
     Media::InitializationOptions opts;
     if (isHDRCapture) {
+        // The HDR map is always RGBA_F16; the caller decides when to capture it.
         opts.pixelFormat = Media::PixelFormat::RGBA_F16;
+    } else if (captureConfig_.useDma) {
+        // DMA capture keeps the default RGBA_8888, ignoring the requested format.
+        opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+    } else if (captureConfig_.pixelFormat == Media::PixelFormat::BGRA_8888) {
+        opts.pixelFormat = Media::PixelFormat::BGRA_8888;
+    } else if (captureConfig_.pixelFormat == Media::PixelFormat::RGBA_8888) {
+        opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+    } else if (captureConfig_.pixelFormat != Media::PixelFormat::UNKNOWN) {
+        errorCode_ = CaptureError::CAPTURE_UNSUPPORTED_FORMAT;
+        opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+        RS_LOGW("RSSurfaceCaptureTaskParallel::CreatePixelMapByDisplayNode pixelFormat"
+            " %{public}u not support, fallback to RGBA_8888",
+            static_cast<uint32_t>(captureConfig_.pixelFormat));
+    } else {
+        opts.pixelFormat = Media::PixelFormat::RGBA_8888;
     }
     opts.size.width = ceil(pixmapWidth * captureConfig_.scaleX);
     opts.size.height = ceil(pixmapHeight * captureConfig_.scaleY);
     RS_LOGI("%{public}s NodeId[%{public}" PRIu64 "], size[%{public}u, %{public}u],"
         " scale[%{public}f, %{public}f], rect[%{public}f, %{public}f, %{public}f, %{public}f],"
         " dma[%{public}d], rot[%{public}d], corr[%{public}d],"
-        " blackList[%{public}zu], isHDR[%{public}d]",
-        __func__, node->GetId(), pixmapWidth, pixmapHeight, captureConfig_.scaleX, captureConfig_.scaleY,
+        " blackList[%{public}zu], isHDR[%{public}d]"
+        " contentRect[%{public}d, %{public}d, %{public}d, %{public}d]", __func__,
+        node->GetId(), pixmapWidth, pixmapHeight, captureConfig_.scaleX, captureConfig_.scaleY,
         rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(), captureConfig_.useDma, screenRotation_,
-        screenCorrection_, captureConfig_.blackList.size(), isHDRCapture);
+        screenCorrection_, captureConfig_.blackList.size(), isHDRCapture,
+        contentRect.x, contentRect.y, contentRect.w, contentRect.h);
     std::unique_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
     if (pixelMap) {
         GraphicColorGamut windowColorGamut = isHDRCapture ?
@@ -607,9 +722,7 @@ std::shared_ptr<Drawing::Surface> RSSurfaceCaptureTaskParallel::CreateSurface(
     }
     OHOS::ColorManager::ColorSpaceName colorSpaceName = pixelmap->InnerGetGrColorSpace().GetColorSpaceName();
     auto colorSpace = RSBaseRenderEngine::ConvertColorSpaceNameToDrawingColorSpace(colorSpaceName);
-    auto colorType = pixelmap->GetPixelFormat() == Media::PixelFormat::RGBA_F16 ?
-        Drawing::ColorType::COLORTYPE_RGBA_F16 :
-        Drawing::ColorType::COLORTYPE_RGBA_8888;
+    auto colorType = RSPixelMapUtil::PixelFormatToDrawingColorType(pixelmap->GetPixelFormat());
     Drawing::ImageInfo info = Drawing::ImageInfo{pixelmap->GetWidth(), pixelmap->GetHeight(),
         colorType, Drawing::AlphaType::ALPHATYPE_PREMUL, colorSpace};
 
@@ -670,6 +783,8 @@ int32_t RSSurfaceCaptureTaskParallel::CalPixelMapRotation()
 void RSSurfaceCaptureTaskParallel::AddBlur(
     RSPaintFilterCanvas& canvas, const std::shared_ptr<Drawing::Surface>& surface, float blurRadius)
 {
+    RS_LOGI("RSSurfaceCaptureTaskParallel::AddBlur");
+    RS_TRACE_NAME("RSSurfaceCaptureTaskParallel::AddBlur");
     Drawing::AutoCanvasRestore autoRestore(canvas, true);
     canvas.ResetMatrix();
     auto image = surface->GetImageSnapshot();
@@ -937,8 +1052,15 @@ void RSSurfaceCaptureTaskParallel::CaptureDisplayNode(DrawableV2::RSRenderNodeDr
     // Screenshot blacklist, exclude surfaceNode in blacklist while capturing displaynode
     std::unordered_set<NodeId> blackList(captureConfig_.blackList.begin(), captureConfig_.blackList.end());
     RSUniRenderThread::Instance().SetBlackList(blackList);
+    auto flaggedDrawables = MarkResolvedBlacklistAncestorCacheRoots(blacklistAncestorNodeIds_);
     RSEffectLuminanceManager::GetInstance().SetCurrentScreenshotType(type);
     displayNodeDrawable.OnCapture(canvas);
+    for (const auto& [drawable, inBlacklist] : flaggedDrawables) {
+        const auto& params = drawable->GetRenderParams();
+        if (params != nullptr) {
+            params->SetNodeGroupHasChildInBlacklist(inBlacklist);
+        }
+    }
     RSEffectLuminanceManager::GetInstance().SetCurrentScreenshotType(
             RSPaintFilterCanvas::ScreenshotType::NON_SHOT);
     RSUniRenderThread::Instance().SetBlackList({});

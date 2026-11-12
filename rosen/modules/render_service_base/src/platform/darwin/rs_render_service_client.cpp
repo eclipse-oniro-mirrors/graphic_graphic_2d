@@ -48,6 +48,11 @@ std::vector<MemoryGraphic> RSRenderServiceClient::GetMemoryGraphics()
     return {};
 }
 
+std::vector<MemoryGraphic> RSRenderServiceClient::GetMemoryGraphicsByRenderPid(int32_t renderPid)
+{
+    return {};
+}
+
 bool RSRenderServiceClient::GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize)
 {
     return {};
@@ -195,6 +200,10 @@ void RSRenderServiceClient::SetRefreshRateMode(int32_t refreshRateMode)
 
 void RSRenderServiceClient::SyncFrameRateRange(FrameRateLinkerId id,
     const FrameRateRange& range, int32_t animatorExpectedFrameRate)
+{
+}
+
+void RSRenderServiceClient::SetThermalFrameRateLimit(uint32_t frameRate)
 {
 }
 
@@ -373,12 +382,27 @@ int32_t RSRenderServiceClient::SetScreenColorGamut(ScreenId id, int32_t modeIdx)
     return {};
 }
 
+int32_t RSRenderServiceClient::SetVirtualScreenHDRMode(ScreenId id, HDRMode mode)
+{
+    return {};
+}
+
+int32_t RSRenderServiceClient::GetVirtualScreenHDRMode(ScreenId id, HDRMode& mode)
+{
+    return {};
+}
+
 int32_t RSRenderServiceClient::SetScreenGamutMap(ScreenId id, ScreenGamutMap mode)
 {
     return {};
 }
 
 int32_t RSRenderServiceClient::SetScreenCorrection(ScreenId id, ScreenRotation screenRotation)
+{
+    return {};
+}
+
+int32_t RSRenderServiceClient::SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param)
 {
     return {};
 }
@@ -519,6 +543,10 @@ uint32_t RSRenderServiceClient::SetScreenActiveRect(ScreenId id, const Rect& act
 }
 
 void RSRenderServiceClient::ForceRefreshOneFrameWithNextVSync()
+{
+}
+
+void RSRenderServiceClient::SetSkipColorSpaceConversion(ScreenId id, bool skipColorSpaceConversion)
 {
 }
 

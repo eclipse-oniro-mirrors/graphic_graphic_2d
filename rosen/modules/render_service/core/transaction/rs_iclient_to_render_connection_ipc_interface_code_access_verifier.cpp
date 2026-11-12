@@ -70,12 +70,16 @@ bool RSIClientToRenderConnectionInterfaceCodeAccessVerifier::IsExclusiveVerifica
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_GLOBAL_DARK_COLOR_MODE");
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::BLUR_PIXEL_MAP): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::BLUR_PIXEL_MAP");
+            break;
+        }
         case static_cast<CodeUnderlyingType>(CodeEnumType::TAKE_UI_CAPTURE_IN_RANGE): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::TAKE_UI_CAPTURE_IN_RANGE");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_POINTER_POSITION): {
-            hasPermission = CheckPermission(code);
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_POINTER_POSITION");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_ANCO_FORCE_DO_DIRECT): {
@@ -169,6 +173,7 @@ bool RSIClientToRenderConnectionInterfaceCodeAccessVerifier::IsExclusiveVerifica
         case static_cast<CodeUnderlyingType>(CodeEnumType::UNREGISTER_SURFACE_TRANSACTION_LISTENER):
         case static_cast<CodeUnderlyingType>(CodeEnumType::REGISTER_CLIENT_PROCESS_BUFFER_RELEASE_LISTENER):
         case static_cast<CodeUnderlyingType>(CodeEnumType::UNREGISTER_CLIENT_PROCESS_BUFFER_RELEASE_LISTENER):
+        case static_cast<CodeUnderlyingType>(CodeEnumType::CLEAN_DELEGATE_BUFFER_CMD):
         case static_cast<CodeUnderlyingType>(CodeEnumType::REGISTER_SURFACE_BUFFER_CALLBACK):
         case static_cast<CodeUnderlyingType>(CodeEnumType::UNREGISTER_SURFACE_BUFFER_CALLBACK):
         case static_cast<CodeUnderlyingType>(CodeEnumType::REGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK):

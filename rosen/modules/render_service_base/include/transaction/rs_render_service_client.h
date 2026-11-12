@@ -58,6 +58,7 @@
 #include "screen_manager/rs_screen_mode_info.h"
 #include "screen_manager/rs_surface_region_config.h"
 #include "screen_manager/screen_types.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 #include "screen_manager/rs_virtual_screen_resolution.h"
 #include "vsync_receiver.h"
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"
@@ -138,8 +139,7 @@ public:
 
     std::shared_ptr<RSSurface> CreateRSSurface(const sptr<Surface> &surface);
 
-    ScreenId CreateVirtualScreen(const std::string& name, uint32_t width, uint32_t height, sptr<Surface> surface,
-        ScreenId associatedScreenId = 0, int32_t flags = 0, std::vector<NodeId> whiteList = {});
+    ScreenId CreateVirtualScreen(const RSVirtualScreenOption& option, int32_t& errorCode);
 
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface);
 
@@ -187,6 +187,8 @@ public:
     void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate);
 
     void SetRefreshRateMode(int32_t refreshRateMode);
+
+    void SetThermalFrameRateLimit(uint32_t frameRate);
 
     void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
         int32_t animatorExpectedFrameRate);
@@ -253,6 +255,8 @@ public:
     MemoryGraphic GetMemoryGraphic(int pid);
 
     std::vector<MemoryGraphic> GetMemoryGraphics();
+    
+    std::vector<MemoryGraphic> GetMemoryGraphicsByRenderPid(int32_t renderPid);
 #endif // !ROSEN_ARKUI_X
     bool GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize);
 
@@ -273,9 +277,15 @@ public:
 
     int32_t SetScreenColorGamut(ScreenId id, int32_t modeIdx);
 
+    int32_t SetVirtualScreenHDRMode(ScreenId id, HDRMode mode);
+
+    int32_t GetVirtualScreenHDRMode(ScreenId id, HDRMode& mode);
+
     int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode);
 
     int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation);
+
+    int32_t SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param);
 
     bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation);
 
@@ -321,6 +331,8 @@ public:
     void SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY);
 
     void SetScreenFrameGravity(ScreenId id, int32_t gravity);
+
+    void SetSkipColorSpaceConversion(ScreenId id, bool skipColorSpaceConversion);
 
     int32_t RegisterHgmConfigChangeCallback(const HgmConfigChangeCallback& callback);
 

@@ -236,7 +236,7 @@ void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeD
     RSMainThread::Instance()->RequestNextVSync("subthreadDone");
 
     // mark nodedrawable can release
-    RSUifirstManager::Instance().AddProcessDoneNode(nodeId);
+    RSUifirstManager::Instance().AddProcessDoneNode(nodeId, surfaceParams->GetUifirstNodeEnableParam());
     doingCacheProcessNum_--;
 }
 
@@ -305,7 +305,7 @@ void RSSubThread::DrawableCacheWithSkImage(std::shared_ptr<DrawableV2::RSSurface
     bool isHdrSurface = false;
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetUifirstRenderParams().get());
     float hdrScale = 1.0f;
-    
+
     bool isScRGBEnable = RSSystemParameters::IsNeedScRGBForP3(rsSubThreadCache.GetTargetColorGamut()) &&
         RSUifirstManager::Instance().GetUiFirstSwitch();
     if (surfaceParams != nullptr) {

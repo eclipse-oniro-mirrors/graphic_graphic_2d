@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "draw_cmd.h"
 #include "drawing_painter_impl.h"
 #include "recording_canvas.h"
 #include "text_blob_builder.h"
@@ -25,7 +26,56 @@ using namespace OHOS::Rosen::SPText;
 using namespace OHOS::Rosen::TextEngine;
 using namespace skia::textlayout;
 
+namespace Drawing = OHOS::Rosen::Drawing;
+
 namespace txt {
+namespace {
+constexpr int32_t CANVAS_WIDTH = 200;   // 200 just for test
+constexpr int32_t CANVAS_HEIGHT = 100;  // 100 just for test
+constexpr SkScalar RECT_WIDTH = 100.0f; // 100 just for test
+constexpr SkScalar RECT_HEIGHT = 50.0f; // 50 just for test
+constexpr SkColor COLOR_FILL_GREEN = 0xFF00FF00;
+constexpr SkColor COLOR_BORDER_RED = 0xFFFF0000;
+constexpr SkColor COLOR_TRANSPARENT = 0;
+constexpr SkScalar BORDER_WIDTH = 2.0f; // 2.0 just for test
+constexpr int EXPECTED_ROUND_RECT_OPS_ONE = 1;
+constexpr int EXPECTED_ROUND_RECT_OPS_TWO = 2;
+
+int CountRoundRectOps(const std::shared_ptr<RecordingCanvas>& canvas)
+{
+    int count = 0;
+    for (const auto& opItem : canvas->GetDrawCmdList()->GetDrawOpItems()) {
+        if (opItem->GetType() == DrawOpItem::ROUND_RECT_OPITEM) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+constexpr SkScalar CORNER_RADIUS = 6.0f; // 6.0 just for test
+
+// Captures the RoundRect of every recorded round-rect op. RecordingCanvas is used (instead of a
+// test-local Canvas subclass) because rosen_text is CFI-instrumented: a vtable defined in this
+// translation unit is rejected by its cross-DSO CFI check, while RecordingCanvas's vtable is
+// registered inside lib2d_graphics.
+std::vector<Drawing::RoundRect> CaptureRoundRects(
+    const SkRRect& rrect, const SkColor fillColor, const SkColor borderColor, const SkScalar borderWidth)
+{
+    auto canvas = std::make_shared<RecordingCanvas>(CANVAS_WIDTH, CANVAS_HEIGHT, false);
+    std::vector<PaintRecord> paints; // empty paints: drawRRectWithBorder only uses the canvas
+    RSCanvasParagraphPainter painter(canvas.get(), paints);
+    painter.drawRRectWithBorder(rrect, fillColor, borderColor, borderWidth);
+    std::vector<Drawing::RoundRect> roundRects;
+    for (const auto& opItem : canvas->GetDrawCmdList()->GetDrawOpItems()) {
+        if (opItem->GetType() == DrawOpItem::ROUND_RECT_OPITEM) {
+            auto* roundRectOp = static_cast<const DrawRoundRectOpItem*>(opItem.get());
+            roundRects.push_back(roundRectOp->rrect_);
+        }
+    }
+    return roundRects;
+}
+} // namespace
+
 class RSCanvasParagraphPainterTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -463,6 +513,150 @@ HWTEST_F(RSCanvasParagraphPainterTest, RSCanvasParagraphPainterTest025, TestSize
     paint.emplace<ParagraphPainter::PaintID>(paintID);
     SkRect rect = SkRect::MakeEmpty();
     canvasParagraphPainterWithoutPenBrush_->drawRect(rect, paint);
+}
+
+/*
+ * @tc.name: RSCanvasParagraphPainterTest026
+ * @tc.desc: test for drawRRectWithBorder draws both fill and border
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasParagraphPainterTest, RSCanvasParagraphPainterTest026, TestSize.Level0)
+{
+    auto canvas = std::make_shared<RecordingCanvas>(CANVAS_WIDTH, CANVAS_HEIGHT, false);
+    ASSERT_NE(canvas, nullptr);
+    std::vector<PaintRecord> paints; // empty paints: drawRRectWithBorder only uses the canvas
+    RSCanvasParagraphPainter painter(canvas.get(), paints);
+    SkRRect rrect = SkRRect::MakeRect(SkRect::MakeWH(RECT_WIDTH, RECT_HEIGHT));
+    painter.drawRRectWithBorder(rrect, COLOR_FILL_GREEN, COLOR_BORDER_RED, BORDER_WIDTH);
+    EXPECT_EQ(CountRoundRectOps(canvas), EXPECTED_ROUND_RECT_OPS_TWO); // one fill op plus one border op
+}
+
+/*
+ * @tc.name: RSCanvasParagraphPainterTest027
+ * @tc.desc: test for drawRRectWithBorder skips transparent fill and draws border only
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasParagraphPainterTest, RSCanvasParagraphPainterTest027, TestSize.Level0)
+{
+    auto canvas = std::make_shared<RecordingCanvas>(CANVAS_WIDTH, CANVAS_HEIGHT, false);
+    ASSERT_NE(canvas, nullptr);
+    std::vector<PaintRecord> paints; // empty paints: drawRRectWithBorder only uses the canvas
+    RSCanvasParagraphPainter painter(canvas.get(), paints);
+    SkRRect rrect = SkRRect::MakeRect(SkRect::MakeWH(RECT_WIDTH, RECT_HEIGHT));
+    painter.drawRRectWithBorder(rrect, COLOR_TRANSPARENT, COLOR_BORDER_RED, BORDER_WIDTH);
+    EXPECT_EQ(CountRoundRectOps(canvas), EXPECTED_ROUND_RECT_OPS_ONE); // border only, fill skipped
+}
+
+/*
+ * @tc.name: RSCanvasParagraphPainterTest028
+ * @tc.desc: test for drawRRectWithBorder skips border when borderColor is 0
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasParagraphPainterTest, RSCanvasParagraphPainterTest028, TestSize.Level0)
+{
+    auto canvas = std::make_shared<RecordingCanvas>(CANVAS_WIDTH, CANVAS_HEIGHT, false);
+    ASSERT_NE(canvas, nullptr);
+    std::vector<PaintRecord> paints; // empty paints: drawRRectWithBorder only uses the canvas
+    RSCanvasParagraphPainter painter(canvas.get(), paints);
+    SkRRect rrect = SkRRect::MakeRect(SkRect::MakeWH(RECT_WIDTH, RECT_HEIGHT));
+    painter.drawRRectWithBorder(rrect, COLOR_FILL_GREEN, COLOR_TRANSPARENT, BORDER_WIDTH);
+    EXPECT_EQ(CountRoundRectOps(canvas), EXPECTED_ROUND_RECT_OPS_ONE); // fill only, border skipped
+}
+
+/*
+ * @tc.name: RSCanvasParagraphPainterTest029
+ * @tc.desc: test for drawRRectWithBorder skips border when borderWidth is not positive
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasParagraphPainterTest, RSCanvasParagraphPainterTest029, TestSize.Level0)
+{
+    auto canvas = std::make_shared<RecordingCanvas>(CANVAS_WIDTH, CANVAS_HEIGHT, false);
+    ASSERT_NE(canvas, nullptr);
+    std::vector<PaintRecord> paints; // empty paints: drawRRectWithBorder only uses the canvas
+    RSCanvasParagraphPainter painter(canvas.get(), paints);
+    SkRRect rrect = SkRRect::MakeRect(SkRect::MakeWH(RECT_WIDTH, RECT_HEIGHT));
+    painter.drawRRectWithBorder(rrect, COLOR_FILL_GREEN, COLOR_BORDER_RED, 0.0f);
+    EXPECT_EQ(CountRoundRectOps(canvas), EXPECTED_ROUND_RECT_OPS_ONE); // fill only, zero-width border skipped
+    painter.drawRRectWithBorder(rrect, COLOR_FILL_GREEN, COLOR_BORDER_RED, -BORDER_WIDTH);
+    EXPECT_EQ(CountRoundRectOps(canvas), EXPECTED_ROUND_RECT_OPS_TWO); // fill again, border skipped
+}
+
+/*
+ * @tc.name: RSCanvasParagraphPainterTest030
+ * @tc.desc: test for drawRRectWithBorder stroking an outset path so the border is fully outside
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasParagraphPainterTest, RSCanvasParagraphPainterTest030, TestSize.Level0)
+{
+    SkRRect rrect = SkRRect::MakeRectXY(SkRect::MakeWH(RECT_WIDTH, RECT_HEIGHT), CORNER_RADIUS, CORNER_RADIUS);
+    auto roundRects = CaptureRoundRects(rrect, COLOR_FILL_GREEN, COLOR_BORDER_RED, BORDER_WIDTH);
+    ASSERT_EQ(roundRects.size(), static_cast<size_t>(EXPECTED_ROUND_RECT_OPS_TWO)); // fill first, then border
+    const Drawing::Rect& fillRect = roundRects[0].GetRect();
+    EXPECT_FLOAT_EQ(fillRect.GetLeft(), 0.0f); // fill stays on the text bounds
+    EXPECT_FLOAT_EQ(fillRect.GetRight(), RECT_WIDTH);
+    constexpr SkScalar HALF_BORDER = BORDER_WIDTH / 2.0f; // 1.0 just for test
+    const Drawing::Rect& borderRect = roundRects[1].GetRect();
+    EXPECT_FLOAT_EQ(borderRect.GetLeft(), -HALF_BORDER);
+    EXPECT_FLOAT_EQ(borderRect.GetTop(), -HALF_BORDER);
+    EXPECT_FLOAT_EQ(borderRect.GetRight(), RECT_WIDTH + HALF_BORDER);
+    EXPECT_FLOAT_EQ(borderRect.GetBottom(), RECT_HEIGHT + HALF_BORDER);
+    constexpr SkScalar EXPECTED_RADIUS = CORNER_RADIUS + HALF_BORDER;
+    EXPECT_FLOAT_EQ(roundRects[0].GetCornerRadius(Drawing::RoundRect::TOP_LEFT_POS).GetX(), CORNER_RADIUS);
+    EXPECT_FLOAT_EQ(roundRects[1].GetCornerRadius(Drawing::RoundRect::TOP_LEFT_POS).GetX(), EXPECTED_RADIUS);
+}
+
+/*
+ * @tc.name: RSCanvasParagraphPainterTest031
+ * @tc.desc: test for drawRRectWithBorder border-only op uses the outset path
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasParagraphPainterTest, RSCanvasParagraphPainterTest031, TestSize.Level0)
+{
+    SkRRect rrect = SkRRect::MakeRectXY(SkRect::MakeWH(RECT_WIDTH, RECT_HEIGHT), CORNER_RADIUS, CORNER_RADIUS);
+    auto roundRects = CaptureRoundRects(rrect, COLOR_TRANSPARENT, COLOR_BORDER_RED, BORDER_WIDTH);
+    ASSERT_EQ(roundRects.size(), static_cast<size_t>(EXPECTED_ROUND_RECT_OPS_ONE)); // border only
+    constexpr SkScalar HALF_BORDER = BORDER_WIDTH / 2.0f;                           // 1.0 just for test
+    EXPECT_FLOAT_EQ(roundRects[0].GetRect().GetLeft(), -HALF_BORDER);
+}
+
+/*
+ * @tc.name: RSCanvasParagraphPainterTest032
+ * @tc.desc: test for zero corner radius keeping a square stroke path under mixed interpolation
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasParagraphPainterTest, RSCanvasParagraphPainterTest032, TestSize.Level0)
+{
+    SkRRect rrect = SkRRect::MakeRect(SkRect::MakeWH(RECT_WIDTH, RECT_HEIGHT)); // sharp input corners
+    auto roundRects = CaptureRoundRects(rrect, COLOR_FILL_GREEN, COLOR_BORDER_RED, BORDER_WIDTH);
+    ASSERT_EQ(roundRects.size(), static_cast<size_t>(EXPECTED_ROUND_RECT_OPS_TWO));
+    constexpr SkScalar HALF_BORDER = BORDER_WIDTH / 2.0f; // 1.0 just for test
+    EXPECT_FLOAT_EQ(roundRects[1].GetRect().GetLeft(), -HALF_BORDER); // path still outsets w/2
+    EXPECT_FLOAT_EQ(roundRects[1].GetCornerRadius(Drawing::RoundRect::TOP_LEFT_POS).GetX(), 0.0f); // square
+    EXPECT_FLOAT_EQ(roundRects[0].GetCornerRadius(Drawing::RoundRect::TOP_LEFT_POS).GetX(), 0.0f); // fill unchanged
+}
+
+/*
+ * @tc.name: RSCanvasParagraphPainterTest033
+ * @tc.desc: test for smoothstep transition of the stroke path radius below w/2
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasParagraphPainterTest, RSCanvasParagraphPainterTest033, TestSize.Level0)
+{
+    constexpr SkScalar SMALL_RADIUS = 0.5f; // 0.5 just for test: t = 0.5, smoothstep = 0.5
+    constexpr SkScalar TINY_RADIUS = 0.25f; // 0.25 just for test: under the floor, clamps to square
+    constexpr SkScalar EDGE_RADIUS = 1.0f;  // 1.0 just for test: exactly w/2, matches old scheme
+    constexpr SkScalar EXPECTED_SMALL = 0.5f;  // 0.5 + 2 * 0.5 - 1
+    constexpr SkScalar EXPECTED_TINY = 0.0f;   // clamped to a square corner
+    constexpr SkScalar EXPECTED_EDGE = 2.0f;   // 1.0 + 2 * 1.0 - 1, equals r + w/2 (old scheme)
+    const SkScalar radii[] = { SMALL_RADIUS, TINY_RADIUS, EDGE_RADIUS };
+    const SkScalar expected[] = { EXPECTED_SMALL, EXPECTED_TINY, EXPECTED_EDGE };
+    for (size_t i = 0; i < sizeof(radii) / sizeof(radii[0]); ++i) {
+        SkRRect rrect = SkRRect::MakeRectXY(SkRect::MakeWH(RECT_WIDTH, RECT_HEIGHT), radii[i], radii[i]);
+        auto roundRects = CaptureRoundRects(rrect, COLOR_FILL_GREEN, COLOR_BORDER_RED, BORDER_WIDTH);
+        ASSERT_EQ(roundRects.size(), static_cast<size_t>(EXPECTED_ROUND_RECT_OPS_TWO));
+        EXPECT_FLOAT_EQ(roundRects[1].GetCornerRadius(Drawing::RoundRect::TOP_LEFT_POS).GetX(), expected[i]);
+        EXPECT_FLOAT_EQ(roundRects[0].GetCornerRadius(Drawing::RoundRect::TOP_LEFT_POS).GetX(), radii[i]);
+    }
 }
 
 } // namespace txt

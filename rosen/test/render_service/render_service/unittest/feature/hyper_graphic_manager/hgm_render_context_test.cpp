@@ -20,11 +20,13 @@
 #include "hgm_core.h"
 #include "hgm_frame_rate_manager.h"
 #include "params/rs_render_params.h"
+#include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "render_server/rs_render_process_manager_agent.h"
 #include "render_server/rs_render_service.h"
 #include "render_server/rs_render_service_agent.h"
 #include "screen_manager/public/rs_screen_manager_agent.h"
+#include "screen_manager/rs_screen.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "transaction/rs_render_to_service_connection.h"
 
@@ -319,6 +321,187 @@ HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForLTPS002, Function 
 }
 
 /**
+ * @tc.name: HandleAdaptiveVsyncConditionForShellAssistantAnco001
+ * @tc.desc: ShellAssistantAnco_ prefix + contains gameNodeName_ suffix → game node on tree
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForShellAssistantAnco001, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "gameNode";
+
+    config.id = 1;
+    config.name = "ShellAssistantAnco_gameNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->SetIsOnTheTree(true);
+    surfaceNode->SetVisibleRegion(Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000}));
+    rsContext->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_TRUE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
+ * @tc.name: HandleAdaptiveVsyncConditionForShellAssistantAnco002
+ * @tc.desc: ShellAssistantAnco_ prefix + gameNodeName_ appears in the middle → game node on tree
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForShellAssistantAnco002, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "gameNode";
+
+    config.id = 1;
+    config.name = "ShellAssistantAnco_prefix_gameNode_suffix";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->SetIsOnTheTree(true);
+    surfaceNode->SetVisibleRegion(Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000}));
+    rsContext->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_TRUE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
+ * @tc.name: HandleAdaptiveVsyncConditionForShellAssistantAnco003
+ * @tc.desc: ShellAssistantAnco_ prefix but doesn't contain gameNodeName_ → not game node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForShellAssistantAnco003, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "gameNode";
+
+    config.id = 1;
+    config.name = "ShellAssistantAnco_otherNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->SetIsOnTheTree(true);
+    surfaceNode->SetVisibleRegion(Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000}));
+    rsContext->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_FALSE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
+ * @tc.name: HandleAdaptiveVsyncConditionForShellAssistantAnco004
+ * @tc.desc: gameNodeName_ empty + ShellAssistantAnco_ prefix → guard prevents match, not game node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForShellAssistantAnco004, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "";
+
+    config.id = 1;
+    config.name = "ShellAssistantAnco_gameNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->SetIsOnTheTree(true);
+    surfaceNode->SetVisibleRegion(Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000}));
+    rsContext->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_FALSE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
+ * @tc.name: HandleAdaptiveVsyncConditionForShellAssistantAnco005
+ * @tc.desc: no ShellAssistantAnco_ prefix, contains gameNodeName_ substring but not exact match → not game node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForShellAssistantAnco005, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "gameNode";
+
+    config.id = 1;
+    config.name = "OtherPrefix_gameNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->SetIsOnTheTree(true);
+    surfaceNode->SetVisibleRegion(Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000}));
+    rsContext->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_FALSE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
+ * @tc.name: HandleAdaptiveVsyncConditionForEmptyVisibleRegion
+ * @tc.desc: test self-drawing node is skipped when its app node has empty visible region
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForEmptyVisibleRegion, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "gameNode";
+
+    config.id = 1;
+    config.name = "ShellAssistantAnco_gameNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto gameNode = std::make_shared<RSSurfaceRenderNode>(config);
+    gameNode->SetIsOnTheTree(true);
+    rsContext->GetMutableNodeMap().RegisterRenderNode(gameNode);
+
+    NodeId appNodeId = 2;
+    config.id = appNodeId;
+    config.name = "appNode";
+    config.nodeType = RSSurfaceNodeType::DEFAULT;
+    auto appNode = std::make_shared<RSSurfaceRenderNode>(config);
+    appNode->SetIsOnTheTree(true);
+    rsContext->GetMutableNodeMap().RegisterRenderNode(appNode);
+
+    config.id = 3;
+    config.name = "otherAppSelfNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto selfNode = std::make_shared<RSSurfaceRenderNode>(config);
+    selfNode->SetIsOnTheTree(true, appNodeId);
+    rsContext->GetMutableNodeMap().RegisterRenderNode(selfNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_TRUE(hgmRenderContext.isGameNodeOnTree_.load());
+
+    auto visibleRegion = Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000});
+    appNode->SetVisibleRegion(visibleRegion);
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_FALSE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
  * @tc.name: SetServiceToProcessInfoTest
  * @tc.desc: test HgmRenderContext.SetServiceToProcessInfo
  * @tc.type: FUNC
@@ -445,5 +628,100 @@ HWTEST_F(HgmRenderContextTest, InitHgmConfigTest002, TestSize.Level1)
         << "hgmAbilityEnabled_ should be true (default) when ability_enable node is absent";
     g_customTestXmlPath.clear();
     std::remove(testXmlPath3.c_str());
+}
+
+/**
+ * @tc.name: OnScreenPropertyChangedTest001
+ * @tc.desc: Test HgmContext::OnScreenPropertyChanged with non-RENDER_RESOLUTION type and success path
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, OnScreenPropertyChangedTest001, TestSize.Level1)
+{
+    auto& hgmCore = HgmCore::Instance();
+    auto frameRateMgr = hgmCore.GetFrameRateMgr();
+    auto origScreenManager = hgmCore.GetScreenManager();
+    auto screenManagerForProcess = sptr<RSScreenManager>::MakeSptr();
+    hgmCore.SetScreenManager(screenManagerForProcess.GetRefPtr());
+    screenManagerForProcess->MockHdiScreenConnected(std::make_shared<RSScreen>(1));
+
+    auto hgmContext = std::make_shared<HgmContext>(nullptr, frameRateMgr, nullptr, nullptr, nullptr);
+    ASSERT_NE(hgmContext, nullptr);
+    sptr<ScreenPropertyBase> dummyProperty = nullptr;
+    hgmContext->OnScreenPropertyChanged(1, ScreenPropertyType::ID, dummyProperty);
+    auto screen = screenManagerForProcess->GetScreen(1);
+    ASSERT_NE(screen, nullptr);
+    screen->isRogResolution_ = true;
+    hgmContext->OnScreenPropertyChanged(1, ScreenPropertyType::RENDER_RESOLUTION, dummyProperty);
+    screen->isRogResolution_ = false;
+    hgmCore.SetScreenManager(origScreenManager);
+}
+
+/**
+ * @tc.name: OnScreenPropertyChangedTest002
+ * @tc.desc: Test HgmContext::OnScreenPropertyChanged with RENDER_RESOLUTION but null screenManager
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, OnScreenPropertyChangedTest002, TestSize.Level1)
+{
+    auto& hgmCore = HgmCore::Instance();
+    auto frameRateMgr = hgmCore.GetFrameRateMgr();
+    auto hgmContext = std::make_shared<HgmContext>(nullptr, frameRateMgr, nullptr, nullptr, nullptr);
+    ASSERT_NE(hgmContext, nullptr);
+    auto origScreenManager = hgmCore.GetScreenManager();
+    hgmCore.SetScreenManager(nullptr);
+    sptr<ScreenPropertyBase> dummyProperty = nullptr;
+    hgmContext->OnScreenPropertyChanged(1, ScreenPropertyType::RENDER_RESOLUTION, dummyProperty);
+    hgmCore.SetScreenManager(origScreenManager);
+}
+
+/**
+ * @tc.name: OnScreenPropertyChangedTest003
+ * @tc.desc: Test HgmContext::OnScreenPropertyChanged with RENDER_RESOLUTION and GetRogScreenResolution fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, OnScreenPropertyChangedTest003, TestSize.Level1)
+{
+    auto& hgmCore = HgmCore::Instance();
+    auto frameRateMgr = hgmCore.GetFrameRateMgr();
+    auto origScreenManager = hgmCore.GetScreenManager();
+    auto screenManagerForProcess = sptr<RSScreenManager>::MakeSptr();
+    hgmCore.SetScreenManager(screenManagerForProcess.GetRefPtr());
+    screenManagerForProcess->MockHdiScreenConnected(std::make_shared<RSScreen>(1));
+
+    auto hgmContext = std::make_shared<HgmContext>(nullptr, frameRateMgr, nullptr, nullptr, nullptr);
+    ASSERT_NE(hgmContext, nullptr);
+    sptr<ScreenPropertyBase> dummyProperty = nullptr;
+    hgmContext->OnScreenPropertyChanged(9999, ScreenPropertyType::RENDER_RESOLUTION, dummyProperty);
+    auto screen = screenManagerForProcess->GetScreen(1);
+    ASSERT_NE(screen, nullptr);
+    hgmContext->OnScreenPropertyChanged(1, ScreenPropertyType::RENDER_RESOLUTION, dummyProperty);
+    hgmCore.SetScreenManager(origScreenManager);
+}
+
+/**
+ * @tc.name: ShowRefreshRateChangeProcessTest
+ * @tc.desc: Verify ShowRefreshRateChangeProcess handles nullptr, invalid string, enable and disable inputs
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, ShowRefreshRateChangeProcessTest, TestSize.Level1)
+{
+    std::string propKey = "rosen.showRefreshRate.enabled";
+    auto& mgr = RSRealtimeRefreshRateManager::Instance();
+    bool initial = mgr.GetShowRefreshRateEnabled();
+
+    HgmRenderContext::ShowRefreshRateChangeProcess(propKey.c_str(), nullptr, nullptr);
+    EXPECT_EQ(mgr.GetShowRefreshRateEnabled(), initial);
+    HgmRenderContext::ShowRefreshRateChangeProcess(propKey.c_str(), "invalid", nullptr);
+    EXPECT_EQ(mgr.GetShowRefreshRateEnabled(), initial);
+    HgmRenderContext::ShowRefreshRateChangeProcess(propKey.c_str(), "1", nullptr);
+    EXPECT_TRUE(mgr.GetShowRefreshRateEnabled());
+    HgmRenderContext::ShowRefreshRateChangeProcess(propKey.c_str(), "0", nullptr);
+    EXPECT_FALSE(mgr.GetShowRefreshRateEnabled());
+    HgmRenderContext::ShowRefreshRateChangeProcess(propKey.c_str(), initial ? "1" : "0", nullptr);
+    EXPECT_EQ(mgr.GetShowRefreshRateEnabled(), initial);
 }
 } // namespace OHOS::Rosen

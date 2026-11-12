@@ -446,7 +446,7 @@ HWTEST_F(RsSubThreadTest, DrawableCacheWithSkImageColorSpaceChangeTest002, TestS
     ASSERT_NE(nodeDrawable, nullptr);
 
     auto& subCache = nodeDrawable->GetRsSubThreadCache();
-    
+
     subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
     subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     EXPECT_EQ(subCache.GetTargetColorGamut(), subCache.GetCacheSurfaceColorSpace());
@@ -480,10 +480,10 @@ HWTEST_F(RsSubThreadTest, DrawableCacheWithSkImageColorSpaceChangeTest003, TestS
     ASSERT_NE(nodeDrawable, nullptr);
 
     auto& subCache = nodeDrawable->GetRsSubThreadCache();
-    
+
     subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
     subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    
+
     bool isColorSpaceChanged = (subCache.GetTargetColorGamut() != subCache.GetCacheSurfaceColorSpace());
     EXPECT_TRUE(isColorSpaceChanged);
     EXPECT_EQ(subCache.GetTargetColorGamut(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
@@ -510,13 +510,13 @@ HWTEST_F(RsSubThreadTest, DrawableCacheWithSkImageBufferFormatAndColorSpaceTest,
     ASSERT_NE(nodeDrawable, nullptr);
 
     auto& subCache = nodeDrawable->GetRsSubThreadCache();
-    
+
     subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
     subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    
+
     bool bufferColorSpaceChange = (subCache.GetTargetColorGamut() != subCache.GetCacheSurfaceColorSpace());
     EXPECT_FALSE(bufferColorSpaceChange);
-    
+
     subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
     bufferColorSpaceChange = (subCache.GetTargetColorGamut() != subCache.GetCacheSurfaceColorSpace());
     EXPECT_TRUE(bufferColorSpaceChange);
@@ -560,10 +560,10 @@ HWTEST_F(RsSubThreadTest, DrawableCacheWithSkImageHDRColorSpaceChangeTest, TestS
     auto& subCache = nodeDrawable->GetRsSubThreadCache();
     subCache.SetHDRPresent(true);
     EXPECT_TRUE(subCache.GetHDRPresent());
-    
+
     subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
     subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    
+
     bool isColorSpaceChanged = (subCache.GetTargetColorGamut() != subCache.GetCacheSurfaceColorSpace());
     EXPECT_TRUE(isColorSpaceChanged);
 }
@@ -590,21 +590,21 @@ HWTEST_F(RsSubThreadTest, DrawableCacheWithSkImageMultipleColorSpaceChangesTest,
 
     auto& subCache = nodeDrawable->GetRsSubThreadCache();
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetUifirstRenderParams().get());
-    
+
     subCache.isOcclusionEnabled_ = false;
-    
+
     subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
     subCache.UpdateCacheSurfaceInfo(nodeDrawable.get(), surfaceParams);
     EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
-    
+
     subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
     subCache.UpdateCacheSurfaceInfo(nodeDrawable.get(), surfaceParams);
     EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
-    
+
     subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
     subCache.UpdateCacheSurfaceInfo(nodeDrawable.get(), surfaceParams);
     EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
-    
+
     subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
     subCache.UpdateCacheSurfaceInfo(nodeDrawable.get(), surfaceParams);
     EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
@@ -738,5 +738,129 @@ HWTEST_F(RsSubThreadTest, DrawableCacheWithSkImageHDRParams, TestSize.Level1)
     curThread->DrawableCacheWithSkImage(nodeDrawable);
     EXPECT_EQ(curThread->grContext_, nullptr);
     EXPECT_TRUE(subCache.GetHDRPresent());
+}
+
+/**
+ * @tc.name: DrawableCacheWithSkImageSurfaceParamsNullTest
+ * @tc.desc: Test DrawableCacheWithSkImage when surface params is null
+ * @tc.type: FUNC
+ * @tc.require: issue26284
+ */
+HWTEST_F(RsSubThreadTest, DrawableCacheWithSkImageSurfaceParamsNullTest, TestSize.Level1)
+{
+    auto renderContext = RenderContext::Create();
+    renderContext->Init();
+    auto curThread = std::make_shared<RSSubThread>(renderContext, 0);
+    ASSERT_NE(curThread, nullptr);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    auto nodeDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+    ASSERT_NE(nodeDrawable, nullptr);
+
+    nodeDrawable->uifirstRenderParams_ = nullptr;
+    curThread->DrawableCacheWithSkImage(nodeDrawable);
+}
+
+/**
+ * @tc.name: DrawableCacheWithSkImageHdrSurfaceBranchTest
+ * @tc.desc: Test DrawableCacheWithSkImage hdr surface branch
+ * @tc.type: FUNC
+ * @tc.require: issue26284
+ */
+HWTEST_F(RsSubThreadTest, DrawableCacheWithSkImageHdrSurfaceBranchTest, TestSize.Level1)
+{
+    auto renderContext = RenderContext::Create();
+    renderContext->Init();
+    auto curThread = std::make_shared<RSSubThread>(renderContext, 0);
+    ASSERT_NE(curThread, nullptr);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    auto nodeDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+    ASSERT_NE(nodeDrawable, nullptr);
+
+    nodeDrawable->uifirstRenderParams_ = std::make_unique<RSSurfaceRenderParams>(nodeDrawable->GetId());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetUifirstRenderParams().get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetHDRPresent(true);
+    auto& subCache = nodeDrawable->GetRsSubThreadCache();
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+
+    curThread->DrawableCacheWithSkImage(nodeDrawable);
+    EXPECT_TRUE(surfaceParams->GetHDRPresent());
+}
+
+/**
+ * @tc.name: DrawableCacheWithSkImageNonHdrBranchTest
+ * @tc.desc: Test DrawableCacheWithSkImage non-hdr surface and no color space change branch
+ * @tc.type: FUNC
+ * @tc.require: issue26284
+ */
+HWTEST_F(RsSubThreadTest, DrawableCacheWithSkImageNonHdrBranchTest, TestSize.Level1)
+{
+    auto renderContext = RenderContext::Create();
+    renderContext->Init();
+    auto curThread = std::make_shared<RSSubThread>(renderContext, 0);
+    ASSERT_NE(curThread, nullptr);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    auto nodeDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+    ASSERT_NE(nodeDrawable, nullptr);
+
+    nodeDrawable->uifirstRenderParams_ = std::make_unique<RSSurfaceRenderParams>(nodeDrawable->GetId());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetUifirstRenderParams().get());
+    ASSERT_NE(surfaceParams, nullptr);
+    auto& subCache = nodeDrawable->GetRsSubThreadCache();
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+
+    curThread->DrawableCacheWithSkImage(nodeDrawable);
+    EXPECT_FALSE(surfaceParams->GetHDRPresent());
+}
+
+/**
+ * @tc.name: DrawableCacheWithSkImageColorSpaceChangeBranchTest
+ * @tc.desc: Test DrawableCacheWithSkImage color space change branch
+ * @tc.type: FUNC
+ * @tc.require: issue26284
+ */
+HWTEST_F(RsSubThreadTest, DrawableCacheWithSkImageColorSpaceChangeBranchTest, TestSize.Level1)
+{
+    auto renderContext = RenderContext::Create();
+    renderContext->Init();
+    auto curThread = std::make_shared<RSSubThread>(renderContext, 0);
+    ASSERT_NE(curThread, nullptr);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    auto nodeDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+    ASSERT_NE(nodeDrawable, nullptr);
+
+    nodeDrawable->uifirstRenderParams_ = std::make_unique<RSSurfaceRenderParams>(nodeDrawable->GetId());
+    auto& subCache = nodeDrawable->GetRsSubThreadCache();
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+
+    curThread->DrawableCacheWithSkImage(nodeDrawable);
+    EXPECT_NE(subCache.GetTargetColorGamut(), subCache.GetCacheSurfaceColorSpace());
+}
+
+/**
+ * @tc.name: DumpMemNullNodeTest
+ * @tc.desc: Verify function DumpMem traverses null surface node
+ * @tc.type:FUNC
+ * @tc.require: issue26284
+ */
+HWTEST_F(RsSubThreadTest, DumpMemNullNodeTest, TestSize.Level1)
+{
+    std::shared_ptr<RenderContext> renderContext = RenderContext::Create();
+    auto curThread = std::make_shared<RSSubThread>(renderContext, 0);
+    DfxString log;
+    curThread->grContext_ = std::make_shared<Drawing::GPUContext>();
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().surfaceNodeMap_.emplace(0xFFFFF, nullptr);
+    curThread->DumpMem(log, false);
+    EXPECT_TRUE(curThread->grContext_);
 }
 } // namespace OHOS::Rosen

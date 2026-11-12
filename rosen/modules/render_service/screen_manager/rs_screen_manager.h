@@ -17,6 +17,7 @@
 #define RS_SCREEN_MANAGER
 
 #include <condition_variable>
+#include <cstddef>
 #include <cstdint>
 #include <event_handler.h>
 #include <future>
@@ -44,6 +45,7 @@
 #include <screen_manager/rs_virtual_screen_resolution.h>
 #include <screen_manager/rs_screen_property.h>
 #include <screen_manager/rs_surface_region_config.h>
+#include <screen_manager/rs_virtual_screen_option.h>
 #include "rs_screen_preprocessor.h"
 #include "product_feature/fold/rs_fold_screen_manager.h"
 
@@ -121,6 +123,8 @@ public:
 
     int32_t SetScreenColorGamut(ScreenId id, int32_t modeIdx);
     int32_t GetScreenColorGamut(ScreenId id, ScreenColorGamut& mode) const;
+    int32_t SetVirtualScreenHDRMode(ScreenId id, HDRMode mode);
+    int32_t GetVirtualScreenHDRMode(ScreenId id, HDRMode& mode) const;
     int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode) const;
     int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode);
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) const;
@@ -142,8 +146,9 @@ public:
     uint32_t SetScreenActiveRect(ScreenId id, const Rect& activeRect);
 
     // virtual screen
-    ScreenId CreateVirtualScreen(const std::string& name, uint32_t width, uint32_t height, sptr<Surface> surface,
-        ScreenId associatedScreenId = 0, int32_t flags = 0, std::vector<NodeId> whiteList = {});
+    // Core creation entry: the HDR mode is applied when the virtual screen is created. On failure
+    // INVALID_SCREEN_ID is returned and errorCode carries the StatusCode reason.
+    ScreenId CreateVirtualScreen(const RSVirtualScreenOption& vsOption, int32_t& errorCode);
     void RemoveVirtualScreen(ScreenId id);
     uint32_t GetCurrentVirtualScreenNum();
 
@@ -176,6 +181,9 @@ public:
     // type blacklist
     int32_t SetVirtualScreenTypeBlackList(ScreenId id, const std::vector<uint8_t>& typeBlackList);
 
+    // post processing shader
+    int32_t SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param);
+
     // whitelist
     int32_t AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
     int32_t RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
@@ -191,6 +199,7 @@ public:
 
     void SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY);
     void SetScreenFrameGravity(ScreenId id, int32_t gravity);
+    void SetSkipColorSpaceConversion(ScreenId id, bool skipColorSpaceConversion);
     void OnScreenChangeCallbackChanged(sptr<RSIScreenManagerAgentListener> agentListener) const;
     bool UpdateVsyncEnabledScreenId(ScreenId screenId);
     uint64_t JudgeVSyncEnabledScreenWhilePowerStatusChanged(

@@ -111,6 +111,9 @@ public:
     virtual ErrCode GetPixelmap(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap,
         const Drawing::Rect* rect, std::shared_ptr<Drawing::DrawCmdList> drawCmdList, bool& success) = 0;
 
+    virtual ErrCode BlurPixelMap(std::shared_ptr<Media::PixelMap> pixelMap, float blurRadius,
+        std::shared_ptr<Media::PixelMap>& blurredPixelMap, bool& success) = 0;
+
     virtual ErrCode SetSystemAnimatedScenes(
         SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation, bool& success) = 0;
 
@@ -239,6 +242,7 @@ public:
     virtual bool UnRegisterSurfaceTransactionListener(uint64_t listenerId) = 0;
     virtual bool RegisterSurfaceNodeBufferReleaseListener(sptr<RSISurfaceNodeBufferReleaseCallback> listener) = 0;
     virtual bool UnRegisterSurfaceNodeBufferReleaseListener() = 0;
+    virtual bool CleanDelegateModeBufferCmd(NodeId id) = 0;
 };
 
 } // namespace Rosen

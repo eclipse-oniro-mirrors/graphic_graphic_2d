@@ -25,6 +25,8 @@
 #include "mask/include/fractal_glass_mask_para.h"
 #include "mask/include/binocular_mask_para.h"
 #include "mask/include/sweep_refraction_mask_para.h"
+#include "mask/include/atlas_frame_mask_para.h"
+#include "common/rs_atlas_info.h"
 
 #ifdef IMAGE_NAPI_ENABLE
 #include "pixel_map_napi.h"
@@ -139,6 +141,7 @@ napi_value MaskNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_STATIC_FUNCTION("createFractalGlassMask", CreateFractalGlassMask),
         DECLARE_NAPI_STATIC_FUNCTION("createBinocularMask", CreateBinocularMask),
         DECLARE_NAPI_STATIC_FUNCTION("createSweepRefractionMask", CreateSweepRefractionMask),
+        DECLARE_NAPI_STATIC_FUNCTION("createAtlasFrameMask", CreateAtlasFrameMask),
     };
 
     napi_value constructor = nullptr;
@@ -431,12 +434,6 @@ napi_value MaskNapi::Create(napi_env env, std::shared_ptr<MaskPara> maskPara)
 
 napi_value MaskNapi::CreateWaveDisturbanceMask(napi_env env, napi_callback_info info)
 {
-    if (!UIEffectNapiUtils::IsSystemApp()) {
-        MASK_LOG_E("MaskNapi CreateWaveDisturbanceMask failed, is not system app");
-        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
-            "MaskNapi CreateWaveDisturbanceMask failed, is not system app");
-        return nullptr;
-    }
     const size_t requireArgc = NUM_4;
     size_t realArgc = NUM_4;
     napi_value argv[requireArgc];
@@ -455,12 +452,6 @@ napi_value MaskNapi::CreateWaveDisturbanceMask(napi_env env, napi_callback_info 
 
 napi_value MaskNapi::CreateWaveGradientMask(napi_env env, napi_callback_info info)
 {
-    if (!UIEffectNapiUtils::IsSystemApp()) {
-        MASK_LOG_E("MaskNapi CreateWaveGradientMask failed, is not system app");
-        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
-            "MaskNapi CreateWaveGradientMask failed, is not system app");
-        return nullptr;
-    }
     const size_t requireMinArgc = NUM_4;
     const size_t requireMaxArgc = NUM_5;
     size_t realArgc = NUM_5;
@@ -481,12 +472,6 @@ napi_value MaskNapi::CreateWaveGradientMask(napi_env env, napi_callback_info inf
 
 napi_value MaskNapi::CreateRippleMask(napi_env env, napi_callback_info info)
 {
-    if (!UIEffectNapiUtils::IsSystemApp()) {
-        MASK_LOG_E("MaskNapi CreateRippleMask failed, is not system app");
-        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
-            "MaskNapi CreateRippleMask failed, is not system app");
-        return nullptr;
-    }
     const size_t requireMinArgc = NUM_3;
     const size_t requireMaxArgc = NUM_4;
     size_t realArgc = NUM_4;
@@ -524,12 +509,6 @@ napi_value MaskNapi::CreateWarpedRingMask(napi_env env, napi_callback_info info)
 
 napi_value MaskNapi::CreateRadialGradientMask(napi_env env, napi_callback_info info)
 {
-    if (!UIEffectNapiUtils::IsSystemApp()) {
-        MASK_LOG_E("MaskNapi CreateRadialGradientMask failed");
-        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
-            "MaskNapi CreateRadialGradientMask failed, is not system app");
-        return nullptr;
-    }
     const size_t requireArgc = NUM_4;
     size_t realArgc = NUM_4;
     napi_value argv[requireArgc];
@@ -592,12 +571,6 @@ static bool ParsePixelMapMask(napi_env env, napi_value* argv, size_t realArgc, s
 
 napi_value MaskNapi::CreatePixelMapMask(napi_env env, napi_callback_info info)
 {
-    if (!UIEffectNapiUtils::IsSystemApp()) {
-        MASK_LOG_E("MaskNapi CreatePixelMapMask failed");
-        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
-            "MaskNapi CreatePixelMapMask failed, is not system app");
-        return nullptr;
-    }
     static const size_t maxArgc = NUM_4;
     static const size_t minArgc = NUM_3;
     size_t realArgc = maxArgc;
@@ -646,12 +619,6 @@ static bool ParseImageMask(napi_env env, napi_value* argv,
 
 napi_value MaskNapi::CreateImageMask(napi_env env, napi_callback_info info)
 {
-    if (!UIEffectNapiUtils::IsSystemApp()) {
-        MASK_LOG_E("MaskNapi CreateImageMask failed");
-        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
-            "MaskNapi CreateImageMask failed, is not system app");
-        return nullptr;
-    }
     static const size_t maxArgc = NUM_1;
     size_t realArgc = maxArgc;
     napi_value result = nullptr;
@@ -690,12 +657,6 @@ static bool ParseUseEffectMask(napi_env env, napi_value* argv,
 
 napi_value MaskNapi::CreateUseEffectMask(napi_env env, napi_callback_info info)
 {
-    if (!UIEffectNapiUtils::IsSystemApp()) {
-        MASK_LOG_E("MaskNapi CreateUseEffectpMask failed");
-        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
-            "MaskNapi CreateUseEffectpMask failed, is not system app");
-        return nullptr;
-    }
     static const size_t maxArgc = NUM_1;
     size_t realArgc = maxArgc;
     napi_value result = nullptr;
@@ -931,6 +892,89 @@ napi_value MaskNapi::CreateSweepRefractionMask(napi_env env, napi_callback_info 
 
     API_STATS_HISTOGRAM("Arkgraphics2d.Mask.createSweepRefractionMask", 1);
     return Create(env, maskPara);
+}
+
+static bool ParseAtlasImage(napi_env env, napi_value param, AtlasInfo& atlasInfo)
+{
+    napi_valuetype type = napi_undefined;
+    napi_typeof(env, param, &type);
+    if (type != napi_object) {
+        return false;
+    }
+
+    napi_value tmp = nullptr;
+    double val = 0.0;
+    int32_t intVal = 0;
+
+    if (napi_get_named_property(env, param, "mode", &tmp) == napi_ok && tmp != nullptr) {
+        napi_get_value_int32(env, tmp, &intVal);
+        atlasInfo.mode = intVal;
+    }
+    if (napi_get_named_property(env, param, "rows", &tmp) == napi_ok && tmp != nullptr) {
+        napi_get_value_int32(env, tmp, &intVal);
+        atlasInfo.rows = intVal;
+    }
+    if (napi_get_named_property(env, param, "cols", &tmp) == napi_ok && tmp != nullptr) {
+        napi_get_value_int32(env, tmp, &intVal);
+        atlasInfo.cols = intVal;
+    }
+    if (napi_get_named_property(env, param, "frameWidth", &tmp) == napi_ok && tmp != nullptr) {
+        napi_get_value_double(env, tmp, &val);
+        atlasInfo.frameWidth = static_cast<float>(val);
+    }
+    if (napi_get_named_property(env, param, "frameHeight", &tmp) == napi_ok && tmp != nullptr) {
+        napi_get_value_double(env, tmp, &val);
+        atlasInfo.frameHeight = static_cast<float>(val);
+    }
+    if (napi_get_named_property(env, param, "padding", &tmp) == napi_ok && tmp != nullptr) {
+        napi_get_value_double(env, tmp, &val);
+        atlasInfo.padding = static_cast<float>(val);
+    }
+    if (napi_get_named_property(env, param, "frameIndex", &tmp) == napi_ok && tmp != nullptr) {
+        napi_get_value_double(env, tmp, &val);
+        atlasInfo.frameIndex = static_cast<float>(val);
+    }
+    if (napi_get_named_property(env, param, "totalFrame", &tmp) == napi_ok && tmp != nullptr) {
+        napi_get_value_int32(env, tmp, &intVal);
+        atlasInfo.totalFrame = intVal;
+    }
+    if (napi_get_named_property(env, param, "atlasImage", &tmp) == napi_ok && tmp != nullptr) {
+        std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
+        if (ParsePixelMap(env, tmp, pixelMap) && pixelMap != nullptr) {
+            atlasInfo.pixelMap = pixelMap;
+        }
+    }
+    return true;
+}
+
+napi_value MaskNapi::CreateAtlasFrameMask(napi_env env, napi_callback_info info)
+{
+    static const size_t maxArgc = NUM_1;
+    size_t realArgc = maxArgc;
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    napi_status status;
+    napi_value argv[maxArgc];
+    napi_value thisVar = nullptr;
+    UIEFFECT_JS_ARGS(env, info, status, realArgc, argv, thisVar);
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && realArgc == maxArgc, nullptr,
+        MASK_LOG_E("MaskNapi CreateAtlasFrameMask parsing input fail."));
+
+    if (!UIEffectNapiUtils::CheckNullOrUndefined(env, argv[NUM_0], "atlasInfo")) {
+        return nullptr;
+    }
+
+    AtlasInfo atlasInfo;
+    if (!ParseAtlasImage(env, argv[NUM_0], atlasInfo)) {
+        MASK_LOG_E("MaskNapi CreateAtlasFrameMask parse param failed");
+        return nullptr;
+    }
+
+    auto para = std::make_shared<AtlasFrameMaskPara>();
+    para->SetAtlasInfo(atlasInfo);
+
+    API_STATS_HISTOGRAM("Arkgraphics2d.Mask.createAtlasFrameMask", 1);
+    return Create(env, para);
 }
 
 void MaskNapi::RegisterMaskParaUnmarshallingCallback()

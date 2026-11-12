@@ -22,6 +22,7 @@
 #include "ipc_callbacks/active_screen_id_changed_callback.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/rs_surface_region_config.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -61,8 +62,7 @@ public:
     std::vector<ScreenId> GetAllScreenIds();
     void MarkPowerOffNeedProcessOneFrame();
 
-    ScreenId CreateVirtualScreen(const std::string& name, uint32_t width, uint32_t height, sptr<Surface> surface,
-        ScreenId associatedScreenId = 0, int32_t flags = 0, std::vector<NodeId> whiteList = {});
+    ScreenId CreateVirtualScreen(const RSVirtualScreenOption& vsOption, int32_t& errorCode);
     void RemoveVirtualScreen(ScreenId id);
     void CleanVirtualScreens();
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface);
@@ -91,6 +91,7 @@ public:
 
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
     int32_t SetVirtualScreenTypeBlackList(ScreenId id, const std::vector<uint8_t>& typeBlackList);
+    int32_t SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param);
     int32_t AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
     int32_t RemoveVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
     int32_t AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
@@ -112,6 +113,8 @@ public:
 
     int32_t SetScreenColorGamut(ScreenId id, int32_t modeIdx);
     int32_t GetScreenColorGamut(ScreenId id, ScreenColorGamut& mode) const;
+    int32_t SetVirtualScreenHDRMode(ScreenId id, HDRMode mode);
+    int32_t GetVirtualScreenHDRMode(ScreenId id, HDRMode& mode) const;
     int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode) const;
     int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode);
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) const;
@@ -141,6 +144,7 @@ public:
     void SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY);
     void SetScreenSwitchStatus(bool status);
     void SetScreenFrameGravity(ScreenId id, int32_t gravity);
+    void SetSkipColorSpaceConversion(ScreenId id, bool skipColorSpaceConversion);
     int32_t SetDualScreenState(ScreenId id, DualScreenStatus status);
     int32_t SetAsMainScreen(ScreenId screenId, bool isMainScreen);
     ScreenId GetMainScreenId();

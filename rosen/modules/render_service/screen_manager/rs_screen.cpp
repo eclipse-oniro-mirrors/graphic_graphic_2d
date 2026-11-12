@@ -19,6 +19,7 @@
 #include <cinttypes>
 
 #include "common/rs_background_thread.h"
+#include "display_engine/rs_luminance_control.h"
 #include "graphic_feature_param_manager.h"
 #include "hgm_core.h"
 #include "pipeline/main_thread/rs_main_thread.h"
@@ -114,6 +115,9 @@ RSScreen::RSScreen(const VirtualScreenConfigs &configs)
     property_.SetScreenType(RSScreenType::VIRTUAL_TYPE_SCREEN);
     property_.SetWhiteList(configs.whiteList);
     property_.SetMultiSurfaceConfigs(configs.surfaceConfigs);
+    // Apply the HDR mode on construction so that the first frame handled by
+    // RSHdrUtil::HandleVirtualScreenHDRStatus always reads the expected value.
+    property_.SetVirtualScreenHDRMode(configs.hdrMode);
     property_.SetState(configs.surfaceConfigs.empty() ? ScreenState::DISABLED : ScreenState::PRODUCER_SURFACE_ENABLE);
     VirtualScreenInit();
     HILOG_COMM_WARN("init virtual screen: {id: %{public}" PRIu64 ", associatedScreenId: %{public}" PRIu64", "
@@ -159,11 +163,27 @@ void RSScreen::PhysicalScreenInit() noexcept
     if (hdiScreen_->GetHDRCapabilityInfos(hdrCapability_) < 0) {
         RS_LOGE("%{public}s: RSScreen(id %{public}" PRIu64 ") failed to GetHDRCapabilityInfos.", __func__, id);
     }
+    const bool isHdrPicEnable = RSLuminanceControl::Get().IsHdrPicEnable(id);
+    RS_LOGI("%{public}s: screenId=%{public}" PRIu64 ", IsHdrPicEnable=%{public}d", __func__, id, isHdrPicEnable);
     {
         std::lock_guard<std::mutex> lock(supportedPhysicalHDRFormatsMutex_);
         std::transform(hdrCapability_.formats.begin(), hdrCapability_.formats.end(),
                        back_inserter(supportedPhysicalHDRFormats_),
                        [](GraphicHDRFormat item) -> ScreenHDRFormat { return HDI_HDR_FORMAT_TO_RS_MAP[item]; });
+        if (isHdrPicEnable) {
+            const std::vector<ScreenHDRFormat> imageHdrFormats = {
+                IMAGE_HDR_VIVID_DUAL,
+                IMAGE_HDR_VIVID_SINGLE,
+                IMAGE_HDR_ISO_DUAL,
+                IMAGE_HDR_ISO_SINGLE
+            };
+            for (const auto& format : imageHdrFormats) {
+                if (std::find(supportedPhysicalHDRFormats_.begin(), supportedPhysicalHDRFormats_.end(),
+                    format) == supportedPhysicalHDRFormats_.end()) {
+                    supportedPhysicalHDRFormats_.emplace_back(format);
+                }
+            }
+        }
     }
     auto status = GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_ON;
     if (MultiScreenParam::IsRsSetScreenPowerStatus() || id == 0) {
@@ -299,6 +319,11 @@ void RSScreen::SetScreenFrameGravity(int32_t gravity)
     UPDATE_PROPERTY(FrameGravity, gravity);
 }
 
+void RSScreen::SetSkipColorSpaceConversion(bool skipColorSpaceConversion)
+{
+    UPDATE_PROPERTY(SkipColorSpaceConversion, skipColorSpaceConversion);
+}
+
 bool RSScreen::IsVirtual() const
 {
     return property_.IsVirtual();
@@ -326,6 +351,7 @@ void RSScreen::WriteHisyseventEpsLcdInfo(GraphicDisplayModeInfo& activeMode)
 
 uint32_t RSScreen::SetActiveMode(uint32_t modeId)
 {
+    std::lock_guard<std::mutex> lock(activeModeMutex_);
     if (IsVirtual()) {
         RS_LOGW("%{public}s: virtual screen not support SetActiveMode.", __func__);
         return StatusCode::VIRTUAL_SCREEN;
@@ -563,6 +589,10 @@ int32_t RSScreen::SetPowerStatus(uint32_t powerStatus)
     HILOG_COMM_WARN("[UL_POWER]RSScreen_%{public}" PRIu64 " SetPowerStatus: %{public}u.", id, powerStatus);
     RS_TRACE_NAME_FMT("[UL_POWER]Screen_%llu SetPowerStatus %u", id, powerStatus);
     hasLogBackLightAfterPowerStatusChanged_ = false;
+    if (powerStatus == ScreenPowerStatus::POWER_STATUS_OFF &&
+        MultiScreenParam::IsSkipScreenPowerOffing()) {
+        UPDATE_PROPERTY(PowerStatus, ScreenPowerStatus::POWER_STATUS_OFFING);
+    }
     if (hdiScreen_->SetScreenPowerStatus(static_cast<GraphicDispPowerStatus>(powerStatus)) < 0) {
         HILOG_COMM_WARN("[UL_POWER] SetPowerStatus failed to set power status");
         UPDATE_PROPERTY(PowerStatus, ScreenPowerStatus::INVALID_POWER_STATUS);
@@ -895,6 +925,7 @@ void RSScreen::DisplayDump(int32_t screenIndex, std::string& dumpString)
                      property_.GetEnableVisibleRect(),
                      property_.GetMainScreenVisibleRect().x, property_.GetMainScreenVisibleRect().y,
                      property_.GetMainScreenVisibleRect().w, property_.GetMainScreenVisibleRect().h);
+        AppendFormat(dumpString, "postProcessingShaderSize=%zu\n", property_.GetPostProcessingShader().size());
     }
 }
 
@@ -1114,6 +1145,32 @@ int32_t RSScreen::SetScreenColorGamut(int32_t modeIdx)
     return StatusCode::SUCCESS;
 }
 
+int32_t RSScreen::SetVirtualScreenHDRMode(HDRMode mode)
+{
+    if (mode >= HDRMode::HDR_MODE_BUTT) {
+        RS_LOGW("%{public}s: invalid HDR mode: %{public}u.", __func__, static_cast<uint32_t>(mode));
+        return StatusCode::INVALID_ARGUMENTS;
+    }
+    if (!IsVirtual()) {
+        RS_LOGW("%{public}s: physical screen(id %{public}" PRIu64 ") not support HDR mode.", __func__,
+            property_.GetId());
+        return StatusCode::SCREEN_TYPE_ERROR;
+    }
+    UPDATE_PROPERTY(VirtualScreenHDRMode, mode);
+    return StatusCode::SUCCESS;
+}
+
+int32_t RSScreen::GetVirtualScreenHDRMode(HDRMode& mode) const
+{
+    if (!IsVirtual()) {
+        RS_LOGW("%{public}s: physical screen(id %{public}" PRIu64 ") not support HDR mode.", __func__,
+            property_.GetId());
+        return StatusCode::SCREEN_TYPE_ERROR;
+    }
+    mode = property_.GetVirtualScreenHDRMode();
+    return StatusCode::SUCCESS;
+}
+
 void RSScreen::SetScreenCorrection(ScreenRotation screenRotation)
 {
     RS_LOGI("%{public}s: RSScreen(id %{public}" PRIu64 "), ScreenRotation: %{public}u.", __func__,
@@ -1243,7 +1300,6 @@ void RSScreen::GetScreenSupportedHDRFormatsCallBack(sptr<RSIScreenSupportedHdrFo
         RS_LOGE("RSScreen::GetScreenSupportedHDRFormatsCallBack callback is nullptr");
         return;
     }
-    specialHDRFormatsInit_ = true;
     std::vector<ScreenHDRFormat> hdrFormatsByVpe;
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     Media::Format parameter{};
@@ -1258,9 +1314,14 @@ void RSScreen::GetScreenSupportedHDRFormatsCallBack(sptr<RSIScreenSupportedHdrFo
                 ScreenHDRFormat::VIDEO_AIHDR) == supportedPhysicalHDRFormats_.end()) {
                 supportedPhysicalHDRFormats_.emplace_back(ScreenHDRFormat::VIDEO_AIHDR);
             }
+            specialHDRFormatsInit_ = true;
         }
-    }
+    } else
 #endif
+    {
+        std::lock_guard<std::mutex> lock(supportedPhysicalHDRFormatsMutex_);
+        specialHDRFormatsInit_ = true;
+    }
     callback->OnScreenSupportedHDRFormatsUpdate(Id(), hdrFormatsByVpe);
 }
 
@@ -1271,12 +1332,14 @@ int32_t RSScreen::GetScreenSupportedHDRFormats(std::vector<ScreenHDRFormat>& hdr
     if (IsVirtual()) {
         hdrFormats = supportedVirtualHDRFormats_;
     } else {
+        bool needInit = false;
         {
             std::lock_guard<std::mutex> lock(supportedPhysicalHDRFormatsMutex_);
             hdrFormats = supportedPhysicalHDRFormats_;
+            needInit = !specialHDRFormatsInit_;
         }
         if (callback &&
-            GetConnectionType() == ScreenConnectionType::DISPLAY_CONNECTION_TYPE_INTERNAL && !specialHDRFormatsInit_) {
+            GetConnectionType() == ScreenConnectionType::DISPLAY_CONNECTION_TYPE_INTERNAL && needInit) {
             RSBackgroundThread::Instance().PostTask([weakThis = weak_from_this(), callback]() {
                 auto rsScreen = weakThis.lock();
                 if (rsScreen) {
@@ -1449,6 +1512,11 @@ void RSScreen::SetBlackList(const std::unordered_set<NodeId>& blackList)
 void RSScreen::SetTypeBlackList(const std::unordered_set<uint8_t>& typeBlackList)
 {
     UPDATE_PROPERTY(TypeBlackList, typeBlackList);
+}
+
+void RSScreen::SetPostProcessingShader(const std::vector<uint8_t>& param)
+{
+    UPDATE_PROPERTY(PostProcessingShader, param);
 }
 
 void RSScreen::AddBlackList(const std::vector<NodeId>& blackList)

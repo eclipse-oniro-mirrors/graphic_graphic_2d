@@ -33,6 +33,7 @@
 #include "render/rs_color_picker.h"
 #include "render/rs_drawing_filter.h"
 #include "render/rs_effect_luminance_manager.h"
+#include "feature/filter_cache_manager/rs_filter_cache_manager.h"
 #include "render/rs_foreground_effect_filter.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_motion_blur_filter.h"
@@ -55,11 +56,11 @@ constexpr int PARAM_DOUBLE = 2;
 constexpr char COLORFUL_BRIGHTNESS_BLENDER_PROG[] = R"(
         uniform half darkenWeight;
         uniform half fraction;
-        uniform float activeRatesX;
-        uniform float activeRatesY;
-        uniform float activeKBSx;
-        uniform float activeKBSy;
-        uniform float activeKBSz;
+        uniform half activeRatesX;
+        uniform half activeRatesY;
+        uniform half activeKBSx;
+        uniform half activeKBSy;
+        uniform half activeKBSz;
         uniform half activePosX;
         uniform half activePosY;
         uniform half activePosZ;
@@ -68,149 +69,150 @@ constexpr char COLORFUL_BRIGHTNESS_BLENDER_PROG[] = R"(
         uniform half activeNegZ;
         uniform half lumaDiff;
         uniform half colorLimit;
-        uniform float tintedColorPercent;
+        uniform half tintedColorPercent;
+        uniform half penetration;
 
-        const vec3 lumaWeight = vec3(0.2126, 0.7152, 0.0722);
-        const vec3 baseVec = vec3(0.2412016, 0.6922296, 0.0665688);
-        const half eps = 1e-5;
-        const half penetration = 0.1538;
+        const half3 lumaWeight = half3(0.2126, 0.7152, 0.0722);
+        const half3 baseVec = half3(0.2412016, 0.6922296, 0.0665688);
+        const half eps = 1e-3;
         const half lumaMapK = 0.6628;
         const half lumaMapB = 0.3137;
         const half grayMapK = -0.15;
         const half grayMapB = 0.2;
         const half darkModeBrightness = 0.4;
 
-        vec3 Sat(vec3 inColor, half n, vec3 pos, vec3 neg)
+        half3 Sat(half3 inColor, half n, half3 pos, half3 neg)
         {
-            vec3 r = (1.0 - n) * inColor;
-            float base = dot(r, baseVec);
-            vec3 delta = base - r;
-            vec3 v = mix(neg, pos, step(0.0, delta));
+            half3 r = (1.0 - n) * inColor;
+            half base = dot(r, baseVec);
+            half3 delta = base - r;
+            half3 v = mix(neg, pos, step(0.0, delta));
             return inColor + delta * v;
         }
 
-        vec3 Vibrancy(vec3 color)
+        half3 Vibrancy(half3 color)
         {
-            vec3 grayColor = ((activeRatesX * color + activeRatesY) * color + activeKBSx) * color + activeKBSy;
-            return Sat(grayColor, activeKBSz, vec3(activePosX, activePosY, activePosZ),
-                vec3(activeNegX, activeNegY, activeNegZ));
+            half3 grayColor = ((activeRatesX * color + activeRatesY) * color + activeKBSx) * color + activeKBSy;
+            return Sat(grayColor, activeKBSz, half3(activePosX, activePosY, activePosZ),
+                half3(activeNegX, activeNegY, activeNegZ));
         }
 
-        float GetMaxChannelValue(float luma, float ref, float colorMax, float colorMin)
+        half GetMaxChannelValue(half luma, half ref, half colorMax, half colorMin)
         {
-            float k1 = max(5.55 * colorMax - 4.37, 0.0);
-            float k2 = max(0.28 * colorMax - 0.24, 0.0);
-            float y1 = ref + k1 * colorMin;
-            float y2 = ref + k2 * colorMin;
+            half k1 = max(5.55 * colorMax - 4.37, 0.0);
+            half k2 = max(0.28 * colorMax - 0.24, 0.0);
+            half y1 = ref + k1 * colorMin;
+            half y2 = ref + k2 * colorMin;
             return min(mix(y1, y2, luma), 1.0);
         }
 
-        float GetMinChannelValue(float luma, float resMax, float s1, float colorMax)
+        half GetMinChannelValue(half luma, half resMax, half s1, half colorMax)
         {
-            float s0 = clamp(max(1.4 * colorMax, 1.75 * s1), 0.5, 1.0);
+            half s0 = clamp(max(1.4 * colorMax, 1.75 * s1), 0.5, 1.0);
             s0 = mix(s0, 1.0, step(0.5, s1));
-            float k = min(-0.46 * s1 + 1.46, 1.23);
-            float newS = mix(s0, s1, luma) + 2.0 * (k - 1.0) * (s0 + s1) * luma * (1.0 - luma);
+            half k = min(-0.46 * s1 + 1.46, 1.23);
+            half newS = mix(s0, s1, luma) + 2.0 * (k - 1.0) * (s0 + s1) * luma * (1.0 - luma);
             return resMax*(1.0 - newS);
         }
 
-        float GetMidChannelValue(float luma, float ref, float resMax, float resMin,
-            float colorMax, float colorMin, float colorMid)
+        half GetMidChannelValue(half luma, half ref, half resMax, half resMin,
+            half colorMax, half colorMin, half colorMid)
         {
-            float anchor = mix(colorMin, colorMax, 0.39);
-            float range = colorMax - anchor;
-            float isRangeValid = step(0.0001, range);
-            float t = (colorMid - anchor) / (range + 0.0001);
-            float midMin = max(mix(resMin, resMax, t), resMin);
-            float result = mix(midMin, ref, luma);
+            half anchor = mix(colorMin, colorMax, 0.39);
+            half range = colorMax - anchor;
+            half isRangeValid = step(0.0001, range);
+            half t = (colorMid - anchor) / (range + 0.0001);
+            half midMin = max(mix(resMin, resMax, t), resMin);
+            half result = mix(midMin, ref, luma);
             return mix(resMin, result, isRangeValid);
         }
 
-        vec3 sdrColorFilter(vec3 dst, float dstLuma, vec3 src, half darkenWeight)
+        half3 sdrColorFilter(half3 dst, half dstLuma, half3 src, half darkenWeight)
         {
-            float srcMax = max(max(src.r, src.g), src.b);
-            float srcMin = min(min(src.r, src.g), src.b);
-            float saturation = srcMax > 0.0 ? (srcMax - srcMin) / srcMax : 0.0;
+            half srcMax = max(max(src.r, src.g), src.b);
+            half srcMin = min(min(src.r, src.g), src.b);
+            half saturation = srcMax > 0.0 ? (srcMax - srcMin) / srcMax : 0.0;
             half m = mix(grayMapK * srcMax + grayMapB, 0.0, smoothstep(0.0, 0.03, saturation));
             half lightModeNewLuma = dstLuma * lumaMapK + lumaMapB;
             half dstNewLuma = mix(1.0, lightModeNewLuma, darkenWeight);
             half n = mix(dstLuma * darkModeBrightness, 0.0, darkenWeight);
-            vec3 baseColor = src * (dstNewLuma + (dst - dstLuma) * penetration) + m * dst + n;
-
-            vec3 isMax = step(vec3(srcMax), src);
+            half3 baseColor = src * (dstNewLuma + (dst - dstLuma) * penetration) + m * dst + n;
+            if (darkenWeight == 0.0) {return baseColor;}
+ 
+            half3 isMax = step(half3(srcMax), src);
             isMax.g *= (1.0 - isMax.r);
             isMax.b *= (1.0 - isMax.r) * (1.0 - isMax.g);
-            vec3 isMin = step(src, vec3(srcMin));
+            half3 isMin = step(src, half3(srcMin));
             isMin *= (1.0 - isMax);
             isMin.g *= (1.0 - isMin.r);
             isMin.b *= (1.0 - isMin.r) * (1.0 - isMin.g);
-            vec3 isMid = 1.0 - isMax - isMin;
-
-            float srcMid = dot(src, isMid);
-            float resColorMax = dot(baseColor, isMax);
-            float resColorMid = dot(baseColor, isMid);
-
-            float resMax = GetMaxChannelValue(dstLuma, resColorMax, srcMax, srcMin);
-            float resMin = GetMinChannelValue(dstLuma, resMax, saturation, srcMax);
-            float resMid = GetMidChannelValue(dstLuma, resColorMid, resMax, resMin, srcMax, srcMin, srcMid);
-
-            float midMappedAsMax = GetMaxChannelValue(dstLuma, resColorMid, srcMax, srcMin);
-            float blendMax = smoothstep(0.0, 0.05, abs(srcMax - srcMid));
+            half3 isMid = 1.0 - isMax - isMin;
+ 
+            half srcMid = dot(src, isMid);
+            half resColorMax = dot(baseColor, isMax);
+            half resColorMid = dot(baseColor, isMid);
+ 
+            half resMax = GetMaxChannelValue(dstLuma, resColorMax, srcMax, srcMin);
+            half resMin = GetMinChannelValue(dstLuma, resMax, saturation, srcMax);
+            half resMid = GetMidChannelValue(dstLuma, resColorMid, resMax, resMin, srcMax, srcMin, srcMid);
+ 
+            half midMappedAsMax = GetMaxChannelValue(dstLuma, resColorMid, srcMax, srcMin);
+            half blendMax = smoothstep(0.0, 0.05, abs(srcMax - srcMid));
             resMid = mix(midMappedAsMax, resMid, blendMax);
-            float blendMin = smoothstep(0.0, 0.05, abs(srcMid - srcMin));
+            half blendMin = smoothstep(0.0, 0.05, abs(srcMid - srcMin));
             resMid = mix(resMin, resMid, blendMin);
-
-            vec3 reorderedColor = isMax * resMax + isMin * resMin + isMid * resMid;
-            float t1 = smoothstep(0.0, 0.05, saturation);
-            float t2 = 1.0 - smoothstep(0.95, 1.0, saturation);
-            vec3 finalLightModeColor = mix(baseColor, reorderedColor, t1 * t2);
+ 
+            half3 reorderedColor = isMax * resMax + isMin * resMin + isMid * resMid;
+            half t1 = smoothstep(0.0, 0.05, saturation);
+            half t2 = 1.0 - smoothstep(0.95, 1.0, saturation);
+            half3 finalLightModeColor = mix(baseColor, reorderedColor, t1 * t2);
             return mix(baseColor, finalLightModeColor, darkenWeight);
         }
 
-        vec3 keepLumaDiff(vec3 inColor, half darkenWeight)
+        half3 keepLumaDiff(half3 inColor, half darkenWeight)
         {
-            vec3 darkenRes = inColor - lumaDiff;
-            vec3 lightenRes = inColor + lumaDiff;
-            return max(vec3(0.0), mix(lightenRes, darkenRes, darkenWeight));
+            if (lumaDiff == 0.0) {return inColor;}
+            return max(half3(0.0), inColor + lumaDiff * (1.0 - 2.0 * darkenWeight));
         }
 
         half4 main(half4 srcColor, half4 dstColor)
         {
             half factorSrc = 1.0 / (max(srcColor.a, eps));
-            vec3 fgRgb = vec3(saturate(srcColor.rgb * factorSrc));
-            float fgA = float(srcColor.a);
-
+            half3 fgRgb = saturate(srcColor.rgb * factorSrc);
+            half fgA = srcColor.a;
+ 
             half factorDst = 1.0 / (max(dstColor.a, eps));
-            vec3 bgRgb = vec3(saturate(dstColor.rgb * factorDst));
-            float bgA = float(dstColor.a);
-
-            float bgMaxChannelVal = max(max(bgRgb.r, bgRgb.g), bgRgb.b);
-            float hdrExposure = max(bgMaxChannelVal, 1.0);
-            vec3 bgSdrColor = max(bgRgb / hdrExposure, 0.0);
-            float bgLuma = dot(bgSdrColor, lumaWeight);
-
-            vec3 resColor = sdrColorFilter(bgSdrColor, bgLuma, fgRgb, darkenWeight);
-            resColor = mix(bgSdrColor, resColor, tintedColorPercent);
+            half3 bgRgb = max(dstColor.rgb * factorDst, half3(0.0));
+            half bgA = dstColor.a;
+ 
+            half bgMaxChannelVal = max(max(bgRgb.r, bgRgb.g), bgRgb.b);
+            half hdrExposure = max(bgMaxChannelVal, 1.0);
+            half3 bgSdrColor = bgRgb / hdrExposure;
+            half bgLuma = dot(bgSdrColor, lumaWeight);
+ 
+            half3 resColor = bgSdrColor;
+            if (tintedColorPercent > 0.0) {
+                half3 filteredColor = sdrColorFilter(bgSdrColor, bgLuma, fgRgb, darkenWeight);
+                resColor = mix(bgSdrColor, filteredColor, tintedColorPercent);
+            }
             resColor = Vibrancy(resColor);
             resColor = keepLumaDiff(resColor, darkenWeight);
             resColor = clamp(resColor, 0.0, colorLimit);
             resColor = mix(bgSdrColor, resColor, fgA);
-
-            vec3 straightGlassRgb = resColor * hdrExposure;
+ 
+            half3 straightGlassRgb = resColor * hdrExposure;
             
-            vec3 pmaNormalBlend = vec3(srcColor.rgb) * bgA + vec3(dstColor.rgb) * (1.0 - fgA);
-            vec3 pmaGlassBlend = straightGlassRgb * bgA;
-            vec3 finalPmaRgb = mix(pmaGlassBlend, pmaNormalBlend, fraction);
+            half3 pmaNormalBlend = srcColor.rgb * bgA + dstColor.rgb * (1.0 - fgA);
+            half3 pmaGlassBlend = straightGlassRgb * bgA;
+            half3 finalPmaRgb = mix(pmaGlassBlend, pmaNormalBlend, fraction);
             
             return half4(finalPmaRgb, bgA);
         }
     )";
 } // namespace
-std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::binarizationShaderEffect_ = nullptr;
-std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::dynamicDimShaderEffect_ = nullptr;
+
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::dynamicBrightnessBlenderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::dynamicBrightnessLinearBlenderEffect_ = nullptr;
-std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::lightUpShaderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::shadowBlenderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::hdrDarkenBlenderEffect_ = nullptr;
 
@@ -250,6 +252,11 @@ RectI RSPropertyDrawableUtils::DrawingRectI2RectI(const Drawing::RectI& r)
 }
 
 Drawing::Rect RSPropertyDrawableUtils::Rect2DrawingRect(const RectF& r)
+{
+    return { r.left_, r.top_, r.left_ + r.width_, r.top_ + r.height_ };
+}
+
+Vector4f RSPropertyDrawableUtils::Rect2Vector4f(const RectF& r)
 {
     return { r.left_, r.top_, r.left_ + r.width_, r.top_ + r.height_ };
 }
@@ -589,7 +596,7 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas,
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
     auto enableCache = (!paintFilterCanvas->GetDisableFilterCache() && cacheManager != nullptr &&
-        RSProperties::filterCacheEnabled_ && !cacheManager->IsFilterCacheMemExceedThreshold());
+        RSFilterCacheManager::IsFilterCacheEnabled() && !cacheManager->IsFilterCacheMemExceedThreshold());
     if (enableCache) {
         if (cacheManager->GetCachedType() == FilterCacheType::FILTERED_SNAPSHOT) {
             g_blurCnt--;
@@ -724,49 +731,6 @@ void RSPropertyDrawableUtils::DrawForegroundFilter(RSPaintFilterCanvas& canvas,
         imageSnapshot->GetHeight()), dst);
 }
 
-void RSPropertyDrawableUtils::DrawSdfClip(RSPaintFilterCanvas& canvas,
-    const std::shared_ptr<Drawing::GEVisualEffectContainer>& geContainer,
-    const Drawing::Rect& sdfDrawRect, const Drawing::Rect* frameRect)
-{
-    RS_OPTIONAL_TRACE_NAME("DrawSdfClip restore");
-    if (canvas.GetOffscreenDataList().empty()) { // offscreen not started
-        ROSEN_LOGD("RSPropertyDrawableUtils::DrawSdfClip offscreen not started, skip");
-        return;
-    }
-
-    if (geContainer != nullptr && frameRect != nullptr) {
-        // Bake the SDF clip into the snapshot before swap-back; SaveAlpha/SetAlpha(1.0)
-        // isolates the effect from node alpha, restored right after.
-        canvas.SaveAlpha();
-        canvas.SetAlpha(1.0f);
-        geContainer->SetGeometry(canvas.GetTotalMatrix(), *frameRect, *frameRect,
-            frameRect->GetWidth(), frameRect->GetHeight());
-        auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
-        geRender->DrawShaderEffect(canvas, *geContainer, sdfDrawRect);
-        canvas.RestoreAlpha();
-    } else {
-        ROSEN_LOGD("Clip SDF failed, geContainer or frameRect is nullptr");
-    }
-
-    auto imageSnapshot = EndOffscreen(canvas);
-    if (imageSnapshot == nullptr) {
-        ROSEN_LOGD("RSPropertyDrawableUtils::DrawSdfClip image null");
-        return;
-    }
-    // Snapshot already carries node opacity and SDF clip; composite at full alpha to avoid
-    // re-applying opacity. RestoreAlpha restores node alpha for later draws.
-    canvas.SaveAlpha();
-    canvas.SetAlpha(1.0f);
-    // Composite the SDF-clipped snapshot back to the original canvas.
-    Drawing::Rect dstRect(sdfDrawRect.GetLeft(), sdfDrawRect.GetTop(),
-        sdfDrawRect.GetRight(), sdfDrawRect.GetBottom());
-    Drawing::Brush brush;
-    canvas.AttachBrush(brush);
-    canvas.DrawImageRect(*imageSnapshot, dstRect, Drawing::SamplingOptions());
-    canvas.DetachBrush();
-    canvas.RestoreAlpha();
-}
-
 int RSPropertyDrawableUtils::GetAndResetBlurCnt()
 {
     return g_blurCnt.exchange(0);
@@ -800,7 +764,7 @@ void RSPropertyDrawableUtils::DrawBackgroundEffect(
         rsFilter->GetDetailedDescription().c_str(), clipIBounds.ToString().c_str());
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
-    if (RSProperties::filterCacheEnabled_ && cacheManager != nullptr && !canvas->GetDisableFilterCache() &&
+    if (RSFilterCacheManager::IsFilterCacheEnabled() && cacheManager != nullptr && !canvas->GetDisableFilterCache() &&
         !cacheManager->IsFilterCacheMemExceedThreshold()) {
         if (cacheManager->GetCachedType() == FilterCacheType::FILTERED_SNAPSHOT) {
             g_blurCnt--;
@@ -869,210 +833,6 @@ void RSPropertyDrawableUtils::DrawColorFilter(
     Drawing::AutoCanvasRestore acr(*canvas, false);
     Drawing::SaveLayerOps slo(&clipBounds, &brush, Drawing::SaveLayerOps::Flags::INIT_WITH_PREVIOUS);
     canvas->SaveLayer(slo);
-}
-
-void RSPropertyDrawableUtils::DrawLightUpEffect(Drawing::Canvas* canvas, const float lightUpEffectDegree)
-{
-    if (!ROSEN_GE(lightUpEffectDegree, 0.0) || !ROSEN_LNE(lightUpEffectDegree, 1.0)) {
-        ROSEN_LOGE(
-            "RSPropertyDrawableUtils::DrawLightUpEffect Invalid lightUpEffectDegree %{public}f", lightUpEffectDegree);
-        return;
-    }
-
-    Drawing::Surface* surface = canvas->GetSurface();
-    if (surface == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawLightUpEffect surface is null");
-        return;
-    }
-
-    auto clipBounds = canvas->GetDeviceClipBounds();
-    auto image = surface->GetImageSnapshot(clipBounds, false);
-    if (image == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawLightUpEffect image is null");
-        return;
-    }
-    Drawing::Matrix scaleMat;
-    auto imageShader = Drawing::ShaderEffect::CreateImageShader(*image, Drawing::TileMode::CLAMP,
-        Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), scaleMat);
-    auto shader = MakeLightUpShader(lightUpEffectDegree, imageShader);
-    if (shader == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::MakeLightUpShader shader is null");
-        return;
-    }
-    Drawing::Brush brush;
-    brush.SetShaderEffect(shader);
-    Drawing::AutoCanvasRestore acr(*canvas, true);
-    canvas->ResetMatrix();
-    canvas->Translate(clipBounds.GetLeft(), clipBounds.GetTop());
-    canvas->DrawBackground(brush);
-}
-
-std::shared_ptr<Drawing::ShaderEffect> RSPropertyDrawableUtils::MakeLightUpShader(
-    float lightUpDeg, std::shared_ptr<Drawing::ShaderEffect> imageShader)
-{
-    static constexpr char prog[] = R"(
-        uniform float lightUpDeg;
-        uniform shader imageShader;
-        vec3 rgb2hsv(in vec3 c)
-        {
-            vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-            vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-            vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-            float d = q.x - min(q.w, q.y);
-            float e = 1.0e-10;
-            return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-        }
-        vec3 hsv2rgb(in vec3 c)
-        {
-            vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-            return c.z * mix(vec3(1.0), rgb, c.y);
-        }
-        half4 main(float2 coord)
-        {
-            vec4 color = imageShader.eval(coord);
-            float a = color.a;
-            vec3 rgb = max(color.rgb, 0.0);
-            vec3 hsv = rgb2hsv(rgb);
-            float satUpper = clamp(hsv.y * 1.2, 0.0, 1.0);
-            hsv.y = mix(satUpper, hsv.y, lightUpDeg);
-            hsv.z += lightUpDeg - 1.0;
-            hsv.z = max(hsv.z, 0.0);
-            return vec4(hsv2rgb(hsv), a);
-        }
-    )";
-    if (lightUpShaderEffect_ == nullptr) {
-        lightUpShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(prog);
-        if (lightUpShaderEffect_ == nullptr) {
-            ROSEN_LOGE("MakeLightUpShader::RuntimeShader effect error\n");
-            return nullptr;
-        }
-    }
-    std::shared_ptr<Drawing::ShaderEffect> children[] = {imageShader};
-    size_t childCount = 1;
-    auto data = std::make_shared<Drawing::Data>();
-    data->BuildWithCopy(&lightUpDeg, sizeof(lightUpDeg));
-    return lightUpShaderEffect_->MakeShader(data, children, childCount, nullptr, false);
-}
-
-void RSPropertyDrawableUtils::DrawDynamicDim(Drawing::Canvas* canvas, const float dynamicDimDegree)
-{
-    if (!ROSEN_GE(dynamicDimDegree, 0.0) || !ROSEN_LNE(dynamicDimDegree, 1.0)) {
-        ROSEN_LOGE(
-            "RSPropertyDrawableUtils::DrawDynamicDim Invalid dynamicDimDegree %{public}f", dynamicDimDegree);
-        return;
-    }
-
-    Drawing::Surface* surface = canvas->GetSurface();
-    if (surface == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawDynamicDim surface is null");
-        return;
-    }
-
-    auto clipBounds = canvas->GetDeviceClipBounds();
-    auto image = surface->GetImageSnapshot(clipBounds, false);
-    if (image == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawDynamicDim image is null");
-        return;
-    }
-
-    Drawing::Matrix scaleMat;
-    auto imageShader = Drawing::ShaderEffect::CreateImageShader(*image, Drawing::TileMode::CLAMP,
-        Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), scaleMat);
-    auto shader = MakeDynamicDimShader(dynamicDimDegree, imageShader);
-    if (shader == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawDynamicDim shader is null");
-        return;
-    }
-    Drawing::Brush brush;
-    brush.SetShaderEffect(shader);
-    Drawing::AutoCanvasRestore acr(*canvas, true);
-    canvas->ResetMatrix();
-    canvas->Translate(clipBounds.GetLeft(), clipBounds.GetTop());
-    canvas->DrawBackground(brush);
-}
-
-std::shared_ptr<Drawing::ShaderEffect> RSPropertyDrawableUtils::MakeDynamicDimShader(
-    float dynamicDimDeg, std::shared_ptr<Drawing::ShaderEffect> imageShader)
-{
-    static constexpr char prog[] = R"(
-        uniform half dynamicDimDeg;
-        uniform shader imageShader;
-
-        vec3 rgb2hsv(in vec3 c)
-        {
-            vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-            vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-            vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-            float d = q.x - min(q.w, q.y);
-            float e = 1.0e-10;
-            return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-        }
-        vec3 hsv2rgb(in vec3 c)
-        {
-            vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-            return c.z * mix(vec3(1.0), rgb, c.y);
-        }
-        half4 main(float2 coord)
-        {
-            vec3 hsv = rgb2hsv(imageShader.eval(coord).rgb);
-            float value = max(0.8, dynamicDimDeg); // 0.8 is min saturation ratio.
-            hsv.y = hsv.y * (1.75 - value * 0.75); // saturation value [1.0 , 1.15].
-            hsv.z = min(hsv.z * dynamicDimDeg, 1.0);
-            return vec4(hsv2rgb(hsv), 1.0);
-        }
-    )";
-    if (dynamicDimShaderEffect_ == nullptr) {
-        dynamicDimShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(prog);
-        if (dynamicDimShaderEffect_ == nullptr) {
-            ROSEN_LOGE("MakeDynamicDimShader::RuntimeShader effect error\n");
-            return nullptr;
-        }
-    }
-    std::shared_ptr<Drawing::ShaderEffect> children[] = {imageShader};
-    size_t childCount = 1;
-    auto data = std::make_shared<Drawing::Data>();
-    data->BuildWithCopy(&dynamicDimDeg, sizeof(dynamicDimDeg));
-    return dynamicDimShaderEffect_->MakeShader(data, children, childCount, nullptr, false);
-}
-
-std::shared_ptr<Drawing::ShaderEffect> RSPropertyDrawableUtils::MakeBinarizationShader(
-    float low, float high, float thresholdLow, float thresholdHigh, std::shared_ptr<Drawing::ShaderEffect> imageShader)
-{
-    static constexpr char prog[] = R"(
-        uniform mediump float ubo_low;
-        uniform mediump float ubo_high;
-        uniform mediump float ubo_thresholdLow;
-        uniform mediump float ubo_thresholdHigh;
-        uniform shader imageShader;
-        mediump vec4 main(vec2 drawing_coord) {
-            mediump vec3 c = imageShader(drawing_coord).rgb;
-            float gray = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
-            float lowRes = mix(ubo_high, -1.0, step(ubo_thresholdLow, gray));
-            float highRes = mix(-1.0, ubo_low, step(ubo_thresholdHigh, gray));
-            float midRes = (ubo_thresholdHigh - gray) * (ubo_high - ubo_low) /
-            (ubo_thresholdHigh - ubo_thresholdLow) + ubo_low;
-            float invertedGray = mix(midRes, max(lowRes, highRes), step(-0.5, max(lowRes, highRes)));
-            mediump vec3 invert = vec3(invertedGray);
-            mediump vec4 res = vec4(invert, 1.0);
-            return res;
-        }
-    )";
-    if (binarizationShaderEffect_ == nullptr) {
-        binarizationShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(prog);
-        if (binarizationShaderEffect_ == nullptr) {
-            ROSEN_LOGE("RSPropertyDrawableUtils::MakeBinarizationShader effect error\n");
-            return nullptr;
-        }
-    }
-    std::shared_ptr<Drawing::RuntimeShaderBuilder> builder =
-        std::make_shared<Drawing::RuntimeShaderBuilder>(binarizationShaderEffect_);
-    thresholdHigh = thresholdHigh <= thresholdLow ? thresholdHigh + 1e-6 : thresholdHigh;
-    builder->SetChild("imageShader", imageShader);
-    builder->SetUniform("ubo_low", low);
-    builder->SetUniform("ubo_high", high);
-    builder->SetUniform("ubo_thresholdLow", thresholdLow);
-    builder->SetUniform("ubo_thresholdHigh", thresholdHigh);
-    return builder->MakeShader(nullptr, false);
 }
 
 std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
@@ -1297,6 +1057,7 @@ std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeColorfulBrightnes
         Drawing::RuntimeEffect::CreateForBlender(COLORFUL_BRIGHTNESS_BLENDER_PROG);
     std::shared_ptr<Drawing::RuntimeBlenderBuilder> builder =
         std::make_shared<Drawing::RuntimeBlenderBuilder>(colorfulBrightnessBlenderEffect);
+    constexpr float PENETRATION_RATIO = 0.1538f;
     auto mixF = [](float x, float y, float t) { return x * (1.0f - t) + y * t; };
     float vs = params.vibrancyStrength_;
     float activeRatesX = mixF(0.0f, params.cubicRate_, vs);
@@ -1327,41 +1088,10 @@ std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeColorfulBrightnes
     builder->SetUniform("lumaDiff", params.lumaDiff_);
     builder->SetUniform("colorLimit", params.hdrEnabled_ ? 2.0f : 1.0f);
     builder->SetUniform("tintedColorPercent", params.tintedColorPercent_);
+    builder->SetUniform("penetration", PENETRATION_RATIO * params.darkenWeight_);
     RS_OPTIONAL_TRACE_FMT("RSPropertyDrawableUtils::MakeColorfulBrightnessBlender dw=%f,fr=%f,vs=%f",
         params.darkenWeight_, params.fraction_, params.vibrancyStrength_);
     return builder->MakeBlender();
-}
-
-void RSPropertyDrawableUtils::DrawBinarization(Drawing::Canvas* canvas, const std::optional<Vector4f>& aiInvert)
-{
-    if (!aiInvert.has_value()) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawBinarization aiInvert has no value");
-        return;
-    }
-    auto drSurface = canvas->GetSurface();
-    if (drSurface == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawBinarization drSurface is null");
-        return;
-    }
-    auto clipBounds = canvas->GetDeviceClipBounds();
-    auto imageSnapshot = drSurface->GetImageSnapshot(clipBounds);
-    if (imageSnapshot == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawBinarization image is null");
-        return;
-    }
-    Drawing::Matrix matrix;
-    auto imageShader = Drawing::ShaderEffect::CreateImageShader(*imageSnapshot, Drawing::TileMode::CLAMP,
-        Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), matrix);
-    float thresholdLow = aiInvert->z_ - aiInvert->w_;
-    float thresholdHigh = aiInvert->z_ + aiInvert->w_;
-    auto shader = MakeBinarizationShader(aiInvert->x_, aiInvert->y_, thresholdLow, thresholdHigh, imageShader);
-    Drawing::Brush brush;
-    brush.SetShaderEffect(shader);
-    brush.SetAntiAlias(true);
-    Drawing::AutoCanvasRestore acr(*canvas, true);
-    canvas->ResetMatrix();
-    canvas->Translate(clipBounds.GetLeft(), clipBounds.GetTop());
-    canvas->DrawBackground(brush);
 }
 
 void RSPropertyDrawableUtils::DrawPixelStretch(Drawing::Canvas* canvas,
@@ -1494,7 +1224,8 @@ Drawing::Path RSPropertyDrawableUtils::CreateShadowPath(const std::shared_ptr<RS
 }
 
 void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, Drawing::Path& path, const float& offsetX,
-    const float& offsetY, const float& elevation, const bool& isFilled, Color spotColor)
+    const float& offsetY, const float& elevation, const bool& isFilled, Color spotColor,
+    const bool& useBoundsClip, const RRect& rRect_)
 {
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
         "RSPropertyDrawableUtils::DrawShadow, ShadowElevation: %f, ShadowOffsetX: "
@@ -1502,7 +1233,12 @@ void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, Drawing::Path&
         elevation, offsetX, offsetY, path.GetBounds().ToString().c_str());
     Drawing::AutoCanvasRestore acr(*canvas, true);
     if (!isFilled) {
-        canvas->ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
+        if (useBoundsClip) {
+            canvas->ClipRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(rRect_),
+                Drawing::ClipOp::DIFFERENCE, true);
+        } else {
+            canvas->ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
+        }
     }
     path.Offset(offsetX, offsetY);
     Drawing::Point3 planeParams = {0.0f, 0.0f, elevation};
@@ -1518,7 +1254,8 @@ void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, Drawing::Path&
 }
 
 void RSPropertyDrawableUtils::DrawShadowMaskFilter(Drawing::Canvas* canvas, Drawing::Path& path, const float& offsetX,
-    const float& offsetY, const float& radius, const bool& isFilled, Color spotColor, bool disableSDFBlur)
+    const float& offsetY, const float& radius, const bool& isFilled, Color spotColor, bool disableSDFBlur,
+    const bool& useBoundsClip, const RRect& rRect_)
 {
     if (UNLIKELY(canvas == nullptr)) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawShadowMaskFilter canvas is null");
@@ -1530,7 +1267,12 @@ void RSPropertyDrawableUtils::DrawShadowMaskFilter(Drawing::Canvas* canvas, Draw
         radius, offsetX, offsetY, path.GetBounds().ToString().c_str());
     Drawing::AutoCanvasRestore acr(*canvas, true);
     if (!isFilled) {
-        canvas->ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
+        if (useBoundsClip) {
+            canvas->ClipRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(rRect_),
+                Drawing::ClipOp::DIFFERENCE, true);
+        } else {
+            canvas->ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
+        }
     }
     path.Offset(offsetX, offsetY);
     Drawing::Brush brush;
@@ -1562,7 +1304,7 @@ void RSPropertyDrawableUtils::DrawUseEffect(RSPaintFilterCanvas* canvas, UseEffe
     const auto& effectData = useEffectType == UseEffectType::EFFECT_COMPONENT ?
         canvas->GetEffectData() : canvas->GetBehindWindowData();
     if (effectData == nullptr || effectData->cachedImage_ == nullptr ||
-        !(RSSystemProperties::GetEffectMergeEnabled() && RSFilterCacheManager::isCCMEffectMergeEnable_)) {
+        !RSFilterCacheManager::IsEffectMergeEnabled()) {
         return;
     }
     RS_TRACE_FUNC();
@@ -1657,43 +1399,6 @@ void RSPropertyDrawableUtils::DrawFilterWithDRM(Drawing::Canvas* canvas, bool is
     RSColor demoColor = RSColor(rgb, rgb, rgb, alpha);
     brush.SetColor(demoColor.AsArgbInt());
     canvas->DrawBackground(brush);
-}
-
-void RSPropertyDrawableUtils::DrawColorUsingSDFWithDRM(Drawing::Canvas* canvas, const Drawing::Rect* rect, bool isDark,
-    const std::shared_ptr<Drawing::GEVisualEffectContainer>& filterGEContainer, const std::string& filterTag,
-    const std::string& shapeTag)
-{
-    if (UNLIKELY(canvas == nullptr)) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawColorUsingSDFWithDRM canvas is null");
-        return;
-    }
-    if (rect == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawColorUsingSDFWithDRM rect is null");
-        return;
-    }
-    if (!filterGEContainer) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawColorUsingSDFWithDRM filterGEContainer null");
-        return;
-    }
-    auto visualEffect = filterGEContainer->GetGEVisualEffect(filterTag);
-    if (!visualEffect) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawColorUsingSDFWithDRM visualEffect null");
-        return;
-    }
-    auto geShape = visualEffect->GetGEShaderShape(shapeTag);
-    auto sdfColorVisualEffect =
-        std::make_shared<Drawing::GEVisualEffect>(Drawing::GE_SHADER_SDF_COLOR, Drawing::DrawingPaintType::BRUSH);
-    sdfColorVisualEffect->SetParam(Drawing::GE_SHADER_SDF_COLOR_SHAPE, geShape);
-    int16_t alpha = 245; // give a nearly opaque mask to replace blur effect
-    int16_t rgb = isDark ? 55 : 210; // RGB values of the color filter to be replaced in the DRM scenario
-    Drawing::Color color(rgb, rgb, rgb, alpha);
-    Vector4f geColor(color.GetRedF(), color.GetGreenF(), color.GetBlueF(), color.GetAlphaF());
-    sdfColorVisualEffect->SetParam(Drawing::GE_SHADER_SDF_COLOR_COLOR, geColor);
-
-    auto geContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
-    geContainer->AddToChainedFilter(sdfColorVisualEffect);
-    auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
-    geRender->DrawShaderEffect(*canvas, *geContainer, *rect);
 }
 
 std::shared_ptr<Drawing::Image> RSPropertyDrawableUtils::DrawDepthOcclusion(Drawing::Canvas* canvas,
@@ -1966,6 +1671,8 @@ std::shared_ptr<RSFilter> RSPropertyDrawableUtils::GenerateBehindWindowFilter(fl
     const auto hashFunc = SkOpts::hash;
 #endif
     uint32_t hash = hashFunc(&radius, sizeof(radius), 0);
+    hash = hashFunc(&saturation, sizeof(saturation), hash);
+    hash = hashFunc(&brightness, sizeof(brightness), hash);
     std::shared_ptr<Drawing::ColorFilter> colorFilter = GenerateMaterialColorFilter(saturation, brightness);
     std::shared_ptr<Drawing::ImageFilter> blurColorFilter =
         Drawing::ImageFilter::CreateColorBlurImageFilter(*colorFilter, radius, radius);
@@ -1977,8 +1684,6 @@ std::shared_ptr<RSFilter> RSPropertyDrawableUtils::GenerateBehindWindowFilter(fl
             filter->Compose(colorImageFilter, hash) : std::make_shared<RSDrawingFilter>(colorImageFilter, hash);
         filter = filter->Compose(std::static_pointer_cast<RSRenderFilterParaBase>(kawaseBlurFilter));
     } else {
-        hash = hashFunc(&saturation, sizeof(saturation), hash);
-        hash = hashFunc(&brightness, sizeof(brightness), hash);
         filter = filter?
             filter->Compose(blurColorFilter, hash) : std::make_shared<RSDrawingFilter>(blurColorFilter, hash);
     }
@@ -2116,37 +1821,6 @@ void RSPropertyDrawableUtils::ApplySDFShapeToFilter(const RSProperties& properti
     sdfRRectShape->Setter<SDFRRectShapeRRectRenderTag>(sdfRRect);
     filter->Setter<FrostedGlassShapeRenderTag>(sdfRRectShape, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
     drawingFilter->SetNGRenderFilter(filter);
-}
-
-std::shared_ptr<RSNGRenderShapeBase> RSPropertyDrawableUtils::CreateDefaultRRectShape(const RRect& sdfRRect,
-    NodeId nodeId)
-{
-    auto sdfRRectShape = std::static_pointer_cast<RSNGRenderSDFRRectShape>(
-        RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE));
-    if (sdfRRectShape == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::CreateDefaultRRectShape, SDF_RRECT_SHAPE is null, node %{public}" PRIu64,
-            nodeId);
-        return nullptr;
-    }
-    sdfRRectShape->Setter<SDFRRectShapeRRectRenderTag>(sdfRRect);
-    return sdfRRectShape;
-}
-
-void RSPropertyDrawableUtils::ApplySDFShapeToEffect(const RSProperties& properties,
-    const std::shared_ptr<RSNGRenderShaderBase>& shader, NodeId nodeId)
-{
-    if (!shader) {
-        return;
-    }
-    auto sdfShape = GetResolvedSDFShape(properties);
-    if (sdfShape) {
-        RSNGRenderShaderHelper::SetSDFShape(shader, sdfShape);
-    } else {
-        auto sdfRRect = properties.GetRRectForSDF();
-        ROSEN_LOGD("RSPropertyDrawableUtils::ApplySDFShapeToEffect, rrect %{public}s, node %{public}" PRIu64,
-            sdfRRect.ToString().c_str(), nodeId);
-        RSNGRenderShaderHelper::SetSDFShape(shader, CreateDefaultRRectShape(sdfRRect, nodeId));
-    }
 }
 
 std::shared_ptr<RSNGRenderShapeBase> RSPropertyDrawableUtils::GetResolvedSDFShape(const RSProperties& properties)

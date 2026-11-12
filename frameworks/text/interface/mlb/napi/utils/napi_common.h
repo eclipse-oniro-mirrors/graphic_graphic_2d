@@ -74,7 +74,6 @@ enum TextErrorCode : int32_t {
     ERROR_INVALID_PARAM = 401, // the value do not change. It is defined on all system
     ERROR_DEVICE_NOT_SUPPORT = 801, // the value do not change. It is defined on all system
     ERROR_ABNORMAL_PARAM_VALUE = 18600001, // the value do not change. It is defined on color manager system
-    ERROR_NO_MEMORY = 8800100, // no memory
 };
 
 #define GET_UNWRAP_PARAM(argc, value)                                                                                \
@@ -655,9 +654,6 @@ napi_value GetTypographicBoundsAndConvertToJsValue(napi_env env, float ascent,
 
 bool GetStartEndParams(napi_env env, napi_value arg, int64_t &start, int64_t &end);
 
-napi_status NewInstanceFromConstructor(
-    napi_env env, napi_value constructor, const char* clsName, napi_value* obj);
-
 bool SplitAbsolutePath(std::string& absolutePath);
 
 std::shared_ptr<Global::Resource::ResourceManager> GetResourceManager(const std::string& bundleName,
@@ -672,5 +668,8 @@ bool GetResourcePartData(napi_env env, ResourceInfo& info, napi_value paramsNApi
     napi_value moduleNameNApi);
 
 bool ParseContextFilePath(napi_env env, napi_value* argv, sptr<FontPathResourceContext> context, size_t argvPathNum);
+
+napi_status NewInstanceFromConstructor(
+    napi_env env, napi_value constructor, const char* clsName, napi_value* obj);
 } // namespace OHOS::Rosen
 #endif // OHOS_JS_TEXT_UTILS_H

@@ -23,6 +23,8 @@ std::vector<std::pair<RSIClientToServiceConnectionInterfaceCodeAccessVerifier::C
     RSIClientToServiceConnectionInterfaceCodeAccessVerifier::permissionRSIRenderServiceConnectionInterfaceMappings_ {
         { RSIClientToServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::GET_MEMORY_GRAPHICS,
             PermissionType::GET_RUNNING_INFO },
+        { RSIClientToServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::GET_MEMORY_GRAPHICS_BY_RENDER_PID,
+            PermissionType::GET_RUNNING_INFO },
         { RSIClientToServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::SHOW_WATERMARK,
             PermissionType::UPDATE_CONFIGURATION },
         { RSIClientToServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::CREATE_VIRTUAL_SCREEN,
@@ -204,8 +206,20 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_SCREEN_CORRECTION");
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_POST_PROCESSING_SHADER): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_POST_PROCESSING_SHADER");
+            break;
+        }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SCREEN_GAMUT): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_SCREEN_GAMUT");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_VIRTUAL_SCREEN_HDR_MODE): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_VIRTUAL_SCREEN_HDR_MODE");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::GET_VIRTUAL_SCREEN_HDR_MODE): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_VIRTUAL_SCREEN_HDR_MODE");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_WATERMARK): {
@@ -257,11 +271,11 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::ADD_VIRTUAL_SCREEN_WHITELIST): {
-            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::ADD_VIRTUAL_SCREEN_WHITELIST");
+            hasPermission = IsFoundationCalling(codeEnumTypeName_ + "::ADD_VIRTUAL_SCREEN_WHITELIST");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::REMOVE_VIRTUAL_SCREEN_WHITELIST): {
-            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::REMOVE_VIRTUAL_SCREEN_WHITELIST");
+            hasPermission = IsFoundationCalling(codeEnumTypeName_ + "::REMOVE_VIRTUAL_SCREEN_WHITELIST");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_ROG_SCREEN_RESOLUTION): {
@@ -396,6 +410,10 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::GET_MEMORY_GRAPHIC): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_MEMORY_GRAPHIC");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::GET_MEMORY_GRAPHICS_BY_RENDER_PID): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_MEMORY_GRAPHICS_BY_RENDER_PID");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::GET_REFRESH_INFO): {
@@ -606,6 +624,10 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_APS_CONFIG_PARAMS");
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_THERMAL_FRAME_RATE_LIMIT): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_THERMAL_FRAME_RATE_LIMIT");
+            break;
+        }
         case static_cast<CodeUnderlyingType>(CodeEnumType::GET_UNI_RENDER_ENABLED):
         case static_cast<CodeUnderlyingType>(CodeEnumType::GET_BACKGROUND_REBUILD_ENABLED):
         case static_cast<CodeUnderlyingType>(CodeEnumType::CREATE_VSYNC_CONNECTION):
@@ -634,6 +656,10 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::CREATE_PIXEL_MAP_FROM_SURFACE): {
             hasPermission = true;
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SKIP_COLOR_SPACE_CONVERSION): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_SKIP_COLOR_SPACE_CONVERSION");
             break;
         }
         default: {

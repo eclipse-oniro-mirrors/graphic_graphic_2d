@@ -27,6 +27,7 @@
 #include "common/rs_event_def.h"
 #include "memory/rs_memory_graphic.h"
 #include "screen_manager/rs_surface_region_config.h"
+#include "screen_manager/rs_virtual_screen_option.h"
 #include "transaction/rs_render_service_client.h"
 #include "ui/rs_display_node.h"
 #include "ui/rs_surface_node.h"
@@ -88,6 +89,16 @@ public:
         int flags = 0,
         std::vector<NodeId> whiteList = {});
 
+    /**
+     * @brief Create virtual screen with option. The HDR mode is applied when the virtual screen is
+     *        created, so the first frame always reads the expected mode; it avoids the timing issue
+     *        of calling SetVirtualScreenHDRMode separately after CreateVirtualScreen.
+     * @param option Virtual screen creation option, see RSVirtualScreenOption.
+     * @param errorCode Optional output parameter for error code, see StatusCode.
+     * @return Virtual screen id, INVALID_SCREEN_ID means failed.
+     */
+    ScreenId CreateVirtualScreen(const RSVirtualScreenOption& option, int32_t* errorCode = nullptr);
+
     // ========== Multi-Surface Virtual Screen Dynamic Surface Management ==========
     // These methods are for managing surfaces on virtual screens.
     // For single-surface virtual screens, use SetVirtualScreenSurface.
@@ -123,7 +134,8 @@ public:
     /**
      * @brief Use nodeType to Set blackList for mirror screen.
      * @param id Screen id.
-     * @param typeBlackListVector Vector of NodeType.
+     * @param typeBlackListVector Vector of NodeType. Only RSSurfaceNodeType::CURSOR_NODE takes effect,
+     * other node types are filtered out silently.
      * @return 0 means success, others failed.
      */
     int32_t SetVirtualScreenTypeBlackList(ScreenId id, std::vector<NodeType>& typeBlackListVector);
@@ -505,6 +517,13 @@ public:
      * @return a vector of MemoryGraphic, include all application GPU memory.
      */
     std::vector<MemoryGraphic> GetMemoryGraphics();
+
+    /**
+     * @brief Statistics of all application GPU memory.
+     * @param renderPid pid of render service.
+     * @return a vector of MemoryGraphic, include all application GPU memory.
+     */
+    std::vector<MemoryGraphic> GetMemoryGraphicsByRenderPid(int32_t renderPid);
 #endif // !ROSEN_ARKUI_X
     /**
      * @brief Get total App memory size.
@@ -669,6 +688,12 @@ public:
     void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range, int32_t animatorExpectedFrameRate);
 
     /**
+     * @brief Set thermal frame rate limit
+     * @param frameRate frame rate.
+     */
+    void SetThermalFrameRateLimit(uint32_t frameRate);
+
+    /**
      * @brief Get screen current refresh rate.
      * @param id id of screen.
      * @return if success, return rate != 0, else return 0.
@@ -808,6 +833,22 @@ public:
     int32_t SetScreenColorGamut(ScreenId id, int32_t modeIdx);
 
     /**
+     * @brief Set the HDR mode of the virtual screen.
+     * @param id Id of the virtual screen.
+     * @param mode HDR mode to set for the virtual screen, see HDRMode.
+     * @return 0 success, others failed.
+     */
+    int32_t SetVirtualScreenHDRMode(ScreenId id, HDRMode mode);
+
+    /**
+     * @brief Get the HDR mode of the virtual screen.
+     * @param id Id of the virtual screen.
+     * @param mode Output parameter, HDR mode of the virtual screen, see HDRMode.
+     * @return 0 success, others failed.
+     */
+    int32_t GetVirtualScreenHDRMode(ScreenId id, HDRMode& mode);
+
+    /**
      * @brief Set screen's gamut map mode.
      * @param id Id of the screen.
      * @param mode Gamut map mode to set for the screen.
@@ -829,6 +870,14 @@ public:
      * @return 0 means success, others failed.
      */
     int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation);
+
+    /**
+     * @brief Set post processing shader of a physical screen.
+     * @param id Screen id, must be a physical screen.
+     * @param param Opaque post processing shader config, stored into screen property as is.
+     * @return 0 means success, others failed.
+     */
+    int32_t SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param);
 
     /**
      * @brief Get screen's gamut map mode.
@@ -965,6 +1014,13 @@ public:
      * @param gravity The gravity value of the screen node.
      */
     void SetScreenFrameGravity(ScreenId id, int32_t gravity);
+
+    /**
+     * @brief Set whether to skip color space conversion on the screen.
+     * @param id Indicates the screen id.
+     * @param skipColorSpaceConversion Indicates whether to skip color space conversion.
+     */
+    void SetSkipColorSpaceConversion(ScreenId id, bool skipColorSpaceConversion);
 
     /**
      * @brief Create a VsyncReceiver instance.

@@ -80,6 +80,7 @@ private:
     ErrCode ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
     ErrCode GetMemoryGraphic(int pid, MemoryGraphic& memoryGraphic) override;
     ErrCode GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics) override;
+    std::vector<MemoryGraphic> GetMemoryGraphicsByRenderPid(int32_t renderPid) override;
     ErrCode GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize) override;
     ErrCode GetUniRenderEnabled(bool& enable) override;
     ErrCode GetBackgroundRebuildEnabled(uint8_t& enable) override;
@@ -102,14 +103,7 @@ private:
 
     std::vector<ScreenId> GetAllScreenIds() override;
 
-    ScreenId CreateVirtualScreen(
-        const std::string &name,
-        uint32_t width,
-        uint32_t height,
-        sptr<Surface> surface,
-        ScreenId associatedScreenId,
-        int32_t flags = 0,
-        std::vector<NodeId> whiteList = {}) override;
+    ScreenId CreateVirtualScreen(const RSVirtualScreenOption& vsOption, int32_t& errorCode) override;
 
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) override;
 
@@ -159,6 +153,8 @@ private:
     int32_t SetAsMainScreen(ScreenId screenId, bool isMainScreen) override;
 
     ScreenId GetMainScreenId() override;
+
+    void SetThermalFrameRateLimit(uint32_t frameRate) override;
 
     void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate) override;
 
@@ -234,9 +230,15 @@ private:
 
     int32_t SetScreenColorGamut(ScreenId id, int32_t modeIdx) override;
 
+    int32_t SetVirtualScreenHDRMode(ScreenId id, HDRMode mode) override;
+
+    int32_t GetVirtualScreenHDRMode(ScreenId id, HDRMode& mode) override;
+
     int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) override;
 
     int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation) override;
+
+    int32_t SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param) override;
 
     bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation) override;
 
@@ -283,6 +285,8 @@ private:
     void SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY) override;
 
     void SetScreenFrameGravity(ScreenId id, int32_t gravity) override;
+
+    void SetSkipColorSpaceConversion(ScreenId id, bool skipColorSpaceConversion) override;
 
     int32_t RegisterHgmConfigChangeCallback(sptr<RSIHgmConfigChangeCallback> callback) override;
 

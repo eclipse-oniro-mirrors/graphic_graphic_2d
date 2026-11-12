@@ -85,8 +85,26 @@ ScreenId RSInterfaces::CreateVirtualScreen(
     int flags,
     std::vector<NodeId> whiteList)
 {
-    return renderServiceClient_->CreateVirtualScreen(
-        name, width, height, surface, associatedScreenId, flags, whiteList);
+    RSVirtualScreenOption option;
+    option.name = name;
+    option.width = width;
+    option.height = height;
+    option.surface = surface;
+    option.associatedScreenId = associatedScreenId;
+    option.flags = flags;
+    option.whiteList = std::move(whiteList);
+    option.hdrMode = HDRMode::NONE;
+    return CreateVirtualScreen(option);
+}
+
+ScreenId RSInterfaces::CreateVirtualScreen(const RSVirtualScreenOption& option, int32_t* errorCode)
+{
+    int32_t errCode = StatusCode::SUCCESS;
+    ScreenId screenId = renderServiceClient_->CreateVirtualScreen(option, errCode);
+    if (errorCode != nullptr) {
+        *errorCode = errCode;
+    }
+    return screenId;
 }
 
 int32_t RSInterfaces::AddVirtualScreenSurface(
@@ -344,6 +362,11 @@ void RSInterfaces::SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t ra
 void RSInterfaces::SetRefreshRateMode(int32_t refreshRateMode)
 {
     renderServiceClient_->SetRefreshRateMode(refreshRateMode);
+}
+
+void RSInterfaces::SetThermalFrameRateLimit(uint32_t frameRate)
+{
+    renderServiceClient_->SetThermalFrameRateLimit(frameRate);
 }
 
 void RSInterfaces::SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
@@ -654,6 +677,16 @@ int32_t RSInterfaces::SetScreenColorGamut(ScreenId id, int32_t modeIdx)
     return renderServiceClient_->SetScreenColorGamut(id, modeIdx);
 }
 
+int32_t RSInterfaces::SetVirtualScreenHDRMode(ScreenId id, HDRMode mode)
+{
+    return renderServiceClient_->SetVirtualScreenHDRMode(id, mode);
+}
+
+int32_t RSInterfaces::GetVirtualScreenHDRMode(ScreenId id, HDRMode& mode)
+{
+    return renderServiceClient_->GetVirtualScreenHDRMode(id, mode);
+}
+
 int32_t RSInterfaces::SetScreenGamutMap(ScreenId id, ScreenGamutMap mode)
 {
     return renderServiceClient_->SetScreenGamutMap(id, mode);
@@ -667,6 +700,11 @@ bool RSInterfaces::SetUIMode3D(UIMode3D mode)
 int32_t RSInterfaces::SetScreenCorrection(ScreenId id, ScreenRotation screenRotation)
 {
     return renderServiceClient_->SetScreenCorrection(id, screenRotation);
+}
+
+int32_t RSInterfaces::SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param)
+{
+    return renderServiceClient_->SetPostProcessingShader(id, param);
 }
 
 int32_t RSInterfaces::GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode)
@@ -776,6 +814,11 @@ void RSInterfaces::SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offSetY
 void RSInterfaces::SetScreenFrameGravity(ScreenId id, int32_t gravity)
 {
     renderServiceClient_->SetScreenFrameGravity(id, gravity);
+}
+
+void RSInterfaces::SetSkipColorSpaceConversion(ScreenId id, bool skipColorSpaceConversion)
+{
+    renderServiceClient_->SetSkipColorSpaceConversion(id, skipColorSpaceConversion);
 }
 
 int32_t RSInterfaces::SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate)
@@ -901,6 +944,12 @@ std::vector<MemoryGraphic> RSInterfaces::GetMemoryGraphics()
 {
     return renderServiceClient_->GetMemoryGraphics();
 }
+
+std::vector<MemoryGraphic> RSInterfaces::GetMemoryGraphicsByRenderPid(int32_t renderPid)
+{
+    return renderServiceClient_->GetMemoryGraphicsByRenderPid(renderPid);
+}
+
 #endif // !ROSEN_ARKUI_X
 bool RSInterfaces::GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize)
 {

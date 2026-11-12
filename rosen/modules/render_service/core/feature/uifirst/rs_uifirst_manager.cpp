@@ -45,31 +45,39 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-    constexpr int EVENT_START_TIMEOUT = 500;
-    constexpr int EVENT_STOP_TIMEOUT = 150;
-    constexpr int EVENT_DISABLE_UIFIRST_GAP = 100;
-    constexpr int CLEAR_CACHE_DELAY = 400;
-    constexpr size_t MAX_CLEAR_CACHE_NODE_COUNT = 500; // 500 is the maximum number of nodes can be added to the list.
-    const std::string CLEAR_CACHE_TASK_PREFIX = "uifirst_clear_cache_";
-    constexpr std::string_view ARKTSCARDNODE_NAME = "ArkTSCardNode";
-    constexpr std::string_view EVENT_DISABLE_UIFIRST = "APP_LIST_FLING";
-    constexpr std::string_view ABILITY_OR_PAGE_SWITCH = "ABILITY_OR_PAGE_SWITCH";
-    constexpr int UIFIRST_TASKSKIP_PRIO_THRESHOLD = 3;
-    constexpr int UIFIRST_POSTTASK_HIGHPRIO_MAX = 6;
-    constexpr int SUBTHREAD_CONTROL_FRAMERATE_NODE_LIMIT = 5;
-    constexpr int CACHED_SURFACE_IS_TRANSPARENT = 0;
-    const std::unordered_set<std::string_view> LAYER_PART_RENDER_DISABLE_ANIMATION = {
-        "APP_LIST_FLING",
-        "WEB_LIST_FLING",
-        "SCROLLER_ANIMATION",
-    };
-
-    inline int64_t GetCurSysTime()
-    {
-        auto curTime = std::chrono::system_clock::now().time_since_epoch();
-        return std::chrono::duration_cast<std::chrono::milliseconds>(curTime).count();
-    }
+constexpr int EVENT_START_TIMEOUT = 500;
+constexpr int EVENT_STOP_TIMEOUT = 150;
+constexpr int EVENT_DISABLE_UIFIRST_GAP = 100;
+constexpr int CLEAR_CACHE_DELAY = 400;
+constexpr size_t MAX_CLEAR_CACHE_NODE_COUNT = 500; // 500 is the maximum number of nodes can be added to the list.
+const std::string CLEAR_CACHE_TASK_PREFIX = "uifirst_clear_cache_";
+constexpr std::string_view ARKTSCARDNODE_NAME = "ArkTSCardNode";
+constexpr std::string_view EVENT_DISABLE_UIFIRST = "APP_LIST_FLING";
+constexpr std::string_view ABILITY_OR_PAGE_SWITCH = "ABILITY_OR_PAGE_SWITCH";
+constexpr int UIFIRST_TASKSKIP_PRIO_THRESHOLD = 3;
+constexpr int UIFIRST_POSTTASK_HIGHPRIO_MAX = 6;
+constexpr int SUBTHREAD_CONTROL_FRAMERATE_NODE_LIMIT = 5;
+constexpr int CACHED_SURFACE_IS_TRANSPARENT = 0;
+const std::unordered_set<std::string_view> LAYER_PART_RENDER_DISABLE_ANIMATION = {
+    "APP_LIST_FLING",
+    "WEB_LIST_FLING",
+    "SCROLLER_ANIMATION",
 };
+// uifirst-disabled-by-animation-overlap is recorded on node only in these scenes
+const std::vector<std::string_view> ANIMATION_OVERLAP_RECORD_SCENES = {
+    "START_APP_ANI_FORM",
+    "LAUNCHER_APP_LAUNCH_FROM_ICON",
+    "LAUNCHER_APP_LAUNCH_FROM_DOCK",
+    "LAUNCHER_APP_SWIPE_TO_HOME",
+    "LAUNCHER_APP_BACK_TO_HOME",
+};
+
+inline int64_t GetCurSysTime()
+{
+    auto curTime = std::chrono::system_clock::now().time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(curTime).count();
+}
+}; // namespace
 
 RSUifirstManager& RSUifirstManager::Instance()
 {
@@ -116,15 +124,31 @@ bool RSUifirstManager::SetUifirstNodeEnableParam(RSSurfaceRenderNode& node, Mult
 }
 
 // unref in sub when cache done
-void RSUifirstManager::AddProcessDoneNode(NodeId id)
+void RSUifirstManager::AddProcessDoneNode(NodeId id, MultiThreadCacheType type)
 {
     // mutex
     if (id == INVALID_NODEID) {
         return;
     }
     RS_OPTIONAL_TRACE_NAME_FMT("sub done %" PRIu64"", id);
-    std::lock_guard<std::mutex> lock(childrenDrawableMutex_);
-    subthreadProcessDoneNode_.push_back(id);
+    {
+        std::lock_guard<std::mutex> lock(childrenDrawableMutex_);
+        if (GetUIFirstDirtyFrameControlEnabled() &&
+            type == MultiThreadCacheType::NONFOCUS_WINDOW) {
+            subthreadProcessDoneNodeStaging_.insert(id);
+            RS_OPTIONAL_TRACE_NAME_FMT("sub staging done %" PRIu64"", id);
+        } else {
+            subthreadProcessDoneNode_.push_back(id);
+        }
+    }
+}
+
+bool RSUifirstManager::GetUIFirstDirtyFrameControlEnabled()
+{
+    return isUIFirstFrameControlEnable_ &&
+        uifirstType_ != UiFirstCcmType::SINGLE &&
+        GetUiFirstMode() == UiFirstModeType::MULTI_WINDOW_MODE &&
+        RSSystemProperties::GetUIFirstDirtyFrameControlEnabled();
 }
 
 void RSUifirstManager::AddProcessSkippedNode(NodeId id)
@@ -156,6 +180,16 @@ void RSUifirstManager::RemoveFirstFrameCacheGeneratedNode(NodeId id)
 {
     std::lock_guard<std::mutex> lock(firstFrameCacheMutex_);
     firstFrameCacheGeneratedNodes_.erase(id);
+}
+
+void RSUifirstManager::SwapProcessDoneNodes(bool& isDoneNodesSwaped)
+{
+    if (uifirstType_ == UiFirstCcmType::SINGLE || isDoneNodesSwaped) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(childrenDrawableMutex_);
+    std::swap(subthreadProcessDoneNodeAhead_, subthreadProcessDoneNodeStaging_);
+    isDoneNodesSwaped = true;
 }
 
 void RSUifirstManager::AddPurgedNode(NodeId id)
@@ -277,11 +311,16 @@ void RSUifirstManager::MergeOldDirty(NodeId id)
 
 void RSUifirstManager::MergeOldDirtyToDirtyManager(std::shared_ptr<RSSurfaceRenderNode>& node)
 {
+    if (GetUIFirstDirtyFrameControlEnabled() && !HandleUIFirstDirtyFrameControl(node)) {
+        return;
+    }
+
     auto& curDirtyManager = node->GetDirtyManagerForUifirst();
     if (!curDirtyManager) {
         RS_LOGE("MergeOldDirtyToDirtyManager curDirtyManager is nullptr");
         return;
     }
+
     auto curDirtyRegion = curDirtyManager->GetCurrentFrameDirtyRegion();
     auto uifirstDirtyRegion = curDirtyManager->GetUifirstFrameDirtyRegion();
     curDirtyManager->MergeDirtyRect(uifirstDirtyRegion);
@@ -292,6 +331,59 @@ void RSUifirstManager::MergeOldDirtyToDirtyManager(std::shared_ptr<RSSurfaceRend
         uifirstDirtyRegion.left_, uifirstDirtyRegion.top_, uifirstDirtyRegion.width_, uifirstDirtyRegion.height_);
     if (!uifirstDirtyRegion.IsEmpty()) {
         node->AddToPendingSyncList();
+    }
+}
+
+bool RSUifirstManager::HandleUIFirstDirtyFrameControl(const std::shared_ptr<RSSurfaceRenderNode>& node)
+{
+    auto& curDirtyManager = node->GetDirtyManagerForUifirst();
+    if (!curDirtyManager) {
+        RS_LOGE("HandleUIFirstDirtyFrameControl curDirtyManager is nullptr");
+        return false;
+    }
+
+    bool uifirstCacheUpdated = (node->GetLastFrameUifirstCacheType() == MultiThreadCacheType::NONE) ||
+            !UifirstCacheUpdate(node->GetId());
+    if (uifirstCacheUpdated && !node->GetNodeAbsRectChanged()) {
+        auto curDirtyRegion = curDirtyManager->GetCurrentFrameDirtyRegion();
+        curDirtyManager->MergeUifirstDirtyRect(curDirtyRegion);
+        auto uifirstDirtyRegion = curDirtyManager->GetUifirstFrameDirtyRegion();
+        RS_OPTIONAL_TRACE_NAME_FMT("UIfirstDirtyFrameControl %" PRIu64", nodeName %s"
+            " curDirtyRegion[%d %d %d %d], uifirstDirtyRegion[%d %d %d %d]",
+            node->GetId(), node->GetName().c_str(), curDirtyRegion.left_, curDirtyRegion.top_,
+            curDirtyRegion.width_, curDirtyRegion.height_, uifirstDirtyRegion.left_,
+            uifirstDirtyRegion.top_, uifirstDirtyRegion.width_, uifirstDirtyRegion.height_);
+        if (!uifirstDirtyRegion.IsEmpty()) {
+            node->AddToPendingSyncList();
+        }
+        return false;
+    }
+
+    MergeOldDirty(node->GetId());
+    HandleAppWindowChildrenDirty(node);
+    return true;
+}
+
+void RSUifirstManager::HandleAppWindowChildrenDirty(const std::shared_ptr<RSSurfaceRenderNode>& node)
+{
+    if (!node->IsLeashWindow()) {
+        return;
+    }
+
+    for (auto& child : *node->GetSortedChildren()) {
+        auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
+        if (!surfaceNode || !surfaceNode->IsAppWindow()) {
+            continue;
+        }
+
+        auto& childDirtyManager = surfaceNode->GetDirtyManagerForUifirst();
+        if (!childDirtyManager) {
+            continue;
+        }
+        auto curRegion = childDirtyManager->GetCurrentFrameDirtyRegion();
+        auto uifirstRegion = childDirtyManager->GetUifirstFrameDirtyRegion();
+        childDirtyManager->MergeDirtyRect(uifirstRegion);
+        childDirtyManager->SetUifirstFrameDirtyRect(curRegion);
     }
 }
 
@@ -371,18 +463,68 @@ void RSUifirstManager::NotifyUIStartingWindow(NodeId id, bool waitUifirstFrame,
     }
 }
 
+bool RSUifirstManager::UifirstCacheUpdated(std::shared_ptr<RSSurfaceRenderNode>& node)
+{
+    // 1.node is not appwindow
+    // 2.UIFirst dirty frame control not enable
+    // 3.node's abs rect changed
+    // 4.node is uifirst node and its cache need update
+    // 5.node is first level cross node
+    if (!GetUIFirstDirtyFrameControlEnabled() ||
+        node == nullptr ||
+        !node->IsAppWindow() ||
+        node->IsFirstLevelCrossNode()) {
+        return true;
+    }
+
+    bool nodeAbsRectChanged =
+        !node->GetLastFrameAbsDrawRect().IsNearEqual(node->GetAbsDrawRect(), 0);
+    node->SetNodeAbsRectChanged(nodeAbsRectChanged);
+    node->SetLastFrameAbsDrawRect(node->GetAbsDrawRect());
+
+    if (nodeAbsRectChanged) {
+        return true;
+    }
+    if ((node->GetLastFrameUifirstCacheType() != MultiThreadCacheType::NONE)) {
+        return UifirstCacheUpdate(node->GetId());
+    } else {
+        auto leashNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node->GetParent().lock());
+        if ((leashNode != nullptr) && leashNode->IsLeashWindow() &&
+            leashNode->GetLastFrameUifirstCacheType() != MultiThreadCacheType::NONE) {
+                return UifirstCacheUpdate(leashNode->GetId());
+            }
+        return true;
+        }
+    return true;
+}
+
+bool RSUifirstManager::UifirstCacheUpdate(NodeId id)
+{
+    std::lock_guard<std::mutex> lock(childrenDrawableMutex_);
+    return subthreadProcessDoneNodeAhead_.count(id) || !subthreadProcessDoneNode_.empty();
+}
+
 void RSUifirstManager::ProcessDoneNodeInner()
 {
-    std::vector<NodeId> tmp;
+    std::vector<NodeId> processDoneNodes;
     {
         std::lock_guard<std::mutex> lock(childrenDrawableMutex_);
-        if (subthreadProcessDoneNode_.size() == 0) {
+        RS_OPTIONAL_TRACE_NAME_FMT("subthreadProcessDoneNodeAhead_ size %d, subthreadProcessDoneNode_ size %d",
+            subthreadProcessDoneNodeAhead_.size(), subthreadProcessDoneNode_.size());
+        if (subthreadProcessDoneNodeAhead_.size() == 0 && subthreadProcessDoneNode_.size() == 0) {
             return;
         }
-        std::swap(tmp, subthreadProcessDoneNode_);
+        processDoneNodes.insert(processDoneNodes.end(),
+            subthreadProcessDoneNodeAhead_.begin(),
+            subthreadProcessDoneNodeAhead_.end());
+        processDoneNodes.insert(processDoneNodes.end(),
+            subthreadProcessDoneNode_.begin(),
+            subthreadProcessDoneNode_.end());
+        subthreadProcessDoneNodeAhead_.clear();
+        subthreadProcessDoneNode_.clear();
     }
-    RS_TRACE_NAME_FMT("ProcessDoneNode num:%zu", tmp.size());
-    for (auto& id : tmp) {
+
+    for (auto& id : processDoneNodes) {
         RS_OPTIONAL_TRACE_NAME_FMT("Done %" PRIu64"", id);
         auto drawable = GetSurfaceDrawableByID(id);
         if (drawable && drawable->GetRsSubThreadCache().GetCacheSurfaceNeedUpdated() &&
@@ -639,6 +781,8 @@ void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurface
     ScreenId id = screenParams->GetScreenId();
     auto& rsSubThreadCache = drawable->GetRsSubThreadCache();
     rsSubThreadCache.SetHDRPresent(isHdrOn);
+    bool skipColorSpaceConversion = screenParams->GetScreenProperty().GetSkipColorSpaceConversion();
+    rsSubThreadCache.SetSkipColorSpaceConversion(skipColorSpaceConversion);
     bool isScRGBEnable = RSSystemParameters::IsNeedScRGBForP3(screenParams->GetNewColorSpace()) &&
         GetUiFirstSwitch();
     GraphicColorGamut effectiveColorGamut = colorGamut;
@@ -650,8 +794,9 @@ void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurface
         rsSubThreadCache.SetScreenId(id);
         rsSubThreadCache.SetTargetColorGamut(effectiveColorGamut);
     }
-    RS_LOGD("UIFirstHDR SyncDisplayParam:%{public}d, ratio:%{public}f", rsSubThreadCache.GetHDRPresent(),
-        surfaceParams->GetBrightnessRatio());
+    RS_LOGD("UIFirstHDR SyncDisplayParam:%{public}d, ratio:%{public}f, screenId: %{public}"
+        PRIu64 ", SkipColorSpaceConversion:%{public}d", rsSubThreadCache.GetHDRPresent(),
+        surfaceParams->GetBrightnessRatio(), id, rsSubThreadCache.GetSkipColorSpaceConversion());
 #endif
 }
 
@@ -878,7 +1023,7 @@ bool RSUifirstManager::IsBehindWindowOcclusion(const std::shared_ptr<RSSurfaceRe
             RS_OPTIONAL_TRACE_NAME_FMT("visibleRegion is [%s], visibleRegionBehindWindow is [%s]",
                 visibleRegion.GetRegionInfo().c_str(),
                 visibleRegionBehindWindow.GetRegionInfo().c_str());
-            
+
             if (visibleRegionBehindWindow.IsEmpty() && !visibleRegion.IsEmpty()) {
                 return true;
             }
@@ -1596,23 +1741,25 @@ void RSUifirstManager::OnProcessAnimateScene(SystemAnimatedScenes systemAnimated
         case SystemAnimatedScenes::EXIT_RECENTS:
             isRecentTaskScene_.store(false);
             break;
-        // enter and exit mission center are two independent animations, the same goes for enter and exit split screen
-        // enter and exit mission center or enter and exit split screen animation starts for PC
+        // enter and exit mission center are two independent animations
         case SystemAnimatedScenes::ENTER_MISSION_CENTER:
-        case SystemAnimatedScenes::EXIT_MISSION_CENTER:
-            isMissionCenterScene_.store(true);
+            // entering multi-task state, keep state until exit animation ends
+            isInMissionCenterState_.store(true);
+            isExitingMissionCenter_.store(false);
             break;
-        case SystemAnimatedScenes::ENTER_SPLIT_SCREEN:
-        case SystemAnimatedScenes::EXIT_SPLIT_SCREEN:
-            isSplitScreenScene_.store(true);
+        case SystemAnimatedScenes::EXIT_MISSION_CENTER:
+            // mark exiting so OTHERS can leave the multi-task state
+            isExitingMissionCenter_.store(true);
             break;
         case SystemAnimatedScenes::SNAPSHOT_ROTATION:
             isSnapshotRotationScene_.store(true);
             break;
-        // enter and exit mission center or enter and exit split screen animation ends for PC
+        // enter and exit mission center animation ends
         case SystemAnimatedScenes::OTHERS:
-            isMissionCenterScene_.store(false);
-            isSplitScreenScene_.store(false);
+            if (isInMissionCenterState_.load() && isExitingMissionCenter_.load()) {
+                isInMissionCenterState_.store(false);
+                isExitingMissionCenter_.store(false);
+            }
             isSnapshotRotationScene_.store(false);
             break;
         default:
@@ -1851,11 +1998,17 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
     if ((RSUifirstManager::Instance().GetUiFirstMode() == UiFirstModeType::MULTI_WINDOW_MODE) ||
         (node.GetFirstLevelNodeId() != node.GetId()) ||
         (node.IsChildDestoryRebuild()) ||
-        (RSUifirstManager::Instance().NodeIsInCardWhiteList(node)) ||
-        (RSUifirstManager::Instance().CheckIfAppWindowHasAnimation(node))) {
+        (RSUifirstManager::Instance().NodeIsInCardWhiteList(node))) {
         return false;
     }
     if (!node.IsLeashWindow()) {
+        return false;
+    }
+    if (RSUifirstManager::Instance().CheckIfAppWindowHasAnimation(node)) {
+        if (animation && RSUifirstManager::Instance().IsAnimationOverlapRecordScene()) {
+            RS_TRACE_NAME("animation overlap, disable uifirst.");
+            node.SetUifirstDisabledByAnimationOverlap(true);
+        }
         return false;
     }
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
@@ -1936,9 +2089,10 @@ bool RSUifirstManager::IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool ani
             RSUifirstManager::Instance().IsTopLeashWindow(node.GetId()));
         return false;
     }
-    // disable uifirst when leash window has no app window at recent task scene or split screen scene
+    // disable uifirst when leash window has no app window during the whole mission center state
+    // (including the steady multi-task state between enter and exit animations)
     if (node.IsLeashWindow() && node.IsScale() && !LeashWindowContainMainWindow(node) &&
-        (RSUifirstManager::Instance().IsMissionCenterScene() || RSUifirstManager::Instance().IsSplitScreenScene())) {
+        (RSUifirstManager::Instance().IsInMissionCenterState())) {
         RS_TRACE_NAME("leash window has no app window, disable uifirst");
         return false;
     }
@@ -1960,6 +2114,17 @@ bool RSUifirstManager::IsLayerPartRenderDisableAnimation() const
 {
     for (auto& it : currentFrameEvent_) {
         if (LAYER_PART_RENDER_DISABLE_ANIMATION.find(it.sceneId) != LAYER_PART_RENDER_DISABLE_ANIMATION.end()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool RSUifirstManager::IsAnimationOverlapRecordScene() const
+{
+    for (auto& it : currentFrameEvent_) {
+        if (std::find(ANIMATION_OVERLAP_RECORD_SCENES.begin(), ANIMATION_OVERLAP_RECORD_SCENES.end(), it.sceneId) !=
+            ANIMATION_OVERLAP_RECORD_SCENES.end()) {
             return true;
         }
     }
@@ -2105,6 +2270,10 @@ void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancest
         ancestorNodeHasAnimation, node.GetUifirstSupportFlag(), isUiFirstOn_, isCardUiFirstOn_,
         node.uifirstState_.isForceMarked, node.GetSpecialLayerMgr().Find(SpecialLayerType::HAS_PROTECTED),
         node.GetUIFirstSwitch(), curUifirstWindowNums_, uifirstWindowsNumThreshold_);
+
+    if (!ancestorNodeHasAnimation && node.GetUifirstDisabledByAnimationOverlap()) {
+        node.SetUifirstDisabledByAnimationOverlap(false);
+    }
     if (ForceUpdateUifirstNodes(node)) {
         return;
     }
@@ -2356,6 +2525,7 @@ void RSUifirstManager::ReadUIFirstCcmParam()
 #else
     isUiFirstOn_ = UIFirstParam::IsUIFirstEnable();
     isCardUiFirstOn_ = UIFirstParam::IsCardUIFirstEnable();
+    isUIFirstFrameControlEnable_ = UIFirstParam::IsUIFirstFrameControlEnable();
 #endif
     SetUiFirstType(UIFirstParam::GetUIFirstType());
     uifirstWindowsNumThreshold_ = UIFirstParam::GetUIFirstEnableWindowThreshold();
@@ -2531,7 +2701,7 @@ void RSUifirstManager::AddMarkedClearCacheNode(NodeId id)
             id, markedClearCacheNodes_.size());
         return;
     }
-    
+
     RS_TRACE_NAME_FMT("AddMarkedClearCacheNode %" PRIu64, id);
     RS_LOGI("AddMarkedClearCacheNode %{public}" PRIu64, id);
     markedClearCacheNodes_.insert(id);

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "drawable/rs_effect_drawable_utils.h"
 #include "drawable/rs_property_drawable_foreground.h"
 
 #include "ge_render.h"
@@ -21,6 +22,7 @@
 
 #include "common/rs_obj_abs_geometry.h"
 #include "drawable/rs_property_drawable_utils.h"
+#include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_shape_base.h"
 #include "memory/rs_tag_tracker.h"
@@ -43,45 +45,6 @@ constexpr int PARAM_TWO = 2;
 
 const bool FOREGROUND_FILTER_ENABLED = RSSystemProperties::GetForegroundFilterEnabled();
 
-// ====================================
-// Binarization
-RSDrawable::Ptr RSBinarizationDrawable::OnGenerate(const RSRenderNode& node)
-{
-    if (auto ret = std::make_shared<RSBinarizationDrawable>(); ret->OnUpdate(node)) {
-        return std::move(ret);
-    }
-    return nullptr;
-}
-
-bool RSBinarizationDrawable::OnUpdate(const RSRenderNode& node)
-{
-    auto& aiInvert = node.GetRenderProperties().GetAiInvert();
-    if (!aiInvert.has_value()) {
-        return false;
-    }
-    needSync_ = true;
-    stagingAiInvert_ = aiInvert;
-    return true;
-}
-
-void RSBinarizationDrawable::OnSync()
-{
-    if (!needSync_) {
-        return;
-    }
-    aiInvert_ = std::move(stagingAiInvert_);
-    needSync_ = false;
-}
-
-void RSBinarizationDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const
-{
-#ifdef RS_ENABLE_GPU
-    RSTagTracker tagTracker(canvas ? canvas->GetGPUContext() : nullptr,
-        RSTagTracker::SOURCETYPE::SOURCE_RSBINARIZATIONDRAWABLE);
-#endif
-    RSPropertyDrawableUtils::DrawBinarization(canvas, aiInvert_);
-}
-
 RSDrawable::Ptr RSColorFilterDrawable::OnGenerate(const RSRenderNode& node)
 {
     if (auto ret = std::make_shared<RSColorFilterDrawable>(); ret->OnUpdate(node)) {
@@ -93,11 +56,13 @@ RSDrawable::Ptr RSColorFilterDrawable::OnGenerate(const RSRenderNode& node)
 bool RSColorFilterDrawable::OnUpdate(const RSRenderNode& node)
 {
     auto& colorFilter = node.GetRenderProperties().GetColorFilter();
-    if (colorFilter == nullptr) {
+    const auto& colorNGFilter = node.GetRenderProperties().GetColorNGFilter();
+    if (colorFilter == nullptr && colorNGFilter == nullptr) {
         return false;
     }
     needSync_ = true;
     stagingFilter_ = colorFilter;
+    stagingColorNGFilter_ = colorNGFilter;
     return true;
 }
 
@@ -107,6 +72,15 @@ void RSColorFilterDrawable::OnSync()
         return;
     }
     filter_ = std::move(stagingFilter_);
+    colorNGFilter_ = std::move(stagingColorNGFilter_);
+    if (colorNGFilter_) {
+        RSNGRenderFilterHelper::GenerateGEVisualEffect(colorNGFilter_);
+        auto visualEffectContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
+        RSNGRenderFilterHelper::UpdateToGEContainer(colorNGFilter_, visualEffectContainer);
+        visualEffectContainer_ =visualEffectContainer;
+    } else {
+        visualEffectContainer_.reset();
+    }
     needSync_ = false;
 }
 
@@ -116,79 +90,13 @@ void RSColorFilterDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect*
     RSTagTracker tagTracker(canvas ? canvas->GetGPUContext() : nullptr,
         RSTagTracker::SOURCETYPE::SOURCE_RSCOLORFILTERDRAWABLE);
 #endif
-    RSPropertyDrawableUtils::DrawColorFilter(canvas, filter_);
-}
-RSDrawable::Ptr RSLightUpEffectDrawable::OnGenerate(const RSRenderNode& node)
-{
-    if (auto ret = std::make_shared<RSLightUpEffectDrawable>(); ret->OnUpdate(node)) {
-        return std::move(ret);
+    if (filter_) {
+        RSPropertyDrawableUtils::DrawColorFilter(canvas, filter_);
     }
-    return nullptr;
-}
-
-bool RSLightUpEffectDrawable::OnUpdate(const RSRenderNode& node)
-{
-    if (!node.GetRenderProperties().IsLightUpEffectValid()) {
-        return false;
+    if (colorNGFilter_ && visualEffectContainer_) {
+        RSEffectDrawableUtils::DrawColorNGFilter(
+            canvas, rect, visualEffectContainer_);
     }
-    needSync_ = true;
-    stagingLightUpEffectDegree_ = node.GetRenderProperties().GetLightUpEffect();
-    return true;
-}
-
-void RSLightUpEffectDrawable::OnSync()
-{
-    if (!needSync_) {
-        return;
-    }
-    lightUpEffectDegree_ = stagingLightUpEffectDegree_;
-    stagingLightUpEffectDegree_ = 1.0f;
-    needSync_ = false;
-}
-
-void RSLightUpEffectDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const
-{
-#ifdef RS_ENABLE_GPU
-    RSTagTracker tagTracker(canvas ? canvas->GetGPUContext() : nullptr,
-        RSTagTracker::SOURCETYPE::SOURCE_RSLIGHTUPEFFECTDRAWABLE);
-#endif
-    RSPropertyDrawableUtils::DrawLightUpEffect(canvas, lightUpEffectDegree_);
-}
-
-RSDrawable::Ptr RSDynamicDimDrawable::OnGenerate(const RSRenderNode& node)
-{
-    if (auto ret = std::make_shared<RSDynamicDimDrawable>(); ret->OnUpdate(node)) {
-        return std::move(ret);
-    }
-    return nullptr;
-}
-
-bool RSDynamicDimDrawable::OnUpdate(const RSRenderNode& node)
-{
-    if (!node.GetRenderProperties().IsDynamicDimValid()) {
-        return false;
-    }
-    needSync_ = true;
-    stagingDynamicDimDegree_ = node.GetRenderProperties().GetDynamicDimDegree().value();
-    return true;
-}
-
-void RSDynamicDimDrawable::OnSync()
-{
-    if (!needSync_) {
-        return;
-    }
-    dynamicDimDegree_ = stagingDynamicDimDegree_;
-    needSync_ = false;
-}
-
-void RSDynamicDimDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const
-{
-#ifdef RS_ENABLE_GPU
-    RSTagTracker tagTracker(canvas ? canvas->GetGPUContext() : nullptr,
-        RSTagTracker::SOURCETYPE::SOURCE_RSDYNAMICDIMDRAWABLE);
-#endif
-    RSPropertyDrawableUtils::DrawDynamicDim(canvas, dynamicDimDegree_);
 }
 
 RSDrawable::Ptr RSForegroundColorDrawable::OnGenerate(const RSRenderNode& node)
@@ -218,55 +126,6 @@ bool RSForegroundColorDrawable::OnUpdate(const RSRenderNode& node)
     return true;
 }
 
-RSDrawable::Ptr RSForegroundShaderDrawable::OnGenerate(const RSRenderNode& node)
-{
-    if (auto ret = std::make_shared<RSForegroundShaderDrawable>(); ret->OnUpdate(node)) {
-        return std::move(ret);
-    }
-    return nullptr;
-};
-
-void RSForegroundShaderDrawable::PostUpdate(const RSRenderNode& node)
-{
-    enableEDREffect_ = RSNGRenderShaderHelper::CheckEnableEDR(stagingShader_);
-    if (enableEDREffect_) {
-        screenNodeId_ = node.GetScreenNodeId();
-    }
-}
-
-bool RSForegroundShaderDrawable::OnUpdate(const RSRenderNode& node)
-{
-    const RSProperties& properties = node.GetRenderProperties();
-    const auto& shader = properties.GetForegroundShader();
-    if (!shader) {
-        return false;
-    }
-    needSync_ = true;
-    stagingShader_ = shader;
-    PostUpdate(node);
-    return true;
-}
-
-void RSForegroundShaderDrawable::OnSync()
-{
-    if (needSync_ && stagingShader_) {
-        auto visualEffectContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
-        stagingShader_->AppendToGEContainer(visualEffectContainer);
-        visualEffectContainer->UpdateCacheDataFrom(visualEffectContainer_);
-        visualEffectContainer_ = visualEffectContainer;
-        needSync_ = false;
-    }
-}
-
-void RSForegroundShaderDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const
-{
-    auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
-    if (canvas == nullptr || visualEffectContainer_ == nullptr || rect == nullptr) {
-        return;
-    }
-    geRender->DrawShaderEffect(*canvas, *visualEffectContainer_, *rect);
-}
-
 RSDrawable::Ptr RSCompositingFilterDrawable::OnGenerate(const RSRenderNode& node)
 {
     if (auto ret = std::make_shared<RSCompositingFilterDrawable>(); ret->OnUpdate(node)) {
@@ -279,7 +138,7 @@ bool RSCompositingFilterDrawable::OnUpdate(const RSRenderNode& node)
 {
     stagingNodeId_ = node.GetId();
     stagingNodeName_ = node.GetNodeName();
-    auto& rsFilter = node.GetRenderProperties().GetFilter();
+    auto& rsFilter = node.GetRenderProperties().GetCompositingFilter();
     if (rsFilter == nullptr) {
         return false;
     }
@@ -310,6 +169,7 @@ RSDrawable::Ptr RSForegroundFilterDrawable::OnGenerate(const RSRenderNode& node)
 
 bool RSForegroundFilterDrawable::OnUpdate(const RSRenderNode& node)
 {
+    stagingNodeId_ = node.GetId();
     auto& rsFilter = node.GetRenderProperties().GetForegroundFilter();
     if (rsFilter == nullptr) {
         return false;
@@ -325,10 +185,15 @@ bool RSForegroundFilterDrawable::OnUpdate(const RSRenderNode& node)
 
 void RSForegroundFilterDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const
 {
+    // Skip empty bounds (also covers the default value before the first OnSync) to avoid
+    // creating a zero-sized offscreen surface in BeginOffscreen.
+    if (ROSEN_LE(boundsRect_.width_, 0.0f) || ROSEN_LE(boundsRect_.height_, 0.0f)) {
+        return;
+    }
     auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
 #ifdef RS_ENABLE_GPU
     RSTagTracker tagTracker(paintFilterCanvas ? paintFilterCanvas->GetGPUContext() : nullptr,
-        RSTagTracker::SOURCETYPE::SOURCE_RSFOREGROUNDFILTERDRAWABLE);
+        RSTagTracker::SOURCETYPE::SOURCE_RSFOREGROUNDFILTERDRAWABLE, renderNodeId_);
 #endif
     RSPropertyDrawableUtils::BeginOffscreen(*paintFilterCanvas, boundsRect_);
 }
@@ -339,6 +204,7 @@ void RSForegroundFilterDrawable::OnSync()
         return;
     }
     boundsRect_ = stagingBoundsRect_;
+    renderNodeId_ = stagingNodeId_;
     needSync_ = false;
 }
 
@@ -370,11 +236,12 @@ bool RSForegroundFilterRestoreDrawable::OnUpdate(const RSRenderNode& node)
     needSync_ = true;
     stagingForegroundFilter_ = rsFilter;
     stagingDrawRect_ = nullptr;
+    stagingBoundsRect_ = node.GetRenderProperties().GetBoundsRect();
 
     if (rsFilter->IsDrawingFilter()) {
         auto rsDrawingFilter = std::static_pointer_cast<RSDrawingFilter>(rsFilter);
         if (RSNGRenderFilterHelper::HasCustomRegion(rsDrawingFilter->GetNGRenderFilter())) {
-            auto boundsRect = node.GetRenderProperties().GetBoundsRect();
+            auto boundsRect = stagingBoundsRect_;
             // consistent with RSForegroundFilterDrawable's logic for creating offscreenSurface
             // (directly passing the bounds width and height to the MakeSurface()).
             boundsRect.width_ = int(boundsRect.GetWidth());
@@ -387,6 +254,11 @@ bool RSForegroundFilterRestoreDrawable::OnUpdate(const RSRenderNode& node)
 
 void RSForegroundFilterRestoreDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const
 {
+    // Must stay symmetric with RSForegroundFilterDrawable::OnDraw's skip condition (same bounds
+    // source and sync gating), so the offscreen setup and the filter restore are skipped together.
+    if (ROSEN_LE(boundsRect_.width_, 0.0f) || ROSEN_LE(boundsRect_.height_, 0.0f)) {
+        return;
+    }
     if (foregroundFilter_ && foregroundFilter_->IsDrawingFilter() && rect) {
         auto drawingFilter = std::static_pointer_cast<RSDrawingFilter>(foregroundFilter_);
         drawingFilter->SetGeometry(canvas->GetTotalMatrix(), canvas->GetDeviceClipBounds(), Drawing::Rect{},
@@ -396,7 +268,7 @@ void RSForegroundFilterRestoreDrawable::OnDraw(Drawing::Canvas* canvas, const Dr
     auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
 #ifdef RS_ENABLE_GPU
     RSTagTracker tagTracker(paintFilterCanvas ? paintFilterCanvas->GetGPUContext() : nullptr,
-        RSTagTracker::SOURCETYPE::SOURCE_RSFOREGROUNDFILTERRESTOREDRAWABLE);
+        RSTagTracker::SOURCETYPE::SOURCE_RSFOREGROUNDFILTERRESTOREDRAWABLE, renderNodeId_);
 #endif
     RS_TRACE_NAME_FMT("RSForegroundFilterRestoreDrawable::OnDraw node[%llu] ", renderNodeId_);
     std::optional<RectF> drawRect = drawRect_ == nullptr ? std::nullopt : std::optional<RectF>(*drawRect_);
@@ -415,6 +287,7 @@ void RSForegroundFilterRestoreDrawable::OnSync()
     }
     drawRect_ = stagingDrawRect_ != nullptr ?
         std::make_unique<RectF>(*stagingDrawRect_) : nullptr;
+    boundsRect_ = stagingBoundsRect_;
     needSync_ = false;
 }
 
@@ -783,7 +656,7 @@ Vector4f RSSpatialEffectDrawable::CalcDepthPlane(const RSDepthRenderParams& para
     const SpatialEffectVariantPara& variantPara, const std::optional<std::vector<Drawing::Point>>& dstPoints,
     const Drawing::RectI drawRect)
 {
-    bool isSurfaceCase = params.GetDepthSrcSurfaceDrawable().lock() != nullptr;
+    bool isSurfaceCase = !params.GetDepthImage();
     const auto& cameraPara = params.GetDepthCameraPara();
     Vector2f nearFar = cameraPara.has_value() ?
         Vector2f(cameraPara->zNear - cameraPara->position.z_, cameraPara->zFar - cameraPara->position.z_) :
@@ -917,7 +790,8 @@ std::shared_ptr<Drawing::Image> RSSpatialEffectDrawable::CreateOcclusionImage(co
     Vector2f nearFar = cameraPara.has_value() ?
         Vector2f(cameraPara->zNear - cameraPara->position.z_, cameraPara->zFar - cameraPara->position.z_) :
         Vector2f(0.1f, 100.f);
-    const auto& depthImage = depthParam.GetDepthImage();
+    const auto& depthImage = depthParam.GetDepthImage() ? depthParam.GetDepthImage() :
+        depthParam.GetSurfaceDepthImage();
     if (depthImage == nullptr) {
         RS_LOGE("RSSpatialEffectDrawable::CreateOcclusionImage depth image is nullptr");
         return nullptr;
@@ -927,7 +801,7 @@ std::shared_ptr<Drawing::Image> RSSpatialEffectDrawable::CreateOcclusionImage(co
     CalcDepthMapMatrix(depthMapMatrix, drawRect, depthParam);
     auto depthPlane = CalcDepthPlane(depthParam, spatialEffectPara_.value(), spatialEffectDstPoints_, drawRect);
     Vector2f normalizedNearFar = {0.0, 0.0};
-    bool isSurfaceCase = depthParam.GetDepthSrcSurfaceDrawable().lock() != nullptr;
+    bool isSurfaceCase = !depthParam.GetDepthImage();
     normalizedNearFar.x_ = isSurfaceCase ? GetNormalizedValueByNearFar(nearFar.x_, nearFar) : nearFar.x_;
     normalizedNearFar.y_ = isSurfaceCase ? GetNormalizedValueByNearFar(nearFar.y_, nearFar) : nearFar.y_;
     auto occlusionImage = RSPropertyDrawableUtils::DrawDepthOcclusion(canvas, backgroundImage, depthImage,
