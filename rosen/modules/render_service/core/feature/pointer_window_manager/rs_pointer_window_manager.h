@@ -97,7 +97,7 @@ public:
     }
 
     // Atomic: read on RSUniRenderThread (window record white list), written under mtx_ on a binder
-    // thread (SET_POINTER_POSITION). A plain NodeId here is a data race; see report issue 6.
+    // thread (SET_POINTER_POSITION). A plain NodeId here is a data race.
     NodeId GetRsNodeId() const
     {
         return rsNodeId_.load(std::memory_order_relaxed);

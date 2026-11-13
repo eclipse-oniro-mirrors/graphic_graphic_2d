@@ -163,8 +163,7 @@ public:
     }
 
     // A record session is only active on a virtual screen: consumers gate on this instead of the
-    // raw config, so a display re-parented to a physical screen (or whose parent screen is not
-    // ready yet) falls back to normal drawing instead of hijacking the frame.
+    // raw config, so a display re-parented to a physical screen falls back to normal drawing.
     bool IsRecordSessionActive() const
     {
         return !windowRecordConfig_.surfaceNodeIds.empty() && isOnVirtualScreen_;
@@ -193,8 +192,7 @@ public:
         return recordSourceDisplayDrawable_;
     }
     // Called by RSLogicalDisplayRenderNode after writing the record snapshot fields (friend
-    // access), to make their sync requirement explicit instead of riding on another field's
-    // needSync_ side effect.
+    // access).
     void MarkWindowRecordSnapshotSynced() { needSync_ = true; }
 
     void SetWindowRecordConfig(const RSWindowRecordConfig& config) { windowRecordConfig_ = config; needSync_ = true; }

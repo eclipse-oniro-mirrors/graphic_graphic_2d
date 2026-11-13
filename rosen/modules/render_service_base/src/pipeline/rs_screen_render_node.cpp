@@ -230,9 +230,7 @@ void RSScreenRenderNode::UpdateRenderParams()
     auto mirroredNode = GetMirrorSource().lock();
     bool hasWindowRecordChild = false;
     std::shared_ptr<RSLogicalDisplayRenderNode> recordDisplayNode = nullptr;
-    // A record session is only valid on a virtual screen (EX-1): gating the walk means a display
-    // re-parented to a physical screen stops hijacking its host's draw path even if its record
-    // config was never cleared.
+    // A record session is only valid on a virtual screen.
     if (screenProperty_.IsVirtual()) {
         auto children = GetChildren();
         if (children) {
@@ -252,29 +250,21 @@ void RSScreenRenderNode::UpdateRenderParams()
         screenParams->mirrorSourceDrawable_.reset();
     }
     screenParams->hasWindowRecordDisplay_ = hasWindowRecordChild;
-    // White list source is either/or, never merged: a record-active display child owns its mixed
-    // persistent-id/node-id list from the current config, otherwise the screen property white list
-    // applies. A virtual screen hosts at most one mirror-type display node, so this record-active
-    // child is the only possible record source on the screen and the effective list cannot leak
-    // into a sibling extend display's draw path. The screen is prepared before its display
-    // children, so normalizing the current config here (instead of reading the child's per-frame
-    // cache) keeps this same-frame fresh. Downstream consumers (render-thread white list hand-off
-    // and the special-layer state checks) all read this single effective list, which is what makes
-    // a record-active screen visible to the special-layer machinery.
+    // Either/or, never merged: a record-active display child owns its mixed id list from the
+    // current config, otherwise the screen property white list applies. A virtual screen hosts at
+    // most one mirror-type display node, so the effective list cannot leak into a sibling extend
+    // display. The screen is prepared before its display children, so normalizing here keeps the
+    // list fresh in the same frame. Downstream consumers (render-thread white list hand-off and
+    // special-layer checks) read this single effective list.
     std::unordered_set<NodeId> effectiveWhiteList = recordDisplayNode != nullptr
         ? recordDisplayNode->BuildEffectiveRecordWhiteListIds()
         : screenProperty_.GetWhiteList();
     screenParams->SetEffectiveWhiteList(effectiveWhiteList);
-    // Also keep the main-thread special-layer registry in sync, so that the visitor's
-    // allWhiteList_ query and the virtual-screen occlusion culling (IsValidInVirtualScreen) treat
-    // record-active screens exactly like cast-whitelist screens. In the uni-render traversal this
-    // runs after the current screen's InitScreenInfo (QuickPrepareScreenRenderNode queries the
-    // registry at entry, PostPrepare later calls UpdateRenderParams), so the record screen's own
-    // allWhiteList_ diff observes a session change on the next frame; screens prepared later in
-    // the same traversal see it immediately. While a record session is active this node owns the
-    // IS_WHITE_LIST entries and rewrites them every frame -- self-healing against the
-    // property-change path (UpdateScreenSpecialLayer) overwriting them; with record inactive the
-    // event path owns them and the diff gate keeps us silent.
+    // Keep the main-thread special-layer registry in sync for the visitor's allWhiteList_ query
+    // and virtual-screen occlusion culling (IsValidInVirtualScreen), so record-active screens
+    // behave like cast-whitelist screens. While a record session is active this node owns the
+    // IS_WHITE_LIST entries and rewrites them every frame; with record inactive the event path
+    // owns them and the diff gate keeps us silent.
     if (hasWindowRecordChild || effectiveWhiteList != lastRegisteredWhiteList_) {
         ScreenSpecialLayerInfo::Update(SpecialLayerType::IS_WHITE_LIST, GetScreenId(), effectiveWhiteList);
         lastRegisteredWhiteList_ = std::move(effectiveWhiteList);

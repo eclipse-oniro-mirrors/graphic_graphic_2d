@@ -2049,10 +2049,7 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenGatesTest001, TestSize.L
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = { RECORD_SURFACE_NODE_ID };
 
-    // Baseline where every loop gate passes: one live logical display entry, an active record
-    // session, a live source display snapshot and a non-empty whitelist. Every case below starts
-    // from this baseline and breaks exactly one condition, so no case can inherit an invalid input
-    // from the previous one, and a deleted gate cannot land on the same result as another gate.
+    // Passing gates: live display entry, active record session, live source snapshot, non-empty whitelist.
     auto armPassingLoopGates = [&]() {
         screenParams_->logicalDisplayNodeDrawables_ = { displayNode_->GetRenderDrawable() };
         displayParams_->SetWindowRecordConfig(recordConfig);
@@ -2066,10 +2063,7 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenGatesTest001, TestSize.L
         return screenDrawable_->GetDrawSkipType();
     };
 
-    // Record ids without the virtual-screen flag: the session gate continues before the source and
-    // whitelist gates. The source is cleared here as well, so only that continue keeps the entry
-    // from being reported as a missing-source skip: an entry wrongly treated as active would hit
-    // the source gate and yield SKIP_FRAME instead of the null-processor fallthrough.
+    // Record ids without the virtual-screen flag are not an active session; the source is cleared too.
     armPassingLoopGates();
     displayParams_->SetOnVirtualScreen(false);
     displayParams_->recordSourceDisplayDrawable_.reset();
@@ -2082,33 +2076,29 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenGatesTest001, TestSize.L
     screenParams_->logicalDisplayNodeDrawables_.clear();
     EXPECT_EQ(runScreenGate(), DrawSkipType::RENDER_ENGINE_NULL);
 
-    // Null and wrong-type entries are ignored before any downcast; none of them is skipped as a
-    // record session, so the frame is not dropped here.
+    // Null and wrong-type entries are ignored before any downcast, so the frame is not dropped.
     armPassingLoopGates();
     screenParams_->logicalDisplayNodeDrawables_ = { nullptr, screenNode_->GetRenderDrawable() };
     EXPECT_EQ(runScreenGate(), DrawSkipType::RENDER_ENGINE_NULL);
 
-    // Active session and an already populated whitelist, but no resolved source display: SKIP_FRAME
-    // can only come from the missing-source gate. Deleting that gate would fall through to the null
-    // processor (RENDER_ENGINE_NULL), so the two outcomes stay distinguishable.
+    // Active session and a populated whitelist, but no resolved source display: SKIP_FRAME.
     armPassingLoopGates();
     displayParams_->recordSourceDisplayDrawable_.reset();
     ASSERT_TRUE(displayParams_->GetRecordSourceDisplayDrawable().expired());
     ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
     EXPECT_EQ(runScreenGate(), DrawSkipType::SKIP_FRAME);
 
-    // Live source snapshot but an empty whitelist: SKIP_FRAME can only come from the whitelist gate.
+    // Live source snapshot with an empty whitelist: SKIP_FRAME.
     armPassingLoopGates();
     displayParams_->recordWhiteListIds_.clear();
     ASSERT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
     ASSERT_TRUE(displayParams_->GetRecordWhiteListIds().empty());
     EXPECT_EQ(runScreenGate(), DrawSkipType::SKIP_FRAME);
 
-    // Every loop gate satisfied: the loop cannot skip and execution reaches the processor gate.
+    // Every loop gate satisfied: execution reaches the processor gate.
     armPassingLoopGates();
     EXPECT_EQ(runScreenGate(), DrawSkipType::RENDER_ENGINE_NULL);
 
-    // restore fixture state
     screenParams_->logicalDisplayNodeDrawables_ = { displayNode_->GetRenderDrawable() };
     displayParams_->SetWindowRecordConfig(RSWindowRecordConfig{});
     displayParams_->SetOnVirtualScreen(false);
@@ -2132,8 +2122,7 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordGatesTest001, TestSize.Level1)
     ASSERT_NE(virtualProcessor_, nullptr);
     ASSERT_NE(paintFilterCanvas_, nullptr);
 
-    // Restore the whole thread-local capture param on exit; the cases below only preset one field of
-    // it, but the production path owns all of them.
+    // Restore the thread-local capture param on exit.
     struct CaptureParamRestorer {
         CaptureParam saved_ = RSUniRenderThread::GetCaptureParam();
         ~CaptureParamRestorer()
@@ -2154,15 +2143,10 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordGatesTest001, TestSize.Level1)
         EXPECT_EQ(paintFilterCanvas_->GetSaveCount(), saveCount);
         EXPECT_EQ(RSUniRenderThread::GetCaptureParam().isWindowRecord_, prevWindowRecordFlag);
         EXPECT_EQ(RSUniRenderThread::Instance().GetWhiteList(), prevWhiteList);
-        // The full path restores the three values above on its own exits (Restore() and
-        // NodeListGuard), so they cannot separate an early return from a full run. The capture param
-        // is reset rather than restored by the full path, so this preset field survives only when
-        // the call returned before touching the capture state.
         EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
     };
 
-    // Baseline where every early-return gate passes: canvas present, non-empty whitelist, live
-    // logical display source that is paintable, plus the preset capture-param sentinel.
+    // Passing gates: canvas present, non-empty whitelist, paintable source, preset capture param.
     auto armPassingRecordGates = [&]() {
         displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
         displayParams_->recordWhiteListIds_ = { RECORD_SURFACE_NODE_ID };
@@ -2180,7 +2164,7 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordGatesTest001, TestSize.Level1)
     runRecordGate();
     expectNoSideEffect();
 
-    // empty record whitelist with a live, paintable source: only the whitelist gate can stop it
+    // Empty record whitelist with a live, paintable source.
     armPassingRecordGates();
     displayParams_->recordWhiteListIds_.clear();
     ASSERT_TRUE(displayParams_->GetRecordWhiteListIds().empty());
@@ -2213,13 +2197,9 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordGatesTest001, TestSize.Level1)
     runRecordGate();
     expectNoSideEffect();
 
-    // The full path installs its own CaptureParam and ends in ResetCaptureParam(), which clears the
-    // preset sentinel. Checking it here documents why the assertions above stay meaningful without
-    // running a GPU capture.
     RSUniRenderThread::ResetCaptureParam();
     EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
 
-    // restore fixture state
     sourceDrawable->GetRenderParams()->SetShouldPaint(prevShouldPaint);
     displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
     displayParams_->recordWhiteListIds_.clear();

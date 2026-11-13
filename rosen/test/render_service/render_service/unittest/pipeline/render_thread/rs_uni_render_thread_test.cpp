@@ -153,7 +153,6 @@ HWTEST_F(RSUniRenderThreadTest, NodeListGuardRestoresSharedState001, TestSize.Le
     EXPECT_EQ(instance.GetTypeBlackList(), outerTypeBlackList);
     EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
 
-    // restore
     RSUniRenderThread::SetCaptureParam(savedCaptureParam);
     instance.SetWhiteList(savedWhiteList);
     instance.SetBlackList(savedBlackList);
@@ -208,7 +207,6 @@ HWTEST_F(RSUniRenderThreadTest, NodeListGuardRestoresSharedState002, TestSize.Le
     EXPECT_EQ(instance.GetTypeBlackList(), baselineTypeBlackList);
     EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
 
-    // restore
     RSUniRenderThread::SetCaptureParam(savedCaptureParam);
     instance.SetWhiteList(savedWhiteList);
     instance.SetBlackList(savedBlackList);

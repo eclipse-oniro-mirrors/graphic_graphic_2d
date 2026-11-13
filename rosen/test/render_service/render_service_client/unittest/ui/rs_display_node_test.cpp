@@ -510,7 +510,7 @@ HWTEST_F(RSDisplayNodeTest, SetWindowRecordConfigTest001, TestSize.Level1)
 
     auto transactionProxy = RSTransactionProxy::GetInstance();
     ASSERT_NE(transactionProxy, nullptr);
-    // Drop the commands queued by Create so the assertion below only observes SetWindowRecordConfig.
+    // Clear the commands queued by Create.
     transactionProxy->FlushImplicitTransaction();
     ASSERT_TRUE(transactionProxy->IsEmpty());
 
@@ -551,7 +551,7 @@ HWTEST_F(RSDisplayNodeTest, SetWindowRecordConfigTest002, TestSize.Level1)
     displayNode->SetWindowRecordConfig(oversizedConfig);
     EXPECT_TRUE(transactionProxy->IsEmpty());
 
-    // The same proxy path still queues an accepted config, which keeps the negative check meaningful.
+    // A valid config still queues a command.
     RSWindowRecordConfig validConfig;
     validConfig.surfaceNodeIds = { 1 };
     displayNode->SetWindowRecordConfig(validConfig);

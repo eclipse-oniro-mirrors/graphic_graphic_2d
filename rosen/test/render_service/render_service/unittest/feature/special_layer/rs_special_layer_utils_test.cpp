@@ -53,13 +53,9 @@ constexpr int CANVAS_HEIGHT = 600;
 const Drawing::Rect DEFAULT_RECT {0, 0, 100, 100};
 
 // RSSpecialLayerUtils::GetSpecialLayerStateInSubTree reads ambient process state through
-// RSUniRenderThread: the capture param, the curtain flag of the render-thread params owned by
-// RSRenderThreadParamsManager, and the process-wide color filter mode of RSBaseRenderEngine.
-// This guard normalizes all three to "off"/non-snapshot so the NO_SPECIAL_LAYER assertions cannot
-// be polluted by other tests, and restores the saved values on scope exit, including every early
-// test return (the main-thread staging RSRenderThreadParams is not touched: it is not what the
-// function reads). The color filter mode is replayed through an ordered helper because
-// SetColorFilterMode is a transition API, not an assignment.
+// RSUniRenderThread: the capture param, the render-thread curtain flag, and the process-wide color
+// filter mode of RSBaseRenderEngine. This guard normalizes all three to off/non-snapshot and
+// restores the saved values on scope exit.
 class ScopedSubTreeSpecialLayerState {
 public:
     ScopedSubTreeSpecialLayerState()
@@ -103,12 +99,10 @@ public:
     ScopedSubTreeSpecialLayerState& operator=(const ScopedSubTreeSpecialLayerState&) = delete;
 
 private:
-    // RSBaseRenderEngine::SetColorFilterMode is a state transition, not an assignment: the mode is
-    // derived from the current mode, COLOR_FILTER_END cannot be set directly, INVERT_DALTONIZATION_*
-    // falls through to END, and INVERT_COLOR_DISABLE_MODE only clears the invert bit (a no-op at END),
-    // while DALTONIZATION_NORMAL_MODE only clears to END when no invert bit is set. The guard therefore
-    // leaves the mode at END and replays the saved *sustainable* state from there in dependency order.
-    // DALTONIZATION_NORMAL_MODE (16) is a command, never an observable state, so it is not reproduced.
+    // SetColorFilterMode is a state transition, not an assignment: COLOR_FILTER_END cannot be set
+    // directly, INVERT_DALTONIZATION_* falls through to END, INVERT_COLOR_DISABLE_MODE only clears
+    // the invert bit, and DALTONIZATION_NORMAL_MODE is a command rather than an observable state.
+    // The guard leaves the mode at END and replays the saved state from there in dependency order.
     static void RestoreColorFilterMode(ColorFilterMode savedMode)
     {
         constexpr uint32_t invertBitMask = 1u;

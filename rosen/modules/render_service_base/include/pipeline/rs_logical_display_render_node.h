@@ -185,12 +185,11 @@ public:
     bool IsWindowRecordActive() const { return !windowRecordConfig_.surfaceNodeIds.empty(); }
     // Main thread only: builds the effective mixed persistent-id/node-id capture white list when
     // at least one main-window node is resolvable. Called every frame by this node and by the
-    // parent screen node when it selects the effective white list, keeping the whole chain
-    // same-frame fresh without exposing node state to the render thread.
+    // parent screen node when it selects the effective white list.
     std::unordered_set<NodeId> BuildEffectiveRecordWhiteListIds() const;
 
     // true when this display is bound to a virtual screen (both record config
-    // delivery channels gate on this, EX-1)
+    // delivery channels gate on this)
     bool IsOnVirtualScreen() const;
 
     void ClearWindowRecordSession()

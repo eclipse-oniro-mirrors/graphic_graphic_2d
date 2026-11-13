@@ -564,8 +564,7 @@ public:
             return false;
         }
         // Enforce the bound at the parcel boundary so every delivery channel (Create via
-        // RSDisplayNodeConfig, SetDisplayMode, SetWindowRecordConfig) is covered; the setters'
-        // own cap alone cannot catch the constructor-embedded path.
+        // RSDisplayNodeConfig, SetDisplayMode, SetWindowRecordConfig) is covered.
         if (val.surfaceNodeIds.size() > MAX_WINDOW_RECORD_SURFACE_NUM) {
             val.surfaceNodeIds.clear();
             return false;
@@ -590,8 +589,8 @@ public:
         if (!Unmarshalling(parcel, val.screenId) || !Unmarshalling(parcel, mode)) {
             return false;
         }
-        // Clamp out-of-range values to INVALID (the pre-existing default semantics) instead of
-        // storing an out-of-range enum value coming from an untrusted parcel.
+        // Clamp out-of-range values to INVALID instead of storing an out-of-range enum value
+        // coming from an untrusted parcel.
         val.displayMode = mode <= static_cast<uint8_t>(DisplayMode::INDEPENDENT)
             ? static_cast<DisplayMode>(mode) : DisplayMode::INVALID;
         return Unmarshalling(parcel, val.mirrorNodeId) &&

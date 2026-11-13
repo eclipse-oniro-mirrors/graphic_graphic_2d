@@ -377,10 +377,10 @@ GSError RSUniRenderVirtualProcessor::SetScreenInfoForWindowRecord(
             RS_LOGD_IF(DEBUG_PIPELINE, "%{public}s: surfaceFrames_[%zu] surface is null.", __func__, i);
             continue;
         }
-        GSError ret = surfaceFrames_[i].surface->SetScreenInfoForWindowRecord(currentFrameRect, originalRect, angle);
+        GSError ret = surfaceFrames_[i].surface->SetScreenInfo(currentFrameRect, originalRect, angle);
         if (ret != GSERROR_OK) {
-            RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: surfaceFrames_[%zu] SetScreenInfoForWindowRecord failed, ret=%{public}d.",
-                __func__, i, static_cast<int>(ret));
+            RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: surfaceFrames_[%zu] "
+                "SetScreenInfo failed, ret=%{public}d.", __func__, i, static_cast<int>(ret));
             finalResult = ret;
         }
     }

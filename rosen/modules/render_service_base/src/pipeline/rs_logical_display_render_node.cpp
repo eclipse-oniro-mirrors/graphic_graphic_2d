@@ -70,8 +70,7 @@ std::unordered_set<NodeId> RSLogicalDisplayRenderNode::BuildEffectiveRecordWhite
             hasMainWindow = surfaceNode && surfaceNode->IsMainWindowType();
         }
     }
-    // Mixed ids alone do not activate capture: a live main window is still required for bbox and
-    // source-display resolution (EX-3/AC-1.4).
+    // Capture needs a live main window for bbox and source-display resolution.
     if (!hasMainWindow) {
         return {};
     }
@@ -97,8 +96,7 @@ void RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot(RSLogicalDisplayRen
     param.recordSurfaceDrawables_.reserve(windowRecordConfig_.surfaceNodeIds.size());
     for (NodeId windowId : windowRecordConfig_.surfaceNodeIds) {
         auto surfaceNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(windowId);
-        // Ids without a live main-window node are skipped (EX-3). Filtering here means the render
-        // thread never needs the node to decide what belongs to the recording.
+        // Skip ids without a live main-window node; the render thread consumes only this snapshot.
         if (surfaceNode == nullptr || !surfaceNode->IsMainWindowType()) {
             continue;
         }
@@ -108,9 +106,8 @@ void RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot(RSLogicalDisplayRen
             continue;
         }
         param.recordSurfaceDrawables_.emplace_back(std::move(surfaceDrawable));
-        // RSLogicalDisplayRenderNode::SetIsOnTheTree stamps the display id down the whole subtree,
-        // so an on-tree surface already knows which display owns it: one node-map lookup instead of
-        // a parent-chain walk, which would need cycle detection and a depth bound of its own.
+        // SetIsOnTheTree stamps the display id down the subtree, so an on-tree surface already
+        // knows which display owns it.
         if (param.recordSourceDisplayDrawable_.expired() && surfaceNode->IsOnTheTree()) {
             auto sourceDisplay =
                 nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(surfaceNode->GetLogicalDisplayNodeId());

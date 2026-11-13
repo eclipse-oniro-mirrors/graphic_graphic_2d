@@ -1122,10 +1122,9 @@ void ApplyGravityTransform(RSPaintFilterCanvas* curCanvas, const Drawing::RectI&
 Drawing::RectI RSMultiScreenUtil::ComputeGravityRect(int32_t canvasW, int32_t canvasH,
     int32_t contentW, int32_t contentH, WindowRecordFit fit, ScreenRotation rotation)
 {
-    // Public entry point: guard the divisors here rather than relying on every caller. With a zero
-    // or negative content/canvas size, scale becomes inf, contentW * scale becomes NaN, and
-    // static_cast<int32_t>(NaN) is undefined behavior. An empty rect makes callers skip the
-    // clip/scale path via RectI::IsValid().
+    // A non-positive content/canvas size would make scale inf and static_cast<int32_t>(NaN)
+    // undefined behavior. Return an empty rect so callers skip the clip/scale path via
+    // RectI::IsValid().
     if (contentW <= 0 || contentH <= 0 || canvasW <= 0 || canvasH <= 0) {
         RS_LOGE("RSMultiScreenUtil::%{public}s invalid size canvas[%{public}d,%{public}d] "
             "content[%{public}d,%{public}d]", __func__, canvasW, canvasH, contentW, contentH);
@@ -1142,7 +1141,7 @@ Drawing::RectI RSMultiScreenUtil::ComputeGravityRect(int32_t canvasW, int32_t ca
         y = (canvasH - scaledH) / 2;
     } else {
         // ASPECT_FIT_TOP_LEFT: align content to buffer top-left corner.
-        // Canvas is rotated reletive to buffer, so (0,0) in canvas space maps to
+        // Canvas is rotated relative to buffer, so (0,0) in canvas space maps to
         // different buffer corners depending on rotation.
         if (rotation == ScreenRotation::ROTATION_90) {
             x = 0;
@@ -1184,9 +1183,8 @@ void RSMultiScreenUtil::HandleWindowRecordScreen(
     RSScreenRenderParams& params,
     const std::shared_ptr<RSProcessor>& processor)
 {
-    // Nothing drawable (no resolvable main in any record config on this screen):
-    // skip before the processor requests an output buffer, so the consumer surface
-    // receives no frame at all instead of a blank one (AC-1.4, 2026-09-22 decision)
+    // No resolvable main window in any record config on this screen: skip before the processor
+    // requests an output buffer, so the consumer surface receives no frame instead of a blank one.
     for (const auto& displayDrawable : params.GetDisplayDrawables()) {
         // Type gate before any downcast: the container holds base adapter pointers, and static_cast
         // on a mismatched element yields a non-null pointer at a wrong offset, which the null check
@@ -1264,8 +1262,8 @@ void RSMultiScreenUtil::HandleWindowRecord(
         return;
     }
     const auto& config = params.GetWindowRecordConfig();
-    // Defensive duplicate of the HandleWindowRecordScreen gate: an empty whitelist disables
-    // filtering entirely, so bail out before touching the canvas to keep Save/Restore balanced.
+    // An empty whitelist disables filtering entirely; return before touching the canvas so the
+    // Save/Restore pair stays balanced.
     if (params.GetRecordWhiteListIds().empty()) {
         RS_LOGD("RSMultiScreenUtil::%{public}s empty record whitelist, skip frame", __func__);
         return;
@@ -1297,11 +1295,11 @@ void RSMultiScreenUtil::HandleWindowRecord(
         screenCorrection = screenProperty.GetScreenCorrection();
     }
     auto sourceRotation = sourceParams.GetScreenRotation();
-    //Mirror CanvasInit: update originScreenRotation on first frame or when canvasRotation is enabled.
+    // Update originScreenRotation on the first frame or when canvasRotation is enabled.
     if (drawable.IsFirstTimeToProcessor() || canvasRotation) {
         drawable.SetOriginScreenRotation(sourceRotation);
     }
-    //rotationAngle = originScreenRotation - screenCorrection (always applied, same as CanvasInit).
+    // rotationAngle = originScreenRotation - screenCorrection, applied on every frame.
     auto rotationDiff =
         static_cast<int>(drawable.GetOriginScreenRotation()) - static_cast<int>(screenCorrection);
     auto rotation = static_cast<ScreenRotation>((rotationDiff + SCREEN_ROTATION_NUM) % SCREEN_ROTATION_NUM);
@@ -1321,8 +1319,8 @@ void RSMultiScreenUtil::HandleWindowRecord(
         curCanvas->Translate(-canvasH / 2.0f, -canvasW / 2.0f);
         std::swap(canvasW, canvasH);
     }
-    // Capture M_rot: canvas->buffer matrix after rotation, before gravity transform.
-    // Used to map targetTect (canvas scope) to buffer coords for currentFrameRect.
+    // Capture M_rot: canvas->buffer matrix after rotation, before gravity transform; maps
+    // targetRect (canvas scope) to buffer coords for currentFrameRect.
     auto rotMatrix = curCanvas->GetTotalMatrix();
     ApplyGravityTransform(curCanvas, bbox, canvasW, canvasH, config.renderFit, rotation);
 
@@ -1374,8 +1372,8 @@ void RSMultiScreenUtil::HandleWindowRecord(
             ids.insert(cursorId);
         }
     }
-    // Restore the shared filter lists on every exit path instead of clearing them: an empty white
-    // list means "draw everything", and clearing would also drop lists this path never owned.
+    // Restore the shared filter lists on every exit path: an empty white list means "draw
+    // everything", and clearing would also drop lists this path never owned.
     RSUniRenderThread::NodeListGuard nodeListGuard;
     RSUniRenderThread::Instance().SetWhiteList(ids);
     if (screenParams) {
@@ -1393,9 +1391,8 @@ void RSMultiScreenUtil::HandleWindowRecord(
     // parallel canvas captures never observe this flag set.
     RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    // Save the shared render-thread state we are about to override and restore it afterwards
-    // (OpDropped / SecurityDisplay / SecExemption / parentSurfaceMatrix): resetting to defaults
-    // instead would drop whatever the enclosing path had set.
+    // Save and restore the shared render-thread state overridden below (OpDropped / SecurityDisplay
+    // / SecExemption / parentSurfaceMatrix).
     bool isOpDropped = false;
     bool prevSecurityDisplay = false;
     bool prevSecExemption = false;

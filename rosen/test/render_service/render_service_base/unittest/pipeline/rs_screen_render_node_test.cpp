@@ -1652,7 +1652,6 @@ HWTEST_F(RSScreenRenderNodeTest, SetUIMode3D_003, TestSize.Level1)
 /**
  * @tc.name: UpdateRenderParamsRecordChildAndEitherOrWhiteList
  * @tc.desc: Verify a virtual screen selects a record-active child and its white list instead of the property list.
- * The UpdateRenderParams body stays inside LCOV_EXCL; this test documents behavior only.
  * @tc.type: FUNC
  * @tc.require: issues/26744
  */
@@ -1682,8 +1681,7 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildAndEitherOrWhiteLi
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = testScreenId;
     displayConfig.windowRecordConfig.surfaceNodeIds = { mainId };
-    // A non-record display child is added first so the scan really walks past a non-matching child
-    // before selecting the record-active one (children keep their insertion order).
+    // Add a non-record display child first so the scan has to skip it before the record-active one.
     RSDisplayNodeConfig nonRecordDisplayConfig;
     nonRecordDisplayConfig.screenId = testScreenId;
     auto nonRecordDisplay =
@@ -1720,7 +1718,6 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildAndEitherOrWhiteLi
 /**
  * @tc.name: UpdateRenderParamsRecordChildResetsMirrorSource
  * @tc.desc: Verify a record-active child suppresses the mirror source drawable until the session is cleared.
- * The UpdateRenderParams body stays inside LCOV_EXCL; this test documents behavior only.
  * @tc.type: FUNC
  * @tc.require: issues/26744
  */
@@ -1771,7 +1768,6 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildResetsMirrorSource
 /**
  * @tc.name: UpdateRenderParamsPhysicalScreenIgnoresRecordChild
  * @tc.desc: Verify a physical screen ignores an active record child and keeps the property white list.
- * The UpdateRenderParams body stays inside LCOV_EXCL; this test documents behavior only.
  * @tc.type: FUNC
  * @tc.require: issues/26744
  */

@@ -203,7 +203,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId002, TestSize.
     RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
     EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), surfaceParams->GetId());
 
-    // restore
     RSUniRenderThread::SetCaptureParam(savedCaptureParam);
     RSUniRenderThread::Instance().SetWhiteList(savedWhiteList);
 }
@@ -226,11 +225,10 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId003, TestSize.
     const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
     const std::unordered_set<NodeId> savedWhiteList = RSUniRenderThread::Instance().GetWhiteList();
     RSUniRenderThread::Instance().SetWhiteList({surfaceParams->GetId()});
-    // Same input as 002, but outside the window-record path: cast/mirror must not be relaxed.
+    // The same matching node id outside the window-record path keeps persistent-id-only matching.
     RSUniRenderThread::GetCaptureParam().isWindowRecord_ = false;
     EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), INVALID_LEASH_PERSISTENTID);
 
-    // restore
     RSUniRenderThread::SetCaptureParam(savedCaptureParam);
     RSUniRenderThread::Instance().SetWhiteList(savedWhiteList);
 }
@@ -258,7 +256,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId004, TestSize.
     RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
     EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), persistentId);
 
-    // restore
     RSUniRenderThread::SetCaptureParam(savedCaptureParam);
     RSUniRenderThread::Instance().SetWhiteList(savedWhiteList);
 }
@@ -312,11 +309,10 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId006, TestSize.
     canvas_->SetIsParallelCanvas(true);
     EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), INVALID_LEASH_PERSISTENTID);
 
-    // Same inputs on the serial canvas still take the record fallback, guarding the branch order.
+    // The serial canvas takes the record fallback for the same inputs.
     canvas_->SetIsParallelCanvas(false);
     EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), surfaceParams->GetId());
 
-    // restore
     canvas_->SetIsParallelCanvas(savedParallelCanvas);
     RSUniRenderThread::SetCaptureParam(savedCaptureParam);
     RSUniRenderThread::Instance().SetWhiteList(savedWhiteList);
