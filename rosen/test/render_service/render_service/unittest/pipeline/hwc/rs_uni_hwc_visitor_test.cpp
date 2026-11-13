@@ -345,7 +345,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateDstRect003, TestSize.Level1)
 
 /**
  * @tc.name: UpdateDstRect004
- * @tc.desc: Test UpdateDstRect ROG scaling with HardCursorStatus=true, HdiRogEnable=false (no scaling)
+ * @tc.desc: Test UpdateDstRect ROG scaling with HardCursorStatus=true, HdiRogEnable=false (scaling applied)
  * @tc.type: FUNC
  * @tc.require:issues26680
  */
@@ -377,10 +377,11 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateDstRect004, TestSize.Level1)
     RectI absRect(10, 20, 100, 200);
     RectI clipRect(0, 0, 10000, 10000);
     rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
-    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 10);
-    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().top_, 20);
-    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().width_, 100);
-    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().height_, 200);
+    // widthRatio = 1600/800 = 2.0, heightRatio = 1200/600 = 2.0
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 20);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().top_, 40);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().width_, 200);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().height_, 400);
 }
 
 /**
@@ -426,7 +427,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateDstRect005, TestSize.Level1)
 
 /**
  * @tc.name: UpdateDstRect006
- * @tc.desc: Test UpdateDstRect ROG scaling with HardCursorStatus=false, HdiRogEnable=false (no scaling)
+ * @tc.desc: Test UpdateDstRect ROG scaling with HardCursorStatus=false, HdiRogEnable=false (scaling applied)
  * @tc.type: FUNC
  * @tc.require:issues26680
  */
@@ -458,10 +459,11 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateDstRect006, TestSize.Level1)
     RectI absRect(10, 20, 100, 200);
     RectI clipRect(0, 0, 10000, 10000);
     rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
-    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 10);
-    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().top_, 20);
-    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().width_, 100);
-    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().height_, 200);
+    // widthRatio = 1600/800 = 2.0, heightRatio = 1200/600 = 2.0
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 20);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().top_, 40);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().width_, 200);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().height_, 400);
 }
 
 /**
