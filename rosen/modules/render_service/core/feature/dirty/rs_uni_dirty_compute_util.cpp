@@ -340,7 +340,8 @@ void RSUniFilterDirtyComputeUtil::ResetFilterInfoStatus(DrawableV2::RSScreenRend
 }
 
 FilterDirtyRegionInfo RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(
-    RSRenderNode& filterNode, const std::optional<Occlusion::Region>& preDirty, bool isSurface)
+    RSRenderNode& filterNode, const std::optional<Occlusion::Region>& preDirty, bool isSurface,
+    bool forceDisablePartialRender)
 {
     RectI filterRect = (filterNode.NeedDrawBehindWindow() || filterNode.IsInstanceOf<RSEffectRenderNode>()) ?
         filterNode.GetFilterRect() : filterNode.GetOldDirtyInSurface().JoinRect(filterNode.GetFilterRegion());
@@ -358,8 +359,8 @@ FilterDirtyRegionInfo RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo
         .belowDirty_ = preDirty.value_or(Occlusion::Region()),
         .isBackgroundFilterClean_ = RSEffectUtils::HasBackgroundDependentFilter(filterProperties) &&
             !filterNode.IsBackgroundInAppOrNodeSelfDirty(),
-        .forceDisablePartialRender_ = filterNode.IsPixelStretchValid() ||
-            filterNode.GetRenderProperties().NeedDisabledPartialRender()
+        .forceDisablePartialRender_ = forceDisablePartialRender || filterNode.IsPixelStretchValid() ||
+            filterProperties.NeedDisabledPartialRender()
     };
     return filterInfo;
 }
