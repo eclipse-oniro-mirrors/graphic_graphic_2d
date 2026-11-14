@@ -1765,7 +1765,7 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateSpecialLayerInfoTest002, TestSize.Level1)
     auto node = std::make_shared<RSScreenRenderNode>(id, screenId, context);
     node->InitRenderParams();
     std::shared_ptr<RSBaseRenderNode> nullChild;
-    node->children_.emplace_back(nullChild);
+    node->AddChild(nullChild);
     node->UpdateSpecialLayerInfo();
     EXPECT_FALSE(node->GetHasPrivacyLayer());
 }
@@ -1781,7 +1781,7 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateSpecialLayerInfoTest003, TestSize.Level1)
     auto node = std::make_shared<RSScreenRenderNode>(id, screenId, context);
     node->InitRenderParams();
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
-    node->children_.emplace_back(surfaceNode);
+    node->AddChild(surfaceNode);
     node->UpdateSpecialLayerInfo();
     EXPECT_FALSE(node->GetHasPrivacyLayer());
 }
@@ -1798,14 +1798,14 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateSpecialLayerInfoTest004, TestSize.Level1)
     node->InitRenderParams();
     RSDisplayNodeConfig config;
     auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(id + 1, config);
-    node->children_.emplace_back(displayNode);
+    node->AddChild(displayNode);
     node->UpdateSpecialLayerInfo();
     EXPECT_FALSE(node->GetHasPrivacyLayer());
 }
 
 /**
  * @tc.name: UpdateSpecialLayerInfoTest005
- * @tc.desc: test UpdateSpecialLayerInfo with displayNode that has SECURITY flag
+ * @tc.desc: test UpdateSpecialLayerInfo with displayNode that has HAS_SECURITY flag
  * @tc.type: FUNC
  * @tc.require: issue26721
  */
@@ -1815,26 +1815,8 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateSpecialLayerInfoTest005, TestSize.Level1)
     node->InitRenderParams();
     RSDisplayNodeConfig config;
     auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(id + 1, config);
-    displayNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::SECURITY, true);
-    node->children_.emplace_back(displayNode);
-    node->UpdateSpecialLayerInfo();
-    EXPECT_TRUE(node->GetHasPrivacyLayer());
-}
-
-/**
- * @tc.name: UpdateSpecialLayerInfoTest006
- * @tc.desc: test UpdateSpecialLayerInfo with displayNode that has HAS_SECURITY flag
- * @tc.type: FUNC
- * @tc.require: issue26721
- */
-HWTEST_F(RSScreenRenderNodeTest, UpdateSpecialLayerInfoTest006, TestSize.Level1)
-{
-    auto node = std::make_shared<RSScreenRenderNode>(id, screenId, context);
-    node->InitRenderParams();
-    RSDisplayNodeConfig config;
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(id + 1, config);
     displayNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::HAS_SECURITY, true);
-    node->children_.emplace_back(displayNode);
+    node->AddChild(displayNode);
     node->UpdateSpecialLayerInfo();
     EXPECT_TRUE(node->GetHasPrivacyLayer());
 }
