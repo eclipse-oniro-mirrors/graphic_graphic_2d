@@ -22,6 +22,7 @@ namespace OHOS {
 namespace Rosen {
 
 constexpr size_t MAX_CACHE_SIZE = 16;
+constexpr int32_t PRE_CACHE_BUFFER_RELEASE_THRESHOLD = 2;
 static bool g_enableDfx = RSSystemProperties::GetRsDelegateCompositeCleanCacheDfxEnable();
 #define DFX_LOGD(enableDfx, format, ...) \
     ((enableDfx) ? (void) HILOG_ERROR(LOG_CORE, format, ##__VA_ARGS__) : \
@@ -50,6 +51,7 @@ bool RSDelegateCompositeBufferManager::SetBuffer(sptr<SurfaceBuffer> buffer,
     if (config.nodeId != 0) {
         configList.push_back(config);
     }
+#ifndef ROSEN_CROSS_PLATFORM
     RS_TRACE_NAME_FMT("RSDelegateCompositeBufferManager::SetBuffer configListSize=%u, config.nodeId=%llu",
         configList.size(), nodeId_);
     if (configList.size() != 0) {
@@ -58,6 +60,7 @@ bool RSDelegateCompositeBufferManager::SetBuffer(sptr<SurfaceBuffer> buffer,
             rsTransactionHandle_->AddCommand(command, true, FollowType::NONE, 0);
         }
     }
+#endif
     return true;
 }
 
@@ -83,6 +86,7 @@ void RSDelegateCompositeBufferManager::GenerateBufferParams(SetBufferParams &par
     buffer_->SetSurfaceBufferTransform(buffer_transform_);
     params.buffer = std::move(buffer_);
     params.fence = new SyncFence(fence_fd_.Release());
+
     if (damage_region_.empty()) {
         params.damages.push_back(Rect { 0, 0, params.buffer->GetWidth(), params.buffer->GetHeight() });
     } else {
@@ -91,6 +95,7 @@ void RSDelegateCompositeBufferManager::GenerateBufferParams(SetBufferParams &par
             rect.y = params.buffer->GetHeight() - rect.y - rect.h;
         }
     }
+
     params.timestamp = desire_present_time;
 }
 
@@ -147,7 +152,7 @@ void RSDelegateCompositeBufferManager::GenerateTransactionConfigInner(SetBufferP
 {
     uint32_t seqNum = params.buffer->GetSeqNum();
     config.nodeId = nodeId_;
-    config.transaction = new Transaction(params.buffer);
+    config.transaction = new RSBufferTransaction(params.buffer);
     config.transaction->SetFence(params.fence);
     config.transaction->SetDamages(params.damages);
     config.transaction->SetUiTimestamp(params.timestamp);
@@ -158,6 +163,7 @@ void RSDelegateCompositeBufferManager::GenerateTransactionConfigInner(SetBufferP
     config.transaction->SetMetaDataKey(params.metaDataKey);
     config.transaction->SetMetaDataSet(params.metaDataSet);
     config.hasBuffer = false;
+    config.pid = getpid();
 
     {
         std::lock_guard<std::mutex> lock(cacheMutex_);
@@ -176,7 +182,7 @@ void RSDelegateCompositeBufferManager::GenerateTransactionConfigInner(SetBufferP
         cacheInfo.buffer = params.buffer;
         cacheInfo.state = TransactionState::TRANSACTION_STATE_QUEUED;
         transactionCacheForSetBuffer_[bufferSequence] = cacheInfo;
-        if (++setBufferCountAfterCleanCache_ >= 2) { // 2 is cur buffer and pre buffer
+        if (++setBufferCountAfterCleanCache_ >= PRE_CACHE_BUFFER_RELEASE_THRESHOLD) {
             if (preCachebuffer_ != nullptr) {
                 RS_TRACE_NAME_FMT("ReleasePreCacheBuffer: bufId=%" PRIu64 ", bufSeqNum=%u",
                     preCachebuffer_->GetBufferId(), preCachebuffer_->GetSeqNum());
@@ -291,6 +297,21 @@ bool RSDelegateCompositeBufferManager::SetDelegateMode(bool isDelegateMode)
     return renderInterface->SetDelegateMode(nodeId_, isDelegateMode);
 }
 
+bool RSDelegateCompositeBufferManager::CleanDelegateModeBufferCmd()
+{
+    if (!rsUIContext_) {
+        RS_LOGE("RSDelegateCompositeBufferManager::CleanDelegateModeBufferCmd fail: rsUIContext invalid");
+        return false;
+    }
+
+    auto renderInterface = rsUIContext_->GetRSRenderInterface();
+    if (!renderInterface) {
+        RS_LOGE("RSDelegateCompositeBufferManager::CleanDelegateModeBufferCmd fail: renderInterface invalid");
+        return false;
+    }
+    return renderInterface->CleanDelegateModeBufferCmd(nodeId_);
+}
+
 RSDelegateCompositeBufferManager::RSDelegateCompositeBufferManager(std::shared_ptr<RSUIContext> rsUIContext,
     sptr<Surface> psurface, const NodeId& nodeId, const std::string& name)
 {
@@ -316,22 +337,6 @@ RSDelegateCompositeBufferManager::~RSDelegateCompositeBufferManager()
     }
     rsTransactionHandle_ = nullptr;
 }
-
-bool RSDelegateCompositeBufferManager::CleanDelegateModeBufferCmd()
-{
-    if (!rsUIContext_) {
-        RS_LOGE("RSDelegateCompositeBufferManager::CleanDelegateModeBufferCmd fail: rsUIContext invalid");
-        return false;
-    }
-
-    auto renderInterface = rsUIContext_->GetRSRenderInterface();
-    if (!renderInterface) {
-        RS_LOGE("RSDelegateCompositeBufferManager::CleanDelegateModeBufferCmd fail: renderInterface invalid");
-        return false;
-    }
-    return renderInterface->CleanDelegateModeBufferCmd(nodeId_);
-}
-
 } // namespace Rosen
 } // namespace OHOS
 #endif

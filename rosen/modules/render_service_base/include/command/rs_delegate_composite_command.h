@@ -19,7 +19,7 @@
 #include <vector>
 #include "command/rs_command.h"
 #include "command/rs_command_factory.h"
-#include "transaction/transaction.h"
+#include "transaction/rs_buffer_transaction.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -44,15 +44,11 @@ public:
 
     void SetRSTransactionConfigs(std::vector<RSTransactionConfig>& configs);
 
-    void SetNodeId(NodeId nodeId);
     NodeId GetNodeId() const override
     {
         return nodeId_;
     }
 
-    // Expose every target node id so that RSTransactionData::CheckNonSystemCommand validates
-    // the inner config.nodeId list as well; a config pointing to another process's node makes
-    // the whole command invalid instead of being silently skipped in Process.
     std::vector<NodeId> GetAllNodeIds() const override
     {
         std::vector<NodeId> nodeIds;
@@ -82,7 +78,7 @@ public:
     }
 
 private:
-    sptr<IConsumerSurface> GetConsumerSurface(RSContext& context, NodeId nodeId);
+    sptr<IConsumerSurface> GetConsumerSurface(RSContext& context, NodeId nodeId, bool& isDelegateMode);
 
     enum class CmdType : int32_t {
         INVALID = -1,
@@ -97,7 +93,7 @@ private:
 
     // setBuffer
     void ProcessCmdTypeSetBuffer(RSContext& context);
-    void ProcessCmdTypeSetBufferwithAttach(sptr<Transaction> transaction,
+    void ProcessCmdTypeSetBufferwithAttach(sptr<RSBufferTransaction> transaction,
         sptr<IConsumerSurface> consumer, const RSTransactionConfig& config, bool isDelegateMode);
     static RSCommand* UnmarshallingCmdTypeSetBuffer(MessageParcel* messageParcel);
     bool MarshallingCmdTypeSetBuffer(MessageParcel* messageParcel) const;

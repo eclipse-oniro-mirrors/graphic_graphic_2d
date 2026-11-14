@@ -127,11 +127,11 @@ int32_t SurfaceNodeBufferReleaseCallbackStub::OnRemoteRequest(uint32_t code, Mes
                 RsDelegateCompositeCallbackPrintLog("read size fail");
                 break;
             }
-            std::queue<OnCompletedRet> queue;
             if (size > MAX_DELEGATE_CALLBACK_PARCEL_SIZE) {
                 RsDelegateCompositeCallbackPrintLog("SurfaceNodeBufferReleaseCallbackStub fail: size exceed limit");
                 break;
             }
+            std::queue<OnCompletedRet> queue;
             for (uint32_t i = 0; i < size; i++) {
                 OnCompletedRet onCompletedRet;
                 if (!arguments.ReadUint64(onCompletedRet.nodeId) || !arguments.ReadUint64(onCompletedRet.queueId) ||
@@ -140,9 +140,9 @@ int32_t SurfaceNodeBufferReleaseCallbackStub::OnRemoteRequest(uint32_t code, Mes
                     break;
                 }
                 RS_TRACE_NAME_FMT(
-                    "SurfaceNodeBufferReleaseCallbackStub:nodeId=%llu queueId=%llu bufferSeqNum=%u clientPid=%u",
+                    "SurfaceNodeBufferReleaseCallbackStub:nodeId=%llu queueId=%llu bufferSeqNum=%u",
                     onCompletedRet.nodeId, onCompletedRet.queueId,
-                    onCompletedRet.bufferSeqNum, onCompletedRet.clientPid);
+                    onCompletedRet.bufferSeqNum);
 #ifdef ROSEN_OHOS
                 onCompletedRet.releaseFence = SyncFence::ReadFromMessageParcel(arguments);
 #endif

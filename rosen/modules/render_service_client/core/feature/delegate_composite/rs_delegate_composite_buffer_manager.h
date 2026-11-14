@@ -20,7 +20,7 @@
 #include "iconsumer_surface.h"
 #include "surface.h"
 #include "surface_type.h"
-#include "transaction/transaction.h"
+#include "transaction/rs_buffer_transaction.h"
 #include "ui/rs_ui_context.h"
 #include "transaction/rs_transaction_handler.h"
 #include "common/rs_common_def.h"

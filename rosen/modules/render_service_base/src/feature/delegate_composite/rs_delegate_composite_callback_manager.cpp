@@ -23,7 +23,7 @@
 #include "command/rs_delegate_composite_command.h"
 #include "common/rs_optional_trace.h"
 #include "platform/common/rs_log.h"
-#include "platform/common/rs_system_properties.h"
+#include "transaction/rs_buffer_transaction.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -348,6 +348,9 @@ void RsDelegateCompositeCallbackManager::AddBufferReleaseInfoInner(pid_t pid, On
 
     auto iter = currentSurfaceNodeBufferReleaseInfoMap_.find(pid);
     if (iter != currentSurfaceNodeBufferReleaseInfoMap_.end()) {
+        if (iter->second.size() >= MAX_MAP_SIZE) {
+            return;
+        }
         iter->second.push(std::move(ret));
         return;
     }
@@ -377,6 +380,9 @@ void RsDelegateCompositeCallbackManager::AddSurfaceTransactionCmdInfo(
             srcId, seqNum, surfaceTransactionCmdMap_[srcId].size());
         auto iter = surfaceTransactionCmdMap_.find(srcId);
         if (iter != surfaceTransactionCmdMap_.end()) {
+            if (iter->second.size() >= MAX_MAP_SIZE) {
+                return;
+            }
             iter->second.push(seqNum);
         } else {
             std::queue<uint64_t> seqNums;
@@ -394,7 +400,6 @@ void RsDelegateCompositeCallbackManager::AddSurfaceTransactionCmdInfo(
         auto iter = surfaceTransactionIdentityInfoMap_.find(pid);
         if (iter == surfaceTransactionIdentityInfoMap_.end()) {
             if (surfaceTransactionIdentityInfoMap_.size() >= MAX_MAP_SIZE) {
-                ROSEN_LOGE("AddSurfaceTransactionCmdInfo: surfaceTransactionIdentityInfoMap_ size exceed limit");
                 return;
             }
             surfaceTransactionIdentityInfoMap_[pid] = tid;
@@ -407,6 +412,13 @@ void RsDelegateCompositeCallbackManager::GetSurfaceTransactionCmdInfoLocked(
 {
     RS_TRACE_NAME_FMT("surfaceTransactionCmdMap_ size=%u", surfaceTransactionCmdMap_.size());
     surfaceTransactionCmdMap_.swap(surfaceTransactionCmdInfoMap);
+}
+
+bool RsDelegateCompositeCallbackManager::QueryAndResetCommandProcessFlag()
+{
+    bool ret = hasCommandProcess_;
+    hasCommandProcess_ = false;
+    return ret;
 }
 
 bool RsDelegateCompositeCallbackManager::ProcessDelegateCompositeCommand(RSContext& context)
@@ -459,13 +471,6 @@ bool RsDelegateCompositeCallbackManager::ProcessDelegateCompositeCommand(RSConte
             ProcessEachCommandQueue(cmdqueue, context);
         }
     }
-    return ret;
-}
-
-bool RsDelegateCompositeCallbackManager::QueryAndResetCommandProcessFlag()
-{
-    bool ret = hasCommandProcess_;
-    hasCommandProcess_ = false;
     return ret;
 }
 
@@ -753,7 +758,6 @@ bool RsDelegateCompositeCallbackManager::CleanDelegateCompositeCommand(uint64_t 
 
     auto &cmdMap = it1->second;
     for (auto it2 = cmdMap.begin(); it2 != cmdMap.end(); ++it2) {
-        auto &index = it2->first;
         auto &cmdqueue = it2->second;
         RS_TRACE_NAME_FMT("find: pid=%d, token=%" PRIu64 ", nodeId=%" PRIu64, pid, token, nodeId);
         CleanDelegateCompositeCommandInner(nodeId, cmdqueue);

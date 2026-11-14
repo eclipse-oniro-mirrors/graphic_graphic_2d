@@ -47,6 +47,7 @@ static uint64_t CreateUniqueId()
 
 std::unique_ptr<OHOS::Rosen::RSCommand> SurfaceTransactionListener::GetCommand(uint64_t& cmdSeqNum)
 {
+#ifndef ROSEN_CROSS_PLATFORM
     std::lock_guard<std::mutex> lock(mutex_);
     if (workTid_ != gettid()) {
         return nullptr;
@@ -59,6 +60,9 @@ std::unique_ptr<OHOS::Rosen::RSCommand> SurfaceTransactionListener::GetCommand(u
     static NodeId nodeId = static_cast<NodeId>(GetRealPid()) << 32;
     RS_TRACE_NAME_FMT("SurfaceTransactionCommand GetCommand: uniqueId=%llu, commandSeqNum=%llu", uniqueId_, cmdSeqNum);
     return std::make_unique<SurfaceTransactionCommand>(uniqueId_, cmdSeqNum, workPid_, workTid_, nodeId);
+#else
+    return nullptr;
+#endif
 }
 
 SurfaceTransactionListener::SurfaceTransactionListener(sptr<IRemoteObject> connectToRender)
@@ -94,12 +98,12 @@ bool SurfaceTransactionListener::RegisterCommandCompleteCallBack(OnCompleteCallb
     RS_TRACE_NAME_FMT("SurfaceTransactionListener uniqueId=%llu", uniqueId_);
     auto renderPipelineClient = std::make_shared<RSRenderPipelineClient>(connectToRender_);
     if (renderPipelineClient == nullptr) {
-        RS_LOGE("DelegateModeDebugTag: RegisterCommandCompleteCallBack fail, renderPipelineClient == nullptr");
+        RS_LOGE("DelegateModeDebugTag:RegisterCommandCompleteCallBack fail, renderPipelineClient == nullptr");
         return false;
     }
 
     if (!renderPipelineClient->RegisterSurfaceTransactionListener(callbackStubImpl, uniqueId_)) {
-        RS_LOGE("DelegateModeDebugTag: RegisterCommandCompleteCallBack fail, renderPipelineClient return false");
+        RS_LOGE("DelegateModeDebugTag:RegisterCommandCompleteCallBack fail, renderPipelineClient return false");
         return false;
     }
     renderPipelineClient_ = renderPipelineClient;
@@ -111,13 +115,13 @@ bool SurfaceTransactionListener::UnRegisterCommandCompleteCallBack()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!callBackStub_ || !renderPipelineClient_) {
-        RS_LOGE("DelegateModeDebugTag: UnRegisterCommandCompleteCallBack fail. invalid params");
+        RS_LOGE("DelegateModeDebugTag:UnRegisterCommandCompleteCallBack fail. invalid params");
         return false;
     }
 
-    RS_TRACE_NAME_FMT("UnRegisterSurfaceTransactionListener: pid=%u, uniqueId_=%llu", workPid_, uniqueId_);
+    RS_TRACE_NAME_FMT("UnRegisterCommandCompleteCallBack: pid=%u, uniqueId_=%llu", workPid_, uniqueId_);
     if (!renderPipelineClient_->UnRegisterSurfaceTransactionListener(uniqueId_)) {
-        RS_LOGE("DelegateModeDebugTag: UnRegisterCommandCompleteCallBack fail. renderPipelineClient return false");
+        RS_LOGE("DelegateModeDebugTag:UnRegisterCommandCompleteCallBack fail. renderPipelineClient return false");
         return false;
     }
     callBackStub_ = nullptr;
@@ -141,23 +145,19 @@ bool SurfaceNodeBufferReleaseListener::RegisterReleaseBufferCallBack(OnBufferCom
     {
         std::lock_guard<std::mutex> lock(mutex_);
         if (callBackStub_ != nullptr || connectToRender_ == nullptr) {
-            RS_LOGE("DelegateModeDebugTag: RegisterReleaseBufferCallBack fail, same repeat register");
+            RS_LOGE("DelegateModeDebugTag:RegisterReleaseBufferCallBack fail, same repeat register");
             return false;
         }
-
         RS_TRACE_NAME("RegisterReleaseBufferCallBack");
-
         sptr<SurfaceNodeBufferReleaseCallbackStub> callbackStubImpl = new SurfaceNodeBufferReleaseCallbackStub();
         callbackStubImpl->RegisterReleaseBufferCallBack(cb);
-        RS_TRACE_NAME_FMT("SurfaceTransactionListener uniqueId=%llu", uniqueId_);
-        auto renderPipelineClient = std::make_shared<RSRenderPipelineClient>();
+        auto renderPipelineClient = std::make_shared<RSRenderPipelineClient>(connectToRender_);
         if (renderPipelineClient == nullptr) {
-            RS_LOGE("DelegateModeDebugTag: RegisterReleaseBufferCallBack fail, renderPipelineClient == nullptr");
+            RS_LOGE("DelegateModeDebugTag:RegisterReleaseBufferCallBack fail, renderPipelineClient == nullptr");
             return false;
         }
-
         if (!renderPipelineClient->RegisterSurfaceNodeBufferReleaseListener(callbackStubImpl)) {
-            RS_LOGE("DelegateModeDebugTag: RegisterSurfaceNodeBufferReleaseListener fail, renderPipelineClient fail");
+            RS_LOGE("DelegateModeDebugTag:RegisterSurfaceNodeBufferReleaseListener fail, renderPipelineClient fail");
             return false;
         }
         callBackStub_ = callbackStubImpl;
@@ -171,13 +171,13 @@ bool SurfaceNodeBufferReleaseListener::UnRegisterReleaseBufferCallBack()
     {
         std::lock_guard<std::mutex> lock(mutex_);
         if (renderPipelineClient_ == nullptr || callBackStub_ == nullptr) {
-            RS_LOGE("DelegateModeDebugTag: UnRegisterReleaseBufferCallBack fail. invalid params");
+            RS_LOGE("DelegateModeDebugTag:UnRegisterReleaseBufferCallBack fail. invalid params");
             return false;
         }
 
         RS_TRACE_NAME_FMT("UnRegisterReleaseBufferCallBack: pid=%u, uniqueId_=%llu", getpid(), uniqueId_);
         if (!renderPipelineClient_->UnRegisterSurfaceNodeBufferReleaseListener()) {
-            RS_LOGE("DelegateModeDebugTag: UnRegisterReleaseBufferCallBack fail. renderPipelineClient_ return false");
+            RS_LOGE("DelegateModeDebugTag:UnRegisterReleaseBufferCallBack fail. renderPipelineClient_ return false");
             return false;
         }
         callBackStub_ = nullptr;
@@ -192,6 +192,7 @@ bool SurfaceNodeBufferReleaseListener::SetConnectToRender(sptr<IRemoteObject> co
     if (!connectToRender) {
         return false;
     }
+
     std::lock_guard<std::mutex> lock(mutex_);
     if (connectToRender_ != nullptr) {
         return false;
