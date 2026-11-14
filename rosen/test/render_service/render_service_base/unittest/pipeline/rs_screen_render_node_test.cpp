@@ -1782,6 +1782,7 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateSpecialLayerInfoTest003, TestSize.Level1)
     node->InitRenderParams();
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
     node->AddChild(surfaceNode);
+    node->GenerateFullChildrenList();
     node->UpdateSpecialLayerInfo();
     EXPECT_FALSE(node->GetHasPrivacyLayer());
 }
@@ -1799,6 +1800,7 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateSpecialLayerInfoTest004, TestSize.Level1)
     RSDisplayNodeConfig config;
     auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(id + 1, config);
     node->AddChild(displayNode);
+    node->GenerateFullChildrenList();
     node->UpdateSpecialLayerInfo();
     EXPECT_FALSE(node->GetHasPrivacyLayer());
 }
@@ -1817,6 +1819,7 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateSpecialLayerInfoTest005, TestSize.Level1)
     auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(id + 1, config);
     displayNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::HAS_SECURITY, true);
     node->AddChild(displayNode);
+    node->GenerateFullChildrenList();
     node->UpdateSpecialLayerInfo();
     EXPECT_TRUE(node->GetHasPrivacyLayer());
 }
