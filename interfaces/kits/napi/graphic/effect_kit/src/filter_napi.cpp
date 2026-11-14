@@ -189,6 +189,8 @@ napi_value FilterNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("grayscale", Grayscale),
         DECLARE_NAPI_FUNCTION("invert", Invert),
         DECLARE_NAPI_FUNCTION("setColorMatrix", SetColorMatrix),
+        DECLARE_NAPI_FUNCTION("setGpuResourceTag", SetGpuResourceTag),
+        DECLARE_NAPI_FUNCTION("getGpuMemoryStatistics", GetGpuMemoryStatistics),
         DECLARE_NAPI_FUNCTION("outline", Outline),
         DECLARE_NAPI_FUNCTION("halftone", Halftone),
         DECLARE_NAPI_FUNCTION("getPixelMap", GetPixelMap),
@@ -321,12 +323,32 @@ napi_value FilterNapi::CreateEffectFromPtr(napi_env env, std::shared_ptr<Media::
 DrawingError FilterNapi::Render(bool forceCPU)
 {
     EffectImageRender imageRender;
-    return imageRender.Render(srcPixelMap_, effectFilters_, forceCPU, dstPixelMap_);
+    std::string tagName = customTagName_;
+    if (tagName.empty()) {
+        tagName = GetDefaultTagName();
+    }
+    return imageRender.Render(srcPixelMap_, effectFilters_, forceCPU, dstPixelMap_,
+        customTagId_, tagName, &gpuMemoryStatistics_);
 }
 
-void FilterNapi::AddEffectFilter(std::shared_ptr<EffectImageFilter> filter)
+void FilterNapi::AddEffectFilter(std::shared_ptr<EffectImageFilter> filter, const std::string& filterType)
 {
     effectFilters_.emplace_back(filter);
+    if (std::find(filterTypeNames_.begin(), filterTypeNames_.end(), filterType) == filterTypeNames_.end()) {
+        filterTypeNames_.emplace_back(filterType);
+    }
+}
+
+std::string FilterNapi::GetDefaultTagName() const
+{
+    std::string name;
+    for (const auto& filterType : filterTypeNames_) {
+        if (!name.empty()) {
+            name += "+";
+        }
+        name += filterType;
+    }
+    return name;
 }
 
 std::shared_ptr<Media::PixelMap> FilterNapi::GetDstPixelMap()
@@ -529,7 +551,7 @@ napi_value FilterNapi::Blur(napi_env env, napi_callback_info info)
     auto blur = EffectImageFilter::Blur(radius, tileMode);
     EFFECT_NAPI_CHECK_RET_D(blur != nullptr, nullptr,
         EFFECT_LOG_E("FilterNapi Blur create filter fail"));
-    thisFilter->AddEffectFilter(blur);
+    thisFilter->AddEffectFilter(blur, "blur");
     return _this;
 }
 
@@ -703,7 +725,7 @@ napi_value FilterNapi::EllipticalGradientBlur(napi_env env, napi_callback_info i
         degrees);
     EFFECT_NAPI_CHECK_RET_D(ellipticalGradientBlur != nullptr, nullptr,
         EFFECT_LOG_E("FilterNapi EllipticalGradientBlur create filter fail"));
-    thisFilter->AddEffectFilter(ellipticalGradientBlur);
+    thisFilter->AddEffectFilter(ellipticalGradientBlur, "ellipticalGradientBlur");
 
 #ifndef CROSS_PLATFORM
     HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.ellipticalGradientBlur", 1);
@@ -739,7 +761,7 @@ napi_value FilterNapi::Brightness(napi_env env, napi_callback_info info)
     auto brightness = EffectImageFilter::Brightness(fBright);
     EFFECT_NAPI_CHECK_RET_D(brightness != nullptr, nullptr,
         EFFECT_LOG_E("FilterNapi Brightness create filter fail"));
-    thisFilter->AddEffectFilter(brightness);
+    thisFilter->AddEffectFilter(brightness, "brightness");
 
 #ifndef CROSS_PLATFORM
     HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.brightness", 1);
@@ -760,7 +782,7 @@ napi_value FilterNapi::Grayscale(napi_env env, napi_callback_info info)
     auto grayscale = EffectImageFilter::Grayscale();
     EFFECT_NAPI_CHECK_RET_D(grayscale != nullptr, nullptr,
         EFFECT_LOG_E("FilterNapi Grayscale create filter fail"));
-    thisFilter->AddEffectFilter(grayscale);
+    thisFilter->AddEffectFilter(grayscale, "grayscale");
 
 #ifndef CROSS_PLATFORM
     HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.grayscale", 1);
@@ -781,7 +803,7 @@ napi_value FilterNapi::Invert(napi_env env, napi_callback_info info)
     auto invert = EffectImageFilter::Invert();
     EFFECT_NAPI_CHECK_RET_D(invert != nullptr, nullptr,
         EFFECT_LOG_E("FilterNapi Invert create filter fail"));
-    thisFilter->AddEffectFilter(invert);
+    thisFilter->AddEffectFilter(invert, "invert");
 
 #ifndef CROSS_PLATFORM
     HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.invert", 1);
@@ -847,12 +869,67 @@ napi_value FilterNapi::SetColorMatrix(napi_env env, napi_callback_info info)
     auto applyColorMatrix = EffectImageFilter::ApplyColorMatrix(colorMatrix);
     EFFECT_NAPI_CHECK_RET_D(applyColorMatrix != nullptr, nullptr,
         EFFECT_LOG_E("FilterNapi SetColorMatrix create filter fail"));
-    thisFilter->AddEffectFilter(applyColorMatrix);
+    thisFilter->AddEffectFilter(applyColorMatrix, "setColorMatrix");
 
 #ifndef CROSS_PLATFORM
     HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.setColorMatrix", 1);
 #endif
     return _this;
+}
+
+napi_value FilterNapi::SetGpuResourceTag(napi_env env, napi_callback_info info)
+{
+    const size_t requireArgc = NUM_2;
+    size_t realArgc = NUM_2;
+    napi_value argv[NUM_2];
+    napi_value _this;
+    napi_status status;
+    EFFECT_JS_ARGS(env, info, status, realArgc, argv, _this);
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && realArgc == requireArgc, nullptr,
+        EFFECT_LOG_E("FilterNapi SetGpuResourceTag parsing input fail"));
+
+    uint32_t tagId = 0;
+    EFFECT_NAPI_CHECK_RET_D(napi_get_value_uint32(env, argv[NUM_0], &tagId) == napi_ok, nullptr,
+        EFFECT_LOG_E("FilterNapi SetGpuResourceTag parsing tagId fail"));
+    size_t nameLen = 0;
+    EFFECT_NAPI_CHECK_RET_D(napi_get_value_string_utf8(env, argv[NUM_1], nullptr, 0, &nameLen) == napi_ok,
+        nullptr, EFFECT_LOG_E("FilterNapi SetGpuResourceTag parsing tagName fail"));
+    std::vector<char> nameBuf(nameLen + 1);
+    EFFECT_NAPI_CHECK_RET_D(
+        napi_get_value_string_utf8(env, argv[NUM_1], nameBuf.data(), nameBuf.size(), &nameLen) == napi_ok,
+        nullptr, EFFECT_LOG_E("FilterNapi SetGpuResourceTag get tagName fail"));
+    std::string tagName(nameBuf.data(), nameLen);
+
+    FilterNapi* thisFilter = nullptr;
+    status = napi_unwrap_s(env, _this, &FilterNapi::NAPI_TYPE_TAG, reinterpret_cast<void**>(&thisFilter));
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && thisFilter != nullptr, nullptr,
+        EFFECT_LOG_E("FilterNapi SetGpuResourceTag napi_unwrap fail"));
+    constexpr size_t MAX_CUSTOM_TAG_NAME_LEN = 64;
+    thisFilter->customTagId_ = tagId;
+    thisFilter->customTagName_ = tagName.substr(0, MAX_CUSTOM_TAG_NAME_LEN);
+
+    API_STATS_HISTOGRAM("Arkgraphics2d.EffectKit.setGpuResourceTag", 1);
+    return _this;
+}
+
+napi_value FilterNapi::GetGpuMemoryStatistics(napi_env env, napi_callback_info info)
+{
+    napi_value _this;
+    napi_status status;
+    EFFECT_JS_NO_ARGS(env, info, status, _this);
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok, nullptr,
+        EFFECT_LOG_E("FilterNapi GetGpuMemoryStatistics parsing input fail"));
+    FilterNapi* thisFilter = nullptr;
+    status = napi_unwrap_s(env, _this, &FilterNapi::NAPI_TYPE_TAG, reinterpret_cast<void**>(&thisFilter));
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && thisFilter != nullptr, nullptr,
+        EFFECT_LOG_E("FilterNapi GetGpuMemoryStatistics napi_unwrap fail"));
+    napi_value result = nullptr;
+    status = napi_create_string_utf8(env, thisFilter->gpuMemoryStatistics_.c_str(),
+        thisFilter->gpuMemoryStatistics_.size(), &result);
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok, nullptr,
+        EFFECT_LOG_E("FilterNapi GetGpuMemoryStatistics create string fail"));
+    API_STATS_HISTOGRAM("Arkgraphics2d.EffectKit.getGpuMemoryStatistics", 1);
+    return result;
 }
 
 static bool GetFloatProperty(napi_env env, napi_value obj, const char* name, float& value)
@@ -1079,7 +1156,7 @@ napi_value FilterNapi::Outline(napi_env env, napi_callback_info info)
         status == napi_ok && thisFilter != nullptr, _this, EFFECT_LOG_E("FilterNapi Outline napi_unwrap fail"));
     auto outline = EffectImageFilter::Outline(outlineWidth, shadowOptions);
     EFFECT_NAPI_CHECK_RET_D(outline != nullptr, _this, EFFECT_LOG_E("FilterNapi Outline create filter fail"));
-    thisFilter->AddEffectFilter(outline);
+    thisFilter->AddEffectFilter(outline, "outline");
 
     API_STATS_HISTOGRAM("Arkgraphics2d.EffectKit.outline", 1);
     return _this;
@@ -1124,7 +1201,7 @@ napi_value FilterNapi::Halftone(napi_env env, napi_callback_info info)
         status == napi_ok && thisFilter != nullptr, _this, EFFECT_LOG_E("FilterNapi Halftone napi_unwrap fail"));
     auto halftone = EffectImageFilter::Halftone(halftoneParam, outlineWidth, shadowOptions);
     EFFECT_NAPI_CHECK_RET_D(halftone != nullptr, _this, EFFECT_LOG_E("FilterNapi Halftone create filter fail"));
-    thisFilter->AddEffectFilter(halftone);
+    thisFilter->AddEffectFilter(halftone, "halftone");
 
     API_STATS_HISTOGRAM("Arkgraphics2d.EffectKit.halftone", 1);
     return _this;

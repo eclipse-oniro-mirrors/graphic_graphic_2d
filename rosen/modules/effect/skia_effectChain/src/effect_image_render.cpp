@@ -242,13 +242,15 @@ DrawingError EffectImageWaterDropletTransitionFilter::Apply(const std::shared_pt
 
 DrawingError EffectImageRender::Render(const std::shared_ptr<Media::PixelMap>& srcPixelMap,
     const std::vector<std::shared_ptr<EffectImageFilter>>& effectFilters, bool forceCPU,
-    std::shared_ptr<Media::PixelMap>& dstPixelMap)
+    std::shared_ptr<Media::PixelMap>& dstPixelMap,
+    uint32_t customTagId, const std::string& customTagName, std::string* gpuMemoryStatistics)
 {
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageRender::Render");
 
     auto ret = DrawingError::ERR_OK;
     do {
         auto effectImage = std::make_shared<EffectImageChain>();
+        effectImage->SetGpuResourceTag(customTagId, customTagName);
         ret = effectImage->Prepare(srcPixelMap, forceCPU);
         if (ret != DrawingError::ERR_OK) {
             EFFECT_LOG_E("EffectImageRender::Render: Failed to prepare image, ret=%{public}d.", ret);
@@ -274,6 +276,11 @@ DrawingError EffectImageRender::Render(const std::shared_ptr<Media::PixelMap>& s
         if (ret != DrawingError::ERR_OK) {
             EFFECT_LOG_E("EffectImageRender::Render: Failed to draw image, ret=%{public}d.", ret);
             break;
+        }
+
+        if (gpuMemoryStatistics != nullptr) {
+            *gpuMemoryStatistics = "";
+            effectImage->GetGpuMemoryStatistics(*gpuMemoryStatistics);
         }
 
         dstPixelMap = effectImage->GetPixelMap();
@@ -319,7 +326,8 @@ DrawingError EffectImageRender::RenderNativeBuffer(const std::shared_ptr<Media::
     std::shared_ptr<OH_NativeBuffer>& dstNativeBuffer,
     const std::vector<std::shared_ptr<EffectImageFilter>>& effectFilters,
     int32_t* syncFenceFd,
-    bool releaseGpuContext)
+    bool releaseGpuContext,
+    uint32_t customTagId, const std::string& customTagName, std::string* gpuMemoryStatistics)
 {
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageRender::RenderNativeBuffer");
  
@@ -327,6 +335,7 @@ DrawingError EffectImageRender::RenderNativeBuffer(const std::shared_ptr<Media::
     do {
         auto effectImage = std::make_shared<EffectImageChain>();
         effectImage->SetForceReleaseGpuContext(releaseGpuContext);
+        effectImage->SetGpuResourceTag(customTagId, customTagName);
         ret = effectImage->PrepareNativeBuffer(srcPixelMap, dstNativeBuffer);
         if (ret != DrawingError::ERR_OK) {
             EFFECT_LOG_E("EffectImageRender::RenderNativeBuffer: Failed to prepare image, ret=%{public}d.", ret);
@@ -356,10 +365,13 @@ DrawingError EffectImageRender::RenderNativeBuffer(const std::shared_ptr<Media::
             break;
         }
         *syncFenceFd = effectImage->GetfenceId();
-        effectImage->SetForceReleaseGpuContext(releaseGpuContext);
         if (ret != DrawingError::ERR_OK) {
             EFFECT_LOG_E("EffectImageRender::RenderNativeBuffer: Failed to draw image, ret=%{public}d.", ret);
             break;
+        }
+
+        if (gpuMemoryStatistics != nullptr) {
+            effectImage->GetGpuMemoryStatistics(*gpuMemoryStatistics);
         }
     } while (false);
  

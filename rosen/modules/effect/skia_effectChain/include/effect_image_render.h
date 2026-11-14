@@ -250,13 +250,17 @@ public:
 
     DrawingError Render(const std::shared_ptr<Media::PixelMap>& srcPixelMap,
         const std::vector<std::shared_ptr<EffectImageFilter>>& effectFilters, bool forceCPU,
-        std::shared_ptr<Media::PixelMap>& dstPixelMap);
+        std::shared_ptr<Media::PixelMap>& dstPixelMap,
+        uint32_t customTagId = 0, const std::string& customTagName = "",
+        std::string* gpuMemoryStatistics = nullptr);
 #ifndef ROSEN_ARKUI_X
     DrawingError RenderNativeBuffer(const std::shared_ptr<Media::PixelMap>& srcPixelMap,
         std::shared_ptr<OH_NativeBuffer>& dstNativeBuffer,
         const std::vector<std::shared_ptr<EffectImageFilter>>& effectFilters,
         int32_t* syncFenceFd,
-        bool releaseGpuContext);
+        bool releaseGpuContext,
+        uint32_t customTagId = 0, const std::string& customTagName = "",
+        std::string* gpuMemoryStatistics = nullptr);
 #endif
 };
 } // namespace OHOS::Rosen

@@ -19,6 +19,7 @@
 #include <memory>
 #include <mutex>
 
+#include "effect_tag_tracker.h"
 #include "ge_shader_filter_params.h"
 #include "ge_shader_filter_params_for_kits.h"
 #include "ge_shader_mask.h"
@@ -119,11 +120,15 @@ public:
 
     std::shared_ptr<Media::PixelMap> GetPixelMap();
     void SetForceReleaseGpuContext(bool releaseGpuContext);
+    void SetGpuResourceTag(uint32_t customTagId, const std::string& customTagName);
+    EffectTagTracker* GetEffectTagTracker() const;
+    bool GetGpuMemoryStatistics(std::string& result) const;
 
 private:
     bool CheckPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap);
     DrawingError InitWithoutCanvas(const std::shared_ptr<Media::PixelMap>& srcPixelMap);
     std::shared_ptr<Drawing::Surface> CreateSurface(bool forceCPU);
+    void CreateTagTracker();
     DrawingError ApplyMesaBlur(float radius, const Drawing::TileMode& tileMode,
         bool isDirection = false, float angle = 0.0);
     DrawingError ApplyHpsBlur(float radius);
@@ -159,6 +164,10 @@ private:
     Drawing::Rect surfaceRec_{};
     Drawing::FilterMode filterMode_ = Drawing::FilterMode::LINEAR;
     Drawing::MipmapMode mipmapMode_ = Drawing::MipmapMode::LINEAR;
+
+    uint32_t customTagId_ = 0;
+    std::string customTagName_;
+    std::unique_ptr<EffectTagTracker> tagTracker_ = nullptr;
 };
 } // namespace OHOS::Rosen
 #endif // EFFECT_IMAGE_CHAIN_H

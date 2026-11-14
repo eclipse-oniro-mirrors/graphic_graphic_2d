@@ -250,6 +250,7 @@ DrawingError EffectImageChain::PrepareNativeBuffer(
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
+    CreateTagTracker();
 
     auto sbuffer = SurfaceBuffer::NativeBufferToSurfaceBuffer(dstNativeBuffer.get());
     imageRec_ = Drawing::Rect{0, 0, image_->GetWidth(), image_->GetHeight()};
@@ -940,13 +941,14 @@ std::shared_ptr<Drawing::Surface> EffectImageChain::CreateSurface(bool forceCPU)
         }
         gpuContext_ = renderContext_->GetSharedDrGPUContext();
     }
-    if (RSSystemProperties::IsUseVulkan()) {
-        gpuContext_->SetResourceCacheLimits(0, 0);
-    }
     if (gpuContext_ == nullptr) {
         EFFECT_COMM_LOG_E("EffectImageChain::CreateGPUSurface: create gpuContext failed.");
         return nullptr;
     }
+    if (RSSystemProperties::IsUseVulkan()) {
+        gpuContext_->SetResourceCacheLimits(0, 0);
+    }
+    CreateTagTracker();
     
     RS_TRACE_NAME_FMT("EffectImageChain::CreateGPUSurface Imageinfo:Image_Width:%d, Imageinfo_Height:%d",
         imageInfo_.GetWidth(), imageInfo_.GetHeight());
@@ -964,6 +966,7 @@ EffectImageChain::~EffectImageChain()
     filters_.reset();
     canvas_.reset();
     surface_.reset();
+    tagTracker_.reset();
     if (gpuContext_ && forceReleaseGpuContext_) {
         gpuContext_->ReleaseResourcesAndAbandonContext();
 #if (defined(RS_ENABLE_VK) || defined(RS_ENABLE_GL)) && defined(USE_M133_SKIA)
@@ -975,6 +978,36 @@ EffectImageChain::~EffectImageChain()
 void EffectImageChain::SetForceReleaseGpuContext(bool releaseGpuContext)
 {
     forceReleaseGpuContext_ = releaseGpuContext;
+}
+
+void EffectImageChain::SetGpuResourceTag(uint32_t customTagId, const std::string& customTagName)
+{
+    customTagId_ = customTagId;
+    customTagName_ = customTagName;
+}
+
+EffectTagTracker* EffectImageChain::GetEffectTagTracker() const
+{
+    return tagTracker_.get();
+}
+
+bool EffectImageChain::GetGpuMemoryStatistics(std::string& result) const
+{
+    const EffectTagTracker* tracker = GetEffectTagTracker();
+    if (tracker == nullptr) {
+        return false;
+    }
+    return tracker->GetGpuMemoryStatistics(result);
+}
+
+void EffectImageChain::CreateTagTracker()
+{
+    tagTracker_.reset();
+    if (customTagId_ != 0 || !customTagName_.empty()) {
+        tagTracker_ = std::make_unique<EffectTagTracker>(gpuContext_, customTagId_, customTagName_);
+    } else {
+        tagTracker_ = std::make_unique<EffectTagTracker>(gpuContext_);
+    }
 }
 
 static std::shared_ptr<GEShaderFilter> GenerateExtShaderWaterGlass(

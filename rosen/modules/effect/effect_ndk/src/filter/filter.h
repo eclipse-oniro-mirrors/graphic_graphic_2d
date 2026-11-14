@@ -49,14 +49,21 @@ public:
     bool RenderNativeBuffer(
         bool forceCPU, OH_NativeBuffer *dstNativeBuffer, int32_t *syncFenceFd, bool releaseGpuContext);
     bool Scale(float scaleX, float scaleY, Drawing::FilterMode filterMode, Drawing::MipmapMode mipmapMode);
+    void SetGpuResourceTag(uint32_t customTagId, const std::string& customTagName);
+    std::string GetGpuMemoryStatistics() const;
 
 private:
-    void AddNextFilter(std::shared_ptr<EffectImageFilter> filter);
+    void AddNextFilter(std::shared_ptr<EffectImageFilter> filter, const std::string& filterType);
     bool Render(bool forceCPU);
+    std::string GetDefaultTagName() const;
     std::vector<std::shared_ptr<EffectImageFilter>> effectFilters_;
     std::shared_ptr<OHOS::Media::PixelMap> srcPixelMap_ = nullptr;
     std::shared_ptr<OHOS::Media::PixelMap> dstPixelMap_ = nullptr;
     std::shared_ptr<OH_NativeBuffer> dstNativeBuffer_ = nullptr;
+    uint32_t customTagId_ = 0;
+    std::string customTagName_;
+    std::vector<std::string> filterTypeNames_;
+    std::string gpuMemoryStatistics_;
 };
 }
 }
