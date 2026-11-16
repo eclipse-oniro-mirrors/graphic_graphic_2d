@@ -21,6 +21,8 @@
 
 #include "pixel_map_from_surface.h"
 #include "pixel_map_from_surface_utils.h"
+#include <cerrno>
+#include <cinttypes>
 #include <scoped_bytrace.h>
 #include <string>
 #include "common/rs_background_thread.h"
@@ -74,6 +76,36 @@ using namespace OHOS::Media;
 constexpr Drawing::scalar ROTATE_90 = 90.0f;
 constexpr Drawing::scalar ROTATE_180 = 180.0f;
 constexpr Drawing::scalar ROTATE_270 = 270.0f;
+
+// Must run before any GPU import: the GL/VK image is sized from the BufferHandle, so a handle
+// claiming more memory than the dma-buf holds would make the GPU sample past the allocation.
+// The handle is this process's own copy and dma-buf size is fixed once exported, so the result
+// cannot change between this check and the import.
+static bool IsSurfaceBufferIntegrityValid(const sptr<SurfaceBuffer>& surfaceBuffer)
+{
+    // catches handle fields changed after allocation, e.g. through OH_NativeWindow_GetBufferHandleFromNative
+    if (!surfaceBuffer->CheckBufferHandleFields()) {
+        RS_LOGE("[PixelMapFromSurface] SurfaceBuffer handle fields are inconsistent, seq=%{public}u",
+            surfaceBuffer->GetSeqNum());
+        return false;
+    }
+    // CheckBufferHandleFields compares against values sent by the producer and is skipped when
+    // they are absent, so the real allocation size is the check the producer cannot forge
+    const BufferHandle* handle = surfaceBuffer->GetBufferHandle();
+    if (handle == nullptr) {
+        RS_LOGE("[PixelMapFromSurface] SurfaceBuffer handle is nullptr");
+        return false;
+    }
+    BufferLayoutInfo layoutInfo = { handle->format, handle->width, handle->height, handle->stride, handle->size };
+    int64_t allocationSize = GetFdAllocationSize(handle->fd);
+    if (!IsBufferLayoutWithinSize(layoutInfo, allocationSize)) {
+        RS_LOGE("[PixelMapFromSurface] SurfaceBuffer layout invalid: format=%{public}d w=%{public}d h=%{public}d "
+            "stride=%{public}d size=%{public}d allocation=%{public}" PRId64 " errno=%{public}d", handle->format,
+            handle->width, handle->height, handle->stride, handle->size, allocationSize, errno);
+        return false;
+    }
+    return true;
+}
 
 // LCOV_EXCL_START
 static sptr<SurfaceBuffer> LocalDmaMemAlloc(const uint32_t &width, const uint32_t &height,
@@ -704,6 +736,9 @@ OHNativeWindowBuffer *PixelMapFromSurface::GetNativeWindowBufferFromSurface(
         RS_LOGE("GetLastFlushedBuffer fail, ret = %{public}d", ret);
         return nullptr;
     }
+    if (!IsSurfaceBufferIntegrityValid(surfaceBuffer)) {
+        return nullptr;
+    }
 
     int32_t bufferWidth = surfaceBuffer->GetWidth();
     int32_t bufferHeight = surfaceBuffer->GetHeight();
@@ -878,6 +913,9 @@ std::unique_ptr<PixelMap> PixelMapFromSurface::Create(
     ScopedBytrace trace(__func__);
     if (surfaceBuffer == nullptr) {
         RS_LOGE("surfaceBuffer invalid argument: surfaceBuffer is nullptr");
+        return nullptr;
+    }
+    if (!IsSurfaceBufferIntegrityValid(surfaceBuffer)) {
         return nullptr;
     }
     int32_t bufferWidth = surfaceBuffer->GetWidth();
