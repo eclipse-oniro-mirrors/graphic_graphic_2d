@@ -2154,7 +2154,11 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform,
         transform, layer.zOrder, !IsHardwareForcedDisabled(), isLastFrameHwcEnabled_);
 #endif
     surfaceParams->SetLayerInfo(layer);
-    surfaceParams->SetLayerDstDisplay(dstRectDisplayNodeId_, dstRectDisplayOffsetX_, dstRectDisplayOffsetY_);
+    // Only a drm node of a cross node records the display whose frame its dst rect is in. Sync it as well when the
+    // params still hold one, so a record that has just ended does not stay on the params.
+    if (dstRectDisplayNodeId_ != INVALID_NODEID || surfaceParams->GetLayerDstDisplayNodeId() != INVALID_NODEID) {
+        surfaceParams->SetLayerDstDisplay(dstRectDisplayNodeId_, dstRectDisplayOffsetX_, dstRectDisplayOffsetY_);
+    }
     // SolidLayer node without buffer: force hardware enabled to allow solid color layer creation
     bool isSolidLayerNoBuffer = isSolidLayerEnabled_ && buffer == nullptr;
     surfaceParams->SetHardwareEnabled(!IsHardwareForcedDisabled() || isSolidLayerNoBuffer);

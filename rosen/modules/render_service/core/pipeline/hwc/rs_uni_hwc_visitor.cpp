@@ -14,6 +14,7 @@
  */
 #include "rs_uni_hwc_visitor.h"
 
+#include "feature/drm/rs_drm_util.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/hwc/rs_uni_hwc_compute_util.h"
 #include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
@@ -136,9 +137,10 @@ void RSUniHwcVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absR
     node.SetDstRect(dstRect);
     node.SetDstRectWithoutRenderFit(dstRect);
     // While the source of a clone cross node is prepared under the parent of the clone, absRect is in the frame of the
-    // display composing the clone instead of the frame the node matrix is accumulated in, so that display is recorded.
-    node.SetDstRectDisplay(uniRenderVisitor_.isSwitchToSourceCrossNodePrepare_ && uniRenderVisitor_.curScreenNode_ ?
-        uniRenderVisitor_.curScreenNode_->GetId() : INVALID_NODEID);
+    // display composing the clone instead of the frame the node matrix is accumulated in, so that display is recorded
+    // for the drm nodes of the cross node.
+    RSDrmUtil::RecordDstRectDisplay(node, uniRenderVisitor_.isSwitchToSourceCrossNodePrepare_ ?
+        uniRenderVisitor_.curScreenNode_ : nullptr);
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix)

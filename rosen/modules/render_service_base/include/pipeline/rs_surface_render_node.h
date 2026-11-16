@@ -1944,6 +1944,9 @@ public:
     }
     void ClearCrossNodeLayerConversionMatrices()
     {
+        if (crossNodeLayerConversionMatrices_.empty()) {
+            return;
+        }
         crossNodeLayerConversionMatrices_.clear();
     }
     // Display whose frame dstRect_ is in, when it was built while the node was prepared for a clone composed on another
@@ -1951,6 +1954,10 @@ public:
     // the frame the matrix of the node is accumulated in, so the conversion matrices apply to it directly.
     void SetDstRectDisplay(NodeId displayNodeId, int32_t offsetX = 0, int32_t offsetY = 0)
     {
+        if (dstRectDisplayNodeId_ == displayNodeId && dstRectDisplayOffsetX_ == offsetX &&
+            dstRectDisplayOffsetY_ == offsetY) {
+            return;
+        }
         dstRectDisplayNodeId_ = displayNodeId;
         dstRectDisplayOffsetX_ = offsetX;
         dstRectDisplayOffsetY_ = offsetY;

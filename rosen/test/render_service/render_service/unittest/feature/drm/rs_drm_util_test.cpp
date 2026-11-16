@@ -1086,6 +1086,38 @@ HWTEST_F(RSDrmUtilTest, ApplyCrossNodeLayerConversion004, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RecordDstRectDisplay001
+ * @tc.desc: Test the dst rect display is recorded for a drm node only, and is reset when there is none
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, RecordDstRectDisplay001, TestSize.Level1)
+{
+    auto crossNode = RSTestUtil::CreateSurfaceNode();
+    auto drmNode = RSTestUtil::CreateSurfaceNode();
+    auto otherNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(crossNode, nullptr);
+    ASSERT_NE(drmNode, nullptr);
+    ASSERT_NE(otherNode, nullptr);
+    crossNode->firstLevelNodeId_ = crossNode->GetId();
+    drmNode->firstLevelNodeId_ = crossNode->GetId();
+    otherNode->firstLevelNodeId_ = crossNode->GetId();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    RSDrmUtil::ClearDrmNodes();
+    RSDrmUtil::drmNodes_[crossNode->GetId()].push_back(drmNode);
+
+    RSDrmUtil::RecordDstRectDisplay(*drmNode, screenNode);
+    EXPECT_EQ(drmNode->GetDstRectDisplayNodeId(), screenNode->GetId());
+    // a node that is not a drm node records no display, so it is never treated as a converted layer
+    RSDrmUtil::RecordDstRectDisplay(*otherNode, screenNode);
+    EXPECT_EQ(otherNode->GetDstRectDisplayNodeId(), INVALID_NODEID);
+    // the record does not outlive the composition on another display
+    RSDrmUtil::RecordDstRectDisplay(*drmNode, nullptr);
+    EXPECT_EQ(drmNode->GetDstRectDisplayNodeId(), INVALID_NODEID);
+    RSDrmUtil::ClearDrmNodes();
+}
+
+/**
  * @tc.name: CropCrossNodeLayerInfo001
  * @tc.desc: Test the source rect is cropped by the same proportion as the destination rect
  * @tc.type:FUNC

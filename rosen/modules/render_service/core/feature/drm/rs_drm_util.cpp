@@ -18,6 +18,7 @@
 #include <cmath>
 #include <parameters.h>
 #include "common/rs_background_thread.h"
+#include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
 #include "graphic_feature_param_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
@@ -126,19 +127,12 @@ void MapDstRectToSrcBounds(float left, float top, float right, float bottom, Gra
     }
 }
 
+// Map the destination rect with the outward rounding used for the draw areas of the nodes.
 GraphicIRect MapCrossNodeDstRect(const Drawing::Matrix& matrix, const GraphicIRect& dstRect)
 {
-    const float dstLeft = static_cast<float>(dstRect.x);
-    const float dstTop = static_cast<float>(dstRect.y);
-    Drawing::Rect sourceRect(dstLeft, dstTop, dstLeft + static_cast<float>(dstRect.w),
-        dstTop + static_cast<float>(dstRect.h));
-    Drawing::Rect convertedRect;
-    matrix.MapRect(convertedRect, sourceRect);
-    const float left = std::floor(convertedRect.GetLeft());
-    const float top = std::floor(convertedRect.GetTop());
-    return { static_cast<int32_t>(left), static_cast<int32_t>(top),
-        static_cast<int32_t>(std::ceil(convertedRect.GetRight()) - left),
-        static_cast<int32_t>(std::ceil(convertedRect.GetBottom()) - top) };
+    const RectI mapped = RSObjAbsGeometry::MapRect(RectF(static_cast<float>(dstRect.x),
+        static_cast<float>(dstRect.y), static_cast<float>(dstRect.w), static_cast<float>(dstRect.h)), matrix);
+    return { mapped.left_, mapped.top_, mapped.width_, mapped.height_ };
 }
 
 // Same truncation as the layer size handed to the composer by RSUniRenderProcessor::GetLayerInfo.
@@ -153,6 +147,19 @@ void RSDrmUtil::ClearDrmNodes()
 {
     drmNodes_.clear();
 }
+
+bool RSDrmUtil::IsDrmNode(const RSRenderNode& node)
+{
+    const auto it = drmNodes_.find(node.GetFirstLevelNodeId());
+    if (it == drmNodes_.end()) {
+        return false;
+    }
+    return std::any_of(it->second.begin(), it->second.end(),
+        [&node](const std::shared_ptr<RSSurfaceRenderNode>& drmNode) {
+            return drmNode != nullptr && drmNode->GetId() == node.GetId();
+        });
+}
+
 void RSDrmUtil::CollectDrmNodes(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
 {
     auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(
@@ -221,6 +228,15 @@ void RSDrmUtil::UpdateDrmCrossNodeConversion(const RSSurfaceRenderNode& crossNod
         }
         node->AddToPendingSyncList();
     }
+}
+
+void RSDrmUtil::RecordDstRectDisplay(RSSurfaceRenderNode& node,
+    const std::shared_ptr<RSScreenRenderNode>& screenNode)
+{
+    // The layers of the drm nodes are the only ones converted, so only they need the display whose frame their dst
+    // rect is in. The other nodes record none, which keeps the record of a node that is no longer composed on another
+    // display from outliving the composition.
+    node.SetDstRectDisplay(screenNode != nullptr && IsDrmNode(node) ? screenNode->GetId() : INVALID_NODEID);
 }
 
 bool RSDrmUtil::ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, NodeId screenNodeId,

@@ -36,6 +36,10 @@ public:
         const RSSurfaceRenderNode& cloneNode, const RSScreenRenderNode& screenNode, Drawing::Matrix& conversion);
     static void UpdateDrmCrossNodeConversion(const RSSurfaceRenderNode& crossNode, NodeId screenNodeId,
         const Drawing::Matrix& conversion);
+    // Records the display whose frame the dst rect of a drm node of a cross node is in, so the render thread can move
+    // it back before converting it. Only the drm nodes record it, a null screenNode or any other node records none.
+    static void RecordDstRectDisplay(RSSurfaceRenderNode& node,
+        const std::shared_ptr<RSScreenRenderNode>& screenNode);
     // Converts the layer info of a drm cross node composed on screenNodeId with the conversion recorded for that
     // screen. Returns false when there is no such conversion, then the layer info is left unchanged.
     static bool ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, NodeId screenNodeId,
@@ -66,6 +70,8 @@ private:
     static bool GetDarkColorMode(const std::shared_ptr<RSRenderNode>& node,
         const std::shared_ptr<RSSurfaceRenderNode>& appWindowNode);
     static void CollectDrmNodes(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
+    // Whether the node is one of the drm nodes collected for this frame, only those take part in the layer conversion.
+    static bool IsDrmNode(const RSRenderNode& node);
     static void PreAllocProtectedFrameBuffers(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         const sptr<SurfaceBuffer>& buffer, const std::shared_ptr<RSComposerClientManager>& clientManager);
     // Moves the dstRect back into the frame the conversions start from, and returns true when it already is in the
