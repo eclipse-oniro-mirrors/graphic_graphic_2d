@@ -15,9 +15,11 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cinttypes>
 #include <set>
 #include <unistd.h>
 #include "common/rs_common_hook.h"
+#include "gfx/fps_info/rs_surface_fps_manager.h"
 #include "hdi_log.h"
 #include "hdi_output.h"
 #include "info_collection/rs_frame_stats_collection.h"
@@ -287,36 +289,55 @@ void HdiOutput::UpdateRSLayerLocked(const std::shared_ptr<RSLayer>& rsLayer, boo
     auto iter = surfaceIdMap_.find(surfaceId);
     if (invalidTunnelSurfaceIds_.find(surfaceId) != invalidTunnelSurfaceIds_.end() &&
         IsTunnelLayerRequestedLocked(rsLayer)) {
+        auto savedRecords = iter != surfaceIdMap_.end() && iter->second != nullptr
+                                ? iter->second->GetPresentTimeRecords()
+                                : std::array<FPSInfo, HdiLayer::FRAME_RECORDS_NUM>{};
+        auto savedCount = iter != surfaceIdMap_.end() && iter->second != nullptr ? iter->second->GetCount() : 0;
         DestroyLayerBySurfaceIdLocked(surfaceId);
         RS_TRACE_NAME_FMT("TUNNEL_DEBUG %s DestroyAndCreateTunnelLayer surfaceId %" PRIu64, __func__, surfaceId);
         RS_LOGI("TUNNEL_DEBUG %{public}s destroy and recreate tunnel layer, reason:tunnel commit failed, "
             "surfaceId:%{public}" PRIu64, __func__, surfaceId);
         CreateLayerLocked(surfaceId, rsLayer);
+        auto newIter = surfaceIdMap_.find(surfaceId);
+        if (newIter != surfaceIdMap_.end() && newIter->second != nullptr) {
+            newIter->second->RestorePresentTimeRecords(savedRecords, savedCount);
+        }
         return;
     }
     if (iter != surfaceIdMap_.end()) {
-        const std::shared_ptr<HdiLayer>& hdiLayer = iter->second;
-        if (hdiLayer != nullptr && hdiLayer->GetCreatedLayerType() != rsLayer->GetType()) {
-            auto previousRsLayer = GetReplacedTunnelRSLayer(hdiLayer, fallbackRequested);
-            if (previousRsLayer != nullptr) {
-                OnLayerCreated(previousRsLayer->GetNodeId(), false, previousRsLayer->GetTunnelLayerGeneration());
-            }
-            DestroyLayerBySurfaceIdLocked(surfaceId);
-            RS_TRACE_NAME_FMT("TUNNEL_DEBUG %s DestroyAndCreateLayer reason:layer type changed, "
-                "surfaceId %" PRIu64, __func__, surfaceId);
-            RS_LOGI("TUNNEL_DEBUG %{public}s destroy and recreate layer, reason:layer type changed, "
-                "surfaceId:%{public}" PRIu64, __func__, surfaceId);
-            CreateLayerLocked(surfaceId, rsLayer);
-            return;
-        }
-        hdiLayer->UpdateRSLayer(rsLayer);
-        layerIdMap_[hdiLayer->GetLayerId()] = hdiLayer;
-        if (IsTunnelHdiLayer(hdiLayer) && IsTunnelLayerRequestedLocked(rsLayer)) {
-            hdiLayer->MarkPendingTunnelLayerCreated(rsLayer->GetTunnelLayerGeneration());
-        }
+        UpdateExistingLayerLocked(surfaceId, rsLayer, iter->second, fallbackRequested);
         return;
     }
     CreateLayerLocked(surfaceId, rsLayer);
+}
+
+void HdiOutput::UpdateExistingLayerLocked(uint64_t surfaceId, const std::shared_ptr<RSLayer>& rsLayer,
+    const std::shared_ptr<HdiLayer>& hdiLayer, bool fallbackRequested)
+{
+    if (hdiLayer != nullptr && hdiLayer->GetCreatedLayerType() != rsLayer->GetType()) {
+        auto previousRsLayer = GetReplacedTunnelRSLayer(hdiLayer, fallbackRequested);
+        if (previousRsLayer != nullptr) {
+            OnLayerCreated(previousRsLayer->GetNodeId(), false, previousRsLayer->GetTunnelLayerGeneration());
+        }
+        auto savedRecords = hdiLayer->GetPresentTimeRecords();
+        auto savedCount = hdiLayer->GetCount();
+        DestroyLayerBySurfaceIdLocked(surfaceId);
+        RS_TRACE_NAME_FMT("TUNNEL_DEBUG %s DestroyAndCreateLayer reason:layer type changed, "
+            "surfaceId %" PRIu64, __func__, surfaceId);
+        RS_LOGI("TUNNEL_DEBUG %{public}s destroy and recreate layer, reason:layer type changed, "
+            "surfaceId:%{public}" PRIu64, __func__, surfaceId);
+        CreateLayerLocked(surfaceId, rsLayer);
+        auto newIter = surfaceIdMap_.find(surfaceId);
+        if (newIter != surfaceIdMap_.end() && newIter->second != nullptr) {
+            newIter->second->RestorePresentTimeRecords(savedRecords, savedCount);
+        }
+        return;
+    }
+    hdiLayer->UpdateRSLayer(rsLayer);
+    layerIdMap_[hdiLayer->GetLayerId()] = hdiLayer;
+    if (IsTunnelHdiLayer(hdiLayer) && IsTunnelLayerRequestedLocked(rsLayer)) {
+        hdiLayer->MarkPendingTunnelLayerCreated(rsLayer->GetTunnelLayerGeneration());
+    }
 }
 
 bool HdiOutput::UpdateSolidColorLayerLocked(const std::shared_ptr<RSLayer>& rsLayer)
@@ -496,7 +517,44 @@ int32_t HdiOutput::CommitTunnelLayerBySurfaceId(uint64_t surfaceId, uint64_t tun
         static SyncFenceTracker tracker("Tunnel Release Fence");
         tracker.TrackFence(releaseFence);
     }
+
+    RecordTunnelPresentTimeAfterCommit(
+        hdiLayer, releaseFence, PresentFenceMeta{buffer->GetFlushedTimestamp(), GetNodeIdBySurfaceId(surfaceId)});
     return GRAPHIC_DISPLAY_SUCCESS;
+}
+
+void HdiOutput::RecordTunnelPresentTimeAfterCommit(
+    const std::shared_ptr<HdiLayer>& hdiLayer, const sptr<SyncFence>& releaseFence, const PresentFenceMeta& meta)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (thirdFrameAheadPresentFence_ != nullptr && thirdFrameAheadPresentFence_->IsValid()) {
+        int64_t ts = thirdFrameAheadPresentFence_->SyncFileReadTimestamp();
+        auto decision = ProcessPresentPipelineLocked(thirdFrameAheadPresentMeta_, ts);
+        const bool isTunnelMeta = thirdFrameAheadPresentMeta_.nodeId != 0;
+        const bool reportValid = isTunnelMeta ? decision.reportValid : (ts != SyncFence::FENCE_PENDING_TIMESTAMP);
+        if (reportValid) {
+            int64_t reportValue = isTunnelMeta ? static_cast<int64_t>(decision.reportTs) : ts;
+            if (hdiLayer != nullptr) {
+                hdiLayer->RecordTunnelPresentTime(reportValue);
+            }
+            RecordTunnelFramePresent(thirdFrameAheadPresentMeta_, thirdFrameAheadPresentFence_, reportValue);
+        }
+    }
+    UpdateThirdFrameAheadPresentFence(releaseFence, meta);
+}
+
+void HdiOutput::RecordTunnelFramePresent(
+    const PresentFenceMeta& meta, const sptr<SyncFence>& presentFence, int64_t timestamp)
+{
+    if (timestamp == SyncFence::FENCE_PENDING_TIMESTAMP || presentFence == nullptr) {
+        return;
+    }
+    auto& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
+    if (meta.nodeId != 0) {
+        surfaceFpsManager.RecordFrame(meta.nodeId, meta.flushTs, static_cast<uint64_t>(timestamp));
+    } else {
+        surfaceFpsManager.RecordPresentTime(presentFence->Get(), static_cast<uint64_t>(timestamp));
+    }
 }
 
 void HdiOutput::DeletePrevLayersLocked()
@@ -1004,17 +1062,69 @@ int32_t HdiOutput::CommitAndGetReleaseFence(
     return ret;
 }
 
-void HdiOutput::UpdateThirdFrameAheadPresentFence(sptr<SyncFence>& fbFence)
+void HdiOutput::UpdateThirdFrameAheadPresentFence(const sptr<SyncFence>& fbFence, const PresentFenceMeta& meta)
 {
     RS_TRACE_NAME_FMT("presentFenceIndex_ = %d", presentFenceIndex_);
     if (historicalPresentfences_.size() == NUMBER_OF_HISTORICAL_FRAMES) {
         thirdFrameAheadPresentFence_ = historicalPresentfences_[presentFenceIndex_];
+        thirdFrameAheadPresentMeta_ = historicalPresentFencesMeta_[presentFenceIndex_];
         historicalPresentfences_[presentFenceIndex_] = fbFence;
+        historicalPresentFencesMeta_[presentFenceIndex_] = meta;
         presentFenceIndex_ = (presentFenceIndex_ + 1) % NUMBER_OF_HISTORICAL_FRAMES;
     } else {
         RS_TRACE_NAME("historicalPresentfences_ push_back");
         historicalPresentfences_.push_back(fbFence);
+        historicalPresentFencesMeta_.push_back(meta);
     }
+}
+
+bool HdiOutput::IsLastTunnelFrameInRingLocked() const
+{
+    if (thirdFrameAheadPresentMeta_.nodeId == 0) {
+        return false;
+    }
+    for (const auto& ringMeta : historicalPresentFencesMeta_) {
+        if (ringMeta.nodeId != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+HdiOutput::PresentPipelineDecision HdiOutput::ProcessPresentPipelineLocked(
+    const PresentFenceMeta& meta, int64_t timestamp)
+{
+    PresentPipelineDecision decision;
+    const bool isTunnelMeta = meta.nodeId != 0;
+    if (timestamp == SyncFence::FENCE_PENDING_TIMESTAMP) {
+        decision.reportValid = isTunnelMeta && pendingPresentTs_ != 0;
+        decision.reportTs = pendingPresentTs_;
+        pendingPresentTs_ = 0;
+        lastReadWasTunnel_ = isTunnelMeta;
+        return decision;
+    }
+    if (!isTunnelMeta) {
+        lastMainPresentTs_ = static_cast<uint64_t>(timestamp);
+        pendingPresentTs_ = 0;
+        lastReadWasTunnel_ = false;
+        return decision;
+    }
+    const bool isLastTunnelFence = IsLastTunnelFrameInRingLocked();
+    if (!lastReadWasTunnel_) {
+        decision.reportValid = lastMainPresentTs_ != 0;
+        decision.reportTs = (lastMainPresentTs_ + static_cast<uint64_t>(timestamp)) / PRESENT_TIME_AVERAGE_DIVISOR;
+        pendingPresentTs_ = isLastTunnelFence ? 0 : static_cast<uint64_t>(timestamp);
+    } else if (isLastTunnelFence) {
+        decision.reportValid = pendingPresentTs_ != 0;
+        decision.reportTs = pendingPresentTs_;
+        pendingPresentTs_ = 0;
+    } else {
+        decision.reportValid = pendingPresentTs_ != 0;
+        decision.reportTs = pendingPresentTs_;
+        pendingPresentTs_ = static_cast<uint64_t>(timestamp);
+    }
+    lastReadWasTunnel_ = true;
+    return decision;
 }
 
 int32_t HdiOutput::UpdateInfosAfterCommit(sptr<SyncFence> fbFence)
@@ -1037,29 +1147,19 @@ int32_t HdiOutput::UpdateInfosAfterCommit(sptr<SyncFence> fbFence)
         timestamp = thirdFrameAheadPresentFence_->SyncFileReadTimestamp();
     }
     bool startSample = false;
+    auto decision = ProcessPresentPipelineLocked(thirdFrameAheadPresentMeta_, timestamp);
+    const bool isTunnelMeta = thirdFrameAheadPresentMeta_.nodeId != 0;
+    const bool reportValid = isTunnelMeta ? decision.reportValid : (timestamp != SyncFence::FENCE_PENDING_TIMESTAMP);
+    const int64_t reportValue = isTunnelMeta ? static_cast<int64_t>(decision.reportTs) : timestamp;
     if (timestamp != SyncFence::FENCE_PENDING_TIMESTAMP) {
         startSample = sampler_->GetVsyncSamplerEnabled() && sampler_->AddPresentFenceTime(screenId_, timestamp);
         RecordCompositionTime(timestamp);
-        bool presentTimeUpdated = false;
-        std::shared_ptr<HdiLayer> uniRenderLayer = nullptr;
-        for (auto iter = layerIdMap_.begin(); iter != layerIdMap_.end(); ++iter) {
-            const std::shared_ptr<HdiLayer>& hdiLayer = iter->second;
-            RS_TRACE_NAME_FMT("HdiOutput::Iterate layerIdMap_ %u", iter->first);
-            if (hdiLayer->RecordPresentTime(timestamp)) {
-                presentTimeUpdated = true;
-            }
-            if (hdiLayer->GetRSLayer() && hdiLayer->GetRSLayer()->GetUniRenderFlag()) {
-                uniRenderLayer = hdiLayer;
-            }
-        }
-        if (presentTimeUpdated && uniRenderLayer) {
-            RS_TRACE_NAME_FMT("HdiOutput::RecordMergedPresentTime %lld", timestamp);
-            uniRenderLayer->RecordMergedPresentTime(timestamp);
-        }
         thirdFrameAheadPresentFenceFd_ = thirdFrameAheadPresentFence_->Get();
         thirdFrameAheadPresentTime_ = timestamp;
     }
-
+    if (reportValid) {
+        RecordPresentTimeForLayersLocked(reportValue, isTunnelMeta, decision);
+    }
     int32_t ret = GRAPHIC_DISPLAY_SUCCESS;
     if (startSample) {
         ret = StartVSyncSampler();
@@ -1070,6 +1170,31 @@ int32_t HdiOutput::UpdateInfosAfterCommit(sptr<SyncFence> fbFence)
     }
     rsComposerJankStats.CalculateJankInfo(timestamp);
     return ret;
+}
+
+void HdiOutput::RecordPresentTimeForLayersLocked(
+    int64_t reportValue, bool isTunnelMeta, const PresentPipelineDecision& decision)
+{
+    bool presentTimeUpdated = false;
+    std::shared_ptr<HdiLayer> uniRenderLayer = nullptr;
+    for (auto iter = layerIdMap_.begin(); iter != layerIdMap_.end(); ++iter) {
+        const std::shared_ptr<HdiLayer>& hdiLayer = iter->second;
+        RS_TRACE_NAME_FMT("HdiOutput::Iterate layerIdMap_ %u", iter->first);
+        if (hdiLayer->RecordPresentTime(reportValue)) {
+            presentTimeUpdated = true;
+        }
+        if (hdiLayer->GetRSLayer() && hdiLayer->GetRSLayer()->GetUniRenderFlag()) {
+            uniRenderLayer = hdiLayer;
+        }
+    }
+    if (presentTimeUpdated && uniRenderLayer) {
+        RS_TRACE_NAME_FMT("HdiOutput::RecordMergedPresentTime %lld", reportValue);
+        uniRenderLayer->RecordMergedPresentTime(reportValue);
+    }
+    if (isTunnelMeta) {
+        RecordTunnelFramePresent(
+            thirdFrameAheadPresentMeta_, thirdFrameAheadPresentFence_, static_cast<int64_t>(decision.reportTs));
+    }
 }
 
 void HdiOutput::FinalizePostCommit(bool commitSucceeded)

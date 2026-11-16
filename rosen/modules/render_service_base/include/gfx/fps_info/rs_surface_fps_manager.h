@@ -93,6 +93,7 @@ public:
     void RecordFlushTime(NodeId id, uint64_t vsyncId, uint64_t timestamp);
     void RecordPresentFd(uint64_t vsyncId, int32_t presentFd);
     void RecordPresentTime(int32_t presentFd, uint64_t timestamp);
+    void RecordFrame(NodeId id, uint64_t flushTimestamp, uint64_t presentTimestamp);
     void Dump(std::string& result, const std::string& name);
     void ClearDump(std::string& result, const std::string& name);
     void Dump(std::string& result, NodeId id);

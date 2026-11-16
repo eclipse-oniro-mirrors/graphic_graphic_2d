@@ -98,16 +98,25 @@ std::shared_ptr<RSSurfaceRenderNode> RSTunnelLayerManager::GetSurfaceNode(NodeId
     return context->GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId);
 }
 
-void RSTunnelLayerManager::UpdateTunnelStateMachine(
+bool RSTunnelLayerManager::TryHandleLppAfterConsume(
     const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, bool consumeSucceeded)
 {
     auto surfaceHandler = surfaceNode == nullptr ? nullptr : surfaceNode->GetMutableRSSurfaceHandler();
     if (surfaceHandler == nullptr) {
-        return;
+        return false;
     }
     // LPP layer-id sync needs a real consume (sourceType refreshes only then); others run per frame.
     if (consumeSucceeded && HandleLppTunnelLayerId(surfaceNode)) {
         SyncTunnelStateToStaging(surfaceNode);
+        return true;
+    }
+    return false;
+}
+
+void RSTunnelLayerManager::UpdateTunnelStateMachinePerFrame(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
+{
+    auto surfaceHandler = surfaceNode == nullptr ? nullptr : surfaceNode->GetMutableRSSurfaceHandler();
+    if (surfaceHandler == nullptr) {
         return;
     }
     // Kill-switch: both consume paths are independently guarded, so early return never strands buffers.

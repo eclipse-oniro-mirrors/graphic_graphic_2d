@@ -69,6 +69,7 @@ public:
     void SetRemoveSurfaceFpsOpCallback(RemoveSurfaceFpsOpCB callback);
     void SetActiveRectSwitchStatus(bool flag, const RectI& activeRect);
     void SetSkipDelay(bool skipDelay);
+    bool PostTaskToComposer(const std::function<void()>& task);
 
 private:
     explicit RSComposerClient(const sptr<IRSRenderToComposerConnection>& renderToComposerConn);

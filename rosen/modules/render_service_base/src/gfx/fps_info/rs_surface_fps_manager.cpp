@@ -147,6 +147,15 @@ void RSSurfaceFpsManager::RecordPresentTime(int32_t presentFd, uint64_t timestam
     vsyncIdWithPresentFdMap_.Remove(presentFd);
 }
 
+void RSSurfaceFpsManager::RecordFrame(NodeId id, uint64_t flushTimestamp, uint64_t presentTimestamp)
+{
+    const auto& surfaceFps = GetSurfaceFps(id);
+    if (surfaceFps == nullptr) {
+        return;
+    }
+    surfaceFps->RecordBufferTime(flushTimestamp, presentTimestamp);
+}
+
 void RSSurfaceFpsManager::Dump(std::string& result, const std::string& name)
 {
     bool isUnique(false);

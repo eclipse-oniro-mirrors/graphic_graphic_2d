@@ -5702,6 +5702,132 @@ HWTEST_F(HdiLayerTest, SavePrevRSLayer_SolidColorLayer_CreatesSolidColorPrevLaye
     EXPECT_FALSE(hdiLayer_->prevRSLayer_->IsScreenRCDLayer());
     EXPECT_TRUE(hdiLayer_->prevRSLayer_->IsSolidFilledColorLayer());
 }
+
+/**
+ * @tc.name: RecordTunnelPresentTime001
+ * @tc.desc: Test RecordTunnelPresentTime with null rsLayer records the timestamp with an empty windowsName
+ *           and advances the ring count.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiLayerTest, RecordTunnelPresentTime001, Function | MediumTest | Level1)
+{
+    auto hdiLayer = HdiLayer::CreateHdiLayer(0);
+    ASSERT_NE(hdiLayer, nullptr);
+    hdiLayer->rsLayer_ = nullptr;
+    constexpr int64_t testTimestamp = 123456789;
+
+    hdiLayer->RecordTunnelPresentTime(testTimestamp);
+
+    EXPECT_EQ(hdiLayer->GetCount(), 1u);
+    auto records = hdiLayer->GetPresentTimeRecords();
+    EXPECT_EQ(records[0].presentTime, testTimestamp);
+    EXPECT_TRUE(records[0].windowsName.empty());
+}
+
+/**
+ * @tc.name: RecordTunnelPresentTime002
+ * @tc.desc: Test RecordTunnelPresentTime with a valid rsLayer records the windowsName from GetWindowsName.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiLayerTest, RecordTunnelPresentTime002, Function | MediumTest | Level1)
+{
+    auto hdiLayer = HdiLayer::CreateHdiLayer(0);
+    ASSERT_NE(hdiLayer, nullptr);
+    auto rsLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    ASSERT_NE(rsLayer, nullptr);
+    std::vector<std::string> windowsName = { "RecordTunnelPresentTime002" };
+    rsLayer->SetWindowsName(windowsName);
+    hdiLayer->rsLayer_ = rsLayer;
+    constexpr int64_t testTimestamp = 987654321;
+
+    hdiLayer->RecordTunnelPresentTime(testTimestamp);
+
+    EXPECT_EQ(hdiLayer->GetCount(), 1u);
+    auto records = hdiLayer->GetPresentTimeRecords();
+    EXPECT_EQ(records[0].presentTime, testTimestamp);
+    ASSERT_EQ(records[0].windowsName.size(), 1u);
+    EXPECT_EQ(records[0].windowsName[0], windowsName[0]);
+}
+
+/**
+ * @tc.name: RecordTunnelPresentTime003
+ * @tc.desc: Test RecordTunnelPresentTime writes the last slot and wraps count back to zero.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiLayerTest, RecordTunnelPresentTime003, Function | MediumTest | Level1)
+{
+    auto hdiLayer = HdiLayer::CreateHdiLayer(0);
+    ASSERT_NE(hdiLayer, nullptr);
+    hdiLayer->count_ = HdiLayer::FRAME_RECORDS_NUM - 1;
+    constexpr int64_t testTimestamp = 555;
+
+    hdiLayer->RecordTunnelPresentTime(testTimestamp);
+
+    EXPECT_EQ(hdiLayer->GetCount(), 0u);
+    auto records = hdiLayer->GetPresentTimeRecords();
+    EXPECT_EQ(records[HdiLayer::FRAME_RECORDS_NUM - 1].presentTime, testTimestamp);
+}
+
+/**
+ * @tc.name: GetPresentTimeRecords001
+ * @tc.desc: Test GetPresentTimeRecords returns the recorded timestamps in ring order.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiLayerTest, GetPresentTimeRecords001, Function | MediumTest | Level1)
+{
+    auto hdiLayer = HdiLayer::CreateHdiLayer(0);
+    ASSERT_NE(hdiLayer, nullptr);
+    constexpr int64_t firstTimestamp = 111;
+    constexpr int64_t secondTimestamp = 222;
+
+    hdiLayer->RecordTunnelPresentTime(firstTimestamp);
+    hdiLayer->RecordTunnelPresentTime(secondTimestamp);
+
+    auto records = hdiLayer->GetPresentTimeRecords();
+    EXPECT_EQ(records[0].presentTime, firstTimestamp);
+    EXPECT_EQ(records[1].presentTime, secondTimestamp);
+    EXPECT_EQ(hdiLayer->GetCount(), 2u);
+}
+
+/**
+ * @tc.name: GetCount001
+ * @tc.desc: Test GetCount returns zero initially and one after a single tunnel record.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiLayerTest, GetCount001, Function | MediumTest | Level1)
+{
+    auto hdiLayer = HdiLayer::CreateHdiLayer(0);
+    ASSERT_NE(hdiLayer, nullptr);
+    EXPECT_EQ(hdiLayer->GetCount(), 0u);
+
+    hdiLayer->RecordTunnelPresentTime(1);
+
+    EXPECT_EQ(hdiLayer->GetCount(), 1u);
+}
+
+/**
+ * @tc.name: RestorePresentTimeRecords001
+ * @tc.desc: Test RestorePresentTimeRecords overwrites the records and count returned by the getters.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiLayerTest, RestorePresentTimeRecords001, Function | MediumTest | Level1)
+{
+    auto hdiLayer = HdiLayer::CreateHdiLayer(0);
+    ASSERT_NE(hdiLayer, nullptr);
+    std::array<FPSInfo, HdiLayer::FRAME_RECORDS_NUM> records = {};
+    constexpr int64_t restoredTimestamp = 424242;
+    constexpr uint32_t restoredCount = 7;
+    records[0].presentTime = restoredTimestamp;
+    records[0].windowsName = { "RestorePresentTimeRecords001" };
+
+    hdiLayer->RestorePresentTimeRecords(records, restoredCount);
+
+    EXPECT_EQ(hdiLayer->GetCount(), restoredCount);
+    auto gotRecords = hdiLayer->GetPresentTimeRecords();
+    EXPECT_EQ(gotRecords[0].presentTime, restoredTimestamp);
+    ASSERT_EQ(gotRecords[0].windowsName.size(), 1u);
+    EXPECT_EQ(gotRecords[0].windowsName[0], records[0].windowsName[0]);
+}
 } // namespace
 } // namespace Rosen
 } // namespace OHOS

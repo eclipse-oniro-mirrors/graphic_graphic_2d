@@ -370,7 +370,9 @@ public:
     {
         return hasSubNodeShouldPaint_;
     }
+
 #ifndef ROSEN_CROSS_PLATFORM
+    void RestoreTunnelRuntimeState();
     void UpdateTunnelBufferInfo(const sptr<SurfaceBuffer>& buffer,
         std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect,
         const sptr<SyncFence>& acquireFence, const sptr<SurfaceBuffer>& preBuffer,

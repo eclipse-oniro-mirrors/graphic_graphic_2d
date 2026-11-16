@@ -31,6 +31,7 @@ public:
     MOCK_METHOD1(Create, sptr<IConsumerSurface>(std::string));
     MOCK_METHOD1(RegisterConsumerListener, SurfaceError(sptr<IBufferConsumerListener>&));
     MOCK_METHOD3(AcquireBuffer, GSError(AcquireBufferReturnValue&, int64_t, bool));
+    MOCK_METHOD3(AcquireBufferForTunnel, GSError(AcquireBufferReturnValue&, int64_t, bool));
     MOCK_METHOD2(ReleaseBuffer, GSError(sptr<SurfaceBuffer>&, const sptr<SyncFence>&));
     MOCK_METHOD0(GetName, std::string&());
     MOCK_METHOD1(SetTunnelLayerInfo, GSError(const TunnelLayerInfo&));

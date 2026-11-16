@@ -2183,6 +2183,7 @@ HWTEST_F(HdiOutputTest, UpdateInfosAfterCommitVerifyFramePresentFd, Function | M
     int64_t timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
     EXPECT_CALL(*fbFence, SyncFileReadTimestamp()).WillRepeatedly(testing::Return(timeStamp));
+    hdiOutput_->thirdFrameAheadPresentFence_ = SyncFence::InvalidFence();
     ASSERT_EQ(hdiOutput_->UpdateInfosAfterCommit(fbFence), GRAPHIC_DISPLAY_SUCCESS);
     ASSERT_EQ(hdiOutput_->GetCurrentFramePresentFd(), fbFence->Get());
     hdiOutput_->historicalPresentfences_.clear();
@@ -6222,6 +6223,540 @@ HWTEST_F(HdiOutputTest, CheckSupportTunnel_UnsupportedFormat_ReturnsFalse, Funct
     tunnelRsLayer->SetBuffer(buffer);
     EXPECT_TRUE(output->ShouldFallbackTunnelLayerLocked(TEST_SURFACE_ID, tunnelRsLayer));
     output->UnregisterGlobalTunnelLayersLocked();
+}
+
+constexpr uint64_t TEST_TUNNEL_FLUSH_TS = 1000;
+constexpr uint64_t TEST_MAIN_PRESENT_TS = 1000;
+constexpr uint64_t TEST_TUNNEL_PRESENT_TS = 3000;
+constexpr uint64_t TEST_PENDING_PRESENT_TS = 777;
+
+/**
+ * @tc.name: IsLastTunnelFrameInRingLocked001
+ * @tc.desc: Test IsLastTunnelFrameInRingLocked returns false when the third-frame-ahead meta nodeId is zero.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, IsLastTunnelFrameInRingLocked001, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    output->thirdFrameAheadPresentMeta_ = { TEST_TUNNEL_FLUSH_TS, 0 };
+
+    EXPECT_FALSE(output->IsLastTunnelFrameInRingLocked());
+}
+
+/**
+ * @tc.name: IsLastTunnelFrameInRingLocked002
+ * @tc.desc: Test IsLastTunnelFrameInRingLocked returns false when any ring entry has a non-zero nodeId.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, IsLastTunnelFrameInRingLocked002, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    output->thirdFrameAheadPresentMeta_ = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    output->historicalPresentFencesMeta_ = { { 0, 0 }, { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID_SECOND } };
+
+    EXPECT_FALSE(output->IsLastTunnelFrameInRingLocked());
+}
+
+/**
+ * @tc.name: IsLastTunnelFrameInRingLocked003
+ * @tc.desc: Test IsLastTunnelFrameInRingLocked returns true when the third meta is a tunnel frame and the
+ *           whole ring holds main frames.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, IsLastTunnelFrameInRingLocked003, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    output->thirdFrameAheadPresentMeta_ = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    output->historicalPresentFencesMeta_ = { { 0, 0 }, { 0, 0 } };
+
+    EXPECT_TRUE(output->IsLastTunnelFrameInRingLocked());
+}
+
+/**
+ * @tc.name: UpdateThirdFrameAheadPresentFence001
+ * @tc.desc: Test UpdateThirdFrameAheadPresentFence pushes fences into the ring while it is not full and
+ *           keeps the third-frame-ahead fence untouched.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, UpdateThirdFrameAheadPresentFence001, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    int pipeFd[TEST_PIPE_FD_COUNT] = { -1, -1 };
+    ASSERT_EQ(pipe(pipeFd), 0);
+    close(pipeFd[1]);
+    sptr<SyncFence> firstFence = new SyncFence(pipeFd[0]);
+    sptr<SyncFence> secondFence = SyncFence::InvalidFence();
+    PresentFenceMeta firstMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    PresentFenceMeta secondMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID_SECOND };
+
+    output->UpdateThirdFrameAheadPresentFence(firstFence, firstMeta);
+    ASSERT_EQ(output->historicalPresentfences_.size(), 1u);
+    EXPECT_EQ(output->historicalPresentfences_[0]->Get(), firstFence->Get());
+    ASSERT_EQ(output->historicalPresentFencesMeta_.size(), 1u);
+    EXPECT_EQ(output->historicalPresentFencesMeta_[0].nodeId, TEST_NODE_ID);
+
+    output->UpdateThirdFrameAheadPresentFence(secondFence, secondMeta);
+    ASSERT_EQ(output->historicalPresentfences_.size(), 2u);
+    EXPECT_EQ(output->historicalPresentfences_[1]->Get(), secondFence->Get());
+    ASSERT_EQ(output->historicalPresentFencesMeta_.size(), 2u);
+    EXPECT_EQ(output->historicalPresentFencesMeta_[1].nodeId, TEST_NODE_ID_SECOND);
+    EXPECT_EQ(output->presentFenceIndex_, 0);
+    EXPECT_FALSE(output->thirdFrameAheadPresentFence_->IsValid());
+}
+
+/**
+ * @tc.name: UpdateThirdFrameAheadPresentFence002
+ * @tc.desc: Test UpdateThirdFrameAheadPresentFence rotates the ring once full: the third-frame-ahead fence
+ *           takes the oldest entry, the new fence overwrites the slot and the index wraps around.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, UpdateThirdFrameAheadPresentFence002, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    int pipeFd[TEST_PIPE_FD_COUNT] = { -1, -1 };
+    ASSERT_EQ(pipe(pipeFd), 0);
+    sptr<SyncFence> firstFence = new SyncFence(pipeFd[0]);
+    sptr<SyncFence> secondFence = new SyncFence(pipeFd[1]);
+    sptr<SyncFence> thirdFence = SyncFence::InvalidFence();
+    PresentFenceMeta firstMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    PresentFenceMeta secondMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID_SECOND };
+    PresentFenceMeta thirdMeta = { 0, 0 };
+
+    output->UpdateThirdFrameAheadPresentFence(firstFence, firstMeta);
+    output->UpdateThirdFrameAheadPresentFence(secondFence, secondMeta);
+    ASSERT_EQ(output->historicalPresentfences_.size(), 2u);
+
+    output->UpdateThirdFrameAheadPresentFence(thirdFence, thirdMeta);
+    EXPECT_EQ(output->thirdFrameAheadPresentFence_->Get(), firstFence->Get());
+    EXPECT_EQ(output->thirdFrameAheadPresentMeta_.nodeId, firstMeta.nodeId);
+    EXPECT_EQ(output->historicalPresentfences_[0]->Get(), thirdFence->Get());
+    EXPECT_EQ(output->historicalPresentFencesMeta_[0].nodeId, thirdMeta.nodeId);
+    EXPECT_EQ(output->presentFenceIndex_, 1);
+
+    output->UpdateThirdFrameAheadPresentFence(thirdFence, thirdMeta);
+    EXPECT_EQ(output->thirdFrameAheadPresentFence_->Get(), secondFence->Get());
+    EXPECT_EQ(output->thirdFrameAheadPresentMeta_.nodeId, secondMeta.nodeId);
+    EXPECT_EQ(output->presentFenceIndex_, 0);
+}
+
+/**
+ * @tc.name: ProcessPresentPipelineLocked001
+ * @tc.desc: Test a pending tunnel read with a non-zero pending timestamp reports the pending value and
+ *           clears it.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, ProcessPresentPipelineLocked001, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta tunnelMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    output->pendingPresentTs_ = TEST_PENDING_PRESENT_TS;
+
+    auto decision = output->ProcessPresentPipelineLocked(tunnelMeta, SyncFence::FENCE_PENDING_TIMESTAMP);
+
+    EXPECT_TRUE(decision.reportValid);
+    EXPECT_EQ(decision.reportTs, TEST_PENDING_PRESENT_TS);
+    EXPECT_EQ(output->pendingPresentTs_, 0u);
+    EXPECT_TRUE(output->lastReadWasTunnel_);
+}
+
+/**
+ * @tc.name: ProcessPresentPipelineLocked002
+ * @tc.desc: Test a pending tunnel read with a zero pending timestamp reports an invalid decision.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, ProcessPresentPipelineLocked002, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta tunnelMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+
+    auto decision = output->ProcessPresentPipelineLocked(tunnelMeta, SyncFence::FENCE_PENDING_TIMESTAMP);
+
+    EXPECT_FALSE(decision.reportValid);
+    EXPECT_EQ(decision.reportTs, 0u);
+    EXPECT_EQ(output->pendingPresentTs_, 0u);
+    EXPECT_TRUE(output->lastReadWasTunnel_);
+}
+
+/**
+ * @tc.name: ProcessPresentPipelineLocked003
+ * @tc.desc: Test a pending main-frame read reports an invalid decision, clears the pending timestamp and
+ *           resets the tunnel-read flag.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, ProcessPresentPipelineLocked003, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta mainMeta = { 0, 0 };
+    output->pendingPresentTs_ = TEST_PENDING_PRESENT_TS;
+    output->lastReadWasTunnel_ = true;
+
+    auto decision = output->ProcessPresentPipelineLocked(mainMeta, SyncFence::FENCE_PENDING_TIMESTAMP);
+
+    EXPECT_FALSE(decision.reportValid);
+    EXPECT_EQ(decision.reportTs, TEST_PENDING_PRESENT_TS);
+    EXPECT_EQ(output->pendingPresentTs_, 0u);
+    EXPECT_FALSE(output->lastReadWasTunnel_);
+}
+
+/**
+ * @tc.name: ProcessPresentPipelineLocked004
+ * @tc.desc: Test a normal main-frame read stores the timestamp as the last main present time and reports
+ *           an invalid decision.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, ProcessPresentPipelineLocked004, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta mainMeta = { 0, 0 };
+    output->pendingPresentTs_ = TEST_PENDING_PRESENT_TS;
+    output->lastReadWasTunnel_ = true;
+
+    auto decision = output->ProcessPresentPipelineLocked(mainMeta, static_cast<int64_t>(TEST_MAIN_PRESENT_TS));
+
+    EXPECT_FALSE(decision.reportValid);
+    EXPECT_EQ(output->lastMainPresentTs_, TEST_MAIN_PRESENT_TS);
+    EXPECT_EQ(output->pendingPresentTs_, 0u);
+    EXPECT_FALSE(output->lastReadWasTunnel_);
+}
+
+/**
+ * @tc.name: ProcessPresentPipelineLocked005
+ * @tc.desc: Test a normal tunnel read after a main frame reports the average of the last main timestamp
+ *           and the tunnel timestamp, with no pending value left for the last tunnel fence.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, ProcessPresentPipelineLocked005, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta tunnelMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    output->thirdFrameAheadPresentMeta_ = tunnelMeta;
+    output->historicalPresentFencesMeta_ = { { 0, 0 }, { 0, 0 } };
+    output->lastMainPresentTs_ = TEST_MAIN_PRESENT_TS;
+
+    auto decision = output->ProcessPresentPipelineLocked(tunnelMeta, static_cast<int64_t>(TEST_TUNNEL_PRESENT_TS));
+
+    EXPECT_TRUE(decision.reportValid);
+    EXPECT_EQ(decision.reportTs, (TEST_MAIN_PRESENT_TS + TEST_TUNNEL_PRESENT_TS) / 2u);
+    EXPECT_EQ(output->pendingPresentTs_, 0u);
+    EXPECT_TRUE(output->lastReadWasTunnel_);
+}
+
+/**
+ * @tc.name: ProcessPresentPipelineLocked006
+ * @tc.desc: Test a normal tunnel read after a main frame with a zero last main timestamp reports an invalid
+ *           decision and stores the tunnel timestamp as pending when the fence is not the last tunnel one.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, ProcessPresentPipelineLocked006, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta tunnelMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    output->thirdFrameAheadPresentMeta_ = tunnelMeta;
+    output->historicalPresentFencesMeta_ = { { 0, 0 }, { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID_SECOND } };
+
+    auto decision = output->ProcessPresentPipelineLocked(tunnelMeta, static_cast<int64_t>(TEST_TUNNEL_PRESENT_TS));
+
+    EXPECT_FALSE(decision.reportValid);
+    EXPECT_EQ(output->pendingPresentTs_, TEST_TUNNEL_PRESENT_TS);
+    EXPECT_TRUE(output->lastReadWasTunnel_);
+}
+
+/**
+ * @tc.name: ProcessPresentPipelineLocked007
+ * @tc.desc: Test a normal tunnel read following another tunnel read reports the pending value and clears
+ *           it when the fence is the last tunnel one.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, ProcessPresentPipelineLocked007, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta tunnelMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    output->thirdFrameAheadPresentMeta_ = tunnelMeta;
+    output->historicalPresentFencesMeta_ = { { 0, 0 }, { 0, 0 } };
+    output->lastReadWasTunnel_ = true;
+    output->pendingPresentTs_ = TEST_PENDING_PRESENT_TS;
+
+    auto decision = output->ProcessPresentPipelineLocked(tunnelMeta, static_cast<int64_t>(TEST_TUNNEL_PRESENT_TS));
+
+    EXPECT_TRUE(decision.reportValid);
+    EXPECT_EQ(decision.reportTs, TEST_PENDING_PRESENT_TS);
+    EXPECT_EQ(output->pendingPresentTs_, 0u);
+    EXPECT_TRUE(output->lastReadWasTunnel_);
+}
+
+/**
+ * @tc.name: ProcessPresentPipelineLocked008
+ * @tc.desc: Test a normal tunnel read following another tunnel read reports the pending value and rolls
+ *           the pending slot to the new timestamp when the fence is not the last tunnel one.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, ProcessPresentPipelineLocked008, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta tunnelMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    output->thirdFrameAheadPresentMeta_ = tunnelMeta;
+    output->historicalPresentFencesMeta_ = { { 0, 0 }, { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID_SECOND } };
+    output->lastReadWasTunnel_ = true;
+    output->pendingPresentTs_ = TEST_PENDING_PRESENT_TS;
+
+    auto decision = output->ProcessPresentPipelineLocked(tunnelMeta, static_cast<int64_t>(TEST_TUNNEL_PRESENT_TS));
+
+    EXPECT_TRUE(decision.reportValid);
+    EXPECT_EQ(decision.reportTs, TEST_PENDING_PRESENT_TS);
+    EXPECT_EQ(output->pendingPresentTs_, TEST_TUNNEL_PRESENT_TS);
+    EXPECT_TRUE(output->lastReadWasTunnel_);
+}
+
+/**
+ * @tc.name: RecordTunnelFramePresent001
+ * @tc.desc: Test RecordTunnelFramePresent with a pending timestamp returns early without touching the
+ *           fps manager.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, RecordTunnelFramePresent001, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta tunnelMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+
+    EXPECT_NO_FATAL_FAILURE(output->RecordTunnelFramePresent(tunnelMeta, SyncFence::InvalidFence(),
+        SyncFence::FENCE_PENDING_TIMESTAMP));
+}
+
+/**
+ * @tc.name: RecordTunnelFramePresent002
+ * @tc.desc: Test RecordTunnelFramePresent with a null present fence returns early.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, RecordTunnelFramePresent002, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta tunnelMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+
+    EXPECT_NO_FATAL_FAILURE(output->RecordTunnelFramePresent(tunnelMeta, nullptr,
+        static_cast<int64_t>(TEST_TUNNEL_PRESENT_TS)));
+}
+
+/**
+ * @tc.name: RecordTunnelFramePresent003
+ * @tc.desc: Test RecordTunnelFramePresent with a tunnel meta reaches the per-surface RecordFrame path of
+ *           the fps manager without a registered surface and returns safely.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, RecordTunnelFramePresent003, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta tunnelMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+
+    EXPECT_NO_FATAL_FAILURE(output->RecordTunnelFramePresent(tunnelMeta, SyncFence::InvalidFence(),
+        static_cast<int64_t>(TEST_TUNNEL_PRESENT_TS)));
+}
+
+/**
+ * @tc.name: RecordTunnelFramePresent004
+ * @tc.desc: Test RecordTunnelFramePresent with a main meta reaches the present-fd RecordPresentTime path
+ *           of the fps manager without a registered vsync id and returns safely.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, RecordTunnelFramePresent004, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    PresentFenceMeta mainMeta = { 0, 0 };
+
+    EXPECT_NO_FATAL_FAILURE(output->RecordTunnelFramePresent(mainMeta, SyncFence::InvalidFence(),
+        static_cast<int64_t>(TEST_TUNNEL_PRESENT_TS)));
+}
+
+/**
+ * @tc.name: RecordTunnelPresentTimeAfterCommit001
+ * @tc.desc: Test RecordTunnelPresentTimeAfterCommit with an invalid third-frame-ahead fence skips the
+ *           pipeline and only stores the release fence into the ring.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, RecordTunnelPresentTimeAfterCommit001, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    auto hdiLayer = HdiLayer::CreateHdiLayer(TEST_SCREEN_ID);
+    ASSERT_NE(hdiLayer, nullptr);
+    ASSERT_FALSE(output->thirdFrameAheadPresentFence_->IsValid());
+    PresentFenceMeta commitMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    sptr<SyncFence> releaseFence = SyncFence::InvalidFence();
+
+    output->RecordTunnelPresentTimeAfterCommit(hdiLayer, releaseFence, commitMeta);
+
+    EXPECT_EQ(hdiLayer->GetCount(), 0u);
+    ASSERT_EQ(output->historicalPresentfences_.size(), 1u);
+    EXPECT_EQ(output->historicalPresentfences_[0]->Get(), releaseFence->Get());
+    ASSERT_EQ(output->historicalPresentFencesMeta_.size(), 1u);
+    EXPECT_EQ(output->historicalPresentFencesMeta_[0].nodeId, TEST_NODE_ID);
+}
+
+/**
+ * @tc.name: RecordTunnelPresentTimeAfterCommit002
+ * @tc.desc: Test RecordTunnelPresentTimeAfterCommit with a valid fence, a tunnel meta and a non-zero
+ *           pending timestamp records the pending value on the layer and updates the ring.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, RecordTunnelPresentTimeAfterCommit002, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    auto hdiLayer = HdiLayer::CreateHdiLayer(TEST_SCREEN_ID);
+    ASSERT_NE(hdiLayer, nullptr);
+    int pipeFd[TEST_PIPE_FD_COUNT] = { -1, -1 };
+    ASSERT_EQ(pipe(pipeFd), 0);
+    close(pipeFd[1]);
+    output->thirdFrameAheadPresentFence_ = new SyncFence(pipeFd[0]);
+    output->thirdFrameAheadPresentMeta_ = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    output->pendingPresentTs_ = TEST_PENDING_PRESENT_TS;
+    PresentFenceMeta commitMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID_SECOND };
+    sptr<SyncFence> releaseFence = SyncFence::InvalidFence();
+
+    output->RecordTunnelPresentTimeAfterCommit(hdiLayer, releaseFence, commitMeta);
+
+    EXPECT_EQ(hdiLayer->GetCount(), 1u);
+    auto records = hdiLayer->GetPresentTimeRecords();
+    EXPECT_EQ(records[0].presentTime, static_cast<int64_t>(TEST_PENDING_PRESENT_TS));
+    EXPECT_EQ(output->pendingPresentTs_, 0u);
+    ASSERT_EQ(output->historicalPresentfences_.size(), 1u);
+    EXPECT_EQ(output->historicalPresentFencesMeta_[0].nodeId, TEST_NODE_ID_SECOND);
+}
+
+/**
+ * @tc.name: RecordTunnelPresentTimeAfterCommit003
+ * @tc.desc: Test RecordTunnelPresentTimeAfterCommit with a tunnel meta and a zero pending timestamp keeps
+ *           the layer records untouched while the pipeline state and the ring still advance.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, RecordTunnelPresentTimeAfterCommit003, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    auto hdiLayer = HdiLayer::CreateHdiLayer(TEST_SCREEN_ID);
+    ASSERT_NE(hdiLayer, nullptr);
+    int pipeFd[TEST_PIPE_FD_COUNT] = { -1, -1 };
+    ASSERT_EQ(pipe(pipeFd), 0);
+    close(pipeFd[1]);
+    output->thirdFrameAheadPresentFence_ = new SyncFence(pipeFd[0]);
+    output->thirdFrameAheadPresentMeta_ = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    PresentFenceMeta commitMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID_SECOND };
+    sptr<SyncFence> releaseFence = SyncFence::InvalidFence();
+
+    output->RecordTunnelPresentTimeAfterCommit(hdiLayer, releaseFence, commitMeta);
+
+    EXPECT_EQ(hdiLayer->GetCount(), 0u);
+    EXPECT_TRUE(output->lastReadWasTunnel_);
+    ASSERT_EQ(output->historicalPresentfences_.size(), 1u);
+    EXPECT_EQ(output->historicalPresentFencesMeta_[0].nodeId, TEST_NODE_ID_SECOND);
+}
+
+/**
+ * @tc.name: RecordTunnelPresentTimeAfterCommit004
+ * @tc.desc: Test RecordTunnelPresentTimeAfterCommit with a main meta and a pending fence timestamp keeps
+ *           the layer records untouched and clears the pending pipeline state.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, RecordTunnelPresentTimeAfterCommit004, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    auto hdiLayer = HdiLayer::CreateHdiLayer(TEST_SCREEN_ID);
+    ASSERT_NE(hdiLayer, nullptr);
+    int pipeFd[TEST_PIPE_FD_COUNT] = { -1, -1 };
+    ASSERT_EQ(pipe(pipeFd), 0);
+    close(pipeFd[1]);
+    output->thirdFrameAheadPresentFence_ = new SyncFence(pipeFd[0]);
+    output->pendingPresentTs_ = TEST_PENDING_PRESENT_TS;
+    PresentFenceMeta commitMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID_SECOND };
+    sptr<SyncFence> releaseFence = SyncFence::InvalidFence();
+
+    output->RecordTunnelPresentTimeAfterCommit(hdiLayer, releaseFence, commitMeta);
+
+    EXPECT_EQ(hdiLayer->GetCount(), 0u);
+    EXPECT_EQ(output->pendingPresentTs_, 0u);
+    EXPECT_FALSE(output->lastReadWasTunnel_);
+    ASSERT_EQ(output->historicalPresentfences_.size(), 1u);
+}
+
+/**
+ * @tc.name: RecordTunnelPresentTimeAfterCommit005
+ * @tc.desc: Test RecordTunnelPresentTimeAfterCommit with a valid report but a null layer skips the layer
+ *           recording without crashing and still advances the ring.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, RecordTunnelPresentTimeAfterCommit005, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    int pipeFd[TEST_PIPE_FD_COUNT] = { -1, -1 };
+    ASSERT_EQ(pipe(pipeFd), 0);
+    close(pipeFd[1]);
+    output->thirdFrameAheadPresentFence_ = new SyncFence(pipeFd[0]);
+    output->thirdFrameAheadPresentMeta_ = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    output->pendingPresentTs_ = TEST_PENDING_PRESENT_TS;
+    PresentFenceMeta commitMeta = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID_SECOND };
+    sptr<SyncFence> releaseFence = SyncFence::InvalidFence();
+
+    EXPECT_NO_FATAL_FAILURE(output->RecordTunnelPresentTimeAfterCommit(nullptr, releaseFence, commitMeta));
+
+    EXPECT_EQ(output->pendingPresentTs_, 0u);
+    ASSERT_EQ(output->historicalPresentfences_.size(), 1u);
+    EXPECT_EQ(output->historicalPresentFencesMeta_[0].nodeId, TEST_NODE_ID_SECOND);
+}
+
+/**
+ * @tc.name: UpdateInfosAfterCommit001
+ * @tc.desc: Test UpdateInfosAfterCommit with a tunnel third-frame-ahead meta and a pending fence
+ *           timestamp reports the pending value to the layers, records the merged present time for the
+ *           uni render layer and forwards the present-fence frame to the fps manager.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HdiOutputTest, UpdateInfosAfterCommit001, Function | MediumTest | Level1)
+{
+    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
+    ASSERT_NE(output, nullptr);
+    int pipeFd[TEST_PIPE_FD_COUNT] = { -1, -1 };
+    ASSERT_EQ(pipe(pipeFd), 0);
+    close(pipeFd[1]);
+    output->thirdFrameAheadPresentFence_ = new SyncFence(pipeFd[0]);
+    output->thirdFrameAheadPresentMeta_ = { TEST_TUNNEL_FLUSH_TS, TEST_NODE_ID };
+    output->pendingPresentTs_ = TEST_PENDING_PRESENT_TS;
+
+    auto rsLayer = CreateHdiOutputSurfaceLayer(TEST_SURFACE_ID, TEST_NODE_ID_SECOND);
+    ASSERT_NE(rsLayer, nullptr);
+    rsLayer->SetUniRenderFlag(true);
+    auto hdiLayer = CreateHdiOutputHdiLayer(rsLayer);
+    ASSERT_NE(hdiLayer, nullptr);
+    hdiLayer->currBufferInfo_->sbuffer_ = new SurfaceBufferImpl();
+    output->layerIdMap_[TEST_LAYER_ID] = hdiLayer;
+    sptr<SyncFence> fbFence = SyncFence::InvalidFence();
+
+    EXPECT_EQ(output->UpdateInfosAfterCommit(fbFence), GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_EQ(output->GetThirdFrameAheadPresentTime(), SyncFence::FENCE_PENDING_TIMESTAMP);
+
+    EXPECT_EQ(hdiLayer->GetCount(), 1u);
+    auto records = hdiLayer->GetPresentTimeRecords();
+    EXPECT_EQ(records[0].presentTime, static_cast<int64_t>(TEST_PENDING_PRESENT_TS));
+    EXPECT_EQ(hdiLayer->mergedCount_, 1u);
+    EXPECT_EQ(output->GetCurrentFramePresentFd(), fbFence->Get());
+    ASSERT_EQ(output->historicalPresentfences_.size(), 1u);
 }
 } // namespace
 } // namespace Rosen

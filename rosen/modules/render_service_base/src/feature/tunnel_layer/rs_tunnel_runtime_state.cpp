@@ -15,6 +15,8 @@
 
 #include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
 
+#include <cinttypes>
+
 #include "platform/common/rs_log.h"
 #include "common/rs_optional_trace.h"
 
