@@ -233,7 +233,7 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
             if (!useLengthPrefix) {
                 // same per-command flag as in MarshallingCommandBody, set to false here:
                 // this record keeps the origin format (no commandLen prefix follows).
-                isHeadWriteSuccess = isHeadWriteSuccess && parcel.WriteBool(false);
+                parcel.WriteBool(false);
                 success = success && isHeadWriteSuccess && command->Marshalling(parcel);
             } else if (!isHeadWriteSuccess || !MarshallingCommandBody(parcel, *command)) {
                 // drop the whole record (nodeId/followType/hasCommand/length prefix/partial body),
