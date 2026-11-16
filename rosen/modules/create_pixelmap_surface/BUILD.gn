@@ -37,7 +37,10 @@ ohos_source_set("create_pixelmap_surface_src") {
   }
 
   public_configs = [ ":create_pixelmap_surface_public_config" ]
-  sources = [ "src/pixel_map_from_surface.cpp" ]
+  sources = [
+    "src/pixel_map_from_surface.cpp",
+    "src/pixel_map_from_surface_utils.cpp",
+  ]
 
   deps = [
     "$graphic_2d_root/frameworks/opengl_wrapper:EGL",

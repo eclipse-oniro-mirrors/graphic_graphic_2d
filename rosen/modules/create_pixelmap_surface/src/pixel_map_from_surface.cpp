@@ -274,6 +274,8 @@ private:
         const Drawing::Rect &srcDrawRect, const Drawing::Rect &dstRect, std::shared_ptr<Drawing::Canvas> &canvas);
     bool CanvasDrawImage(const std::shared_ptr<Drawing::Image> &drawingImage, const OHOS::Media::Rect &srcRect,
         std::shared_ptr<Drawing::Canvas> &canvas);
+    void CanvasDrawImageByShader(const std::shared_ptr<Drawing::Image> &drawingImage,
+        const Drawing::Rect &srcDrawRect, const Drawing::Rect &dstRect, std::shared_ptr<Drawing::Canvas> &canvas);
     void CreateMatrixBySurface(Drawing::Matrix& matrix, const OHOS::Media::Rect &srcRect);
     void ResetRotation90(Drawing::Matrix& matrix, const OHOS::Media::Rect &srcRect);
     void ResetRotation180(Drawing::Matrix& matrix, const OHOS::Media::Rect &srcRect);
@@ -365,6 +367,9 @@ static Drawing::ColorType GetColorTypeFromVKFormat(VkFormat vkFormat)
             return Drawing::COLORTYPE_RGBA_F16;
         case VK_FORMAT_R5G6B5_UNORM_PACK16:
             return Drawing::COLORTYPE_RGB_565;
+        // RGBA_1010102 buffers import as this format; Skia rejects it when wrapped as RGBA_8888
+        case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+            return Drawing::COLORTYPE_RGBA_1010102;
         default:
             return Drawing::COLORTYPE_RGBA_8888;
     }
@@ -483,6 +488,43 @@ void PixelMapFromSurface::CanvasDrawImageRect(const Drawing::Paint& paint,
 #endif
 }
 
+// Draws P010/RGBA_1010102 content through an image shader so it can be converted to sRGB. The shader
+// matrix only maps srcDrawRect to dstRect; the surface transform is already on the canvas.
+void PixelMapFromSurface::CanvasDrawImageByShader(const std::shared_ptr<Drawing::Image> &drawingImage,
+    const Drawing::Rect &srcDrawRect, const Drawing::Rect &dstRect, std::shared_ptr<Drawing::Canvas> &canvas)
+{
+#if defined(RS_ENABLE_VK)
+    Drawing::Paint paint;
+    paint.SetStyle(Drawing::Paint::PaintStyle::PAINT_FILL);
+    auto sx = dstRect.GetWidth() / srcDrawRect.GetWidth();
+    auto sy = dstRect.GetHeight() / srcDrawRect.GetHeight();
+    auto tx = dstRect.GetLeft() - srcDrawRect.GetLeft() * sx;
+    auto ty = dstRect.GetTop() - srcDrawRect.GetTop() * sy;
+    Drawing::Matrix shaderMatrix;
+    shaderMatrix.SetScaleTranslate(sx, sy, tx, ty);
+
+    auto imageShader = Drawing::ShaderEffect::CreateImageShader(*drawingImage, Drawing::TileMode::CLAMP,
+        Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::NEAREST), shaderMatrix);
+    if (!imageShader) {
+        RS_LOGE("[PixelMapFromSurface] CanvasDrawImage CreateImageShader fail");
+        CanvasDrawImageRect(paint, drawingImage, srcDrawRect, dstRect, canvas);
+        return;
+    }
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    sptr<SurfaceBuffer> sfBuffer(surfaceBuffer_);
+    auto targetColorSpace = GRAPHIC_COLOR_GAMUT_SRGB;
+    if (!RSColorSpaceConvert::Instance().ColorSpaceConvertor(imageShader, sfBuffer, paint, targetColorSpace, 0,
+        DynamicRangeMode::STANDARD)) {
+        RS_LOGE("[PixelMapFromSurface] CanvasDrawImage ColorSpaceConvertor fail");
+        CanvasDrawImageRect(paint, drawingImage, srcDrawRect, dstRect, canvas);
+        return;
+    }
+#endif // USE_VIDEO_PROCESSING_ENGINE
+    canvas->AttachPaint(paint);
+    canvas->DrawRect(dstRect);
+#endif
+}
+
 bool PixelMapFromSurface::CanvasDrawImage(const std::shared_ptr<Drawing::Image> &drawingImage,
     const OHOS::Media::Rect &srcRect, std::shared_ptr<Drawing::Canvas> &canvas)
 {
@@ -492,50 +534,24 @@ bool PixelMapFromSurface::CanvasDrawImage(const std::shared_ptr<Drawing::Image> 
     RS_LOGD("canvas width: %{public}d, height: %{public}d",
         canvas->GetWidth(), canvas->GetHeight());
 
-    Drawing::Paint paint;
-    paint.SetStyle(Drawing::Paint::PaintStyle::PAINT_FILL);
-
     Drawing::Rect srcDrawRect = Drawing::Rect(srcRect.left, srcRect.top, srcRect.width, srcRect.height);
     Drawing::Rect dstRect = Drawing::Rect(0, 0, srcRect.width, srcRect.height);
 
+    // the surface transform (rotation/flip) applies to every format, including the shader path below
     Drawing::Matrix matrix;
     CreateMatrixBySurface(matrix, srcRect);
+    canvas->ConcatMatrix(matrix);
     GraphicPixelFormat pixelFormat = static_cast<GraphicPixelFormat>(surfaceBuffer_->GetFormat());
     if (pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010 ||
         pixelFormat == GRAPHIC_PIXEL_FMT_RGBA_1010102) {
-        auto srcWidth = srcDrawRect.GetWidth();
-        auto srcHeight = srcDrawRect.GetHeight();
-        if (ROSEN_LE(srcWidth, 0.0f) || ROSEN_LE(srcHeight, 0.0f)) {
+        if (ROSEN_LE(srcDrawRect.GetWidth(), 0.0f) || ROSEN_LE(srcDrawRect.GetHeight(), 0.0f)) {
             RS_LOGE("[PixelMapFromSurface] CanvasDrawImage srcRect width or height is invalid");
             return false;
         }
-        auto sx = dstRect.GetWidth() / srcWidth;
-        auto sy = dstRect.GetHeight() / srcHeight;
-        auto tx = dstRect.GetLeft() - srcDrawRect.GetLeft() * sx;
-        auto ty = dstRect.GetTop() - srcDrawRect.GetTop() * sy;
-        matrix.SetScaleTranslate(sx, sy, tx, ty);
-
-        auto imageShader = Drawing::ShaderEffect::CreateImageShader(*drawingImage, Drawing::TileMode::CLAMP,
-            Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::NEAREST), matrix);
-        if (!imageShader) {
-            RS_LOGE("[PixelMapFromSurface] CanvasDrawImage CreateImageShader fail");
-            CanvasDrawImageRect(paint, drawingImage, srcDrawRect, dstRect, canvas);
-            return true;
-        }
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-        sptr<SurfaceBuffer> sfBuffer(surfaceBuffer_);
-        auto targetColorSpace = GRAPHIC_COLOR_GAMUT_SRGB;
-        if (!RSColorSpaceConvert::Instance().ColorSpaceConvertor(imageShader, sfBuffer, paint, targetColorSpace, 0,
-            DynamicRangeMode::STANDARD)) {
-            RS_LOGE("[PixelMapFromSurface] CanvasDrawImage ColorSpaceConvertor fail");
-            CanvasDrawImageRect(paint, drawingImage, srcDrawRect, dstRect, canvas);
-            return true;
-        }
-#endif // USE_VIDEO_PROCESSING_ENGINE
-        canvas->AttachPaint(paint);
-        canvas->DrawRect(dstRect);
+        CanvasDrawImageByShader(drawingImage, srcDrawRect, dstRect, canvas);
     } else {
-        canvas->ConcatMatrix(matrix);
+        Drawing::Paint paint;
+        paint.SetStyle(Drawing::Paint::PaintStyle::PAINT_FILL);
         CanvasDrawImageRect(paint, drawingImage, srcDrawRect, dstRect, canvas);
     }
     return true;
