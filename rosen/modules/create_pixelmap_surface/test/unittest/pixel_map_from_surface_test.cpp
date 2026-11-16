@@ -257,10 +257,10 @@ HWTEST_F(PixelMapFromSurfaceTest, IsBufferLayoutWithinSize001, Function | Medium
 * Rank: Important(2)
 * EnvConditions: N/A
 * CaseDescription:
-    1. accept genuine NV12, odd-height NV12, P010 and NV16 layouts
+    1. accept genuine NV12, odd-height NV12 and P010 layouts
     2. reject an RGBA-sized buffer whose format was changed to NV12
     3. reject NV12 when size does not cover the rounded-up chroma rows
-    4. reject formats without a verifiable layout rule
+    4. reject unsupported formats even when their geometry would fit
  */
 HWTEST_F(PixelMapFromSurfaceTest, IsBufferLayoutWithinSize002, Function | MediumTest| Level3)
 {
@@ -273,23 +273,26 @@ HWTEST_F(PixelMapFromSurfaceTest, IsBufferLayoutWithinSize002, Function | Medium
     constexpr int32_t nv12OddSize = width * (oddHeight + chromaRowsOdd);
     constexpr int32_t p010Stride = width * 2;
     constexpr int32_t p010Size = p010Stride * height * 3 / 2;
-    constexpr int32_t nv16Size = width * height * 2;
-    constexpr int32_t rgbaSize = width * 4 * height;
+    constexpr int32_t rgbaStride = width * 4;
+    constexpr int32_t rgbaSize = rgbaStride * height;
 
     ASSERT_TRUE(IsBufferLayoutWithinSize({ nv12, width, height, width, nv12Size }, nv12Size));
     ASSERT_TRUE(IsBufferLayoutWithinSize({ nv12, width, oddHeight, width, nv12OddSize }, nv12OddSize));
     ASSERT_TRUE(IsBufferLayoutWithinSize(
         { GRAPHIC_PIXEL_FMT_YCBCR_P010, width, height, p010Stride, p010Size }, p010Size));
-    ASSERT_TRUE(IsBufferLayoutWithinSize(
-        { GRAPHIC_PIXEL_FMT_YCBCR_422_SP, width, height, width, nv16Size }, nv16Size));
-    ASSERT_FALSE(IsBufferLayoutWithinSize({ nv12, width, height, width * 4, rgbaSize }, rgbaSize));
+    ASSERT_FALSE(IsBufferLayoutWithinSize(
+        { GRAPHIC_PIXEL_FMT_YCBCR_422_SP, width, height, rgbaStride, rgbaSize }, rgbaSize));
+    ASSERT_FALSE(IsBufferLayoutWithinSize({ GRAPHIC_PIXEL_FMT_RGB_888, width, height, rgbaStride, rgbaSize },
+        rgbaSize));
+    ASSERT_FALSE(IsBufferLayoutWithinSize({ GRAPHIC_PIXEL_FMT_Y8, width, height, rgbaStride, rgbaSize }, rgbaSize));
+    ASSERT_FALSE(IsBufferLayoutWithinSize({ nv12, width, height, rgbaStride, rgbaSize }, rgbaSize));
     ASSERT_FALSE(IsBufferLayoutWithinSize({ nv12, width, oddHeight, width, nv12OddSize - 1 }, nv12OddSize));
     ASSERT_FALSE(IsBufferLayoutWithinSize(
         { GRAPHIC_PIXEL_FMT_YCBCR_P010, width, height, width, p010Size }, p010Size));
     ASSERT_FALSE(IsBufferLayoutWithinSize({ GRAPHIC_PIXEL_FMT_BLOB, width, 1, width, width }, width));
     ASSERT_FALSE(IsBufferLayoutWithinSize({ GRAPHIC_PIXEL_FMT_VENDER_PRIVATE1, width, height, width, rgbaSize },
         rgbaSize));
-    ASSERT_FALSE(IsBufferLayoutWithinSize({ GRAPHIC_PIXEL_FMT_BUTT, width, height, width * 4, rgbaSize }, rgbaSize));
+    ASSERT_FALSE(IsBufferLayoutWithinSize({ GRAPHIC_PIXEL_FMT_BUTT, width, height, rgbaStride, rgbaSize }, rgbaSize));
 }
 
 /*
