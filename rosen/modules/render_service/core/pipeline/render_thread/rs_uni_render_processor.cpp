@@ -30,6 +30,7 @@
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "feature/anco_manager/rs_anco_manager.h"
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
+#include "feature/drm/rs_drm_util.h"
 // hpae offline
 #include "feature/hwc/hpae_offline/rs_offline_processor.h"
 #include "feature/hwc/hpae_offline/rs_offline_util.h"
@@ -70,6 +71,7 @@ bool RSUniRenderProcessor::Init(RSScreenRenderNode& node, std::shared_ptr<RSBase
     if (!RSProcessor::Init(node, renderEngine)) {
         return false;
     }
+    screenNodeId_ = node.GetId();
     // In uni render mode, we can handle screen rotation in the rendering process,
     // so we do not need to handle rotation in composer adapter any more,
     // just pass the buffer to composer straightly.
@@ -84,6 +86,7 @@ bool RSUniRenderProcessor::InitForRenderThread(DrawableV2::RSScreenRenderNodeDra
     if (!RSProcessor::InitForRenderThread(screenDrawable, renderEngine)) {
         return false;
     }
+    screenNodeId_ = screenDrawable.GetId();
     // In uni render mode, we can handle screen rotation in the rendering process,
     // so we do not need to handle rotation in composer adapter any more,
     // just pass the buffer to composer straightly.
@@ -373,11 +376,17 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     }
     layer->SetNodeId(params.GetId());  // node id only for dfx
     auto layerInfo = params.layerInfo_;
+    bool isCrossNodeLayer = false;
     if (params.GetHwcGlobalPositionEnabled()) {
-        // dst and matrix transform to screen position
-        layerInfo.matrix.PostTranslate(-offsetX_, -offsetY_);
-        layerInfo.dstRect.x -= offsetX_;
-        layerInfo.dstRect.y -= offsetY_;
+        if (RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId_, layerInfo)) {
+            // a drm cross node composed on this screen, converted with the matrix recorded for this screen
+            isCrossNodeLayer = true;
+        } else {
+            // dst and matrix transform to screen position
+            layerInfo.matrix.PostTranslate(-offsetX_, -offsetY_);
+            layerInfo.dstRect.x -= offsetX_;
+            layerInfo.dstRect.y -= offsetY_;
+        }
     }
     layer->SetNeedBilinearInterpolation(params.NeedBilinearInterpolation());
     layer->SetSurface(consumer);
@@ -428,6 +437,10 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
             static_cast<int32_t>(std::ceil(originDstRect.GetBottom() * rogHeightRatio)) };
         Drawing::Rect screen = { 0.f, 0.f,
             uniComposerAdapter_->GetScreenInfo().phyWidth, uniComposerAdapter_->GetScreenInfo().phyHeight };
+        if (isCrossNodeLayer && offlineResult == nullptr) {
+            // the dstRect is clipped to the screen below, the srcRect has to be cropped with it to avoid stretching
+            RSDrmUtil::CropCrossNodeLayerInfo(adjustedDstRect, screen, layerInfo);
+        }
         adjustedDstRect.Intersect(screen);
         dstRect = { adjustedDstRect.left_, adjustedDstRect.top_,
             adjustedDstRect.GetWidth(), adjustedDstRect.GetHeight() };

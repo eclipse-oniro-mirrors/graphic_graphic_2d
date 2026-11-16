@@ -30,6 +30,22 @@ public:
     static void ClearDrmNodes();
     static void AddDrmCloneCrossNode(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         DrawablesVec& hardwareEnabledDrawables);
+    // Conversion of the drm layers of a cross node from the frame of the display owning the cross node into the frame
+    // of screenNode, where the clone of the cross node is composed. Returns false when the cross node has no drm node.
+    static bool CalcCrossNodeLayerConversion(const RSSurfaceRenderNode& sourceNode,
+        const RSSurfaceRenderNode& cloneNode, const RSScreenRenderNode& screenNode, Drawing::Matrix& conversion);
+    static void UpdateDrmCrossNodeConversion(const RSSurfaceRenderNode& crossNode, NodeId screenNodeId,
+        const Drawing::Matrix& conversion);
+    // Converts the layer info of a drm cross node composed on screenNodeId with the conversion recorded for that
+    // screen. Returns false when there is no such conversion, then the layer info is left unchanged.
+    static bool ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, NodeId screenNodeId,
+        RSLayerInfo& layerInfo);
+    static void ApplyCrossNodeLayerConversion(const Drawing::Matrix& conversion, RSLayerInfo& layerInfo,
+        bool convertDstRect = true);
+    // The layer info of a cross node keeps the geometry of the whole surface, which may cross the screen boundary, so
+    // the source rect is cropped by the same proportion as the destination rect, following its transform.
+    static void CropCrossNodeLayerInfo(const Drawing::Rect& composedDstRect, const Drawing::Rect& screenRect,
+        RSLayerInfo& layerInfo);
     static void DRMCreateLayer(std::shared_ptr<RSProcessor> processor, Drawing::Matrix hwcMatrix);
     static void MarkBlurIntersectWithDRM(const std::shared_ptr<RSRenderNode>& node,
         const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes,
@@ -52,6 +68,10 @@ private:
     static void CollectDrmNodes(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
     static void PreAllocProtectedFrameBuffers(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         const sptr<SurfaceBuffer>& buffer, const std::shared_ptr<RSComposerClientManager>& clientManager);
+    // Moves the dstRect back into the frame the conversions start from, and returns true when it already is in the
+    // local frame of screenNodeId, so it must not be converted again.
+    static bool RestoreCrossNodeDstRect(const RSSurfaceRenderParams& params, NodeId screenNodeId,
+        RSLayerInfo& layerInfo);
     inline static std::unordered_map<NodeId, // map<first level node ID, drm surface node>
         std::vector<std::shared_ptr<RSSurfaceRenderNode>>> drmNodes_ = {};
 };

@@ -32,6 +32,7 @@ using namespace testing::ext;
 namespace {
 constexpr uint32_t DEFAULT_CANVAS_WIDTH = 800;
 constexpr uint32_t DEFAULT_CANVAS_HEIGHT = 600;
+constexpr float CROSS_SCREEN_OFFSET_X = 3240.f;
 }
 
 namespace OHOS::Rosen {
@@ -815,5 +816,380 @@ HWTEST_F(RSDrmUtilTest, HasDRMInVirtualScreen005, TestSize.Level2)
 
     auto result = RSDrmUtil::HasDRMInVirtualScreen(filterCanvas, surfaceParams);
     ASSERT_TRUE(result);
+}
+
+/**
+ * Function: UpdateDrmCrossNodeConversion
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: drm node on the tree collected under the first level node of the cross node
+ *                  2. operation: UpdateDrmCrossNodeConversion
+ *                  3. result: the conversion is recorded on the drm node and on its staging params
+ */
+HWTEST_F(RSDrmUtilTest, UpdateDrmCrossNodeConversion001, TestSize.Level1)
+{
+    auto crossNode = RSTestUtil::CreateSurfaceNode();
+    auto drmNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(crossNode, nullptr);
+    ASSERT_NE(drmNode, nullptr);
+    crossNode->firstLevelNodeId_ = crossNode->GetId();
+    drmNode->isOnTheTree_ = true;
+    drmNode->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(drmNode->GetId());
+    RSDrmUtil::ClearDrmNodes();
+    RSDrmUtil::drmNodes_[crossNode->GetId()].push_back(drmNode);
+
+    const NodeId screenNodeId = GenerateNodeId();
+    Drawing::Matrix conversion;
+    conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
+    RSDrmUtil::UpdateDrmCrossNodeConversion(*crossNode, screenNodeId, conversion);
+
+    const auto& nodeMatrices = drmNode->GetCrossNodeLayerConversionMatrices();
+    auto nodeIt = nodeMatrices.find(screenNodeId);
+    ASSERT_NE(nodeIt, nodeMatrices.end());
+    EXPECT_TRUE(nodeIt->second == conversion);
+    auto drmParams = static_cast<RSSurfaceRenderParams*>(drmNode->GetStagingRenderParams().get());
+    ASSERT_NE(drmParams, nullptr);
+    const auto& paramsMatrices = drmParams->GetCrossNodeLayerConversionMatrices();
+    auto paramsIt = paramsMatrices.find(screenNodeId);
+    ASSERT_NE(paramsIt, paramsMatrices.end());
+    EXPECT_TRUE(paramsIt->second == conversion);
+    RSDrmUtil::ClearDrmNodes();
+}
+
+/**
+ * Function: UpdateDrmCrossNodeConversion
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: drm node collected under another first level node, or off the tree
+ *                  2. operation: UpdateDrmCrossNodeConversion
+ *                  3. result: the drm node is left unchanged
+ */
+HWTEST_F(RSDrmUtilTest, UpdateDrmCrossNodeConversion002, TestSize.Level1)
+{
+    auto crossNode = RSTestUtil::CreateSurfaceNode();
+    auto otherNode = RSTestUtil::CreateSurfaceNode();
+    auto drmNode = RSTestUtil::CreateSurfaceNode();
+    auto offTreeDrmNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(crossNode, nullptr);
+    ASSERT_NE(otherNode, nullptr);
+    ASSERT_NE(drmNode, nullptr);
+    ASSERT_NE(offTreeDrmNode, nullptr);
+    crossNode->firstLevelNodeId_ = crossNode->GetId();
+    drmNode->isOnTheTree_ = true;
+    offTreeDrmNode->isOnTheTree_ = false;
+    RSDrmUtil::ClearDrmNodes();
+    RSDrmUtil::drmNodes_[otherNode->GetId()].push_back(drmNode);
+    RSDrmUtil::drmNodes_[crossNode->GetId()].push_back(offTreeDrmNode);
+
+    Drawing::Matrix conversion;
+    conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
+    RSDrmUtil::UpdateDrmCrossNodeConversion(*crossNode, GenerateNodeId(), conversion);
+
+    EXPECT_TRUE(drmNode->GetCrossNodeLayerConversionMatrices().empty());
+    EXPECT_TRUE(offTreeDrmNode->GetCrossNodeLayerConversionMatrices().empty());
+    RSDrmUtil::ClearDrmNodes();
+}
+
+/**
+ * @tc.name: CalcCrossNodeLayerConversion001
+ * @tc.desc: Test no conversion is calculated for a cross node without drm node
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, CalcCrossNodeLayerConversion001, TestSize.Level1)
+{
+    auto crossNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(crossNode, nullptr);
+    crossNode->firstLevelNodeId_ = crossNode->GetId();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    RSDrmUtil::ClearDrmNodes();
+    Drawing::Matrix conversion;
+    EXPECT_FALSE(RSDrmUtil::CalcCrossNodeLayerConversion(*crossNode, *crossNode, *screenNode, conversion));
+}
+
+/**
+ * @tc.name: CalcCrossNodeLayerConversion002
+ * @tc.desc: Test the conversion is calculated for a cross node with drm node
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, CalcCrossNodeLayerConversion002, TestSize.Level1)
+{
+    auto crossNode = RSTestUtil::CreateSurfaceNode();
+    auto drmNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(crossNode, nullptr);
+    ASSERT_NE(drmNode, nullptr);
+    crossNode->firstLevelNodeId_ = crossNode->GetId();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    RSDrmUtil::ClearDrmNodes();
+    RSDrmUtil::drmNodes_[crossNode->GetId()].push_back(drmNode);
+    // without parents both frames are the frame of the node itself, so the conversion is identity
+    Drawing::Matrix conversion;
+    conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
+    EXPECT_TRUE(RSDrmUtil::CalcCrossNodeLayerConversion(*crossNode, *crossNode, *screenNode, conversion));
+    EXPECT_TRUE(conversion.IsIdentity());
+    RSDrmUtil::ClearDrmNodes();
+}
+
+/**
+ * @tc.name: ConvertCrossNodeLayerInfo001
+ * @tc.desc: Test the layer info is left unchanged when no conversion is recorded for the screen
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo001, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(GenerateNodeId());
+    Drawing::Matrix conversion;
+    conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
+    const NodeId screenNodeId = GenerateNodeId();
+    params.SetCrossNodeLayerConversionMatrix(GenerateNodeId(), conversion);
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 3300, 10, 100, 50 };
+    EXPECT_FALSE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId, layerInfo));
+    EXPECT_EQ(layerInfo.dstRect.x, 3300);
+    EXPECT_EQ(layerInfo.dstRect.y, 10);
+    EXPECT_TRUE(layerInfo.matrix.IsIdentity());
+}
+
+/**
+ * @tc.name: ConvertCrossNodeLayerInfo002
+ * @tc.desc: Test the dst rect and the matrix are converted with the conversion recorded for the screen
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo002, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(GenerateNodeId());
+    Drawing::Matrix conversion;
+    conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
+    const NodeId screenNodeId = GenerateNodeId();
+    params.SetCrossNodeLayerConversionMatrix(screenNodeId, conversion);
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 3300, 10, 100, 50 };
+    EXPECT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId, layerInfo));
+    EXPECT_EQ(layerInfo.dstRect.x, 60);
+    EXPECT_EQ(layerInfo.dstRect.y, 10);
+    EXPECT_EQ(layerInfo.dstRect.w, 100);
+    EXPECT_EQ(layerInfo.dstRect.h, 50);
+    EXPECT_FLOAT_EQ(layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_X), -CROSS_SCREEN_OFFSET_X);
+}
+
+/**
+ * @tc.name: ConvertCrossNodeLayerInfo003
+ * @tc.desc: Test a dst rect built on the composing screen only loses the offset, while the matrix is converted
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo003, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(GenerateNodeId());
+    Drawing::Matrix conversion;
+    conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
+    const NodeId screenNodeId = GenerateNodeId();
+    params.SetCrossNodeLayerConversionMatrix(screenNodeId, conversion);
+    params.SetLayerDstDisplay(screenNodeId, static_cast<int32_t>(CROSS_SCREEN_OFFSET_X), 0);
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 3300, 10, 100, 50 };
+    EXPECT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId, layerInfo));
+    EXPECT_EQ(layerInfo.dstRect.x, 60);
+    EXPECT_EQ(layerInfo.dstRect.y, 10);
+    EXPECT_FLOAT_EQ(layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_X), -CROSS_SCREEN_OFFSET_X);
+}
+
+/**
+ * @tc.name: ApplyCrossNodeLayerConversion001
+ * @tc.desc: Test cross node layer conversion with a translate only conversion matrix
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, ApplyCrossNodeLayerConversion001, TestSize.Level1)
+{
+    Drawing::Matrix conversion;
+    conversion.PostTranslate(100.0f, 50.0f);
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 10, 20, 30, 40 };
+    RSDrmUtil::ApplyCrossNodeLayerConversion(conversion, layerInfo);
+    EXPECT_EQ(layerInfo.dstRect.x, 110);
+    EXPECT_EQ(layerInfo.dstRect.y, 70);
+    EXPECT_EQ(layerInfo.dstRect.w, 30);
+    EXPECT_EQ(layerInfo.dstRect.h, 40);
+    EXPECT_FLOAT_EQ(layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_X), 100.0f);
+    EXPECT_FLOAT_EQ(layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_Y), 50.0f);
+}
+
+/**
+ * @tc.name: ApplyCrossNodeLayerConversion002
+ * @tc.desc: Test cross node layer conversion with a rotation conversion matrix
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, ApplyCrossNodeLayerConversion002, TestSize.Level1)
+{
+    // source panel [0, 1080] x [0, 2400] rotated into the target screen frame [0, 2400] x [0, 1080]
+    Drawing::Matrix conversion;
+    conversion.PreRotate(90.0f);
+    conversion.PreTranslate(0.0f, -2400.0f);
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 100, 200, 300, 400 };
+    RSDrmUtil::ApplyCrossNodeLayerConversion(conversion, layerInfo);
+    EXPECT_EQ(layerInfo.dstRect.x, 1800);
+    EXPECT_EQ(layerInfo.dstRect.y, 100);
+    EXPECT_EQ(layerInfo.dstRect.w, 400);
+    EXPECT_EQ(layerInfo.dstRect.h, 300);
+    // The target screen layer keeps its own rotation correction instead of falling back to no rotation
+    EXPECT_NE(layerInfo.transformType, GraphicTransformType::GRAPHIC_ROTATE_NONE);
+}
+
+/**
+ * @tc.name: ApplyCrossNodeLayerConversion003
+ * @tc.desc: Test the transform type is recalculated from the converted matrix, so an identity matrix drops the rotation
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, ApplyCrossNodeLayerConversion003, TestSize.Level1)
+{
+    Drawing::Matrix conversion;
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 100, 200, 300, 400 };
+    layerInfo.transformType = GraphicTransformType::GRAPHIC_ROTATE_270;
+    RSDrmUtil::ApplyCrossNodeLayerConversion(conversion, layerInfo);
+    EXPECT_EQ(layerInfo.dstRect.x, 100);
+    EXPECT_EQ(layerInfo.dstRect.y, 200);
+    EXPECT_EQ(layerInfo.dstRect.w, 300);
+    EXPECT_EQ(layerInfo.dstRect.h, 400);
+    EXPECT_TRUE(layerInfo.matrix.IsIdentity());
+    EXPECT_EQ(layerInfo.transformType, GraphicTransformType::GRAPHIC_ROTATE_NONE);
+}
+
+/**
+ * @tc.name: ApplyCrossNodeLayerConversion004
+ * @tc.desc: Test a dst rect already in the frame of the composing screen is kept while the matrix is still converted
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, ApplyCrossNodeLayerConversion004, TestSize.Level1)
+{
+    Drawing::Matrix conversion;
+    conversion.PostTranslate(100.0f, 50.0f);
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 10, 20, 30, 40 };
+    RSDrmUtil::ApplyCrossNodeLayerConversion(conversion, layerInfo, false);
+    EXPECT_EQ(layerInfo.dstRect.x, 10);
+    EXPECT_EQ(layerInfo.dstRect.y, 20);
+    EXPECT_EQ(layerInfo.dstRect.w, 30);
+    EXPECT_EQ(layerInfo.dstRect.h, 40);
+    EXPECT_FLOAT_EQ(layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_X), 100.0f);
+    EXPECT_FLOAT_EQ(layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_Y), 50.0f);
+}
+
+/**
+ * @tc.name: CropCrossNodeLayerInfo001
+ * @tc.desc: Test the source rect is cropped by the same proportion as the destination rect
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfo001, TestSize.Level1)
+{
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 0, 0, 400, 200 };
+    layerInfo.srcRect = { 0, 0, 800, 400 };
+    RSDrmUtil::CropCrossNodeLayerInfo(Drawing::Rect(0, 0, 400, 200), Drawing::Rect(0, 0, 300, 1000), layerInfo);
+    EXPECT_EQ(layerInfo.dstRect.x, 0);
+    EXPECT_EQ(layerInfo.dstRect.y, 0);
+    EXPECT_EQ(layerInfo.dstRect.w, 300);
+    EXPECT_EQ(layerInfo.dstRect.h, 200);
+    EXPECT_EQ(layerInfo.srcRect.x, 0);
+    EXPECT_EQ(layerInfo.srcRect.y, 0);
+    EXPECT_EQ(layerInfo.srcRect.w, 600);
+    EXPECT_EQ(layerInfo.srcRect.h, 400);
+}
+
+/**
+ * @tc.name: CropCrossNodeLayerInfo002
+ * @tc.desc: Test the source rect crop follows the rotation of the layer
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfo002, TestSize.Level1)
+{
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 0, 0, 400, 200 };
+    layerInfo.srcRect = { 0, 0, 800, 400 };
+    layerInfo.transformType = GraphicTransformType::GRAPHIC_ROTATE_90;
+    // the bottom quarter of the destination rect is out of the screen, it maps to the right quarter of the source
+    RSDrmUtil::CropCrossNodeLayerInfo(Drawing::Rect(0, 0, 400, 200), Drawing::Rect(0, 0, 1000, 150), layerInfo);
+    EXPECT_EQ(layerInfo.dstRect.x, 0);
+    EXPECT_EQ(layerInfo.dstRect.y, 0);
+    EXPECT_EQ(layerInfo.dstRect.w, 400);
+    EXPECT_EQ(layerInfo.dstRect.h, 150);
+    EXPECT_EQ(layerInfo.srcRect.x, 0);
+    EXPECT_EQ(layerInfo.srcRect.y, 0);
+    EXPECT_EQ(layerInfo.srcRect.w, 600);
+    EXPECT_EQ(layerInfo.srcRect.h, 400);
+}
+
+/**
+ * @tc.name: CropCrossNodeLayerInfo003
+ * @tc.desc: Test the source rect crop follows the opposite rotation of the layer
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfo003, TestSize.Level1)
+{
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 0, 0, 400, 200 };
+    layerInfo.srcRect = { 0, 0, 800, 400 };
+    layerInfo.transformType = GraphicTransformType::GRAPHIC_ROTATE_270;
+    // the layer matrix [0 1; -1 0] puts the left edge of the source at the bottom of the destination rect, so the
+    // cropped bottom quarter maps to the left quarter of the source, as on a screen rotated by 90 degrees
+    RSDrmUtil::CropCrossNodeLayerInfo(Drawing::Rect(0, 0, 400, 200), Drawing::Rect(0, 0, 1000, 150), layerInfo);
+    EXPECT_EQ(layerInfo.srcRect.x, 200);
+    EXPECT_EQ(layerInfo.srcRect.y, 0);
+    EXPECT_EQ(layerInfo.srcRect.w, 600);
+    EXPECT_EQ(layerInfo.srcRect.h, 400);
+}
+
+/**
+ * @tc.name: CropCrossNodeLayerInfo004
+ * @tc.desc: Test the layer info keeps unchanged when the destination rect is fully inside the screen
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfo004, TestSize.Level1)
+{
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 0, 0, 400, 200 };
+    layerInfo.srcRect = { 10, 20, 800, 400 };
+    RSDrmUtil::CropCrossNodeLayerInfo(Drawing::Rect(0, 0, 400, 200), Drawing::Rect(0, 0, 1000, 1000), layerInfo);
+    EXPECT_EQ(layerInfo.dstRect.x, 0);
+    EXPECT_EQ(layerInfo.dstRect.y, 0);
+    EXPECT_EQ(layerInfo.dstRect.w, 400);
+    EXPECT_EQ(layerInfo.dstRect.h, 200);
+    EXPECT_EQ(layerInfo.srcRect.x, 10);
+    EXPECT_EQ(layerInfo.srcRect.y, 20);
+    EXPECT_EQ(layerInfo.srcRect.w, 800);
+    EXPECT_EQ(layerInfo.srcRect.h, 400);
+}
+
+/**
+ * @tc.name: CropCrossNodeLayerInfo005
+ * @tc.desc: Test the layer info keeps unchanged when the destination rect is out of the screen
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfo005, TestSize.Level1)
+{
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 500, 0, 400, 200 };
+    layerInfo.srcRect = { 0, 0, 800, 400 };
+    RSDrmUtil::CropCrossNodeLayerInfo(Drawing::Rect(500, 0, 900, 200), Drawing::Rect(0, 0, 400, 200), layerInfo);
+    EXPECT_EQ(layerInfo.dstRect.x, 500);
+    EXPECT_EQ(layerInfo.dstRect.w, 400);
+    EXPECT_EQ(layerInfo.srcRect.x, 0);
+    EXPECT_EQ(layerInfo.srcRect.w, 800);
+    EXPECT_EQ(layerInfo.srcRect.h, 400);
 }
 }

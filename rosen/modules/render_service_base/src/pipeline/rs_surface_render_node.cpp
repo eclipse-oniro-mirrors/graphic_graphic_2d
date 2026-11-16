@@ -2154,6 +2154,7 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform,
         transform, layer.zOrder, !IsHardwareForcedDisabled(), isLastFrameHwcEnabled_);
 #endif
     surfaceParams->SetLayerInfo(layer);
+    surfaceParams->SetLayerDstDisplay(dstRectDisplayNodeId_, dstRectDisplayOffsetX_, dstRectDisplayOffsetY_);
     // SolidLayer node without buffer: force hardware enabled to allow solid color layer creation
     bool isSolidLayerNoBuffer = isSolidLayerEnabled_ && buffer == nullptr;
     surfaceParams->SetHardwareEnabled(!IsHardwareForcedDisabled() || isSolidLayerNoBuffer);
@@ -3371,6 +3372,7 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->hasSubSurfaceNodes_ = HasSubSurfaceNodes();
     surfaceParams->allSubSurfaceNodeIds_ = GetAllSubSurfaceNodeIds();
     surfaceParams->crossNodeSkipDisplayConversionMatrices_ = crossNodeSkipDisplayConversionMatrices_;
+    surfaceParams->crossNodeLayerConversionMatrices_ = crossNodeLayerConversionMatrices_;
     surfaceParams->regionToBeMagnified_ = regionToBeMagnified_;
     surfaceParams->isFirstLevelCrossNode_ = isFirstLevelCrossNode_;
     std::shared_ptr<RSSurfaceRenderNode> cloneSourceNode = sourceCrossNode_.lock();

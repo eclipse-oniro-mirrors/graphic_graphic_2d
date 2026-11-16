@@ -1929,6 +1929,36 @@ public:
     {
         crossNodeSkipDisplayConversionMatrices_.clear();
     }
+    // Conversion of the layer info per composing display. The skip display matrices above start from the frame the
+    // node was prepared in this frame, which is the frame of its dirty region. The layer matrix is accumulated along
+    // the real parent chain instead, so its conversion starts from the frame of the display owning the node.
+    void UpdateCrossNodeLayerConversionMatrices(NodeId displayId, const Drawing::Matrix& matrix)
+    {
+        crossNodeLayerConversionMatrices_[displayId] = matrix;
+    }
+    // One node may be composed on several displays, so a caller that delivers the matrices to another node has to keep
+    // all of them, otherwise a display would miss the conversion towards it and compose the layer in a foreign frame.
+    const std::unordered_map<NodeId, Drawing::Matrix>& GetCrossNodeLayerConversionMatrices() const
+    {
+        return crossNodeLayerConversionMatrices_;
+    }
+    void ClearCrossNodeLayerConversionMatrices()
+    {
+        crossNodeLayerConversionMatrices_.clear();
+    }
+    // Display whose frame dstRect_ is in, when it was built while the node was prepared for a clone composed on another
+    // display, together with the offset a global position node adds to it there. INVALID_NODEID means dstRect_ is in
+    // the frame the matrix of the node is accumulated in, so the conversion matrices apply to it directly.
+    void SetDstRectDisplay(NodeId displayNodeId, int32_t offsetX = 0, int32_t offsetY = 0)
+    {
+        dstRectDisplayNodeId_ = displayNodeId;
+        dstRectDisplayOffsetX_ = offsetX;
+        dstRectDisplayOffsetY_ = offsetY;
+    }
+    NodeId GetDstRectDisplayNodeId() const
+    {
+        return dstRectDisplayNodeId_;
+    }
 
     void ClearCloneCrossNode();
     void SetCrossNodeVisitedStatus(bool hasVisited);
@@ -2515,6 +2545,10 @@ private:
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
     std::unordered_set<NodeId> childrenBlurBehindWindow_ = {};
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
+    std::unordered_map<NodeId, Drawing::Matrix> crossNodeLayerConversionMatrices_ = {};
+    NodeId dstRectDisplayNodeId_ = INVALID_NODEID;
+    int32_t dstRectDisplayOffsetX_ = 0;
+    int32_t dstRectDisplayOffsetY_ = 0;
 
     bool isBootAnimation_ = false;
 

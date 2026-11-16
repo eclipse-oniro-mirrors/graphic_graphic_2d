@@ -135,6 +135,10 @@ void RSUniHwcVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absR
     // Set the destination rectangle of the node
     node.SetDstRect(dstRect);
     node.SetDstRectWithoutRenderFit(dstRect);
+    // While the source of a clone cross node is prepared under the parent of the clone, absRect is in the frame of the
+    // display composing the clone instead of the frame the node matrix is accumulated in, so that display is recorded.
+    node.SetDstRectDisplay(uniRenderVisitor_.isSwitchToSourceCrossNodePrepare_ && uniRenderVisitor_.curScreenNode_ ?
+        uniRenderVisitor_.curScreenNode_->GetId() : INVALID_NODEID);
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix)
@@ -1533,6 +1537,10 @@ void RSUniHwcVisitor::UpdateDstRectByGlobalPosition(RSSurfaceRenderNode& node)
         const auto& screenProperty = uniRenderVisitor_.curScreenNode_->GetScreenProperty();
         dstRect.left_ += screenProperty.GetOffsetX();
         dstRect.top_ += screenProperty.GetOffsetY();
+        if (node.GetDstRectDisplayNodeId() != INVALID_NODEID) {
+            node.SetDstRectDisplay(node.GetDstRectDisplayNodeId(), screenProperty.GetOffsetX(),
+                screenProperty.GetOffsetY());
+        }
         RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " dstRect:[%s]",
             node.GetName().c_str(), node.GetId(), dstRect.ToString().c_str());
         node.SetDstRect(dstRect);

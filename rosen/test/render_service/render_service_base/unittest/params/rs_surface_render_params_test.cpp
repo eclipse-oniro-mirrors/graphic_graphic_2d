@@ -997,4 +997,31 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetUifirstDisabledByAnimationOverlapOnSync00
     source.OnSync(target);
     EXPECT_TRUE(static_cast<RSSurfaceRenderParams*>(target.get())->GetUifirstDisabledByAnimationOverlap());
 }
+
+/**
+ * @tc.name: SetCrossNodeLayerConversionMatrix001
+ * @tc.desc: Test the layer conversion is kept apart from the skip display conversion and is synced to the target
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetCrossNodeLayerConversionMatrix001, TestSize.Level1)
+{
+    constexpr NodeId displayId = 1;
+    Drawing::Matrix matrix;
+    matrix.PostTranslate(100.0f, 50.0f);
+    RSSurfaceRenderParams source(DEFAULT_NODEID);
+    source.SetCrossNodeLayerConversionMatrix(displayId, matrix);
+    EXPECT_TRUE(source.needSync_);
+    EXPECT_TRUE(source.GetCrossNodeSkipDisplayConversionMatrix().empty());
+    source.needSync_ = false;
+    source.SetCrossNodeLayerConversionMatrix(displayId, matrix); // same value -> early return
+    EXPECT_FALSE(source.needSync_);
+
+    std::unique_ptr<RSRenderParams> target = std::make_unique<RSSurfaceRenderParams>(DEFAULT_NODEID);
+    source.OnSync(target);
+    const auto& matrices = static_cast<RSSurfaceRenderParams*>(target.get())->GetCrossNodeLayerConversionMatrices();
+    auto it = matrices.find(displayId);
+    ASSERT_NE(it, matrices.end());
+    EXPECT_EQ(it->second, matrix);
+}
 } // namespace OHOS::Rosen
