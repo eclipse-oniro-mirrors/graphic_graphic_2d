@@ -272,6 +272,21 @@ void OH_Drawing_CanvasSaveLayer(OH_Drawing_Canvas* cCanvas,
     canvas->SaveLayer(slr);
 }
 
+OH_Drawing_ErrorCode OH_Drawing_CanvasSaveLayerWithFlag(OH_Drawing_Canvas* cCanvas,
+    const OH_Drawing_Rect* cRect, const OH_Drawing_Brush* cBrush, uint32_t saveLayerFlags)
+{
+    Canvas* canvas = CastToCanvas(cCanvas);
+    if (canvas == nullptr) {
+        g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
+        return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
+    }
+ 
+    SaveLayerOps slr = SaveLayerOps(reinterpret_cast<const Drawing::Rect*>(cRect),
+        reinterpret_cast<const Drawing::Brush*>(cBrush), saveLayerFlags);
+    canvas->SaveLayer(slr);
+    return OH_DRAWING_SUCCESS;
+}
+
 void OH_Drawing_CanvasRestore(OH_Drawing_Canvas* cCanvas)
 {
     Canvas* canvas = CastToCanvas(cCanvas);
