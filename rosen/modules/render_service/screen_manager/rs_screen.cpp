@@ -1491,9 +1491,9 @@ void RSScreen::SetBlackList(const std::unordered_set<NodeId>& blackList)
     UPDATE_PROPERTY(BlackList, blackList);
 }
 
-void RSScreen::SetTypeBlackList(const std::unordered_set<uint8_t>& typeBlackList)
+void RSScreen::SetCursorMode(RSVirtualScreenCursorMode mode)
 {
-    UPDATE_PROPERTY(TypeBlackList, typeBlackList);
+    UPDATE_PROPERTY(CursorMode, mode);
 }
 
 void RSScreen::SetPostProcessingShader(const std::vector<uint8_t>& param)

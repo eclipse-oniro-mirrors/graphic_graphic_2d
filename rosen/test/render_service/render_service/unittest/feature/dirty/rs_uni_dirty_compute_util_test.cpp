@@ -996,9 +996,7 @@ HWTEST_F(RSUniDirtyComputeUtilTest, CheckCurrentFrameHasDirtyInVirtual001, TestS
     mirroredScreenParams->logicalDisplayNodeDrawables_.emplace_back(displayDrawable);
     
     ASSERT_NE(screenManager_, nullptr);
-    NodeType cursorType = 12;
-    std::vector<NodeType> typeBlackList = {cursorType};
-    screenManager_->SetVirtualScreenTypeBlackList(logicalScreenNodeId, typeBlackList);
+    screenManager_->SetVirtualScreenCursorMode(logicalScreenNodeId, RSVirtualScreenCursorMode::HIDE);
 
     screenDrawable->syncDirtyManager_->typeHwcDirtyRegion_ =
         {{RSSurfaceNodeType::CURSOR_NODE, defaultDirtyRect}};

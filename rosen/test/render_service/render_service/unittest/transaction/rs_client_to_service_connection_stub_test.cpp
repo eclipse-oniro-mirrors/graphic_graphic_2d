@@ -4353,59 +4353,69 @@ HWTEST_F(RSClientToServiceConnectionStubTest, RemoveVirtualScreenBlackListTest00
 }
 
 /**
- * @tc.name: SetVirtualScreenTypeBlackListTest001
- * @tc.desc: Test SetVirtualScreenTypeBlackList
+ * @tc.name: SetVirtualScreenCursorModeTest001
+ * @tc.desc: Test SET_VIRTUAL_SCREEN_CURSOR_MODE parcel parsing and mode range check in OnRemoteRequest
  * @tc.type: FUNC
  * @tc.require: issue20886
  */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackListTest001, TestSize.Level2)
+HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenCursorModeTest001, TestSize.Level2)
 {
     ASSERT_NE(connectionStub_, nullptr);
     MessageParcel reply;
     MessageOption option;
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_CURSOR_MODE);
     ScreenId id = INVALID_SCREEN_ID;
-    std::vector<NodeType> typeBlackListVector;
 
+    // case 1: interface token only, ReadUint64 fails
     MessageParcel data1;
     data1.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     auto res = connectionStub_->OnRemoteRequest(code, data1, reply, option);
     EXPECT_NE(res, ERR_NONE);
 
+    // case 2: truncated parcel carrying no uint8, ReadUint8 fails instead of being taken as 0
     MessageParcel data2;
     data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     data2.WriteUint64(id);
     res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
-    EXPECT_EQ(res, ERR_NONE);
+    EXPECT_NE(res, ERR_NONE);
 
+    // case 3: mode out of range is rejected before reaching the screen manager
     MessageParcel data3;
     data3.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     data3.WriteUint64(id);
-    data3.WriteUInt8Vector(typeBlackListVector);
+    data3.WriteUint8(static_cast<uint8_t>(RSVirtualScreenCursorMode::MODE_MAX));
     res = connectionStub_->OnRemoteRequest(code, data3, reply, option);
+    EXPECT_NE(res, ERR_NONE);
+
+    // case 4: complete parcel
+    MessageParcel data4;
+    data4.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    data4.WriteUint64(id);
+    data4.WriteUint8(static_cast<uint8_t>(RSVirtualScreenCursorMode::HIDE));
+    res = connectionStub_->OnRemoteRequest(code, data4, reply, option);
     EXPECT_EQ(res, ERR_NONE);
 }
 
 /**
- * @tc.name: SetVirtualScreenTypeBlackListTest002
- * @tc.desc: Test SetVirtualScreenTypeBlackList when screenManagerAgent_ of connection is nullptr
+ * @tc.name: SetVirtualScreenCursorModeTest002
+ * @tc.desc: Test SetVirtualScreenCursorMode when screenManagerAgent_ of connection is nullptr
  * @tc.type: FUNC
  * @tc.require: issue20886
  */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackListTest002, TestSize.Level2)
+HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenCursorModeTest002, TestSize.Level2)
 {
     ASSERT_NE(connectionStub_, nullptr);
     sptr<RSClientToServiceConnection> connection = iface_cast<RSClientToServiceConnection>(connectionStub_);
     ASSERT_NE(connection, nullptr);
 
     ScreenId screenId = INVALID_SCREEN_ID;
-    std::vector<NodeType> typeBlackListVector;
-    int32_t repCode;
+    int32_t repCode = StatusCode::SUCCESS;
 
     auto screenManagerAgent = connection->screenManagerAgent_;
     connection->screenManagerAgent_ = nullptr;
-    auto res = connection->SetVirtualScreenTypeBlackList(screenId, typeBlackListVector, repCode);
+    auto res = connection->SetVirtualScreenCursorMode(screenId, RSVirtualScreenCursorMode::HIDE, repCode);
     ASSERT_EQ(res, ERR_INVALID_VALUE);
+    ASSERT_EQ(repCode, StatusCode::SCREEN_NOT_FOUND);
 
     // restore screenManagerAgent
     connection->screenManagerAgent_ = screenManagerAgent;
@@ -4413,80 +4423,39 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackListTest0
 }
 
 /**
- * @tc.name: SetVirtualScreenTypeBlackListTest003
- * @tc.desc: Test SetVirtualScreenTypeBlackList when typeBlackListVector is empty
- * @tc.type: FUNC
- * @tc.require: issue20886
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackListTest003, TestSize.Level2)
-{
-    ASSERT_NE(connectionStub_, nullptr);
-    sptr<RSClientToServiceConnection> connection = iface_cast<RSClientToServiceConnection>(connectionStub_);
-    ASSERT_NE(connection, nullptr);
-
-    ScreenId screenId = INVALID_SCREEN_ID;
-    std::vector<NodeType> typeBlackListVector;
-    int32_t repCode;
-    auto res = connection->SetVirtualScreenTypeBlackList(screenId, typeBlackListVector, repCode);
-    ASSERT_EQ(res, ERR_OK);
-}
-
-/**
- * @tc.name: SetVirtualScreenTypeBlackListTest004
- * @tc.desc: Test SetVirtualScreenTypeBlackList when typeBlackListVector size is over MAX_SPECIAL_LAYER_NUM
- * @tc.type: FUNC
- * @tc.require: issue20886
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackListTest004, TestSize.Level2)
-{
-    ASSERT_NE(connectionStub_, nullptr);
-    sptr<RSClientToServiceConnection> connection = iface_cast<RSClientToServiceConnection>(connectionStub_);
-    ASSERT_NE(connection, nullptr);
-
-    ScreenId screenId = INVALID_SCREEN_ID;
-    std::vector<NodeType> typeBlackListVector(MAX_SPECIAL_LAYER_NUM + 1);
-    int32_t repCode;
-    auto res = connection->SetVirtualScreenTypeBlackList(screenId, typeBlackListVector, repCode);
-    ASSERT_EQ(res, ERR_OK);
-}
-
-/**
- * @tc.name: SetVirtualScreenTypeBlackListRepCodeSuccessTest001
- * @tc.desc: Test SET_VIRTUAL_SCREEN_TYPE_BLACKLIST repCode SUCCESS branch in OnRemoteRequest
+ * @tc.name: SetVirtualScreenCursorModeRepCodeSuccessTest001
+ * @tc.desc: Test the repCode SUCCESS branch of every cursor mode in OnRemoteRequest
  * @tc.type: FUNC
  * @tc.require: issue26241
  */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackListRepCodeSuccessTest001, TestSize.Level2)
+HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenCursorModeRepCodeSuccessTest001, TestSize.Level2)
 {
     ASSERT_NE(connectionStub_, nullptr);
     MessageParcel reply;
     MessageOption option;
-    uint32_t code = static_cast<uint32_t>(
-        RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST);
+    auto code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_CURSOR_MODE);
 
-    // case 1: empty typeBlackList on the registered screen, repCode is SUCCESS
+    // case 1: HIDE on the registered screen, repCode is SUCCESS
     MessageParcel data1;
     data1.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     data1.WriteUint64(screenId_);
-    std::vector<NodeType> emptyTypeBlackList;
-    data1.WriteUInt8Vector(emptyTypeBlackList);
+    data1.WriteUint8(static_cast<uint8_t>(RSVirtualScreenCursorMode::HIDE));
     auto res = connectionStub_->OnRemoteRequest(code, data1, reply, option);
     EXPECT_EQ(res, ERR_NONE);
 
-    // case 2: typeBlackList with CURSOR_NODE on the registered screen, repCode is SUCCESS
+    // case 2: FORCE_RENDER on the registered screen, repCode is SUCCESS
     MessageParcel data2;
     data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     data2.WriteUint64(screenId_);
-    std::vector<NodeType> typeBlackList { static_cast<NodeType>(RSSurfaceNodeType::CURSOR_NODE) };
-    data2.WriteUInt8Vector(typeBlackList);
+    data2.WriteUint8(static_cast<uint8_t>(RSVirtualScreenCursorMode::FORCE_RENDER));
     res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
     EXPECT_EQ(res, ERR_NONE);
 
-    // clear the type blacklist to restore the screen state
+    // restore the screen state to the default mode
     sptr<RSClientToServiceConnection> connection = iface_cast<RSClientToServiceConnection>(connectionStub_);
     ASSERT_NE(connection, nullptr);
     int32_t repCode = StatusCode::SUCCESS;
-    connection->SetVirtualScreenTypeBlackList(screenId_, emptyTypeBlackList, repCode);
+    connection->SetVirtualScreenCursorMode(screenId_, RSVirtualScreenCursorMode::DEFAULT, repCode);
     EXPECT_EQ(repCode, StatusCode::SUCCESS);
 }
 

@@ -157,7 +157,8 @@ public:
     int32_t AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
     int32_t RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
 
-    int32_t SetVirtualScreenTypeBlackList(ScreenId id, std::vector<NodeType>& typeBlackListVector);
+    // cursorMode replaces the old hideCursor/forceRenderCursor pair: one field, last writer wins
+    int32_t SetVirtualScreenCursorMode(ScreenId id, RSVirtualScreenCursorMode mode);
 #endif
 
     int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList);

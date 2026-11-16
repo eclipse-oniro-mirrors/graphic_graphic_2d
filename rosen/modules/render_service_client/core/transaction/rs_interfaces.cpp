@@ -123,9 +123,29 @@ int32_t RSInterfaces::SetVirtualScreenBlackList(ScreenId id, const std::vector<N
     return renderServiceClient_->SetVirtualScreenBlackList(id, blackList);
 }
 
-int32_t RSInterfaces::SetVirtualScreenTypeBlackList(ScreenId id, std::vector<NodeType>& typeBlackListVector)
+namespace {
+bool HasCursorNodeType(const std::vector<NodeType>& typeList)
 {
-    return renderServiceClient_->SetVirtualScreenTypeBlackList(id, typeBlackListVector);
+    constexpr NodeType CURSOR_NODE_TYPE = static_cast<NodeType>(RSSurfaceNodeType::CURSOR_NODE);
+    return std::find(typeList.cbegin(), typeList.cend(), CURSOR_NODE_TYPE) != typeList.cend();
+}
+} // namespace
+
+int32_t RSInterfaces::SetVirtualScreenCursorMode(ScreenId id, RSVirtualScreenCursorMode mode)
+{
+    return renderServiceClient_->SetVirtualScreenCursorMode(id, mode);
+}
+
+int32_t RSInterfaces::SetVirtualScreenTypeBlackList(ScreenId id, const std::vector<NodeType>& typeBlackListVector)
+{
+    return SetVirtualScreenCursorMode(id, HasCursorNodeType(typeBlackListVector) ?
+        RSVirtualScreenCursorMode::HIDE : RSVirtualScreenCursorMode::DEFAULT);
+}
+
+int32_t RSInterfaces::SetVirtualScreenTypeWhiteList(ScreenId id, const std::vector<NodeType>& typeWhiteListVector)
+{
+    return SetVirtualScreenCursorMode(id, HasCursorNodeType(typeWhiteListVector) ?
+        RSVirtualScreenCursorMode::FORCE_RENDER : RSVirtualScreenCursorMode::DEFAULT);
 }
 
 int32_t RSInterfaces::AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList)

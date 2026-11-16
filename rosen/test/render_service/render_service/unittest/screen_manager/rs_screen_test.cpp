@@ -2376,18 +2376,30 @@ HWTEST_F(RSScreenTest, SetBlackList_001, testing::ext::TestSize.Level1)
 }
 
 /*
- * @tc.name: SetTypeBlackList_001
- * @tc.desc: SetTypeBlackList Test
+ * @tc.name: SetCursorMode_001
+ * @tc.desc: SetCursorMode stores one tri-state screen property
  * @tc.type: FUNC
  * @tc.require: issueIAIRAN
  */
-HWTEST_F(RSScreenTest, SetTypeBlackList_001, testing::ext::TestSize.Level1)
+HWTEST_F(RSScreenTest, SetCursorMode_001, testing::ext::TestSize.Level1)
 {
     auto rsScreen = std::make_shared<RSScreen>(0);
     ASSERT_NE(nullptr, rsScreen);
 
-    std::unordered_set<uint8_t> blackList {};
-    rsScreen->SetTypeBlackList(blackList);
+    rsScreen->SetCursorMode(RSVirtualScreenCursorMode::HIDE);
+    auto property = rsScreen->GetProperty();
+    ASSERT_NE(nullptr, property);
+    ASSERT_EQ(property->GetCursorMode(), RSVirtualScreenCursorMode::HIDE);
+
+    rsScreen->SetCursorMode(RSVirtualScreenCursorMode::FORCE_RENDER);
+    property = rsScreen->GetProperty();
+    ASSERT_NE(nullptr, property);
+    ASSERT_EQ(property->GetCursorMode(), RSVirtualScreenCursorMode::FORCE_RENDER);
+
+    rsScreen->SetCursorMode(RSVirtualScreenCursorMode::DEFAULT);
+    property = rsScreen->GetProperty();
+    ASSERT_NE(nullptr, property);
+    ASSERT_EQ(property->GetCursorMode(), RSVirtualScreenCursorMode::DEFAULT);
 }
 
 /*

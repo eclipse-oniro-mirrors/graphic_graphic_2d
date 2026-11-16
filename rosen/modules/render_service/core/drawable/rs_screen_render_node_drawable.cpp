@@ -570,7 +570,7 @@ bool RSScreenRenderNodeDrawable::PrepareForDraw(std::shared_ptr<RSProcessor>& pr
     RSScreenRenderParams*& params, bool isVirtualExpandSkip, ScreenId& paramScreenId,
     std::shared_ptr<RSBaseRenderEngine> renderEngine)
 {
-    RSSpecialLayerManager::ClearWhiteListRootIds();
+    WhiteListRootIdStack::ClearWhiteListRootIds();
     Drawing::GPUResourceTag::SetCurrentNodeId(GetId());
     SetDrawSkipType(DrawSkipType::NONE);
 
