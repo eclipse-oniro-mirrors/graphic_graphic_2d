@@ -280,7 +280,7 @@ OH_Drawing_ErrorCode OH_Drawing_CanvasSaveLayerWithFlag(OH_Drawing_Canvas* cCanv
         g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
         return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
     }
- 
+
     SaveLayerOps slr = SaveLayerOps(reinterpret_cast<const Drawing::Rect*>(cRect),
         reinterpret_cast<const Drawing::Brush*>(cBrush), saveLayerFlags);
     canvas->SaveLayer(slr);

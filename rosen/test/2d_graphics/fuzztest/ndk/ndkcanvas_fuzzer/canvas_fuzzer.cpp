@@ -304,6 +304,10 @@ void CanvasFuzzTest004(const uint8_t* data, size_t size)
     OH_Drawing_CanvasSaveLayer(canvas, rect, brush);
     OH_Drawing_CanvasSaveLayer(nullptr, rect, brush);
 
+    OH_Drawing_CanvasSaveLayerWithFlag(canvas, rect, brush, GetObject<uint32_t>());
+    OH_Drawing_CanvasSaveLayerWithFlag(nullptr, rect, brush, GetObject<uint32_t>());
+    OH_Drawing_CanvasSaveLayerWithFlag(canvas, nullptr, nullptr, GetObject<uint32_t>());
+
     OH_Drawing_CanvasDrawBackground(canvas, brush);
     OH_Drawing_CanvasDrawBackground(nullptr, brush);
     OH_Drawing_CanvasDrawBackground(canvas, nullptr);
