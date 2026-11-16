@@ -276,6 +276,25 @@ void RSPaintFilterCanvasBase::DrawPath(const Path& path)
 #endif
 }
 
+// DrawParticle is not overridden by Drawing::Canvas subclasses that wrap a real backend (the wrapper's
+// own impl_ is a BackendNoPixels shell), so it must be forwarded explicitly to canvas_ just like the
+// geometric Draw* methods. Otherwise the call lands on BackendBase::DrawParticle (a no-op) and the
+// particle effect is silently dropped.
+void RSPaintFilterCanvasBase::DrawParticle(std::shared_ptr<ParticleEffect> particle)
+{
+#ifdef SKP_RECORDING_ENABLED
+    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
+        if ((*iter) != nullptr && OnFilter()) {
+            (*iter)->DrawParticle(particle);
+        }
+    }
+#else
+    if (canvas_ != nullptr && OnFilter()) {
+        canvas_->DrawParticle(particle);
+    }
+#endif
+}
+
 void RSPaintFilterCanvasBase::DrawPathWithStencil(const Drawing::Path& path, uint32_t stencilVal)
 {
 #ifdef SKP_RECORDING_ENABLED

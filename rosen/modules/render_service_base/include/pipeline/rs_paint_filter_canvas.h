@@ -73,6 +73,7 @@ public:
     void DrawOval(const Drawing::Rect& oval) override;
     void DrawCircle(const Drawing::Point& centerPt, Drawing::scalar radius) override;
     void DrawPath(const Drawing::Path& path) override;
+    void DrawParticle(std::shared_ptr<Drawing::ParticleEffect> particle) override;
     void DrawPathWithStencil(const Drawing::Path& path, uint32_t stencilVal) override;
     void DrawBackground(const Drawing::Brush& brush) override;
     void DrawShadow(const Drawing::Path& path, const Drawing::Point3& planeParams,

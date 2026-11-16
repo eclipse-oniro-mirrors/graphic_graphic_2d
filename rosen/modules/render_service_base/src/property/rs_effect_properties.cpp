@@ -998,6 +998,16 @@ std::shared_ptr<RSNGRenderFilterBase> RSEffectProperties::GetForegroundNGFilter(
     return nullptr;
 }
 
+bool RSEffectProperties::IgnorePropertiesContentDirty() const
+{
+    return ignorePropertiesContentDirty_;
+}
+
+void RSEffectProperties::SetIgnorePropertiesContentDirty(bool ignore)
+{
+    ignorePropertiesContentDirty_ = ignore;
+}
+
 void RSEffectProperties::SetMaterialNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& filter)
 {
     GetFilterEffect().mtNGRenderFilter_ = filter;
@@ -1720,7 +1730,21 @@ void RSEffectProperties::GenerateForegroundFilter(const ForegroundFilterParams& 
         CreateHDRUIBrightnessFilter(params.hdrUIBrightness, params.needGenFgFilterCache);
     } else if (GetForegroundNGFilter()) {
         RSNGRenderFilterHelper::PrepareForForeground(GetFilterEffect().fgNGRenderFilter_);
-        ComposeNGRenderFilter(GetFilterEffect().foregroundFilter_, GetForegroundNGFilter(), params.rotationAngle);
+        // Particle aggregation takes the FOREGROUND_FILTER_CACHE path, storing into
+        // foregroundFilterCache_ to avoid redrawing the subtree every frame. Other NGFilters
+        // take the drawable path (foregroundFilter_).
+        bool useCachePath = params.needGenFgFilterCache &&
+            GetForegroundNGFilter()->ContainsType(RSNGEffectType::PARTICLE_AGGREGATION);
+        auto& targetFilter = useCachePath ? GetFilterEffect().foregroundFilterCache_
+                                         : GetFilterEffect().foregroundFilter_;
+        ComposeNGRenderFilter(targetFilter, GetForegroundNGFilter(), params.rotationAngle);
+        // Per-frame progress changes must not invalidate the subtree cache. ignorePropertiesContentDirty_
+        // defaults to false; the particle-aggregation cache path sets it true so that IsContentDirty()
+        // evaluates contentDirty_ && !ignore, suppressing spuriously triggered contentDirty_.
+        // The next frame's ResetDirty sets it back to false to restore normal dirty evaluation.
+        if (useCachePath) {
+            SetIgnorePropertiesContentDirty(true);
+        }
     } else if (GetColorAdaptive()) {
         SetForegroundFilterCache(std::make_shared<RSColorAdaptiveFilter>());
     }

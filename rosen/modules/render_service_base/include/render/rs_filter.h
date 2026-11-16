@@ -94,6 +94,7 @@ public:
         PARTICLE_ABLATION,
         FROSTED_GLASS,
         FROSTED_GLASS_BLUR,
+        PARTICLE_AGGREGATION,
     };
     FilterType GetFilterType() const
     {
