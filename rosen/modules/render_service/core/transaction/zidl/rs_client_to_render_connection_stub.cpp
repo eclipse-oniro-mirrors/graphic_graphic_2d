@@ -284,6 +284,18 @@ void RSClientToRenderConnectionStub::SetQos()
 int RSClientToRenderConnectionStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
+#if defined(RS_MULTI_DISPLAY_FEATURES)
+    // Multi-display products require every client to hold a dedicated render-process connection;
+    // the default connection is only the construction-time placeholder. Reject all requests on it
+    // before any side effect so client fallback paths (see RSRenderPipelineClient::CommitTransaction)
+    // fail fast server-side instead of silently bypassing the client-side guard.
+    if (isDefaultConnection_) {
+        RS_LOGE_LIMIT(__func__, __line__,
+            "RSClientToRenderConnectionStub::OnRemoteRequest rejected on default connection, code:%{public}u",
+            code);
+        return ERR_INVALID_STATE;
+    }
+#endif
     uint32_t parcelNumber = RS_PROFILER_ON_REMOTE_REQUEST(this, code, data, reply, option);
     AshmemFdContainer::SetIsUnmarshalThread(false);
     const pid_t callingPid = RS_PROFILER_GET_CALLING_PID(this);

@@ -35,6 +35,12 @@ public:
 
     int OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) override;
 
+    // Set once by RSRenderService::CreateConnection, before the stub is handed to the client,
+    // so binder threads only read it; dedicated render-process connections are never marked.
+    // On multi-display products OnRemoteRequest rejects every request on a marked connection.
+    bool IsDefaultConnection() const override { return isDefaultConnection_; }
+    void MarkAsDefaultConnection() override { isDefaultConnection_ = true; }
+
 private:
     static const RSInterfaceCodeSecurityManager securityManager_;
     virtual std::string GetBundleName(pid_t pid) { return {}; }
@@ -48,6 +54,7 @@ private:
     RSRenderServiceSecurityUtils securityUtils_;
     std::unordered_set<int> tids_;
     std::mutex mutex_;
+    bool isDefaultConnection_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

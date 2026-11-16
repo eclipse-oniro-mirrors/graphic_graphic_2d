@@ -45,7 +45,7 @@ public:
     // Set once by RSRenderServiceConnectHub on the construction-time connection to the main
     // render service; local flag, never crosses IPC.
     bool IsDefaultConnection() const override { return isDefaultConnection_; }
-    void MarkAsDefaultConnection() { isDefaultConnection_ = true; }
+    void MarkAsDefaultConnection() override { isDefaultConnection_ = true; }
 
     ErrCode CreateDisplayNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId,
         bool& success) override;
