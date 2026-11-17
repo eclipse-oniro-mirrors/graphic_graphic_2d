@@ -36,7 +36,7 @@ public:
     // source crop tuning
     void SetVideoSurfaceFlag(bool videoSurfaceFlag);
     bool GetVideoSurfaceFlag() const;
-    void SetSurfaceOpaqueType(const std::string &surfaceOpaqueType);
+    void SetSurfaceOpaqueType(const std::string& surfaceOpaqueType);
     std::string GetSurfaceOpaqueType() const;
 
     // use to implement product isolation for the adaptive P3 scheme
@@ -93,11 +93,10 @@ private:
 
     std::string tvPlayerBundleName_;
 
-    std::string surfaceOpaqueType_;
-
     std::unordered_map<std::string, std::string> overlappedHwcNodeInAppEnabledConfig_;
 
     // use in updating hwcnode hardware state with background alpha
+    std::string surfaceOpaqueType_;
     std::atomic<bool> hardwareEnabledByHwcnodeSkippedFlag_{false};
     std::atomic<bool> hardwareEnabledByBackgroundAlphaSkippedFlag_{false};
     std::atomic<bool> isWhiteListForSolidColorLayerFlag_{false};
