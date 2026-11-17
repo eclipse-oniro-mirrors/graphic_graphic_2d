@@ -64,6 +64,33 @@ void RSScreenRenderNode::CollectSurface(
     }
 }
 
+std::shared_ptr<RSLogicalDisplayRenderNode> RSScreenRenderNode::NormalizeWindowRecordDisplays()
+{
+    // A record session is only valid on a virtual screen.
+    if (!screenProperty_.IsVirtual()) {
+        return nullptr;
+    }
+    std::shared_ptr<RSLogicalDisplayRenderNode> recordDisplayNode = nullptr;
+    auto children = GetChildren();
+    if (children == nullptr) {
+        return recordDisplayNode;
+    }
+    for (const auto& child : *children) {
+        auto displayNode = child ? child->ReinterpretCastTo<RSLogicalDisplayRenderNode>() : nullptr;
+        if (displayNode == nullptr || !displayNode->IsWindowRecordActive()) {
+            continue;
+        }
+        if (recordDisplayNode != nullptr) {
+            RS_LOGW("RSScreenRenderNode::%{public}s multiple record displays, keep first, "
+                    "clear id[%{public}" PRIu64 "]", __func__, displayNode->GetId());
+            displayNode->ClearWindowRecordSession();
+            continue;
+        }
+        recordDisplayNode = std::move(displayNode);
+    }
+    return recordDisplayNode;
+}
+
 void RSScreenRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor,
     bool isParentPrepareInReverseOrder)
 {
@@ -74,6 +101,11 @@ void RSScreenRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visi
     auto screenInfo = screenProperty_.GetScreenInfo();
     SetScreenInfo(screenInfo);
     ApplyModifiers();
+#ifdef RS_ENABLE_GPU
+    // The screen prepares before its children: pick the record owner now so a later record-active
+    // child is cleared before it can publish. Gated by RS_ENABLE_GPU, like the snapshot staging.
+    NormalizeWindowRecordDisplays();
+#endif
     visitor->QuickPrepareScreenRenderNode(*this, isParentPrepareInReverseOrder);
 }
 
@@ -228,34 +260,16 @@ void RSScreenRenderNode::UpdateRenderParams()
         return;
     }
     auto mirroredNode = GetMirrorSource().lock();
-    bool hasWindowRecordChild = false;
-    std::shared_ptr<RSLogicalDisplayRenderNode> recordDisplayNode = nullptr;
-    // A record session is only valid on a virtual screen.
-    if (screenProperty_.IsVirtual()) {
-        auto children = GetChildren();
-        if (children) {
-            for (const auto& child : *children) {
-                auto displayNode = child ? child->ReinterpretCastTo<RSLogicalDisplayRenderNode>() : nullptr;
-                if (displayNode && displayNode->IsWindowRecordActive()) {
-                    hasWindowRecordChild = true;
-                    recordDisplayNode = std::move(displayNode);
-                    break;
-                }
-            }
-        }
-    }
+    auto recordDisplayNode = NormalizeWindowRecordDisplays();
+    bool hasWindowRecordChild = recordDisplayNode != nullptr;
     if (mirroredNode && !hasWindowRecordChild) {
         screenParams->mirrorSourceDrawable_ = mirroredNode->GetRenderDrawable();
     } else {
         screenParams->mirrorSourceDrawable_.reset();
     }
     screenParams->hasWindowRecordDisplay_ = hasWindowRecordChild;
-    // Either/or, never merged: a record-active display child owns its mixed id list from the
-    // current config, otherwise the screen property white list applies. A virtual screen hosts at
-    // most one mirror-type display node, so the effective list cannot leak into a sibling extend
-    // display. The screen is prepared before its display children, so normalizing here keeps the
-    // list fresh in the same frame. Downstream consumers (render-thread white list hand-off and
-    // special-layer checks) read this single effective list.
+    // Either/or, never merged: the first record-active display owns its mixed id list (later ones
+    // were cleared), otherwise the screen property white list applies. Consumers read this one list.
     std::unordered_set<NodeId> effectiveWhiteList = recordDisplayNode != nullptr
         ? recordDisplayNode->BuildEffectiveRecordWhiteListIds()
         : screenProperty_.GetWhiteList();

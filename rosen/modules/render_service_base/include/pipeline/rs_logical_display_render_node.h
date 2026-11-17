@@ -188,8 +188,7 @@ public:
     // parent screen node when it selects the effective white list.
     std::unordered_set<NodeId> BuildEffectiveRecordWhiteListIds() const;
 
-    // true when this display is bound to a virtual screen (both record config
-    // delivery channels gate on this)
+    // true when this display is bound to a virtual screen (the SetWindowRecordConfig path gates on this)
     bool IsOnVirtualScreen() const;
 
     void ClearWindowRecordSession()

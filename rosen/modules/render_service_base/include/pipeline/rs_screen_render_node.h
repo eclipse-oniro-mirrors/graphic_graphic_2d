@@ -42,6 +42,7 @@
 namespace OHOS {
 namespace Rosen {
 class RSSurfaceRenderNode;
+class RSLogicalDisplayRenderNode;
 class RSDynamicLayerSkipController;
 typedef void (*ReleaseDmaBufferTask)(uint64_t);
 
@@ -600,6 +601,9 @@ protected:
 private:
     void InitRenderParams() override;
     void CollectHdrStatusMap(NodeId id, HdrStatus hdrStatus);
+    // Selects the single record owner among the display children, clearing later record-active ones
+    // before child prepare so they cannot publish. UpdateRenderParams() reuses the same selection.
+    std::shared_ptr<RSLogicalDisplayRenderNode> NormalizeWindowRecordDisplays();
     void ScaleSyncDirtyManagerForRogIfNeed(const std::shared_ptr<RSDirtyRegionManager>& syncDirtyManager) const;
 
     bool hasChildCrossNode_ = false;

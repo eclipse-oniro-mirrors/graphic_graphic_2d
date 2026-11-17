@@ -52,10 +52,9 @@ T GetData()
 inline RSWindowRecordConfig GetRSWindowRecordConfigFromData()
 {
     RSWindowRecordConfig recordConfig;
-    recordConfig.needDrawMouse = GetData<bool>();
     recordConfig.renderFit = GetData<bool>() ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
     // Bounded id count; includes the over-cap MAX_WINDOW_RECORD_SURFACE_NUM + 1 value.
-    size_t idCount = GetData<uint8_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
+    size_t idCount = GetData<uint16_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
     for (size_t i = 0; i < idCount; ++i) {
         recordConfig.surfaceNodeIds.push_back(GetData<NodeId>());
     }
@@ -73,7 +72,6 @@ inline RSDisplayNodeConfig GetRSDisplayNodeConfigFromData()
     float positionZ = GetData<float>();
 
     RSDisplayNodeConfig config = { screenId, displayMode, mirrorNodeId, isSync, mirrorSourceRotation, positionZ };
-    config.windowRecordConfig = GetRSWindowRecordConfigFromData();
     return config;
 }
 } // namespace

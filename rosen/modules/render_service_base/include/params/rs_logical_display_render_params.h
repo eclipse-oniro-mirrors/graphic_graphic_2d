@@ -191,6 +191,10 @@ public:
     {
         return recordSourceDisplayDrawable_;
     }
+    bool HasPaintableRecordSurface() const
+    {
+        return hasPaintableRecordSurface_;
+    }
     // Called by RSLogicalDisplayRenderNode after writing the record snapshot fields (friend
     // access).
     void MarkWindowRecordSnapshotSynced() { needSync_ = true; }
@@ -229,14 +233,15 @@ private:
 
     RSWindowRecordConfig windowRecordConfig_;
     bool isOnVirtualScreen_ = false;
-    // Main-thread resolved window-record snapshots (see GetRecordSurfaceDrawables() for the
-    // thread contract). recordSurfaceDrawables_ holds only main-window-type surfaces, so the
-    // render thread needs no node type check; recordWhiteListIds_ contains both persistent ids
-    // and surface node ids for record-only capture matching; recordSourceDisplayDrawable_
-    // replaces the per-frame parent-chain walk.
+    // Main-thread resolved window-record snapshots (thread contract: GetRecordSurfaceDrawables()).
+    // recordSurfaceDrawables_ holds only paintable main-window surfaces under the anchor, so the render
+    // thread needs no type check; recordWhiteListIds_ mixes persistent and surface node ids for
+    // record-only matching; recordSourceDisplayDrawable_ is a weak snapshot of the source display;
+    // hasPaintableRecordSurface_ requires the surface and all ancestors to paint.
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr> recordSurfaceDrawables_;
     std::unordered_set<NodeId> recordWhiteListIds_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr recordSourceDisplayDrawable_;
+    bool hasPaintableRecordSurface_ = false;
 
     friend class RSLogicalDisplayRenderNode;
 };

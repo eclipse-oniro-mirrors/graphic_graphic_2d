@@ -546,26 +546,20 @@ public:
 
     static bool Marshalling(Parcel& parcel, const RSWindowRecordConfig& val)
     {
-        return Marshalling(parcel, val.needDrawMouse) &&
-               Marshalling(parcel, static_cast<int32_t>(val.renderFit)) &&
-               Marshalling(parcel, val.surfaceNodeIds);
+        return Marshalling(parcel, static_cast<int32_t>(val.renderFit)) &&
+               Marshalling(parcel, val.surfaceNodeIds, MAX_WINDOW_RECORD_SURFACE_NUM);
     }
 
     static bool Unmarshalling(Parcel& parcel, RSWindowRecordConfig& val)
     {
         int32_t renderFit = 0;
-        if (!Unmarshalling(parcel, val.needDrawMouse) || !Unmarshalling(parcel, renderFit) ||
+        if (!Unmarshalling(parcel, renderFit) ||
             renderFit < static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT) ||
             renderFit > static_cast<int32_t>(WindowRecordFit::ASPECT_FIT)) {
             return false; // out-of-range enum from an untrusted parcel: drop the config
         }
         val.renderFit = static_cast<WindowRecordFit>(renderFit);
-        if (!Unmarshalling(parcel, val.surfaceNodeIds)) {
-            return false;
-        }
-        // Enforce the bound at the parcel boundary so every delivery channel (Create via
-        // RSDisplayNodeConfig, SetDisplayMode, SetWindowRecordConfig) is covered.
-        if (val.surfaceNodeIds.size() > MAX_WINDOW_RECORD_SURFACE_NUM) {
+        if (!Unmarshalling(parcel, val.surfaceNodeIds, MAX_WINDOW_RECORD_SURFACE_NUM)) {
             val.surfaceNodeIds.clear();
             return false;
         }
@@ -579,8 +573,7 @@ public:
                Marshalling(parcel, val.mirrorNodeId) &&
                Marshalling(parcel, val.isSync) &&
                Marshalling(parcel, val.mirrorSourceRotation) &&
-               Marshalling(parcel, val.positionZ) &&
-               Marshalling(parcel, val.windowRecordConfig);
+               Marshalling(parcel, val.positionZ);
     }
 
     static bool Unmarshalling(Parcel& parcel, RSDisplayNodeConfig& val)
@@ -596,8 +589,7 @@ public:
         return Unmarshalling(parcel, val.mirrorNodeId) &&
                Unmarshalling(parcel, val.isSync) &&
                Unmarshalling(parcel, val.mirrorSourceRotation) &&
-               Unmarshalling(parcel, val.positionZ) &&
-               Unmarshalling(parcel, val.windowRecordConfig);
+               Unmarshalling(parcel, val.positionZ);
     }
 
     template<typename T, typename... Args>

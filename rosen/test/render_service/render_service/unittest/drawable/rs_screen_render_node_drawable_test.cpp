@@ -258,7 +258,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, DrawCurtainScreen, TestSize.Level1)
 
 /**
  * @tc.name: WindowRecordScreenNullProcessorEarlyReturn
- * @tc.desc: Test the record-screen handler returns before requesting a buffer when the processor is null
+ * @tc.desc: Test the record-screen handler skips the frame when no display has an active record session
  * @tc.type: FUNC
  * @tc.require: issues/26744
  */
@@ -274,8 +274,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, WindowRecordScreenNullProcessorEarlyRet
     screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
     RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *params, nullProcessor);
 
-    // The null processor is rejected before InitForRenderThread, so no frame reaches the surface.
-    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 }
 
 /**

@@ -481,10 +481,9 @@ enum class WindowRecordFit {
 // Upper bound for one record session's window list: the ids are re-resolved on the RS main thread
 // every frame and the resulting set is copied into the render params every frame, so the list must
 // stay small (the generic parcel bound is 65535).
-constexpr size_t MAX_WINDOW_RECORD_SURFACE_NUM = 64;
+constexpr size_t MAX_WINDOW_RECORD_SURFACE_NUM = 4096;
 
 struct RSWindowRecordConfig {
-    bool needDrawMouse = false;
     WindowRecordFit renderFit = WindowRecordFit::ASPECT_FIT_TOP_LEFT;
     // Contains leash persistent ids and surface node ids. Every main window is supplied with both
     // ids, and values from the two id spaces never collide across different windows.
@@ -492,8 +491,7 @@ struct RSWindowRecordConfig {
 
     bool operator==(const RSWindowRecordConfig& other) const
     {
-        return needDrawMouse == other.needDrawMouse &&
-               renderFit == other.renderFit &&
+        return renderFit == other.renderFit &&
                surfaceNodeIds == other.surfaceNodeIds;
     }
 };
@@ -736,7 +734,6 @@ struct RSDisplayNodeConfig {
     bool isSync = false;
     uint32_t mirrorSourceRotation = 4; // default INVALID_SCREEN_ROTATION
     float positionZ = 0.0f;
-    RSWindowRecordConfig windowRecordConfig;
 
     std::string ToString() const
     {
@@ -745,8 +742,7 @@ struct RSDisplayNodeConfig {
                ", sourceDisplayNodeId:" + std::to_string(mirrorNodeId) +
                ", isSync:" + std::to_string(isSync) +
                ", mirrorSourceRotation:" + std::to_string(mirrorSourceRotation) +
-               ", positionZ:" + std::to_string(positionZ) +
-               ", surfaceNodeIdsCount:" + std::to_string(windowRecordConfig.surfaceNodeIds.size()) + "]";
+               ", positionZ:" + std::to_string(positionZ) + "]";
     }
 };
 

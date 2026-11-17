@@ -146,6 +146,7 @@ HWTEST_F(RSLogicalDisplayRenderParamsTest, WindowRecordFieldsOnSync, TestSize.Le
     source.recordSurfaceDrawables_.push_back(drawable);
     source.recordWhiteListIds_ = { whiteListId };
     source.recordSourceDisplayDrawable_ = drawable;
+    source.hasPaintableRecordSurface_ = true;
 
     std::unique_ptr<RSRenderParams> target = std::make_unique<RSLogicalDisplayRenderParams>(id);
     source.OnSync(target);
@@ -157,5 +158,6 @@ HWTEST_F(RSLogicalDisplayRenderParamsTest, WindowRecordFieldsOnSync, TestSize.Le
     EXPECT_EQ(targetParams->GetRecordSurfaceDrawables()[0].lock(), drawable);
     EXPECT_EQ(targetParams->GetRecordWhiteListIds(), source.GetRecordWhiteListIds());
     EXPECT_EQ(targetParams->GetRecordSourceDisplayDrawable().lock(), drawable);
+    EXPECT_TRUE(targetParams->HasPaintableRecordSurface());
 }
 } // namespace OHOS::Rosen

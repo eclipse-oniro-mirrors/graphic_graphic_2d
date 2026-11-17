@@ -756,7 +756,7 @@ bool DoMarshallingHelper022()
 }
 
 // RSWindowRecordConfig round trip. Bytes come from the shared GetData() cursor, so no argument is needed.
-// The id count spans 0..65 to cover the MAX_WINDOW_RECORD_SURFACE_NUM bound on both sides.
+// The id count spans the configured bound on both sides.
 bool DoMarshallingHelper023()
 {
     if (DATA == nullptr) {
@@ -765,9 +765,8 @@ bool DoMarshallingHelper023()
 
     Parcel parcel;
     RSWindowRecordConfig config;
-    config.needDrawMouse = GetData<bool>();
     config.renderFit = static_cast<WindowRecordFit>(GetData<uint8_t>() % WINDOWRECORDFIT_SIZE);
-    size_t idCount = GetData<uint8_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
+    size_t idCount = GetData<uint16_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
     for (size_t i = 0; i < idCount; i++) {
         config.surfaceNodeIds.push_back(GetData<NodeId>());
     }
@@ -777,7 +776,6 @@ bool DoMarshallingHelper023()
 
     // Untrusted wire value: a renderFit byte outside the enum range must be rejected.
     Parcel invalidFitParcel;
-    invalidFitParcel.WriteBool(GetData<bool>());
     invalidFitParcel.WriteInt32(static_cast<int32_t>(GetData<uint8_t>()));
     invalidFitParcel.WriteUint64(0);
     RSWindowRecordConfig invalidFitConfig;
@@ -785,7 +783,7 @@ bool DoMarshallingHelper023()
     return true;
 }
 
-// RSDisplayNodeConfig nested round trip. The raw display mode byte is taken verbatim from the input so the
+// Baseline RSDisplayNodeConfig round trip. The raw display mode byte is taken verbatim from the input so the
 // clamping branch (out-of-range mode -> DisplayMode::INVALID) is reachable.
 bool DoMarshallingHelper024()
 {
@@ -801,13 +799,6 @@ bool DoMarshallingHelper024()
     config.isSync = GetData<bool>();
     config.mirrorSourceRotation = GetData<uint32_t>();
     config.positionZ = GetData<float>();
-    config.windowRecordConfig.needDrawMouse = GetData<bool>();
-    config.windowRecordConfig.renderFit =
-        static_cast<WindowRecordFit>(GetData<uint8_t>() % WINDOWRECORDFIT_SIZE);
-    size_t idCount = GetData<uint8_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
-    for (size_t i = 0; i < idCount; i++) {
-        config.windowRecordConfig.surfaceNodeIds.push_back(GetData<NodeId>());
-    }
     RSMarshallingHelper::Marshalling(parcel, config);
     RSDisplayNodeConfig unmarshalled;
     RSMarshallingHelper::Unmarshalling(parcel, unmarshalled);

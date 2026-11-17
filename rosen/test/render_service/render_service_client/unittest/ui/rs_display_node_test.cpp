@@ -515,7 +515,6 @@ HWTEST_F(RSDisplayNodeTest, SetWindowRecordConfigTest001, TestSize.Level1)
     ASSERT_TRUE(transactionProxy->IsEmpty());
 
     RSWindowRecordConfig recordConfig;
-    recordConfig.needDrawMouse = true;
     recordConfig.renderFit = WindowRecordFit::ASPECT_FIT;
     recordConfig.surfaceNodeIds = { 1, 2 };
     displayNode->SetWindowRecordConfig(recordConfig);

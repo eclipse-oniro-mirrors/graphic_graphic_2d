@@ -714,7 +714,6 @@ HWTEST_F(RSMarshallingTest, DepthLightParaMarshalling002, TestSize.Level1)
 static RSWindowRecordConfig CreateWindowRecordConfig(size_t idCount)
 {
     RSWindowRecordConfig config;
-    config.needDrawMouse = true;
     config.renderFit = WindowRecordFit::ASPECT_FIT;
     for (size_t i = 0; i < idCount; i++) {
         config.surfaceNodeIds.push_back(static_cast<NodeId>(i + 1));
@@ -748,7 +747,6 @@ HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling001, TestSize.Level1)
 
     RSWindowRecordConfig unmarshalled;
     ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(parcel, unmarshalled));
-    EXPECT_EQ(unmarshalled.needDrawMouse, config.needDrawMouse);
     EXPECT_EQ(unmarshalled.renderFit, config.renderFit);
     EXPECT_EQ(unmarshalled.surfaceNodeIds, config.surfaceNodeIds);
 }
@@ -767,9 +765,10 @@ HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling002, TestSize.Level1)
     ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, config));
 
     RSWindowRecordConfig unmarshalled;
-    unmarshalled.needDrawMouse = true;
+    // Prefilled stale values must be replaced by the decoded defaults.
+    unmarshalled.renderFit = WindowRecordFit::ASPECT_FIT;
+    unmarshalled.surfaceNodeIds = { 5 };
     ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(parcel, unmarshalled));
-    EXPECT_FALSE(unmarshalled.needDrawMouse);
     EXPECT_EQ(unmarshalled.renderFit, WindowRecordFit::ASPECT_FIT_TOP_LEFT);
     EXPECT_TRUE(unmarshalled.surfaceNodeIds.empty());
 }
@@ -787,12 +786,11 @@ HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling003, TestSize.Level1)
     MessageParcel emptyParcel;
     EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(emptyParcel, unmarshalled));
 
-    MessageParcel boolOnlyParcel;
-    boolOnlyParcel.WriteBool(true); // renderFit and the id list are missing
-    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(boolOnlyParcel, unmarshalled));
+    MessageParcel renderFitOnlyParcel;
+    renderFitOnlyParcel.WriteInt32(static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT)); // id list missing
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(renderFitOnlyParcel, unmarshalled));
 
     MessageParcel missingIdParcel;
-    missingIdParcel.WriteBool(true);
     missingIdParcel.WriteInt32(static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT));
     missingIdParcel.WriteUint64(2); // declares two ids but only one is present
     missingIdParcel.WriteUint64(7);
@@ -810,7 +808,6 @@ HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling004, TestSize.Level1)
     const int32_t invalidFits[] = { -1, static_cast<int32_t>(WindowRecordFit::ASPECT_FIT) + 1, 1000 };
     for (const auto invalidFit : invalidFits) {
         MessageParcel parcel;
-        parcel.WriteBool(false);
         parcel.WriteInt32(invalidFit);
         parcel.WriteUint64(0); // empty id list
 
@@ -847,19 +844,22 @@ HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling005, TestSize.Level1)
 HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling006, TestSize.Level1)
 {
     RSWindowRecordConfig config = CreateWindowRecordConfig(MAX_WINDOW_RECORD_SURFACE_NUM + 1);
+    MessageParcel encodingParcel;
+    EXPECT_FALSE(RSMarshallingHelper::Marshalling(encodingParcel, config));
 
-    MessageParcel parcel;
-    ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, config));
-
+    // Over-cap declared count without an id payload must be rejected before reserve/loop.
+    MessageParcel decodingParcel;
+    decodingParcel.WriteInt32(static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT));
+    decodingParcel.WriteUint64(MAX_WINDOW_RECORD_SURFACE_NUM + 1);
     RSWindowRecordConfig unmarshalled;
     unmarshalled.surfaceNodeIds = { 3, 4 }; // stale entries must be dropped together with the config
-    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(parcel, unmarshalled));
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(decodingParcel, unmarshalled));
     EXPECT_TRUE(unmarshalled.surfaceNodeIds.empty());
 }
 
 /**
  * @tc.name: RSDisplayNodeConfigMarshalling001
- * @tc.desc: test full round trip of RSDisplayNodeConfig including the nested window record config
+ * @tc.desc: test full round trip of the baseline RSDisplayNodeConfig fields
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -872,7 +872,6 @@ HWTEST_F(RSMarshallingTest, RSDisplayNodeConfigMarshalling001, TestSize.Level1)
     config.isSync = true;
     config.mirrorSourceRotation = 1;
     config.positionZ = 1.5f;
-    config.windowRecordConfig = CreateWindowRecordConfig(2);
 
     MessageParcel parcel;
     ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, config));
@@ -885,7 +884,6 @@ HWTEST_F(RSMarshallingTest, RSDisplayNodeConfigMarshalling001, TestSize.Level1)
     EXPECT_EQ(unmarshalled.isSync, config.isSync);
     EXPECT_EQ(unmarshalled.mirrorSourceRotation, config.mirrorSourceRotation);
     EXPECT_FLOAT_EQ(unmarshalled.positionZ, config.positionZ);
-    EXPECT_TRUE(unmarshalled.windowRecordConfig == config.windowRecordConfig);
 }
 
 /**
@@ -898,10 +896,6 @@ HWTEST_F(RSMarshallingTest, RSDisplayNodeConfigMarshalling002, TestSize.Level1)
 {
     MessageParcel invalidModeParcel;
     WriteDisplayNodeConfigHeader(invalidModeParcel, 0xFF); // out-of-range enum from an untrusted parcel
-    invalidModeParcel.WriteBool(true);
-    invalidModeParcel.WriteInt32(static_cast<int32_t>(WindowRecordFit::ASPECT_FIT));
-    invalidModeParcel.WriteUint64(1);
-    invalidModeParcel.WriteUint64(9);
 
     RSDisplayNodeConfig unmarshalled;
     ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(invalidModeParcel, unmarshalled));
@@ -911,15 +905,9 @@ HWTEST_F(RSMarshallingTest, RSDisplayNodeConfigMarshalling002, TestSize.Level1)
     EXPECT_TRUE(unmarshalled.isSync);
     EXPECT_EQ(unmarshalled.mirrorSourceRotation, 1u);
     EXPECT_FLOAT_EQ(unmarshalled.positionZ, 1.5f);
-    EXPECT_TRUE(unmarshalled.windowRecordConfig.needDrawMouse);
-    ASSERT_EQ(unmarshalled.windowRecordConfig.surfaceNodeIds.size(), 1u);
-    EXPECT_EQ(unmarshalled.windowRecordConfig.surfaceNodeIds[0], 9u);
 
     MessageParcel maxModeParcel;
     WriteDisplayNodeConfigHeader(maxModeParcel, static_cast<uint8_t>(DisplayMode::INDEPENDENT));
-    maxModeParcel.WriteBool(false);
-    maxModeParcel.WriteInt32(static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT));
-    maxModeParcel.WriteUint64(0);
 
     ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(maxModeParcel, unmarshalled));
     EXPECT_EQ(unmarshalled.displayMode, DisplayMode::INDEPENDENT);
@@ -942,14 +930,13 @@ HWTEST_F(RSMarshallingTest, RSDisplayNodeConfigMarshalling003, TestSize.Level1)
     screenIdOnlyParcel.WriteUint64(1); // display mode and the remaining fields are missing
     EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(screenIdOnlyParcel, unmarshalled));
 
-    MessageParcel missingNestedParcel;
-    WriteDisplayNodeConfigHeader(missingNestedParcel, static_cast<uint8_t>(DisplayMode::MIRROR));
-    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(missingNestedParcel, unmarshalled));
-
-    MessageParcel partialNestedParcel;
-    WriteDisplayNodeConfigHeader(partialNestedParcel, static_cast<uint8_t>(DisplayMode::MIRROR));
-    partialNestedParcel.WriteBool(true); // needDrawMouse present, renderFit and the id list are missing
-    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(partialNestedParcel, unmarshalled));
+    MessageParcel partialParcel;
+    partialParcel.WriteUint64(1); // screenId
+    partialParcel.WriteUint8(static_cast<uint8_t>(DisplayMode::MIRROR));
+    partialParcel.WriteUint64(2); // mirrorNodeId
+    partialParcel.WriteBool(true); // isSync
+    partialParcel.WriteUint32(1); // mirrorSourceRotation; positionZ is missing
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(partialParcel, unmarshalled));
 }
 
 } // namespace OHOS::Rosen

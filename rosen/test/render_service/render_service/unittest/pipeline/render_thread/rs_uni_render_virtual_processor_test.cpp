@@ -2074,8 +2074,13 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CancelCurrentFrame_SurfaceFrames, Test
         std::make_shared<Drawing::Surface>(), DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, DEFAULT_BUFFER_AGE);
     SurfaceFrameConfig config2;
     config2.frame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    auto renderFrame = config2.frame.get();
+    ASSERT_NE(renderFrame->targetSurface_, nullptr);
+    ASSERT_NE(renderFrame->surfaceFrame_, nullptr);
     virtualProcessor_->surfaceFrames_.push_back(std::move(config2));
     virtualProcessor_->CancelCurrentFrame();
+    EXPECT_EQ(renderFrame->targetSurface_, nullptr);
+    EXPECT_EQ(renderFrame->surfaceFrame_, nullptr);
 
     virtualProcessor_->surfaceFrames_.clear();
 #endif // RS_ENABLE_VK
@@ -2988,5 +2993,21 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThread_TidPositive_SetPar
         RSUniRenderThread::Instance().uniRenderEngine_, tid);
 
     EXPECT_TRUE(result || !result);
+}
+
+/**
+ * @tc.name: SetWindowRecordSourceScreenTest001
+ * @tc.desc: Verify window record fence merging uses the source screen without enabling mirror mode
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, SetWindowRecordSourceScreenTest001, TestSize.Level1)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    virtualProcessor_->isMirror_ = false;
+    virtualProcessor_->SetWindowRecordSourceScreen(DEFAULT_ID);
+    EXPECT_TRUE(virtualProcessor_->mergeHardwareEnabledFence_);
+    EXPECT_EQ(virtualProcessor_->mirroredScreenNodeId_, DEFAULT_ID);
+    EXPECT_FALSE(virtualProcessor_->isMirror_);
 }
 } // namespace OHOS::Rosen

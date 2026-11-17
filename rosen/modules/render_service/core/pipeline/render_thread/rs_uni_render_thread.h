@@ -328,17 +328,13 @@ public:
         sptr<SyncFence> fence_ = SyncFence::InvalidFence();
     };
 
-    // Saves the render-thread filter lists and the window-record capture flag, and restores them on
-    // scope exit. They are per-frame global state shared by every screen drawn on this thread, so a
-    // draw path must neither leave its own lists behind nor clear lists it never set: an empty white
-    // list means "draw everything" (see RSRenderNodeDrawable::IsWhiteListNode), and clearing another
-    // path's black list would drop its special-layer filtering.
+    // Restores the render-thread filter lists and complete capture state on scope exit.
     struct NodeListGuard {
         NodeListGuard()
             : whiteList_(RSUniRenderThread::Instance().GetWhiteList()),
               blackList_(RSUniRenderThread::Instance().GetBlackList()),
               typeBlackList_(RSUniRenderThread::Instance().GetTypeBlackList()),
-              isWindowRecord_(RSUniRenderThread::GetCaptureParam().isWindowRecord_)
+              captureParam_(RSUniRenderThread::GetCaptureParam())
         {
         }
 
@@ -348,7 +344,7 @@ public:
             instance.SetWhiteList(whiteList_);
             instance.SetBlackList(blackList_);
             instance.SetTypeBlackList(typeBlackList_);
-            RSUniRenderThread::GetCaptureParam().isWindowRecord_ = isWindowRecord_;
+            RSUniRenderThread::SetCaptureParam(captureParam_);
         }
 
         NodeListGuard(const NodeListGuard&) = delete;
@@ -357,7 +353,7 @@ public:
         std::unordered_set<NodeId> whiteList_;
         std::unordered_set<NodeId> blackList_;
         std::unordered_set<NodeType> typeBlackList_;
-        bool isWindowRecord_ = false;
+        CaptureParam captureParam_;
     };
     using CommitDoneCallback = std::function<void(ScreenId)>;
     void SetCommitDoneCallback(CommitDoneCallback callback);

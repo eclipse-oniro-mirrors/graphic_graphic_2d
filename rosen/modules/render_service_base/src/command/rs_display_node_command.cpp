@@ -130,6 +130,9 @@ void DisplayNodeCommandHelper::SetScreenId(RSContext& context, NodeId id, uint64
     }
 
     logicalDisplayNode->NotifyScreenSwitchFinish(logicalDisplayNode->GetScreenId());
+    if (logicalDisplayNode->GetScreenId() != screenId) {
+        logicalDisplayNode->ClearWindowRecordSession();
+    }
     logicalDisplayNode->SetScreenId(screenId);
     for (auto& child : *(logicalDisplayNode->GetChildren())) {
         if (!child) {
@@ -218,32 +221,22 @@ void DisplayNodeCommandHelper::SetDisplayMode(RSContext& context, NodeId id, con
 
     DisplayMode mode = config.displayMode;
     node->SetDisplayMode(mode);
-    bool hasRecordConfig = !config.windowRecordConfig.surfaceNodeIds.empty();
-    if (hasRecordConfig && !node->IsOnVirtualScreen()) {
-        // A record config is only active on a virtual screen. Keep it inert so consumers gating on
-        // IsRecordSessionActive activate it once the display is attached to a virtual screen.
-        RS_LOGW("DisplayNodeCommandHelper::%{public}s displayNodeId[%{public}" PRIu64
-                "] is not on a virtual screen yet, windowRecordConfig kept inactive", __func__, id);
-    }
-    if (hasRecordConfig) {
-        node->SetWindowRecordConfig(config.windowRecordConfig);
-        node->ResetMirrorSource();
-    } else {
-        node->ClearWindowRecordSession();
-        if (mode == DisplayMode::MIRROR) {
-            NodeId mirroredNodeId = config.mirrorNodeId;
-            auto& nodeMap = context.GetNodeMap();
-            auto mirrorSourceNode = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(mirroredNodeId);
-            if (mirrorSourceNode == nullptr) {
-                RS_LOGW("DisplayNodeCommandHelper::%{public}s fail, displayNodeId[%{public}" PRIu64
-                        "], mirroredNodeId[%{public}" PRIu64 "]", __func__, id, mirroredNodeId);
-                return;
-            }
-            node->SetMirrorSource(mirrorSourceNode);
-            node->SetMirrorSourceRotation(static_cast<ScreenRotation>(config.mirrorSourceRotation));
-        } else {
-            node->ResetMirrorSource();
+    // Selecting another display mode ends any record session before mirror state is applied; the
+    // config itself is delivered only through SetWindowRecordConfig.
+    node->ClearWindowRecordSession();
+    if (mode == DisplayMode::MIRROR) {
+        NodeId mirroredNodeId = config.mirrorNodeId;
+        auto& nodeMap = context.GetNodeMap();
+        auto mirrorSourceNode = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(mirroredNodeId);
+        if (mirrorSourceNode == nullptr) {
+            RS_LOGW("DisplayNodeCommandHelper::%{public}s fail, displayNodeId[%{public}" PRIu64
+                    "], mirroredNodeId[%{public}" PRIu64 "]", __func__, id, mirroredNodeId);
+            return;
         }
+        node->SetMirrorSource(mirrorSourceNode);
+        node->SetMirrorSourceRotation(static_cast<ScreenRotation>(config.mirrorSourceRotation));
+    } else {
+        node->ResetMirrorSource();
     }
 }
 

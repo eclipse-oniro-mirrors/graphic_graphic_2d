@@ -43,6 +43,8 @@ namespace Rosen {
 bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable,
     std::shared_ptr<RSBaseRenderEngine> renderEngine, int32_t tid)
 {
+    mergeHardwareEnabledFence_ = false;
+    mirroredScreenNodeId_ = INVALID_NODEID;
     if (!RSProcessor::InitForRenderThread(screenDrawable, renderEngine)) {
         return false;
     }
@@ -179,6 +181,12 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRender
 #endif
 
     return true;
+}
+
+void RSUniRenderVirtualProcessor::SetWindowRecordSourceScreen(NodeId sourceScreenNodeId)
+{
+    mirroredScreenNodeId_ = sourceScreenNodeId;
+    mergeHardwareEnabledFence_ = sourceScreenNodeId != INVALID_NODEID;
 }
 
 void RSUniRenderVirtualProcessor::CancelCurrentFrame()
@@ -575,7 +583,7 @@ void RSUniRenderVirtualProcessor::PostProcess()
         auto surfaceOhos = frame->GetSurface();
         RSBaseRenderEngine::SetUiTimeStamp(frame, surfaceOhos);
         frame->Flush();
-        if (isMirror_) {
+        if (isMirror_ || mergeHardwareEnabledFence_) {
             MergeMirrorFenceToHardwareEnabledDrawables(frame->GetAcquireFence());
         }
         RS_LOGD_IF(DEBUG_PIPELINE, "RSUniRenderVirtualProcessor::PostProcess, FlushFrame succeed.");
@@ -844,6 +852,8 @@ void RSUniRenderVirtualProcessor::RequestFramesForAllSurfaces(
             RS_LOGD_IF(DEBUG_PIPELINE,
                 "RSUniRenderVirtualProcessor::%{public}s: Canvas is null for surface index %{public}zu",
                 __func__, i);
+            // The frame is not yet owned by surfaceFrames_, so an outer cancel guard cannot reach it.
+            config.frame->CancelCurrentFrame();
             continue;
         }
 

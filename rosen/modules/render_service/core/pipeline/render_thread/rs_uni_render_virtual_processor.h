@@ -117,6 +117,7 @@ public:
     sptr<SyncFence> GetFrameAcquireFence();
     bool SetCropRectForMetadata(const HDI::Display::Graphic::Common::V1_0::BufferHandleMetaRegion& metaRegion);
     GSError SetScreenInfoForWindowRecord(const Rect& currentFrameRect, const Rect& originalRect, float angle);
+    void SetWindowRecordSourceScreen(NodeId sourceScreenNodeId);
 
     // Multi-surface support
     bool IsMultiSurfaceExtendMode() const { return needsOffscreenRender_; }
@@ -168,6 +169,7 @@ private:
     Drawing::Rect visibleRect_;
     ScreenId virtualScreenId_ = INVALID_SCREEN_ID;
     NodeId mirroredScreenNodeId_ = INVALID_NODEID;
+    bool mergeHardwareEnabledFence_ = false;
     std::shared_ptr<RSSLRScaleFunction> slrManager_ = nullptr;
     bool drawMirrorCopy_ = false;
     bool displaySkipInMirror_ = false;
