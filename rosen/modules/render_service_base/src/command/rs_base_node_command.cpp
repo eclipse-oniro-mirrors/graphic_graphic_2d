@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#include <atomic>
-#include <chrono>
-
 #include "command/rs_base_node_command.h"
 
 #include "pipeline/rs_base_render_node.h"
@@ -51,8 +48,7 @@ void BaseNodeCommandHelper::AddChild(RSContext& context, NodeId nodeId, NodeId c
     auto node = nodeMap.GetRenderNode(nodeId);
     auto child = nodeMap.GetRenderNode(childNodeId);
     if (node == nullptr) {
-        RS_LOGE_LIMIT(__func__, __line__,
-            "BaseNodeCommandHelper::AddChild node:%{public}" PRIu64 " not found in map", nodeId);
+        RS_LOGE("AddChild %{public}" PRIu64 " not found in map", nodeId);
         RS_TRACE_NAME_FMT("BaseNodeCommandHelper::AddChild node:%" PRIu64 " not found in map", nodeId);
         context.GetMutableNodeMap().RegisterUnTreeNode(nodeId);
         return;
