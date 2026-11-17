@@ -1159,7 +1159,7 @@ HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfoTranslation, TestSize.Level1)
 
 HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfoRotationAndFlip, TestSize.Level1)
 {
-    constexpr float PANEL_HEIGHT = 2400.0f;
+    constexpr float panelHeight = 2400.0f;
     const GraphicIRect localDst = { 100, 200, 300, 400 };
     const GraphicIRect expectedDst = { 1800, 100, 400, 300 };
     const NodeId preparedId = GenerateNodeId();
@@ -1167,7 +1167,7 @@ HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfoRotationAndFlip, TestSize.Level
     RSSurfaceRenderParams params(GenerateNodeId());
     Drawing::Matrix conversion;
     conversion.PreRotate(RS_ROTATION_90);
-    conversion.PreTranslate(0, -PANEL_HEIGHT);
+    conversion.PreTranslate(0, -panelHeight);
     params.SetLayerDstDisplay(preparedId);
     params.SetCrossNodeLayerConversionMatrix(preparedId, Drawing::Matrix());
     params.SetCrossNodeLayerConversionMatrix(targetId, conversion);
@@ -1564,13 +1564,13 @@ HWTEST_F(RSDrmUtilTest, RecordDstRectDisplayQuarterTurns, TestSize.Level1)
     const float rotations[] = { RS_ROTATION_0, RS_ROTATION_90, RS_ROTATION_180, RS_ROTATION_270 };
     const Drawing::Point offsets[] = { { 0, 0 }, { 125, 2160 }, { 3840, 17 }, { -3840, -17 } };
     const GraphicIRect localDst = { 567, 789, 560, 1335 };
-    constexpr float LAYER_X = 467;
-    constexpr float LAYER_Y = 733;
+    constexpr float layerX = 467;
+    constexpr float layerY = 733;
     for (const auto rotation : rotations) {
         for (const auto& offset : offsets) {
             Drawing::Matrix raw;
             raw.PreRotate(rotation);
-            raw.PostTranslate(LAYER_X, LAYER_Y);
+            raw.PostTranslate(layerX, layerY);
             auto prepare = raw;
             prepare.PostTranslate(-raw.Get(Drawing::Matrix::SCALE_X) * offset.GetX() -
                 raw.Get(Drawing::Matrix::SKEW_X) * offset.GetY(),
