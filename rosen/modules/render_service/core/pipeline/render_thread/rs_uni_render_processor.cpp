@@ -388,6 +388,23 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
             layerInfo.dstRect.y -= offsetY_;
         }
     }
+    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+    if (params.GetHwcGlobalPositionEnabled()) {
+        Drawing::Matrix::Buffer matrixBuffer;
+        layerInfo.matrix.GetAll(matrixBuffer);
+        RS_LOGW("[RSCrossNode] layerInfo node:%{public}" PRIu64 " screen:%{public}" PRIu64
+            " hit:%{public}d dstIn:[%d,%d,%d,%d] dstOut:[%d,%d,%d,%d] transformType:%{public}d"
+            " dstDisplay:%{public}" PRIu64 " offset:[%{public}d,%{public}d]"
+            " matrix:[%{public}f %{public}f %{public}f %{public}f %{public}f %{public}f]", params.GetId(),
+            screenNodeId_, static_cast<int32_t>(isCrossNodeLayer),
+            params.GetLayerInfo().dstRect.x, params.GetLayerInfo().dstRect.y, params.GetLayerInfo().dstRect.w,
+            params.GetLayerInfo().dstRect.h, layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w,
+            layerInfo.dstRect.h, static_cast<int32_t>(layerInfo.transformType),
+            params.GetLayerDstDisplayNodeId(), offsetX_, offsetY_, matrixBuffer[Drawing::Matrix::SCALE_X],
+            matrixBuffer[Drawing::Matrix::SKEW_X], matrixBuffer[Drawing::Matrix::TRANS_X],
+            matrixBuffer[Drawing::Matrix::SKEW_Y], matrixBuffer[Drawing::Matrix::SCALE_Y],
+            matrixBuffer[Drawing::Matrix::TRANS_Y]);
+    }
     layer->SetNeedBilinearInterpolation(params.NeedBilinearInterpolation());
     layer->SetSurface(consumer);
     auto layerBuffer = layer->GetBuffer();
@@ -448,6 +465,16 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     if (layerInfo.layerType == GraphicLayerType::GRAPHIC_LAYER_TYPE_CURSOR &&
         ((layerInfo.dstRect.w != layerInfo.srcRect.w) || (layerInfo.dstRect.h != layerInfo.srcRect.h))) {
         dstRect = {layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.srcRect.w, layerInfo.srcRect.h};
+    }
+    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+    if (params.GetHwcGlobalPositionEnabled()) {
+        RS_LOGW("[RSCrossNode] layerSize node:%{public}" PRIu64 " screen:%{public}" PRIu64
+            " finalDst:[%d,%d,%d,%d] layerSize:[%d,%d,%d,%d] src:[%d,%d,%d,%d] phy:[%{public}d,%{public}d]"
+            " crop:%{public}d", params.GetId(), screenNodeId_, layerInfo.dstRect.x, layerInfo.dstRect.y,
+            layerInfo.dstRect.w, layerInfo.dstRect.h, dstRect.x, dstRect.y, dstRect.w, dstRect.h,
+            layerInfo.srcRect.x, layerInfo.srcRect.y, layerInfo.srcRect.w, layerInfo.srcRect.h,
+            uniComposerAdapter_->GetScreenInfo().phyWidth, uniComposerAdapter_->GetScreenInfo().phyHeight,
+            static_cast<int32_t>(isCrossNodeLayer && offlineResult == nullptr));
     }
     layer->SetLayerSize(dstRect);
     layer->SetBoundSize(layerInfo.boundRect);

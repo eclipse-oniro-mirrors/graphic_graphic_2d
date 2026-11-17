@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <parameters.h>
+#include <string>
 #include "common/rs_background_thread.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
@@ -25,6 +26,7 @@
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_effect_render_node.h"
+#include "platform/common/rs_log.h"
 #include "rs_render_composer_manager.h"
 #include "screen_manager/screen_types.h"
 
@@ -35,6 +37,19 @@ constexpr const int BLUR_MIN_ALPHA = 100;
 namespace {
 constexpr float NORMALIZED_MAX = 1.0f;
 constexpr float NORMALIZED_MIN = 0.0f;
+
+// Temporary log of the cross node conversion, removed after the cross screen issue is located.
+std::string DebugMatrix(const Drawing::Matrix& matrix)
+{
+    Drawing::Matrix::Buffer buffer;
+    matrix.GetAll(buffer);
+    std::string result;
+    for (const Drawing::Matrix::Index index : { Drawing::Matrix::SCALE_X, Drawing::Matrix::SKEW_X,
+        Drawing::Matrix::TRANS_X, Drawing::Matrix::SKEW_Y, Drawing::Matrix::SCALE_Y, Drawing::Matrix::TRANS_Y }) {
+        result += std::to_string(buffer[index]) + " ";
+    }
+    return result;
+}
 
 // Absolute matrix of a node in the frame of the display owning it. The cached absolute matrix of a cross node is
 // rewritten by every prepare, including the prepare under the parent of the clone on another display, so it is rebuilt
@@ -197,10 +212,19 @@ bool RSDrmUtil::CalcCrossNodeLayerConversion(const RSSurfaceRenderNode& sourceNo
     }
     // The layer matrix is accumulated along the real parent chain, so the conversion starts from the frame of the
     // display owning the source node rather than from its cached absolute matrix.
-    if (!CalcOwnDisplayAbsMatrix(sourceNode).Invert(conversion)) {
+    const Drawing::Matrix ownMatrix = CalcOwnDisplayAbsMatrix(sourceNode);
+    if (!ownMatrix.Invert(conversion)) {
         return false;
     }
-    conversion.PostConcat(CalcCloneDisplayAbsMatrix(sourceNode, cloneNode, screenNode));
+    const Drawing::Matrix cloneMatrix = CalcCloneDisplayAbsMatrix(sourceNode, cloneNode, screenNode);
+    conversion.PostConcat(cloneMatrix);
+    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+    const auto& screenProperty = screenNode.GetScreenProperty();
+    RS_LOGW("[RSCrossNode] calc source:%{public}" PRIu64 " first:%{public}" PRIu64 " clone:%{public}" PRIu64
+        " screen:%{public}" PRIu64 " offset:[%{public}d,%{public}d] own:[%{public}s] cloneAbs:[%{public}s]"
+        " conversion:[%{public}s]", sourceNode.GetId(), sourceNode.GetFirstLevelNodeId(), cloneNode.GetId(),
+        screenNode.GetId(), screenProperty.GetOffsetX(), screenProperty.GetOffsetY(),
+        DebugMatrix(ownMatrix).c_str(), DebugMatrix(cloneMatrix).c_str(), DebugMatrix(conversion).c_str());
     return true;
 }
 
@@ -213,8 +237,15 @@ void RSDrmUtil::UpdateDrmCrossNodeConversion(const RSSurfaceRenderNode& crossNod
     // first cross screen frame and moves the drm layers off the screen for one frame.
     const auto it = drmNodes_.find(crossNode.GetFirstLevelNodeId());
     if (it == drmNodes_.end()) {
+        // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+        RS_LOGW("[RSCrossNode] deliver first:%{public}" PRIu64 " screen:%{public}" PRIu64 " drmCount:0",
+            crossNode.GetFirstLevelNodeId(), screenNodeId);
         return;
     }
+    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+    RS_LOGW("[RSCrossNode] deliver first:%{public}" PRIu64 " screen:%{public}" PRIu64 " drmCount:%{public}d"
+        " conversion:[%{public}s]", crossNode.GetFirstLevelNodeId(), screenNodeId,
+        static_cast<int32_t>(it->second.size()), DebugMatrix(conversion).c_str());
     for (const auto& node : it->second) {
         if (node == nullptr || !node->IsOnTheTree()) {
             continue;
@@ -237,6 +268,13 @@ void RSDrmUtil::RecordDstRectDisplay(RSSurfaceRenderNode& node,
     // rect is in. The other nodes record none, which keeps the record of a node that is no longer composed on another
     // display from outliving the composition.
     node.SetDstRectDisplay(screenNode != nullptr && IsDrmNode(node) ? screenNode->GetId() : INVALID_NODEID);
+    if (screenNode != nullptr || IsDrmNode(node)) {
+        // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+        RS_LOGW("[RSCrossNode] recordDstDisplay node:%{public}" PRIu64 " screen:%{public}" PRIu64
+            " isDrm:%{public}d dstDisplay:%{public}" PRIu64, node.GetId(),
+            screenNode != nullptr ? screenNode->GetId() : INVALID_NODEID,
+            static_cast<int32_t>(IsDrmNode(node)), node.GetDstRectDisplayNodeId());
+    }
 }
 
 bool RSDrmUtil::ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, NodeId screenNodeId,
@@ -261,12 +299,20 @@ bool RSDrmUtil::RestoreCrossNodeDstRect(const RSSurfaceRenderParams& params, Nod
     // parent chain. The conversions start from the latter, so the rect is moved back with the inverse of the
     // conversion recorded for the display that built it, and it is left as is when this screen is that display.
     const NodeId dstDisplayId = params.GetLayerDstDisplayNodeId();
+    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+    RS_LOGW("[RSCrossNode] restore node:%{public}" PRIu64 " screen:%{public}" PRIu64 " dstDisplay:%{public}" PRIu64
+        " offset:[%{public}d,%{public}d] dstIn:[%d,%d,%d,%d]", params.GetId(), screenNodeId, dstDisplayId,
+        params.GetLayerDstDisplayOffsetX(), params.GetLayerDstDisplayOffsetY(), layerInfo.dstRect.x,
+        layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h);
     if (dstDisplayId == INVALID_NODEID) {
         return false;
     }
     if (dstDisplayId == screenNodeId) {
         layerInfo.dstRect.x -= params.GetLayerDstDisplayOffsetX();
         layerInfo.dstRect.y -= params.GetLayerDstDisplayOffsetY();
+        // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+        RS_LOGW("[RSCrossNode] restore same screen dstOut:[%d,%d,%d,%d]", layerInfo.dstRect.x, layerInfo.dstRect.y,
+            layerInfo.dstRect.w, layerInfo.dstRect.h);
         return true;
     }
     const auto& conversionMatrices = params.GetCrossNodeLayerConversionMatrices();
@@ -278,6 +324,9 @@ bool RSDrmUtil::RestoreCrossNodeDstRect(const RSSurfaceRenderParams& params, Nod
     layerInfo.dstRect.x -= params.GetLayerDstDisplayOffsetX();
     layerInfo.dstRect.y -= params.GetLayerDstDisplayOffsetY();
     layerInfo.dstRect = MapCrossNodeDstRect(inverse, layerInfo.dstRect);
+    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+    RS_LOGW("[RSCrossNode] restore map dstOut:[%d,%d,%d,%d] inverse:[%{public}s]", layerInfo.dstRect.x,
+        layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h, DebugMatrix(inverse).c_str());
     return false;
 }
 
