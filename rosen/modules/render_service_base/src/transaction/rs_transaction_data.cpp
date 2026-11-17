@@ -62,7 +62,7 @@ bool MarshallingCommandBody(Parcel& parcel, RSCommand& command)
     bool marshalOk = command.Marshalling(parcel);
     
     // Step3 prefix mode: backfill the real commandLen on success; on failure return false
-    //    so the caller drops the whole record
+    // so the caller drops the whole record
     if (!marshalOk) {
         ROSEN_LOGE("RSTransactionData skip failed marshalling type:%{public}s",
             command.PrintType().c_str());
