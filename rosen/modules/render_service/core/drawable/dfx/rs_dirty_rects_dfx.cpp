@@ -32,7 +32,6 @@ namespace {
 // DFX drawing alpha
 constexpr float DFX_FILL_ALPHA = 0.2f;
 constexpr float DFXFontSize = 24.f;
-constexpr float HWC_DFX_FILL_ALPHA = 0.3f;
 }
 
 static const std::map<DirtyRegionType, std::string> DIRTY_REGION_TYPE_MAP {
@@ -85,9 +84,6 @@ void RSDirtyRectsDfx::OnDraw(RSPaintFilterCanvas& canvas)
         DrawTargetSurfaceVisibleRegionForDFX(canvas);
     }
 
-    if (RSSystemProperties::GetHwcRegionDfxEnabled()) {
-        DrawHwcRegionForDFX(canvas);
-    }
     if (UNLIKELY(RSSystemProperties::GetDirtyRegionDebugType() == DirtyRegionDebugType::CURRENT_FRAME_VIS_DIRTY)) {
         DrawCurrentFrameVisibleDirtyRects(canvas);
     }
@@ -105,32 +101,6 @@ void RSDirtyRectsDfx::OnDrawVirtual(RSPaintFilterCanvas& canvas)
     if (renderThreadParams->isVirtualDirtyDfxEnabled_) {
         DrawDirtyRegionInVirtual(canvas);
     }
-}
-
-void RSDirtyRectsDfx::DrawHwcRegionForDFX(RSPaintFilterCanvas& canvas) const
-{
-#ifdef RS_ENABLE_GPU
-    auto& hardwareDrawables =
-        RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetHardwareEnabledTypeDrawables();
-    static uint32_t updateCnt = 0;
-    if (++updateCnt == UINT32_MAX) {
-        updateCnt = 0;
-    }
-    for (const auto& [_, __, drawable] : hardwareDrawables) {
-        if (UNLIKELY(!drawable || !drawable->GetRenderParams())) {
-            continue;
-        }
-        auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
-        std::string extraInfo = surfaceParams->GetName() + " UpdateCnt: " + std::to_string(updateCnt);
-        if (surfaceParams->GetHardwareEnabled()) {
-            RSUniRenderUtil::DrawRectForDfx(canvas, surfaceParams->GetDstRect(), Drawing::Color::COLOR_BLUE,
-                HWC_DFX_FILL_ALPHA, extraInfo);
-        } else {
-            RSUniRenderUtil::DrawRectForDfx(canvas, surfaceParams->GetDstRect(), Drawing::Color::COLOR_RED,
-                HWC_DFX_FILL_ALPHA, extraInfo);
-        }
-    }
-#endif
 }
 
 void RSDirtyRectsDfx::DrawDirtyRegionInVirtual(RSPaintFilterCanvas& canvas) const

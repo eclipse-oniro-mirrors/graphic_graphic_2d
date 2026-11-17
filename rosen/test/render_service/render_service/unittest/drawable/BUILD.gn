@@ -24,6 +24,7 @@ group("unittest") {
     ":RSCanvasRenderNodeDrawableTest",
     ":RSDepthRenderNodeDrawableTest",
     ":RSDirtyRectsDFXTest",
+    ":RSHwcRegionDFXTest",
     ":RSEffectRenderNodeDrawableTest",
     ":RSLogicalDisplayRenderNodeDrawableTest",
     ":RSRenderNodeDrawableAdapterTest",
@@ -345,6 +346,33 @@ ohos_unittest("RSSurfaceRenderNodeDrawableTest") {
 ohos_unittest("RSDirtyRectsDFXTest") {
   module_out_path = module_output_path
   sources = [ "dfx/rs_dirty_rects_dfx_test.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "memmgr:memmgrclient",
+    "samgr:samgr_proxy",
+    "egl:libEGL",
+    "opengles:libGLES",
+    "libxml2:libxml2",
+    "drivers_interface_display:display_commontype_idl_headers",
+    "hisysevent:libhisysevent",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+}
+
+## Build RSHwcRegionDFXTest
+ohos_unittest("RSHwcRegionDFXTest") {
+  module_out_path = module_output_path
+  sources = [ "dfx/rs_hwc_region_dfx_test.cpp" ]
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",

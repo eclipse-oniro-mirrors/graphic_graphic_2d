@@ -84,6 +84,7 @@
 #include "render/rs_pixel_map_util.h"
 // dfx
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
+#include "drawable/dfx/rs_hwc_region_dfx.h"
 #include "drawable/dfx/rs_skp_capture_dfx.h"
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "utils/performanceCaculate.h"
@@ -1090,6 +1091,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 curCanvas_->ConcatMatrix(params->GetSlrMatrix());
             }
             rsDirtyRectsDfx.OnDraw(*curCanvas_);
+            RSHwcRegionDfx::Draw(*curCanvas_);
             curCanvas_->Restore();
             DrawCurtainScreen();
             bool displayP3Enable = (params->GetNewColorSpace() == GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
