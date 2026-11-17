@@ -136,11 +136,10 @@ void RSUniHwcVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absR
     // Set the destination rectangle of the node
     node.SetDstRect(dstRect);
     node.SetDstRectWithoutRenderFit(dstRect);
-    // While the source of a clone cross node is prepared under the parent of the clone, absRect is in the frame of the
-    // display composing the clone instead of the frame the node matrix is accumulated in, so that display is recorded
-    // for the drm nodes of the cross node.
-    RSDrmUtil::RecordDstRectDisplay(node, uniRenderVisitor_.isSwitchToSourceCrossNodePrepare_ ?
-        uniRenderVisitor_.curScreenNode_ : nullptr);
+    // Every prepare builds the dst rect in the frame of the prepared display and adds the offset of that display,
+    // so the display is recorded on every prepare, not only on the prepare of the clone: the layer uses the rect of
+    // the last prepare of the node, which is usually the one of the display owning it.
+    RSDrmUtil::RecordDstRectDisplay(node, uniRenderVisitor_.curScreenNode_);
     // Temporary log of the cross node conversion, removed after the cross screen issue is located.
     if (node.GetHwcGlobalPositionEnabled()) {
         RS_LOGW("[RSCrossNode] updateDstRect node:%{public}" PRIu64 " screen:%{public}" PRIu64

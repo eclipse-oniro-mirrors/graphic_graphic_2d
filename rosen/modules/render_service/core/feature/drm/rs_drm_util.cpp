@@ -265,16 +265,23 @@ void RSDrmUtil::RecordDstRectDisplay(RSSurfaceRenderNode& node,
     const std::shared_ptr<RSScreenRenderNode>& screenNode)
 {
     // The layers of the drm nodes are the only ones converted, so only they need the display whose frame their dst
-    // rect is in. The other nodes record none, which keeps the record of a node that is no longer composed on another
-    // display from outliving the composition.
-    node.SetDstRectDisplay(screenNode != nullptr && IsDrmNode(node) ? screenNode->GetId() : INVALID_NODEID);
-    if (screenNode != nullptr || IsDrmNode(node)) {
-        // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-        RS_LOGW("[RSCrossNode] recordDstDisplay node:%{public}" PRIu64 " screen:%{public}" PRIu64
-            " isDrm:%{public}d dstDisplay:%{public}" PRIu64, node.GetId(),
-            screenNode != nullptr ? screenNode->GetId() : INVALID_NODEID,
-            static_cast<int32_t>(IsDrmNode(node)), node.GetDstRectDisplayNodeId());
+    // rect is in. Every prepare rebuilds the dst rect in the frame of the display being prepared and adds the offset of
+    // that display to it, so the display is recorded on every prepare, not only on the prepare of the clone: the layer
+    // is composed with the rect of the last prepare of the node, which is usually the one of the display owning it. The
+    // other nodes record none, which keeps the record of a node that is no longer composed on another display from
+    // outliving the composition.
+    if (screenNode == nullptr || !IsDrmNode(node)) {
+        node.SetDstRectDisplay(INVALID_NODEID);
+        return;
     }
+    // The offset of that display is recorded where it is added to the rect, so a prepare that skips the global position
+    // update keeps a zero offset here.
+    node.SetDstRectDisplay(screenNode->GetId());
+    const auto& screenProperty = screenNode->GetScreenProperty();
+    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+    RS_LOGW("[RSCrossNode] recordDstDisplay node:%{public}" PRIu64 " screen:%{public}" PRIu64
+        " dstDisplay:%{public}" PRIu64 " screenOffset:[%{public}d,%{public}d]", node.GetId(), screenNode->GetId(),
+        node.GetDstRectDisplayNodeId(), screenProperty.GetOffsetX(), screenProperty.GetOffsetY());
 }
 
 bool RSDrmUtil::ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, NodeId screenNodeId,
@@ -294,39 +301,44 @@ bool RSDrmUtil::ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, N
 bool RSDrmUtil::RestoreCrossNodeDstRect(const RSSurfaceRenderParams& params, NodeId screenNodeId,
     RSLayerInfo& layerInfo)
 {
-    // While the source of a clone cross node is prepared under the parent of the clone, its dstRect is built in the
-    // frame of the display of the clone plus the offset of that display, while its matrix keeps the frame of the real
-    // parent chain. The conversions start from the latter, so the rect is moved back with the inverse of the
-    // conversion recorded for the display that built it, and it is left as is when this screen is that display.
+    // The dstRect is built in the frame of the display the node was last prepared on and the offset of that display is
+    // added to it, while the conversions start from the frame of the display owning the node. The rect is moved back
+    // by the offset of the display that built it first: it is already in this frame when this screen built it, and it
+    // is in the frame of the owning display otherwise, or moved back to it with the inverse of the conversion
+    // recorded for that display.
     const NodeId dstDisplayId = params.GetLayerDstDisplayNodeId();
     // Temporary log of the cross node conversion, removed after the cross screen issue is located.
     RS_LOGW("[RSCrossNode] restore node:%{public}" PRIu64 " screen:%{public}" PRIu64 " dstDisplay:%{public}" PRIu64
-        " offset:[%{public}d,%{public}d] dstIn:[%d,%d,%d,%d]", params.GetId(), screenNodeId, dstDisplayId,
-        params.GetLayerDstDisplayOffsetX(), params.GetLayerDstDisplayOffsetY(), layerInfo.dstRect.x,
-        layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h);
+        " offset:[%{public}d,%{public}d] dstIn:[%{public}d,%{public}d,%{public}d,%{public}d]", params.GetId(),
+        screenNodeId, dstDisplayId, params.GetLayerDstDisplayOffsetX(), params.GetLayerDstDisplayOffsetY(),
+        layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h);
     if (dstDisplayId == INVALID_NODEID) {
         return false;
     }
+    layerInfo.dstRect.x -= params.GetLayerDstDisplayOffsetX();
+    layerInfo.dstRect.y -= params.GetLayerDstDisplayOffsetY();
     if (dstDisplayId == screenNodeId) {
-        layerInfo.dstRect.x -= params.GetLayerDstDisplayOffsetX();
-        layerInfo.dstRect.y -= params.GetLayerDstDisplayOffsetY();
         // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-        RS_LOGW("[RSCrossNode] restore same screen dstOut:[%d,%d,%d,%d]", layerInfo.dstRect.x, layerInfo.dstRect.y,
-            layerInfo.dstRect.w, layerInfo.dstRect.h);
+        RS_LOGW("[RSCrossNode] restore same screen dstOut:[%{public}d,%{public}d,%{public}d,%{public}d]",
+            layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h);
         return true;
     }
     const auto& conversionMatrices = params.GetCrossNodeLayerConversionMatrices();
     const auto conversion = conversionMatrices.find(dstDisplayId);
     Drawing::Matrix inverse;
     if (conversion == conversionMatrices.end() || !conversion->second.Invert(inverse)) {
+        // No conversion ends on the display that built the rect, so the node is owned by that display and the rect is
+        // already in the frame the conversions start from.
+        // Temporary log of the cross node conversion, removed after the cross screen issue is located.
+        RS_LOGW("[RSCrossNode] restore own display dstOut:[%{public}d,%{public}d,%{public}d,%{public}d]",
+            layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h);
         return false;
     }
-    layerInfo.dstRect.x -= params.GetLayerDstDisplayOffsetX();
-    layerInfo.dstRect.y -= params.GetLayerDstDisplayOffsetY();
     layerInfo.dstRect = MapCrossNodeDstRect(inverse, layerInfo.dstRect);
     // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-    RS_LOGW("[RSCrossNode] restore map dstOut:[%d,%d,%d,%d] inverse:[%{public}s]", layerInfo.dstRect.x,
-        layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h, DebugMatrix(inverse).c_str());
+    RS_LOGW("[RSCrossNode] restore map dstOut:[%{public}d,%{public}d,%{public}d,%{public}d] inverse:[%{public}s]",
+        layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h,
+        DebugMatrix(inverse).c_str());
     return false;
 }
 

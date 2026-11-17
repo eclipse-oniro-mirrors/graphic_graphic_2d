@@ -37,7 +37,9 @@ public:
     static void UpdateDrmCrossNodeConversion(const RSSurfaceRenderNode& crossNode, NodeId screenNodeId,
         const Drawing::Matrix& conversion);
     // Records the display whose frame the dst rect of a drm node of a cross node is in, so the render thread can move
-    // it back before converting it. Only the drm nodes record it, a null screenNode or any other node records none.
+    // it back before converting it. It is recorded on every prepare, so it always describes the last one; the offset
+    // added to that rect is recorded where it is added. Only the drm nodes record it, a null screenNode or any other
+    // node records none.
     static void RecordDstRectDisplay(RSSurfaceRenderNode& node,
         const std::shared_ptr<RSScreenRenderNode>& screenNode);
     // Converts the layer info of a drm cross node composed on screenNodeId with the conversion recorded for that

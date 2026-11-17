@@ -33,6 +33,7 @@ namespace {
 constexpr uint32_t DEFAULT_CANVAS_WIDTH = 800;
 constexpr uint32_t DEFAULT_CANVAS_HEIGHT = 600;
 constexpr float CROSS_SCREEN_OFFSET_X = 3240.f;
+constexpr int32_t CROSS_SCREEN_OFFSET_Y = 1854;
 }
 
 namespace OHOS::Rosen {
@@ -997,6 +998,59 @@ HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo003, TestSize.Level1)
     EXPECT_EQ(layerInfo.dstRect.x, 60);
     EXPECT_EQ(layerInfo.dstRect.y, 10);
     EXPECT_FLOAT_EQ(layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_X), -CROSS_SCREEN_OFFSET_X);
+}
+
+/**
+ * @tc.name: ConvertCrossNodeLayerInfo004
+ * @tc.desc: Test a dst rect built on the display owning the node loses that display offset before the conversion, even
+ *           when no conversion is recorded for it
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo004, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(GenerateNodeId());
+    Drawing::Matrix conversion;
+    conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
+    const NodeId screenNodeId = GenerateNodeId();
+    params.SetCrossNodeLayerConversionMatrix(screenNodeId, conversion);
+    // the rect was built on the display owning the node, which records no conversion towards itself
+    params.SetLayerDstDisplay(GenerateNodeId(), 0, CROSS_SCREEN_OFFSET_Y);
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 3300, CROSS_SCREEN_OFFSET_Y + 10, 100, 50 };
+    EXPECT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId, layerInfo));
+    EXPECT_EQ(layerInfo.dstRect.x, 60);
+    EXPECT_EQ(layerInfo.dstRect.y, 10);
+    EXPECT_EQ(layerInfo.dstRect.w, 100);
+    EXPECT_EQ(layerInfo.dstRect.h, 50);
+    EXPECT_FLOAT_EQ(layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_X), -CROSS_SCREEN_OFFSET_X);
+}
+
+/**
+ * @tc.name: ConvertCrossNodeLayerInfo005
+ * @tc.desc: Test a dst rect built on another display composing the clone is moved back with that conversion first
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo005, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(GenerateNodeId());
+    Drawing::Matrix conversion;
+    conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
+    const NodeId screenNodeId = GenerateNodeId();
+    params.SetCrossNodeLayerConversionMatrix(screenNodeId, conversion);
+    Drawing::Matrix otherConversion;
+    otherConversion.Translate(0, -CROSS_SCREEN_OFFSET_Y);
+    const NodeId otherDisplayId = GenerateNodeId();
+    params.SetCrossNodeLayerConversionMatrix(otherDisplayId, otherConversion);
+    params.SetLayerDstDisplay(otherDisplayId, 0, CROSS_SCREEN_OFFSET_Y);
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = { 3300, CROSS_SCREEN_OFFSET_Y + 10, 100, 50 };
+    EXPECT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId, layerInfo));
+    EXPECT_EQ(layerInfo.dstRect.x, 60);
+    EXPECT_EQ(layerInfo.dstRect.y, CROSS_SCREEN_OFFSET_Y + 10);
+    EXPECT_EQ(layerInfo.dstRect.w, 100);
+    EXPECT_EQ(layerInfo.dstRect.h, 50);
 }
 
 /**
