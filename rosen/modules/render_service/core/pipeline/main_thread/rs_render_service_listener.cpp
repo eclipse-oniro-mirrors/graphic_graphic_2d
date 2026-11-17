@@ -261,7 +261,7 @@ void RSRenderServiceListener::OnGoBackground()
                 return;
             }
             if (node == nullptr) {
-                RS_LOGE_LIMIT(__func__, __line__, "RSRenderServiceListener::OnGoBackground node is nullptr");
+                RS_LOGE("OnGoBackground node null");
                 handler->ResetBufferAvailableCount();
                 handler->CleanCache();
                 return;
