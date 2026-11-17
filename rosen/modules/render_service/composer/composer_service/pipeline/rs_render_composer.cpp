@@ -327,19 +327,17 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
         RSFrameStatsCollection::GetInstance().Increment(idx);
     }
 
-    if (RSSystemProperties::IsSuperFoldDisplay() && screenId_ == 0) {
-        std::vector<std::shared_ptr<RSLayer>> reviseLayers = layers;
+    std::vector<std::shared_ptr<RSLayer>> reviseLayers;
+    bool isSuperFoldDisplay = RSSystemProperties::IsSuperFoldDisplay() && screenId_ == 0;
+    if (isSuperFoldDisplay) {
+        reviseLayers = layers;
         ChangeLayersForActiveRectOutside(reviseLayers);
-        if (!isHwcDead_) {
-            hdiOutput_->SetRSLayers(reviseLayers);
-        }
-        lppLayerCollector_.AddLppLayerId(reviseLayers);
-    } else {
-        if (!isHwcDead_) {
-            hdiOutput_->SetRSLayers(layers);
-        }
-        lppLayerCollector_.AddLppLayerId(layers);
     }
+    auto& layersToUse = isSuperFoldDisplay ? reviseLayers : layers;
+    if (!isHwcDead_) {
+        hdiOutput_->SetRSLayers(layersToUse);
+    }
+    lppLayerCollector_.AddLppLayerId(layersToUse);
     ResetScreenRCDRedrawState(layers);
     bool isPowerOffing = (screenPowerStatus_.load() == ScreenPowerStatus::POWER_STATUS_OFFING);
     bool doRepaint = hdiOutput_->IsDeviceValid() && !shouldDropFrame && !isHwcDead_ && !isPowerOffing;
@@ -354,6 +352,8 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
         }
         hdiOutput_->Repaint();
         RecordTimestamp(pipelineParam.vsyncId);
+    } else if (isPowerOffing) {
+        hdiOutput_->ClearFence();
     }
     ReleaseLayerBuffersInfo releaseLayerInfo;
     releaseLayerInfo.screenId = screenId_;

@@ -95,6 +95,7 @@ public:
     void DumpHitchs(std::string& result, const std::string& arg) const;
     void ClearFpsDump(std::string& result, const std::string& arg);
     GSError ClearFrameBuffer();
+    void ClearFence();
 
     RosenError InitDevice();
     /* only used for mock tests */

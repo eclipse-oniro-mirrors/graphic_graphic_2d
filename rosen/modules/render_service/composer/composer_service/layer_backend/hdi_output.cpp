@@ -1823,5 +1823,11 @@ void HdiOutput::InitTunnelProperty()
     RS_LOGI("TUNNEL_DEBUG %{public}s THRESHOLD:%{public}zu SUPPORT_TYPE:%{public}" PRIu64,
         __func__, TUNNEL_LAYER_NUM_THRESHOLD.load(), TUNNEL_LAYER_SUPPORT_TYPE.load());
 }
+
+void HdiOutput::ClearFence()
+{
+    layersId_.clear();
+    fences_.clear();
+}
 } // namespace Rosen
 } // namespace OHOS
