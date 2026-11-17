@@ -1798,16 +1798,6 @@ public:
         return isContainerWindowTransparent_;
     }
 
-    bool IsUIRenderDirectorStopped() const
-    {
-        return isUIRenderDirectorStopped_.load();
-    }
-
-    void SetUIRenderDirectorStopped(bool isUIRenderDirectorStopped)
-    {
-        isUIRenderDirectorStopped_ = isUIRenderDirectorStopped;
-    }
-
     bool IsSecureUIExtension() const
     {
         return nodeType_ == RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE;
@@ -2106,6 +2096,16 @@ public:
     bool IsDelegateModeNodeWithBuffer();
     bool GetDelegateMode() override;
 
+    void SetApsFilterRate(int rate)
+    {
+        apsFilterRate_ = rate;
+    }
+
+    int GetApsFilterRate() const
+    {
+        return apsFilterRate_;
+    }
+
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -2277,6 +2277,9 @@ private:
     std::weak_ptr<RSSurfaceRenderNode> sourceCrossNode_;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> cloneCrossNodeVec_;
 
+    // app filter rate
+    int apsFilterRate_ = INVALID_FILTER_RATE;
+
     // hpae offline
     bool deviceOfflineEnable_ = false;
 
@@ -2332,7 +2335,6 @@ private:
     Drawing::GPUContext* grContext_ = nullptr;
     ScreenId screenId_ = INVALID_SCREEN_ID;
     bool isRebuildingState_ = false;
-    std::atomic<bool> isUIRenderDirectorStopped_ = false;
     SurfaceId surfaceId_ = 0;
     uint64_t leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
     struct GamutCollector

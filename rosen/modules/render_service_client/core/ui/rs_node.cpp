@@ -368,6 +368,16 @@ void RSNode::SetFrameNodeInfo(int32_t id, std::string tag)
 #endif
 }
 
+void RSNode::AppSetNodeRate(int32_t nodeTargetRate)
+{
+    if (nodeTargetRate_ == nodeTargetRate) {
+        return;
+    }
+    nodeTargetRate_ = nodeTargetRate;
+    RS_OPTIONAL_TRACE_NAME_FMT("RSNode::AppSetNodeRate nodeTargetRate is [%d]", nodeTargetRate_);
+    SetRSCmdProperty<NodeTargetRateCmdModifier>(NodeTargetRateCmdParam { nodeTargetRate_ });
+}
+
 int32_t RSNode::GetFrameNodeId()
 {
     return frameNodeId_;
@@ -2386,7 +2396,7 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
             visualEffectPara->GetParaType() == VisualEffectPara::HARMONIUM_EFFECT ||
             visualEffectPara->GetParaType() == VisualEffectPara::FROSTED_GLASS_EFFECT ||
             visualEffectPara->GetParaType() == VisualEffectPara::SPATIAL_GLASS_EFFECT ||
-            visualEffectPara->GetParaType() == VisualEffectPara::GLASS_EFFECT) {
+            visualEffectPara->GetParaType() == VisualEffectPara::GLASS_MARBLE_EFFECT) {
             SetBackgroundNGShader(RSNGShaderBase::Create(visualEffectPara));
         }
 
@@ -4806,6 +4816,7 @@ std::string RSCmdModifierTypeToString(RSCmdModifierType type)
         { RSCmdModifierType::EXCLUDE_NODE_GROUP,               "EXCLUDE_NODE_GROUP" },
         { RSCmdModifierType::MARK_NODE_SINGLE_FRAME_COMPOSER,  "MARK_NODE_SINGLE_FRAME_COMPOSER" },
         { RSCmdModifierType::IS_REPAINT_BOUNDARY,              "IS_REPAINT_BOUNDARY" },
+        { RSCmdModifierType::NODE_TARGET_RATE,                 "NODE_TARGET_RATE" },
         { RSCmdModifierType::MARK_OPINC_NODE,                  "MARK_OPINC_NODE" },
         { RSCmdModifierType::IS_UIFIRST_NODE,                  "IS_UIFIRST_NODE" },
         { RSCmdModifierType::IS_FORCE_UIFIRST_NODE,            "IS_FORCE_UIFIRST_NODE" },
@@ -4931,6 +4942,9 @@ void RSNode::Dump(std::string& out) const
     out += "], parent[" + std::to_string(parent_.lock() ? parent_.lock()->GetId() : -1);
     out += "], instanceId[" + std::to_string(instanceId_);
     out += "], UIContext[" + (rsUIContextPtr ? std::to_string(rsUIContextPtr->GetToken()) : "null");
+    // Current-context flag (follows migration); distinct from server's birth identity.
+    out += "], contextIsSceneBoard["
+        + std::string(rsUIContextPtr && rsUIContextPtr->IsSceneBoard() ? "true" : "false");
     if (auto node = ReinterpretCastTo<RSSurfaceNode>()) {
         out += "], name[" + node->GetName();
     } else if (!nodeName_.empty()) {
@@ -5083,6 +5097,11 @@ bool RSNode::AddCommand(std::unique_ptr<RSCommand>& command, bool isRenderServic
         }
     }
     return AddCommandInner(command, isRenderServiceCommand, followType, nodeId);
+}
+
+uint64_t RSNode::GetUIContextToken() const
+{
+    return rsUIContext_ ? rsUIContext_->GetToken() : 0;
 }
 
 void RSNode::SetUIContextToken()

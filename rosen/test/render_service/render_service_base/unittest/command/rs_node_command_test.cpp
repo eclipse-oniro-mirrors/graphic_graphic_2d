@@ -44,6 +44,17 @@ void RSNodeCommandTest::TearDownTestCase() {}
 void RSNodeCommandTest::SetUp() {}
 void RSNodeCommandTest::TearDown() {}
 
+namespace {
+// DumpNodeTreeProcessor is a plain function pointer, so the callback cannot capture local state.
+// A file-scope flag records whether the processor was invoked.
+bool g_dumpNodeTreeCalled = false;
+
+void DumpNodeTreeProcessorStub(NodeId, pid_t, uint64_t, uint32_t)
+{
+    g_dumpNodeTreeCalled = true;
+}
+} // namespace
+
 /**
  * @tc.name: TestRSBaseNodeCommand003
  * @tc.desc: SetFreeze test.
@@ -683,16 +694,15 @@ HWTEST_F(RSNodeCommandTest, CommitDumpClientNodeTreeTest, TestSize.Level1)
 HWTEST_F(RSNodeCommandTest, DumpClientNodeTree001, TestSize.Level1)
 {
     RSContext context;
-    bool flag = false;
-    auto func = [&flag] (NodeId, pid_t, uint64_t, uint32_t) { flag = true; };
-    RSNodeCommandHelper::SetDumpNodeTreeProcessor(func);
+    g_dumpNodeTreeCalled = false;
+    RSNodeCommandHelper::SetDumpNodeTreeProcessor(DumpNodeTreeProcessorStub);
     RSNodeCommandHelper::DumpClientNodeTree(context, 0, 0, 0, 0);
-    ASSERT_TRUE(flag);
+    ASSERT_TRUE(g_dumpNodeTreeCalled);
 
-    flag = false;
+    g_dumpNodeTreeCalled = false;
     RSNodeCommandHelper::SetDumpNodeTreeProcessor(nullptr);
     RSNodeCommandHelper::DumpClientNodeTree(context, 0, 0, 0, 0);
-    ASSERT_FALSE(flag);
+    ASSERT_FALSE(g_dumpNodeTreeCalled);
 
     SUCCEED();
 }
@@ -1061,5 +1071,26 @@ HWTEST_F(RSNodeCommandTest, UpdateAtlasFrameIndexSuccess001, TestSize.Level1)
     // Context fields unchanged.
     EXPECT_EQ(typedProp->Get().mode, 1);
     EXPECT_EQ(typedProp->Get().totalFrame, 6);
+}
+
+/**
+ * @tc.name: SetNodeTargetRateTest001
+ * @tc.desc: test RSNodeCommandHelper::SetNodeTargetRate with registered and missing nodes
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeCommandTest, SetNodeTargetRateTest001, TestSize.Level1)
+{
+    RSContext context;
+    constexpr NodeId nodeId = 930001;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    auto node = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    ASSERT_NE(node, nullptr);
+
+    // registered node dispatches app rate to filter drawables without crash
+    RSNodeCommandHelper::SetNodeTargetRate(context, nodeId, 60);
+
+    // unregistered node id should not crash
+    RSNodeCommandHelper::SetNodeTargetRate(context, 930099, 30);
 }
 } // namespace OHOS::Rosen

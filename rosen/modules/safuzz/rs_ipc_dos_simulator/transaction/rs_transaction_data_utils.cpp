@@ -34,6 +34,7 @@
 #include "command/rs_root_node_command_utils.h"
 #include "command/rs_surface_node_command_utils.h"
 #include "command/rs_spatial_effect_command_utils.h"
+#include "command/rs_ui_director_command_utils.h"
 #include "command/rs_union_node_command_utils.h"
 #include "command/rs_window_keyframe_node_command_utils.h"
 #include "common/safuzz_log.h"
@@ -119,6 +120,7 @@ const std::unordered_map<std::string, std::function<bool(std::unique_ptr<RSTrans
     DECLARE_ADD_RANDOM(RSNodeCommand, RSDumpClientNodeTree),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSCommitDumpClientNodeTree),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSMarkRepaintBoundary),
+    DECLARE_ADD_RANDOM(RSNodeCommand, RSSetNodeTargetRate),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSModifierNGAttachProperty),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSModifierNGDetachProperty),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSUpdateOcclusionCullingStatus),
@@ -269,6 +271,15 @@ const std::unordered_map<std::string, std::function<bool(std::unique_ptr<RSTrans
     /********** RSWindowKeyFrameNodeCommand **********/
     DECLARE_ADD_RANDOM(RSWindowKeyFrameNodeCommand, RSWindowKeyFrameNodeCreate),
     DECLARE_ADD_RANDOM(RSWindowKeyFrameNodeCommand, RSWindowKeyFrameNodeLinkNode),
+
+    /********** RSUIDirectorCommand **********/
+    DECLARE_ADD_RANDOM(RSUIDirectorCommand, RSUIDirectorGoCreate),
+    DECLARE_ADD_RANDOM(RSUIDirectorCommand, RSUIDirectorGoResume),
+    DECLARE_ADD_RANDOM(RSUIDirectorCommand, RSUIDirectorGoForeground),
+    DECLARE_ADD_RANDOM(RSUIDirectorCommand, RSUIDirectorGoBackground),
+    DECLARE_ADD_RANDOM(RSUIDirectorCommand, RSUIDirectorGoStop),
+    DECLARE_ADD_RANDOM(RSUIDirectorCommand, RSUIDirectorGoDestroy),
+    DECLARE_ADD_RANDOM(RSUIDirectorCommand, RSUIDirectorMarkSceneBoard),
 };
 }
 

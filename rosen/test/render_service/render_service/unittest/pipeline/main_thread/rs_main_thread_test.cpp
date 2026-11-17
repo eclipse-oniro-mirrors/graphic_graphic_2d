@@ -388,8 +388,15 @@ std::shared_ptr<RSScreenRenderNode> RSMainThreadTest::GetAndInitScreenRenderNode
     RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
     screenNode->UpdateScreenProperty(ScreenPropertyType::STATE,
         sptr<ScreenProperty<uint8_t>>::MakeSptr(static_cast<uint8_t>(ScreenState::HDI_OUTPUT_ENABLE)));
-
+    // PhysicalScreenInit() now calls RSLuminanceControl::Get().IsHdrPicEnable(id). A previous test may
+    // have left rSLuminanceControlInterface_ pointing at an already-destroyed local mock (use-after-free),
+    // which crashes the virtual call during RSScreen construction. Force the interface to nullptr while
+    // constructing the screen so IsHdrPicEnable safely returns false; restore afterwards.
+    auto& luminanceInterface = RSLuminanceControl::Get().rSLuminanceControlInterface_;
+    auto savedLuminanceInterface = luminanceInterface;
+    luminanceInterface = nullptr;
     auto rsScreen = std::make_shared<RSScreen>(screenId);
+    luminanceInterface = savedLuminanceInterface;
     if (rsScreen == nullptr) {
         return screenNode;
     }
@@ -10266,6 +10273,121 @@ HWTEST_F(RSMainThreadTest, CheckCmdOverThreshold_Combined006, TestSize.Level1)
     EXPECT_TRUE(mainThread->lastCommandReportTimeMap_.count(TEST_PID_2) > 0);
 }
 
+static void ResetMainThreadForceAllDisplayDirtyInputs(RSMainThread* mainThread)
+{
+    mainThread->isForceRefresh_ = false;
+    mainThread->forceUpdateUniRenderFlag_ = false;
+    mainThread->screenPowerOnChanged_.store(false);
+    mainThread->isAccessibilityConfigChanged_ = false;
+    mainThread->isCachedSurfaceUpdated_ = false;
+    mainThread->pendingNonSystemUiCaptureTasks_.clear();
+    mainThread->nonSystemUiCaptureTasks_ = {};
+    mainThread->pendingSystemUiCaptureTasks_.clear();
+    mainThread->systemUiCaptureTasks_ = {};
+    mainThread->pendingSyncWindowCaptureTasks_.clear();
+    mainThread->syncWindowCaptureTasks_ = {};
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = {};
+}
+
+/**
+ * @tc.name: CheckForceAllDisplayDirty001
+ * @tc.desc: Test CheckForceAllDisplayDirty returns true when any single force condition is set
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckForceAllDisplayDirty001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+
+    EXPECT_FALSE(mainThread->CheckForceAllDisplayDirty());
+}
+
+/**
+ * @tc.name: CheckForceAllDisplayDirty002
+ * @tc.desc: Test CheckForceAllDisplayDirty with the public setters of the force conditions
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckForceAllDisplayDirty002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->isForceRefresh_ = true;
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->forceUpdateUniRenderFlag_ = true;
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->screenPowerOnChanged_.store(true);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->isAccessibilityConfigChanged_ = true;
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->isCachedSurfaceUpdated_ = true;
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+}
+
+/**
+ * @tc.name: CheckForceAllDisplayDirty003
+ * @tc.desc: Each pending capture task container alone forces all displays to be prepared.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckForceAllDisplayDirty003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    constexpr NodeId nodeId{6001};
+    auto task = std::make_tuple(nodeId, std::function<void()>([]() {}));
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->pendingNonSystemUiCaptureTasks_.emplace_back(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->nonSystemUiCaptureTasks_.emplace(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->pendingSystemUiCaptureTasks_.emplace_back(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->systemUiCaptureTasks_.emplace(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->pendingSyncWindowCaptureTasks_.emplace_back(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->syncWindowCaptureTasks_.emplace(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->pendingWindowCapTasks_.emplace_back(
+        std::make_tuple(nodeId, std::function<void()>([]() {}), uint64_t{0}, uint64_t{0}, false));
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->windowCapTasks_.emplace(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+}
+
 /**
  * @tc.name: CleanResourcesReportTimeMap001
  * @tc.desc: Test CleanResources erases per-pid entries in report time maps
@@ -10294,6 +10416,34 @@ HWTEST_F(RSMainThreadTest, CleanResourcesReportTimeMap001, TestSize.Level1)
     EXPECT_EQ(mainThread->lastCommandReportTimeMap_.count(pidB), 0u);
     mainThread->lastDrawOpReportTimeMap_.clear();
     mainThread->lastCommandReportTimeMap_.clear();
+}
+
+/**
+ * @tc.name: SetAdapterLtpoConfig_NullAndNotNull
+ * @tc.desc: Test SetAdapterLtpoConfig with hgmRenderContext_ null and not null
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, SetAdapterLtpoConfig_NullAndNotNull, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    auto savedHgmRenderContext = mainThread->hgmRenderContext_;
+    std::unordered_map<std::string, std::string> config = {
+        { "key1", "value1" }, { "key2", "value2" }
+    };
+
+    // Branch 1: hgmRenderContext_ != nullptr, SetAdapterLtpoConfig should be called
+    mainThread->hgmRenderContext_ = std::make_shared<HgmRenderContext>(nullptr);
+    mainThread->SetAdapterLtpoConfig(config);
+    EXPECT_NE(mainThread->hgmRenderContext_, nullptr);
+
+    // Branch 2: hgmRenderContext_ == nullptr, should not crash (guard check)
+    mainThread->hgmRenderContext_ = nullptr;
+    mainThread->SetAdapterLtpoConfig(config);
+
+    mainThread->hgmRenderContext_ = savedHgmRenderContext;
 }
 } // namespace OHOS::Rosen
 #endif

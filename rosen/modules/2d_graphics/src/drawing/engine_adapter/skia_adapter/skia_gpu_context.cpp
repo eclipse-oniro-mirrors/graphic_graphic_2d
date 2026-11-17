@@ -89,6 +89,7 @@ static CommonPoolExecutor g_defaultExecutor;
 
 bool SkiaGPUContext::BuildFromGL(const GPUContextOptions& options)
 {
+#ifndef ACE_DISABLE_GL
 #ifdef USE_M133_SKIA
     sk_sp<const GrGLInterface> glInterface(GrGLMakeNativeInterface());
 #else
@@ -116,6 +117,10 @@ bool SkiaGPUContext::BuildFromGL(const GPUContextOptions& options)
     grContext_ = GrDirectContext::MakeGL(std::move(glInterface), grOptions);
 #endif
     return grContext_ != nullptr ? true : false;
+#else
+    (void)options;
+    return false;
+#endif
 }
 
 #ifdef RS_ENABLE_VK
@@ -515,16 +520,10 @@ void SkiaGPUContext::InitGpuMemoryInfoStatProc(GpuMemoryInfoStatProcCallback cal
     LOGD("SkiaGPUContext::InitGpuMemoryInfoStatProc, not implement");
 }
 
-void SkiaGPUContext::SetAbnormalPid(pid_t pid)
+void SkiaGPUContext::InitIsAbnormalProcessProc(IsAbnormalProcessProcCallback callback)
 {
-    // Skia Not Implement SetAbnormalPid
-    LOGD("SkiaGPUContext::SetAbnormalPid, not implement");
-}
-
-void SkiaGPUContext::RemoveAbnormalPid(pid_t pid)
-{
-    // Skia Not Implement RemoveAbnormalPid
-    LOGD("SkiaGPUContext::RemoveAbnormalPid, not implement");
+    // Skia Not Implement InitIsAbnormalProcessProc
+    LOGD("SkiaGPUContext::InitIsAbnormalProcessProc, not implement");
 }
 
 #ifdef RS_ENABLE_VK

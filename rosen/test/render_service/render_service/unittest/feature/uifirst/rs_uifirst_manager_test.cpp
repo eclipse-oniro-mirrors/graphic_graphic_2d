@@ -2186,6 +2186,85 @@ HWTEST_F(RSUifirstManagerTest, GetSubNodeIsTransparent, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetSubNodeIsTransparent_AbilityBgAlpha
+ * @tc.desc: test ability bg alpha of app window child in leash window
+ * @tc.type: FUNC
+ * @tc.require: issueIBMDEJ
+ */
+HWTEST_F(RSUifirstManagerTest, GetSubNodeIsTransparent_AbilityBgAlpha, TestSize.Level1)
+{
+    uifirstManager_.currentFrameEvent_.clear();
+    const uint8_t semiTransparentAlpha = 128;
+    std::string dfxMsg;
+    NodeId leashId = static_cast<uint64_t>(1);
+
+    auto leashNode = std::make_shared<RSSurfaceRenderNode>(leashId);
+    ASSERT_NE(leashNode, nullptr);
+    leashNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+
+    // case 1: app window child with semi-transparent ability bg alpha -> transparent
+    auto semiAppWindow = std::make_shared<RSSurfaceRenderNode>(leashId + 1);
+    semiAppWindow->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    semiAppWindow->SetGlobalAlpha(1.0f);
+    semiAppWindow->SetAbilityBGAlpha(semiTransparentAlpha);
+    std::vector<std::shared_ptr<RSRenderNode>> semiChildren;
+    semiChildren.push_back(semiAppWindow);
+    leashNode->fullChildrenList_ = std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>(semiChildren);
+    ASSERT_EQ(uifirstManager_.GetSubNodeIsTransparent(*leashNode, dfxMsg), true);
+
+    // case 2: app window child with fully opaque ability bg alpha -> not transparent
+    auto opaqueAppWindow = std::make_shared<RSSurfaceRenderNode>(leashId + 2);
+    opaqueAppWindow->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    opaqueAppWindow->SetGlobalAlpha(1.0f);
+    opaqueAppWindow->SetAbilityBGAlpha(UINT8_MAX);
+    opaqueAppWindow->AddChild(std::make_shared<RSCanvasRenderNode>(leashId + 3));
+    std::vector<std::shared_ptr<RSRenderNode>> opaqueChildren;
+    opaqueChildren.push_back(opaqueAppWindow);
+    leashNode->fullChildrenList_ = std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>(opaqueChildren);
+    ASSERT_EQ(uifirstManager_.GetSubNodeIsTransparent(*leashNode, dfxMsg), false);
+}
+
+/**
+ * @tc.name: GetSubNodeIsTransparent_AppWindowIgnoreGlobalAlpha
+ * @tc.desc: app window child ignores global alpha, non-app-window child does not
+ * @tc.type: FUNC
+ * @tc.require: issueIBMDEJ
+ */
+HWTEST_F(RSUifirstManagerTest, GetSubNodeIsTransparent_AppWindowIgnoreGlobalAlpha, TestSize.Level1)
+{
+    uifirstManager_.currentFrameEvent_.clear();
+    const float halfAlpha = 0.5f;
+    std::string dfxMsg;
+    NodeId leashId = static_cast<uint64_t>(1);
+
+    auto leashNode = std::make_shared<RSSurfaceRenderNode>(leashId);
+    ASSERT_NE(leashNode, nullptr);
+    leashNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+
+    // case 1: app window child with opaque ability bg, global alpha < 1 -> not transparent
+    // for app window only ability bg alpha is checked, global alpha is ignored
+    auto appWindow = std::make_shared<RSSurfaceRenderNode>(leashId + 1);
+    appWindow->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    appWindow->SetGlobalAlpha(halfAlpha);
+    appWindow->SetAbilityBGAlpha(UINT8_MAX);
+    std::vector<std::shared_ptr<RSRenderNode>> appChildren;
+    appChildren.push_back(appWindow);
+    leashNode->fullChildrenList_ = std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>(appChildren);
+    ASSERT_EQ(uifirstManager_.GetSubNodeIsTransparent(*leashNode, dfxMsg), false);
+
+    // case 2: non-app-window child with opaque ability bg, global alpha < 1 -> transparent
+    // non-app-window still checks global alpha through IsAlphaTransparent
+    auto nonAppWindow = std::make_shared<RSSurfaceRenderNode>(leashId + 2);
+    nonAppWindow->SetSurfaceNodeType(RSSurfaceNodeType::SELF_DRAWING_NODE);
+    nonAppWindow->SetGlobalAlpha(halfAlpha);
+    nonAppWindow->SetAbilityBGAlpha(UINT8_MAX);
+    std::vector<std::shared_ptr<RSRenderNode>> nonAppChildren;
+    nonAppChildren.push_back(nonAppWindow);
+    leashNode->fullChildrenList_ = std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>(nonAppChildren);
+    ASSERT_EQ(uifirstManager_.GetSubNodeIsTransparent(*leashNode, dfxMsg), true);
+}
+
+/**
  * @tc.name: QuerySubAssignable
  * @tc.desc: test results of QuerySubAssignable
  * @tc.type: FUNC
@@ -2791,7 +2870,7 @@ HWTEST_F(RSUifirstManagerTest, ProcessDoneNodeInner002, TestSize.Level1)
 /**
  * @tc.name: MergeOldDirtyToDirtyManager001
  * @tc.desc: Test MergeOldDirtyToDirtyManager early return when GetUIFirstDirtyFrameControlEnabled is true
- *               and HandleUIFirstDirtyFrameControl returns false
+ *           and HandleUIFirstDirtyFrameControl returns false
  * @tc.type: FUNC
  * @tc.require: issueDTS2026052746214
  */
@@ -2816,7 +2895,7 @@ HWTEST_F(RSUifirstManagerTest, MergeOldDirtyToDirtyManager001, TestSize.Level1)
     mainThread_->context_->nodeMap.UnregisterRenderNode(surfaceNode->GetId());
 
     // Restore
-    system::SetParameter("rosen.ui.first.dirty.frame.control.enabled", checkType ? "1": "0");
+    system::SetParameter("rosen.ui.first.dirty.frame.control.enabled", checkType ? "1" : "0");
     uifirstManager_.uifirstType_ = uifirstType;
 }
 
@@ -2844,7 +2923,7 @@ HWTEST_F(RSUifirstManagerTest, GetUIFirstDirtyFrameControlEnabled002, TestSize.L
 
     // Restore
     uifirstManager_.isUIFirstFrameControlEnable_ = isFrameControlEnable;
-    system::SetParameter("rosen.ui.first.dirty.frame.control.enabled", checkType ? "1": "0");
+    system::SetParameter("rosen.ui.first.dirty.frame.control.enabled", checkType ? "1" : "0");
     uifirstManager_.uifirstType_ = uifirstType;
 }
 }
