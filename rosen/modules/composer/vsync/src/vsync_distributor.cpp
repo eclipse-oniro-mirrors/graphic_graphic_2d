@@ -156,7 +156,7 @@ VsyncError VSyncConnection::RequestNextVSync(
         if (isFirstRequestVsync_) {
             isFirstRequestVsync_ = false;
             distributor->FirstRequestVsync();
-            VLOGI("First vsync is requested, name: %{public}s", info_.name_.c_str());
+            VLOGD("First vsync is requested, name: %{public}s", info_.name_.c_str());
         }
         if (requestNativeVSyncCallback_ != nullptr) {
             requestNativeVSyncCallback_();
@@ -219,7 +219,7 @@ int32_t VSyncConnection::PostEvent(int64_t now, int64_t period, int64_t vsyncCou
     data[2] = vsyncCount;
     if (isFirstSendVsync_) {
         isFirstSendVsync_ = false;
-        VLOGI("First vsync has send to : %{public}s", info_.name_.c_str());
+        VLOGD("First vsync has send to : %{public}s", info_.name_.c_str());
     }
     int32_t ret = socketPair->SendData(data, sizeof(data));
     if (ret == ERRNO_EAGAIN) {
@@ -924,7 +924,7 @@ VsyncError VSyncDistributor::RequestNextVSync(const sptr<VSyncConnection> &conne
         if (isFirstRequest_) {
             isFirstRequest_ = false;
             isFirstSend_ = true;
-            VLOGI("First vsync RequestNextVSync conn:%{public}s, rate:%{public}d, highPriorityRate:%{public}d",
+            VLOGD("First vsync RequestNextVSync conn:%{public}s, rate:%{public}d, highPriorityRate:%{public}d",
                 connection->info_.name_.c_str(), connection->rate_, connection->highPriorityRate_);
         }
     }
