@@ -802,31 +802,17 @@ public:
         crossNodeLayerConversionMatrices_[displayId] = matrix;
         needSync_ = true;
     }
-    // Display whose frame the dstRect of the layer info is in, with the offset added to it there, when it was built
-    // while the node was prepared for a clone on another display. It is kept next to the layer info it describes, so
-    // the render thread can move the rect back into the frame the conversion matrices start from.
-    void SetLayerDstDisplay(NodeId displayNodeId, int32_t offsetX, int32_t offsetY)
+    void SetLayerDstDisplay(NodeId displayNodeId)
     {
-        if (layerDstDisplayNodeId_ == displayNodeId && layerDstDisplayOffsetX_ == offsetX &&
-            layerDstDisplayOffsetY_ == offsetY) {
+        if (layerDstDisplayNodeId_ == displayNodeId) {
             return;
         }
         layerDstDisplayNodeId_ = displayNodeId;
-        layerDstDisplayOffsetX_ = offsetX;
-        layerDstDisplayOffsetY_ = offsetY;
         needSync_ = true;
     }
     NodeId GetLayerDstDisplayNodeId() const
     {
         return layerDstDisplayNodeId_;
-    }
-    int32_t GetLayerDstDisplayOffsetX() const
-    {
-        return layerDstDisplayOffsetX_;
-    }
-    int32_t GetLayerDstDisplayOffsetY() const
-    {
-        return layerDstDisplayOffsetY_;
     }
 
     void SetApiCompatibleVersion(uint32_t apiCompatibleVersion)
@@ -1172,8 +1158,6 @@ private:
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeLayerConversionMatrices_ = {};
     NodeId layerDstDisplayNodeId_ = INVALID_NODEID;
-    int32_t layerDstDisplayOffsetX_ = 0;
-    int32_t layerDstDisplayOffsetY_ = 0;
 
     uint32_t apiCompatibleVersion_ = 0;
 

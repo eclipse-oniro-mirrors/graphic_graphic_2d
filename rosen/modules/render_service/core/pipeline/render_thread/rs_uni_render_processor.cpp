@@ -379,36 +379,10 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     bool isCrossNodeLayer = false;
     if (params.GetHwcGlobalPositionEnabled()) {
         if (RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId_, layerInfo)) {
-            // DRM 全局定位层在主屏与副屏都按各自的 prepare 坐标系转换，并进入成对裁剪路径。
             isCrossNodeLayer = true;
         } else {
-            // 转换记录缺失时保留 matrix 的既有回退；dst 已为 prepare 局部坐标，不能再次扣 offset。
             layerInfo.matrix.PostTranslate(-offsetX_, -offsetY_);
         }
-    }
-    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-    if (params.GetHwcGlobalPositionEnabled()) {
-        Drawing::Matrix::Buffer matrixBuffer;
-        Drawing::Matrix::Buffer inMatrixBuffer;
-        layerInfo.matrix.GetAll(matrixBuffer);
-        params.GetLayerInfo().matrix.GetAll(inMatrixBuffer);
-        RS_LOGW("[RSCrossNode] layerInfo node:%{public}" PRIu64 " screen:%{public}" PRIu64
-            " hit:%{public}d dstIn:[%{public}d,%{public}d,%{public}d,%{public}d]"
-            " dstOut:[%{public}d,%{public}d,%{public}d,%{public}d] transformType:%{public}d"
-            " dstDisplay:%{public}" PRIu64 " offset:[%{public}d,%{public}d]"
-            " in:[%{public}f %{public}f %{public}f %{public}f %{public}f %{public}f]"
-            " out:[%{public}f %{public}f %{public}f %{public}f %{public}f %{public}f]", params.GetId(),
-            screenNodeId_, static_cast<int32_t>(isCrossNodeLayer),
-            params.GetLayerInfo().dstRect.x, params.GetLayerInfo().dstRect.y, params.GetLayerInfo().dstRect.w,
-            params.GetLayerInfo().dstRect.h, layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w,
-            layerInfo.dstRect.h, static_cast<int32_t>(layerInfo.transformType),
-            params.GetLayerDstDisplayNodeId(), offsetX_, offsetY_, inMatrixBuffer[Drawing::Matrix::SCALE_X],
-            inMatrixBuffer[Drawing::Matrix::SKEW_X], inMatrixBuffer[Drawing::Matrix::TRANS_X],
-            inMatrixBuffer[Drawing::Matrix::SKEW_Y], inMatrixBuffer[Drawing::Matrix::SCALE_Y],
-            inMatrixBuffer[Drawing::Matrix::TRANS_Y], matrixBuffer[Drawing::Matrix::SCALE_X],
-            matrixBuffer[Drawing::Matrix::SKEW_X], matrixBuffer[Drawing::Matrix::TRANS_X],
-            matrixBuffer[Drawing::Matrix::SKEW_Y], matrixBuffer[Drawing::Matrix::SCALE_Y],
-            matrixBuffer[Drawing::Matrix::TRANS_Y]);
     }
     layer->SetNeedBilinearInterpolation(params.NeedBilinearInterpolation());
     layer->SetSurface(consumer);
@@ -471,18 +445,6 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
         ((layerInfo.dstRect.w != layerInfo.srcRect.w) || (layerInfo.dstRect.h != layerInfo.srcRect.h))) {
         dstRect = {layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.srcRect.w, layerInfo.srcRect.h};
     }
-    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-    if (params.GetHwcGlobalPositionEnabled()) {
-        RS_LOGW("[RSCrossNode] layerSize node:%{public}" PRIu64 " screen:%{public}" PRIu64
-            " finalDst:[%{public}d,%{public}d,%{public}d,%{public}d]"
-            " layerSize:[%{public}d,%{public}d,%{public}d,%{public}d]"
-            " src:[%{public}d,%{public}d,%{public}d,%{public}d] phy:[%{public}d,%{public}d]"
-            " crop:%{public}d", params.GetId(), screenNodeId_, layerInfo.dstRect.x, layerInfo.dstRect.y,
-            layerInfo.dstRect.w, layerInfo.dstRect.h, dstRect.x, dstRect.y, dstRect.w, dstRect.h,
-            layerInfo.srcRect.x, layerInfo.srcRect.y, layerInfo.srcRect.w, layerInfo.srcRect.h,
-            uniComposerAdapter_->GetScreenInfo().phyWidth, uniComposerAdapter_->GetScreenInfo().phyHeight,
-            static_cast<int32_t>(isCrossNodeLayer && offlineResult == nullptr));
-    }
     layer->SetLayerSize(dstRect);
     layer->SetBoundSize(layerInfo.boundRect);
     bool forceClientForDRM = GetForceClientForDRM(params);
@@ -493,12 +455,6 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     bool forceClient = RSSystemProperties::IsForceClient() || forceClientForDRM;
     layer->SetCompositionType(forceClient ? GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT :
         GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
-    if (params.GetHwcGlobalPositionEnabled()) {
-        RS_LOGW("[RSCrossNode] composition node:%{public}" PRIu64 " screen:%{public}" PRIu64
-            " clientRequested:%{public}d forceClientForDRM:%{public}d rotationFixed:%{public}d offline:%{public}d",
-            params.GetId(), screenNodeId_, static_cast<int32_t>(forceClient), static_cast<int32_t>(forceClientForDRM),
-            static_cast<int32_t>(params.GetFixRotationByUser()), static_cast<int32_t>(offlineResult != nullptr));
-    }
     layer->SetCornerRadiusInfoForDRM(params.GetCornerRadiusInfoForDRM());
     layer->SetVcldInfo(params.GetVcldInfo());
     auto bufferBackgroundColor = params.GetBackgroundColor();

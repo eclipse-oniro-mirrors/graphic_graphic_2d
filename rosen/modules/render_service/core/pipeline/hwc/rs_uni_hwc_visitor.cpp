@@ -136,19 +136,7 @@ void RSUniHwcVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absR
     // Set the destination rectangle of the node
     node.SetDstRect(dstRect);
     node.SetDstRectWithoutRenderFit(dstRect);
-    // dst 始终保留本次 prepare 屏的局部坐标；每次记录产生屏，供合成时换算到目标屏。
     RSDrmUtil::RecordDstRectDisplay(node, uniRenderVisitor_.curScreenNode_);
-    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-    if (node.GetHwcGlobalPositionEnabled()) {
-        RS_LOGW("[RSCrossNode] updateDstRect node:%{public}" PRIu64 " screen:%{public}" PRIu64
-            " switchToSource:%{public}d abs:[%d,%d,%d,%d] clip:[%d,%d,%d,%d] dst:[%d,%d,%d,%d]"
-            " dstDisplay:%{public}" PRIu64, node.GetId(), uniRenderVisitor_.curScreenNode_->GetId(),
-            static_cast<int32_t>(uniRenderVisitor_.isSwitchToSourceCrossNodePrepare_),
-            absRect.left_, absRect.top_, absRect.width_, absRect.height_,
-            clipRect.left_, clipRect.top_, clipRect.width_, clipRect.height_,
-            dstRect.left_, dstRect.top_, dstRect.width_, dstRect.height_,
-            node.GetDstRectDisplayNodeId());
-    }
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix)
@@ -1264,15 +1252,6 @@ void RSUniHwcVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& root
         rect.height_ = static_cast<int>(std::ceil(absRect.GetBottom() - rect.top_));
         UpdateCrossInfoForProtectedHwcNode(*hwcNodePtr);
         UpdateDstRect(*hwcNodePtr, rect, clipRect);
-        // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-        if (hwcNodePtr->GetHwcGlobalPositionEnabled()) {
-            const auto skippedDst = hwcNodePtr->GetDstRect();
-            RS_LOGW("[RSCrossNode] skippedRect node:%{public}" PRIu64 " root:%{public}" PRIu64
-                " screen:%{public}" PRIu64 " abs:[%d,%d,%d,%d] dst:[%d,%d,%d,%d] dstDisplay:%{public}" PRIu64,
-                hwcNodePtr->GetId(), rootNode.GetId(), uniRenderVisitor_.curScreenNode_->GetId(),
-                rect.left_, rect.top_, rect.width_, rect.height_, skippedDst.left_, skippedDst.top_,
-                skippedDst.width_, skippedDst.height_, hwcNodePtr->GetDstRectDisplayNodeId());
-        }
         UpdateHwcNodeInfo(*hwcNodePtr, matrix, true);
         hwcNodePtr->SetTotalMatrix(matrix);
         hwcNodePtr->SetOldDirtyInSurface(geoPtr->MapRect(hwcNodePtr->GetSelfDrawRect(), matrix));
@@ -1543,26 +1522,7 @@ void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
         return;
     }
     UpdateHwcNodeByTransform(node, absMatrix);
-    // 保留变换后的局部 dst 诊断，确认拖动时未叠加屏幕 offset。
-    UpdateDstRectByGlobalPosition(node);
     UpdateHwcNodeEnableByBufferSize(node);
-}
-
-void RSUniHwcVisitor::UpdateDstRectByGlobalPosition(RSSurfaceRenderNode& node)
-{
-    // 暂留入口用于跨屏问题诊断；全局定位只影响 matrix，不能再给 prepare 局部 dst 加 offset。
-    if (node.GetHwcGlobalPositionEnabled()) {
-        const auto dstRect = node.GetDstRect();
-        const auto& screenProperty = uniRenderVisitor_.curScreenNode_->GetScreenProperty();
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " dstRect:[%s]",
-            node.GetName().c_str(), node.GetId(), dstRect.ToString().c_str());
-        // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-        RS_LOGW("[RSCrossNode] localDst node:%{public}" PRIu64 " screen:%{public}" PRIu64
-            " screenOffset:[%{public}d,%{public}d] dst:[%d,%d,%d,%d] dstDisplay:%{public}" PRIu64,
-            node.GetId(), uniRenderVisitor_.curScreenNode_->GetId(), screenProperty.GetOffsetX(),
-            screenProperty.GetOffsetY(), dstRect.left_, dstRect.top_, dstRect.width_, dstRect.height_,
-            node.GetDstRectDisplayNodeId());
-    }
 }
 
 void RSUniHwcVisitor::UpdateRectInfoForDelegateMode(RSSurfaceRenderNode& node,

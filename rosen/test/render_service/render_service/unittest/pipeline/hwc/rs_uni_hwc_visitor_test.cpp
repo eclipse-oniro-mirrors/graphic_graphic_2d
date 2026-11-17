@@ -3091,26 +3091,6 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeClipRectAndMatrix_001, Function | Sma
 }
 
 /**
- * @tc.name: UpdateDstRectByGlobalPosition_001
- * @tc.desc: Test UpdateDstRectByGlobalPosition Function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSUniHwcVisitorTest, UpdateDstRectByGlobalPosition_001, TestSize.Level2)
-{
-    NodeId id = 1;
-    RSSurfaceRenderNode surfaceNode(id);
-    surfaceNode.SetHwcGlobalPositionEnabled(false);
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    rsUniRenderVisitor->hwcVisitor_->UpdateDstRectByGlobalPosition(surfaceNode);
-    EXPECT_EQ(surfaceNode.GetDstRect().left_, 0);
-
-    surfaceNode.SetHwcGlobalPositionEnabled(true);
-    rsUniRenderVisitor->hwcVisitor_->UpdateDstRectByGlobalPosition(surfaceNode);
-    EXPECT_EQ(surfaceNode.GetDstRect().left_, 0);
-}
-
-/**
  * @tc.name: UpdateForegroundColorValid_001
  * @tc.desc: Test UpdateForegroundColorValid Function
  * @tc.type: FUNC
