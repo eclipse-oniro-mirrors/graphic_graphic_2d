@@ -667,8 +667,7 @@ ErrCode RSClientToServiceConnectionProxy::RemoveVirtualScreenWhiteList(
 }
 
 int32_t RSClientToServiceConnectionProxy::SetVirtualScreenSecurityExemptionList(
-    ScreenId id,
-    const std::vector<NodeId>& securityExemptionList)
+    ScreenId id, const std::vector<NodeId>& securityExemptionList, bool exemptAll)
 {
     if (securityExemptionList.size() > MAX_SECURITY_EXEMPTION_LIST_NUMBER) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::SetVirtualScreenSecurityExemptionList: too many lists.");
@@ -690,6 +689,10 @@ int32_t RSClientToServiceConnectionProxy::SetVirtualScreenSecurityExemptionList(
     }
     if (!data.WriteUInt64Vector(securityExemptionList)) {
         ROSEN_LOGE("SetVirtualScreenSecurityExemptionList: WriteUInt64Vector securityExemptionList err.");
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteBool(exemptAll)) {
+        ROSEN_LOGE("SetVirtualScreenSecurityExemptionList: WriteBool exemptAll err.");
         return WRITE_PARCEL_ERR;
     }
     uint32_t code = static_cast<uint32_t>(

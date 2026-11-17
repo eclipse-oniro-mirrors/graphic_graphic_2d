@@ -69,6 +69,7 @@ enum class ScreenPropertyType : uint32_t {
     VIRTUAL_SCREEN_HDR_MODE,
     SKIP_COLOR_SPACE_CONVERSION,
     POST_PROCESSING_SHADER,
+    SECURITY_EXEMPT_ALL,
 
     SCREEN_PROPERTY_TYPE_SIZE,  // record num of property type
 };
@@ -158,6 +159,7 @@ DECLARE_PROPERTY_TYPE(ScreenPropertyType::SAMPLING_MODE,
 DECLARE_PROPERTY_TYPE(ScreenPropertyType::VIRTUAL_SCREEN_HDR_MODE,
     uint32_t, static_cast<uint32_t>(HDRMode::NONE));
 DECLARE_PROPERTY_TYPE(ScreenPropertyType::POST_PROCESSING_SHADER, std::vector<uint8_t>, std::vector<uint8_t>());
+DECLARE_PROPERTY_TYPE(ScreenPropertyType::SECURITY_EXEMPT_ALL, bool, false);
 
 class ScreenPropertyBase : public Parcelable {
 public:
@@ -241,6 +243,7 @@ public:
     std::unordered_set<NodeId> GetBlackList() const;
     std::unordered_set<NodeType> GetTypeBlackList() const;
     std::vector<NodeId> GetSecurityExemptionList() const;
+    bool GetSecurityExemptAll() const;
     std::shared_ptr<Media::PixelMap> GetSecurityMask() const;
     bool EnableSkipWindow() const;
     ScreenPowerStatus GetScreenPowerStatus() const;

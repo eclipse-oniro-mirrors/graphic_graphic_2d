@@ -181,6 +181,7 @@ public:
     void RemoveWhiteList(const std::vector<NodeId>& whiteList);
 
     void SetSecurityExemptionList(const std::vector<uint64_t>& securityExemptionList);
+    void SetSecurityExemptAll(bool exemptAll);
 
     int32_t SetSecurityMask(std::shared_ptr<Media::PixelMap> securityMask);
 

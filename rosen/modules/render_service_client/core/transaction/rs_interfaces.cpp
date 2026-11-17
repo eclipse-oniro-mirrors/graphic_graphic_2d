@@ -149,10 +149,9 @@ int32_t RSInterfaces::RemoveVirtualScreenWhiteList(ScreenId id, const std::vecto
 }
 
 int32_t RSInterfaces::SetVirtualScreenSecurityExemptionList(
-    ScreenId id,
-    const std::vector<NodeId>& securityExemptionList)
+    ScreenId id, const std::vector<NodeId>& securityExemptionList, bool exemptAll)
 {
-    return renderServiceClient_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+    return renderServiceClient_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList, exemptAll);
 }
 
 int32_t RSInterfaces::SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask)

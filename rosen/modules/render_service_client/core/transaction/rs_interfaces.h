@@ -176,9 +176,11 @@ public:
      * @brief Set security layer exemption list for mirror screen.
      * @param id screen id.
      * @param securityExemptionList exemption list for security layer.
+     * @param exemptAll exempt all security layers on this screen, priority over exemption list.
      * @return 0 means success, others failed.
      */
-    int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList);
+    int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList,
+        bool exemptAll = false);
 
     /**
      * @brief Set mask image displayed on virtual mirror screen when security layer is present.

@@ -1600,6 +1600,11 @@ void RSScreen::SetSecurityExemptionList(const std::vector<uint64_t>& securityExe
     UPDATE_PROPERTY(SecurityExemptionList, securityExemptionList);
 }
 
+void RSScreen::SetSecurityExemptAll(bool exemptAll)
+{
+    UPDATE_PROPERTY(SecurityExemptAll, exemptAll);
+}
+
 int32_t RSScreen::SetSecurityMask(std::shared_ptr<Media::PixelMap> securityMask)
 {
     UPDATE_PROPERTY(SecurityMask, securityMask);

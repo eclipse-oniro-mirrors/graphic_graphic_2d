@@ -128,7 +128,7 @@ public:
     virtual sptr<IRemoteObject> GetDisplayEngineControl() = 0;
 
     virtual int32_t SetVirtualScreenSecurityExemptionList(
-        ScreenId id, const std::vector<NodeId>& securityExemptionList) = 0;
+        ScreenId id, const std::vector<NodeId>& securityExemptionList, bool exemptAll = false) = 0;
 
     virtual int32_t SetScreenSecurityMask(ScreenId id,
         std::shared_ptr<Media::PixelMap> securityMask) = 0;

@@ -57,6 +57,7 @@ public:
     ResType RemoveBlackList(const std::vector<uint64_t>& blackList);
     ResType SetTypeBlackList(const std::unordered_set<uint8_t>& typeBlackList);
     ResType SetSecurityExemptionList(const std::vector<uint64_t>& securityExemptionList);
+    ResType SetSecurityExemptAll(bool exemptAll);
     ResType SetSecurityMask(std::shared_ptr<Media::PixelMap> securityMask);
     ResType SetCastScreenEnableSkipWindow(bool enable);
     ResType SetPowerStatus(ScreenPowerStatus powerStatus);
@@ -117,6 +118,7 @@ public:
     std::unordered_set<NodeId> GetBlackList() const;
     std::unordered_set<uint8_t> GetTypeBlackList() const;
     std::vector<uint64_t> GetSecurityExemptionList() const;
+    bool GetSecurityExemptAll() const;
     std::shared_ptr<Media::PixelMap> GetSecurityMask() const;
     bool GetCastScreenEnableSkipWindow() const;
     ScreenPowerStatus GetPowerStatus() const;

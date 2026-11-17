@@ -395,15 +395,14 @@ bool RSRenderServiceClient::SetUifirstScale(float scaleFactor)
 }
 
 int32_t RSRenderServiceClient::SetVirtualScreenSecurityExemptionList(
-    ScreenId id,
-    const std::vector<NodeId>& securityExemptionList)
+    ScreenId id, const std::vector<NodeId>& securityExemptionList, bool exemptAll)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
     if (clientToService == nullptr) {
         return RENDER_SERVICE_NULL;
     }
 
-    return clientToService->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+    return clientToService->SetVirtualScreenSecurityExemptionList(id, securityExemptionList, exemptAll);
 }
 
 int32_t RSRenderServiceClient::SetScreenSecurityMask(ScreenId id,

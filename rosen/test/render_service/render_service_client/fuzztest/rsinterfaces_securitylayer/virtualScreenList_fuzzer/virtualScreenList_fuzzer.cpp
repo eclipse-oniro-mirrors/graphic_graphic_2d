@@ -64,7 +64,8 @@ void DoSetVirtualScreenSecurityExemptionList(FuzzedDataProvider& fdp)
     for (uint8_t i = 0; i < securityExemptionListSize; i++) {
         securityExemptionList.push_back(fdp.ConsumeIntegral<uint64_t>());
     }
-    g_rsInterfaces->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+    bool exemptAll = fdp.ConsumeBool();
+    g_rsInterfaces->SetVirtualScreenSecurityExemptionList(id, securityExemptionList, exemptAll);
 }
 
 void DoSetVirtualScreenTypeBlackList(FuzzedDataProvider& fdp)

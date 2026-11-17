@@ -453,7 +453,7 @@ int32_t RSScreenManagerAgent::SetActiveScreenIdChangedCallback(sptr<RSIActiveScr
 }
 
 int32_t RSScreenManagerAgent::SetVirtualScreenSecurityExemptionList(
-    ScreenId id, const std::vector<NodeId>& securityExemptionList)
+    ScreenId id, const std::vector<NodeId>& securityExemptionList, bool exemptAll)
 {
     if (securityExemptionList.size() > MAX_SPECIAL_LAYER_NUM) {
         RS_LOGW("%{public}s: securityExemptionList is over max size!", __func__);
@@ -463,7 +463,7 @@ int32_t RSScreenManagerAgent::SetVirtualScreenSecurityExemptionList(
         RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    return screenManager_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+    return screenManager_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList, exemptAll);
 }
 
 int32_t RSScreenManagerAgent::SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask)

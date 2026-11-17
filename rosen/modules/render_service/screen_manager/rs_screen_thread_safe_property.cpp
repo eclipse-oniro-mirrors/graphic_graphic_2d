@@ -254,6 +254,13 @@ RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetSecurityExemp
     return { ScreenPropertyType::SECURITY_EXEMPTION_LIST, prop };
 }
 
+RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetSecurityExemptAll(bool exemptAll)
+{
+    UniqueLock lock(propertyMutex_);
+    auto prop = property_->Set<ScreenPropertyType::SECURITY_EXEMPT_ALL>(exemptAll);
+    return { ScreenPropertyType::SECURITY_EXEMPT_ALL, prop };
+}
+
 RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetSecurityMask(
     std::shared_ptr<Media::PixelMap> securityMask)
 {
@@ -644,6 +651,12 @@ std::vector<uint64_t> RSScreenThreadSafeProperty::GetSecurityExemptionList() con
 {
     SharedLock lock(propertyMutex_);
     return property_->GetSecurityExemptionList();
+}
+
+bool RSScreenThreadSafeProperty::GetSecurityExemptAll() const
+{
+    SharedLock lock(propertyMutex_);
+    return property_->GetSecurityExemptAll();
 }
 
 std::shared_ptr<Media::PixelMap> RSScreenThreadSafeProperty::GetSecurityMask() const

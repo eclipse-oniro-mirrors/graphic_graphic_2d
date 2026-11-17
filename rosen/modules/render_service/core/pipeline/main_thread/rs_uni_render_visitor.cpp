@@ -724,6 +724,15 @@ void RSUniRenderVisitor::UpdateVirtualDisplaySecurityExemption(RSLogicalDisplayR
         return;
     }
 
+    // exemptAll exempts all security layers for capture virtual screen, priority over exemption list
+    if (curScreenNode_->GetScreenProperty().GetSecurityExemptAll()) {
+        RS_LOGD_IF(DEBUG_PIPELINE,
+            "UpdateVirtualScreenSecurityExemption::node:%{public}" PRIu64 ", isSecurityExemption:true",
+            node.GetId());
+        node.SetSecurityExemption(true);
+        return;
+    }
+
     auto securityExemptionList = curScreenNode_->GetScreenProperty().GetSecurityExemptionList();
     if (securityExemptionList.size() == 0) {
         RS_LOGD_IF(DEBUG_PIPELINE,

@@ -621,13 +621,13 @@ ErrCode RSClientToServiceConnection::RemoveVirtualScreenWhiteList(
 }
 
 int32_t RSClientToServiceConnection::SetVirtualScreenSecurityExemptionList(
-    ScreenId id, const std::vector<uint64_t>& securityExemptionList)
+    ScreenId id, const std::vector<uint64_t>& securityExemptionList, bool exemptAll)
 {
     if (!screenManagerAgent_) {
         RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    return screenManagerAgent_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+    return screenManagerAgent_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList, exemptAll);
 }
 
 int32_t RSClientToServiceConnection::SetScreenSecurityMask(ScreenId id,

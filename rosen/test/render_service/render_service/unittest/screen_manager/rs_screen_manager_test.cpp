@@ -2520,6 +2520,30 @@ HWTEST_F(RSScreenManagerTest, SetVirtualScreenSecurityExemptionList002, TestSize
 }
 
 /*
+ * @tc.name: SetVirtualScreenSecurityExemptionList003
+ * @tc.desc: Test SetVirtualScreenSecurityExemptionList with exemptAll
+ * @tc.type: FUNC
+ * @tc.require: issueIB1YAT
+ */
+HWTEST_F(RSScreenManagerTest, SetVirtualScreenSecurityExemptionList003, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+
+    ScreenId id = 1;
+    std::vector<uint64_t> securityExemptionList = {};  // empty list, exempt all security layers
+    auto screen = std::make_shared<RSScreen>(0);
+    screenManager_->screens_[id] = screen;
+    screen->property_.SetIsVirtual(true);
+    auto ret = screenManager_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList, true);
+    ASSERT_EQ(ret, StatusCode::SUCCESS);
+    ASSERT_EQ(screen->property_.GetSecurityExemptAll(), true);
+
+    ret = screenManager_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList, false);
+    ASSERT_EQ(ret, StatusCode::SUCCESS);
+    ASSERT_EQ(screen->property_.GetSecurityExemptAll(), false);
+}
+
+/*
  * @tc.name: SetMirrorScreenVisibleRect001
  * @tc.desc: Test SetMirrorScreenVisibleRect with abnormal params.
  * @tc.type: FUNC
