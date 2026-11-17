@@ -115,7 +115,6 @@ ohos_unittest("vsync_ltpo_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -161,7 +160,6 @@ ohos_unittest("vsync_30to60_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -207,7 +205,6 @@ ohos_unittest("vsync_30to90_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -253,7 +250,6 @@ ohos_unittest("vsync_30to120_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -299,7 +295,6 @@ ohos_unittest("vsync_60to30_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -345,7 +340,6 @@ ohos_unittest("vsync_60to90_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -391,7 +385,6 @@ ohos_unittest("vsync_60to120_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -437,7 +430,6 @@ ohos_unittest("vsync_90to30_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -483,7 +475,6 @@ ohos_unittest("vsync_90to60_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -529,7 +520,6 @@ ohos_unittest("vsync_90to120_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -575,7 +565,6 @@ ohos_unittest("vsync_120to30_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -621,7 +610,6 @@ ohos_unittest("vsync_120to60_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -667,7 +655,6 @@ ohos_unittest("vsync_120to90_test_st") {
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -714,7 +701,6 @@ ohos_unittest("vsync_multicallback_test_st") {
     "../..:libvsync",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -886,7 +872,6 @@ ohos_unittest("vsync_callbackeveryframe_test_st") {
     "../..:libvsync",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",
@@ -932,7 +917,6 @@ ohos_unittest("vsync_sample_test_st") {
     "../..:libvsync",
   ]
   external_deps = [
-    "eventhandler:libeventhandler",
     "access_token:libaccesstoken_sdk",
     "cJSON:cjson",
     "c_utils:utils",

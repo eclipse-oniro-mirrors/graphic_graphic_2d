@@ -65,6 +65,7 @@ ohos_shared_library("socketpair") {
     "hilog:libhilog",
     "ipc:ipc_core",
   ]
+
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }

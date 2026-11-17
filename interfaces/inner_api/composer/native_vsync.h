@@ -181,7 +181,7 @@ int OH_NativeVSync_DVSyncSwitch(OH_NativeVSync* nativeVsync, bool enable);
  *              Valid range is 0 <= min <= expected <= max <= 144.
  *              expected == 0 indicates cancle vote.
  *              This pointer needs to be released by developer.
- * @return {@link NATIVE_ERROR_OK} 0 - Success.
+ * @return {@link NATIVE_ERROR_OK}0 - Success.
  *      {@link NATIVE_ERROR_INVALID_ARGUMENTS} 40001000 - the parameter is NULL or range is invalid.
  *      {@link NATIVE_ERROR_NOT_SUPPORT} 50102000 - the object nativeVsync does not support this interface
  *                                                  Consider using other methods to create nativeVsync instead.
