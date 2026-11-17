@@ -184,7 +184,7 @@ private:
 GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_MarshalFailDropped_Test)
 {
     auto testNode1 = CreateLayoutNode({ 0, 0, 1000, 450 });
-    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_CYAN);
     });
 
@@ -209,7 +209,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_MarshalFa
 GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_UnregisteredTypeSkipped_Test)
 {
     auto testNode1 = CreateLayoutNode({ 0, 0, 1000, 450 });
-    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_YELLOW);
     });
 
@@ -231,10 +231,10 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_Unregiste
 GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_EmptyRecordingDropped_Test)
 {
     auto testNode1 = CreateLayoutNode({ 0, 0, 1000, 450 });
-    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {});
+    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {});
 
     auto testNode2 = CreateLayoutNode({ 0, 550, 1000, 450 });
-    testNode2->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode2->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
     });
 
@@ -258,7 +258,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_LegacyNul
     testNode1->AddCommand(legacyCmd, testNode1->IsRenderServiceNode());
 
     auto testNode2 = CreateLayoutNode({ 0, 550, 1000, 450 });
-    testNode2->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode2->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_CYAN);
     });
 
@@ -278,7 +278,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_LegacyNul
 GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_OversizedRecordingSplit_Test)
 {
     auto testNode1 = CreateLayoutNode({ 0, 0, 1000, 900 });
-    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         Drawing::Brush brush;
         brush.SetColor(Drawing::Color::COLOR_YELLOW);
         canvas->AttachBrush(brush);
@@ -289,7 +289,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_Oversized
     });
 
     auto testNode2 = CreateLayoutNode({ 0, 1000, 1000, 450 });
-    testNode2->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode2->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
     });
 
@@ -311,7 +311,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_MixedAbno
 {
     // healthy RSCanvasNodeUpdateRecording
     auto testNode1 = CreateLayoutNode({ 0, 0, 1000, 300 });
-    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 300), Drawing::Color::COLOR_GREEN);
     });
 
@@ -346,11 +346,11 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_RepeatedR
     for (int i = 0; i < REPEATED_UPDATE_COUNT; i++) {
         Drawing::Color color = (i % 2 == 0) ? Drawing::Color::COLOR_RED : Drawing::Color::COLOR_YELLOW;
         testNode1->DrawOnNode(
-            RSModifierType::CONTENT_STYLE, [color](std::shared_ptr<Drawing::Canvas> canvas) {
+            ModifierNG::RSModifierType::CONTENT_STYLE, [color](std::shared_ptr<Drawing::Canvas> canvas) {
                 FillRect(canvas, Drawing::Rect(0, 0, 1000, 900), color);
             });
     }
-    testNode1->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 900), Drawing::Color::COLOR_CYAN);
     });
 
@@ -374,7 +374,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_RepeatedR
 GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelCanvasLifecycle_Test)
 {
     auto mainNode = CreateLayoutNode({ 0, 0, 1000, 450 });
-    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    mainNode->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
     });
     auto carrierNode = CreateLayoutNode({ 0, 550, 1000, 450 });
@@ -404,7 +404,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelCan
 
     // the last record of the parcel: the full-node green fill lands after the abnormal
     // record and must still apply, proving the rest of the parcel survives the skip
-    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    mainNode->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_GREEN);
     });
 
@@ -428,7 +428,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelCan
 GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelModifierZSort_Test)
 {
     auto mainNode = CreateLayoutNode({ 0, 0, 1000, 450 });
-    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    mainNode->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
     });
     auto carrierNode = CreateLayoutNode({ 0, 550, 1000, 450 });
@@ -449,12 +449,12 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelMod
     command = std::make_unique<UnregisteredPrefixCommand>(carrierNode->GetId());
     carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
     // RS_NODE/SORT_CHILDREN_BY_INDEX
-    command = std::make_unique<RSSortChildrenByZIndex>(GetRootNode()->GetId());
+    command = std::make_unique<RSSortChildrenByZIndex>(mainNode->GetId());
     mainNode->AddCommand(command, mainNode->IsRenderServiceNode());
 
     // the last record of the parcel: the full-node blue fill lands after the abnormal
     // record and must still apply, proving the rest of the parcel survives the skip
-    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    mainNode->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_BLUE);
     });
 
@@ -480,7 +480,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelCro
 {
     auto uiContext = RSGraphicTestDirector::Instance().GetRSUIContext();
     auto mainNode = CreateLayoutNode({ 0, 0, 1000, 450 });
-    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    mainNode->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_RED);
     });
     auto carrierNode = CreateLayoutNode({ 0, 550, 1000, 450 });
@@ -488,11 +488,11 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelCro
 
     NodeId ghostEffectId = carrierNode->GetId() + GHOST_ID_OFFSET;
     // EFFECT_NODE/CREATE on a ghost id
-    std::unique_ptr<RSCommand> command = std::make_unique<RSEffectNodeCreate>(ghostEffectId, false);
+    std::unique_ptr<RSCommand> command = std::make_unique<RSEffectNodeCreate>(ghostEffectId, false, 0);
     carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
     NodeId ghostDrawingId = ghostEffectId + 1;
     // CANVAS_DRAWING_NODE/CREATE on a ghost id
-    command = std::make_unique<RSCanvasDrawingNodeCreate>(ghostDrawingId, false);
+    command = std::make_unique<RSCanvasDrawingNodeCreate>(ghostDrawingId, false, 0);
     carrierNode->AddCommand(command, carrierNode->IsRenderServiceNode());
     // CANVAS_DRAWING_NODE/RESET_SURFACE
     command = std::make_unique<RSCanvasDrawingNodeResetSurface>(ghostDrawingId, 100, 100, 0);
@@ -516,10 +516,10 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelCro
 
     NodeId ghostCanvasId = ghostEffectId + 2;
     // CANVAS_NODE/CREATE on a ghost id, then the full BASE_NODE retire sequence
-    command = std::make_unique<RSCanvasNodeCreate>(ghostCanvasId, false);
+    command = std::make_unique<RSCanvasNodeCreate>(ghostCanvasId, false, 0);
     mainNode->AddCommand(command, mainNode->IsRenderServiceNode());
     // BASE_NODE/ADD_CHILD
-    command = std::make_unique<RSBaseNodeAddChild>(ghostCanvasId, GetRootNode()->GetId(), -1);
+    command = std::make_unique<RSBaseNodeAddChild>(ghostCanvasId, mainNode->GetId(), -1);
     mainNode->AddCommand(command, mainNode->IsRenderServiceNode());
     // BASE_NODE/REMOVE_FROM_TREE
     command = std::make_unique<RSBaseNodeRemoveFromTree>(ghostCanvasId);
@@ -530,7 +530,7 @@ GRAPHIC_TEST(CmdLenPrefixAbnormalTest, CONTENT_DISPLAY_TEST, LenPrefix_ParcelCro
 
     // the last record of the parcel: the full-node green fill lands after the abnormal
     // record and must still apply, proving the rest of the parcel survives the skip
-    mainNode->DrawOnNode(RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
+    mainNode->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [](std::shared_ptr<Drawing::Canvas> canvas) {
         FillRect(canvas, Drawing::Rect(0, 0, 1000, 450), Drawing::Color::COLOR_GREEN);
     });
 
