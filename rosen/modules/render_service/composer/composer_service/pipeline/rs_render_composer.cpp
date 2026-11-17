@@ -1486,8 +1486,8 @@ void RSRenderComposer::UpdateForSurfaceFps(const PipelineParam& pipelineParam)
 void RSRenderComposer::UpdateReadBackDisable(const PipelineParam& pipelineParam)
 {
     if (hdiOutput_->GetReadBackDisabled() != pipelineParam.hasPrivacyLayer) {
-        HLOGI("SetReadBackDisable changed, screenId:%{public}" PRIu64 ", readBackDisabled:%{public}d",
-            screenId_, pipelineParam.hasPrivacyLayer);
+        HLOGI("SetReadBackDisable changed, screenId:%{public}" PRIu64 ", readBackDisabled:%{public}d -> %{public}d",
+            screenId_, hdiOutput_->GetReadBackDisabled(), pipelineParam.hasPrivacyLayer);
         hdiOutput_->SetReadBackDisable(pipelineParam.hasPrivacyLayer);
     }
 }

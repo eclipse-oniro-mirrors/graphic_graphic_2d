@@ -23,6 +23,7 @@
 #include <securec.h>
 #include "platform/common/rs_log.h"
 #include "v1_6/include/idisplay_composer_interface.h"
+#include "v1_0/idisplay_composer.h"
 
 #define CHECK_FUNC(composerSptr)                                     \
     do {                                                             \
@@ -50,9 +51,14 @@ using namespace OHOS::HDI::Display::Composer::V1_3;
 using namespace OHOS::HDI::Display::Composer::V1_4;
 using namespace OHOS::HDI::Display::Composer::V1_5;
 using namespace OHOS::HDI::Display::Composer::V1_6;
-using IDisplayComposerInterfaceSptr = sptr<Composer::V1_6::IDisplayComposerInterface>;
-
-static IDisplayComposerInterfaceSptr g_composer;
+using IDisplayComposerInterfaceSptr_v5 = sptr<Composer::V1_5::IDisplayComposerInterface>;
+using IDisplayComposerInterfaceSptr_v6 = sptr<Composer::V1_6::IDisplayComposerInterface>;
+using IDisplayComposerServiceExistSptr = sptr<OHOS::HDI::Display::Composer::V1_0::IDisplayComposer>;
+static IDisplayComposerInterfaceSptr_v5 g_composer;
+static IDisplayComposerInterfaceSptr_v5 g_composer_v5;
+static IDisplayComposerInterfaceSptr_v6 g_composer_v6;
+static IDisplayComposerServiceExistSptr g_composer_service;
+constexpr int GET_COMPOSER_DELAY_TIME = 100 * 1000;
 }
 
 class HwcDeathRecipient : public IRemoteObject::DeathRecipient {
@@ -82,14 +88,31 @@ HdiDeviceImpl::~HdiDeviceImpl()
 
 bool HdiDeviceImpl::Init()
 {
-    if (g_composer == nullptr) {
-        g_composer = Composer::V1_6::IDisplayComposerInterface::Get();
-        if (g_composer == nullptr) {
-            HLOGE("IDisplayComposerInterface::Get return nullptr.");
-            return false;
+    while (g_composer_service == nullptr) {
+        IDisplayComposerServiceExistSptr remote = OHOS::HDI::Display::Composer::V1_0::IDisplayComposer::Get();
+        if (remote != nullptr) {
+            g_composer_service = remote;
+            break;
         }
+        HLOGD("%{public}s:get display_composer_service remote object failed!", __func__);
+        usleep(GET_COMPOSER_DELAY_TIME);
     }
-    return true;
+    if (g_composer != nullptr) {
+        return true;
+    }
+    g_composer_v6 = Composer::V1_6::IDisplayComposerInterface::Get();
+    if (g_composer_v6 != nullptr) {
+        g_composer = g_composer_v6;
+        return true;
+    }
+    HLOGI("Composer::V1_6::IDisplayComposerInterface::Get fail, fallback to lower version");
+    g_composer_v5 = Composer::V1_5::IDisplayComposerInterface::Get();
+    if (g_composer_v5 != nullptr) {
+        g_composer = g_composer_v5;
+        return true;
+    }
+    HLOGW("Composer::V1_5::IDisplayComposerInterface::Get fail, fallback to lower version");
+    return false;
 }
 
 void HdiDeviceImpl::Destroy()
@@ -711,8 +734,8 @@ int32_t HdiDeviceImpl::SetDisplayPerFrameParameterSmq(uint32_t devId, const std:
 
 int32_t HdiDeviceImpl::SetDisplayReadBackSmq(uint32_t screenId, bool disableReadback)
 {
-    CHECK_FUNC(g_composer);
-    return g_composer->SetDisplayReadBackSmq(screenId, disableReadback);
+    CHECK_FUNC(g_composer_v6);
+    return g_composer_v6->SetDisplayReadBackSmq(screenId, disableReadback);
 }
 
 int32_t HdiDeviceImpl::SetLayerTunnelHandle(uint32_t screenId, uint32_t layerId, GraphicExtDataHandle *handle)

@@ -9947,7 +9947,7 @@ HWTEST_F(RsRenderComposerTest, AddSolidColorLayer_NotSolidFilledColorLayer_True,
     std::vector<std::shared_ptr<RSLayer>> layers;
     std::shared_ptr<RSRenderSurfaceLayer> layer = std::make_shared<RSRenderSurfaceLayer>();
     layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
-    
+
     GraphicSolidColorLayerProperty solidColorProp;
     solidColorProp.compositionType = GraphicCompositionType::GRAPHIC_COMPOSITION_SOLID_COLOR;
     solidColorProp.zOrder = 5;
