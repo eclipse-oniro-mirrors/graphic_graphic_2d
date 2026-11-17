@@ -29,7 +29,7 @@ class RSFilter;
 class RSBorder;
 class RSNGRenderShaderBase;
 class RSProperties;
-class RSParticlesDrawable;
+class RSParticlesPainter;
 namespace Drawing {
 class GEShader;
 class RuntimeEffect;
@@ -171,7 +171,7 @@ public:
     bool OnUpdate(const RSRenderNode& node) override;
 
 private:
-    std::shared_ptr<RSParticlesDrawable> cachedDrawable_;
+    std::shared_ptr<RSParticlesPainter> cachedPainter_;
 };
 
 class RSPixelStretchDrawable : public RSDrawable {

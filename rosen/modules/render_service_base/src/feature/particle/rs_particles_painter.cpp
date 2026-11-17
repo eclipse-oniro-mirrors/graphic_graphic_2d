@@ -16,8 +16,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "feature/particle/rs_particles_painter.h"
 #include "platform/common/rs_log.h"
-#include "render/rs_particles_drawable.h"
 #include "render/rs_pixel_map_util.h"
 
 namespace OHOS {
@@ -45,9 +45,9 @@ Vector2f ParticlePosition(const RSRenderParticle& data, size_t slot)
 }
 } // namespace
 
-std::shared_ptr<Drawing::Image> RSParticlesDrawable::sharedCircleImage_ = nullptr;
+std::shared_ptr<Drawing::Image> RSParticlesPainter::sharedCircleImage_ = nullptr;
 
-RSParticlesDrawable::RSParticlesDrawable(const std::shared_ptr<RSRenderParticlePool>& pool,
+RSParticlesPainter::RSParticlesPainter(const std::shared_ptr<RSRenderParticlePool>& pool,
     const std::vector<std::shared_ptr<RSImage>>& imageVector, size_t imageCount)
     : pool_(pool), imageVector_(imageVector), imageCount_(imageCount)
 {
@@ -59,7 +59,7 @@ RSParticlesDrawable::RSParticlesDrawable(const std::shared_ptr<RSRenderParticleP
     imageColors_.resize(imageCount_);
 }
 
-std::shared_ptr<Drawing::Image> RSParticlesDrawable::GetSharedCircleImage()
+std::shared_ptr<Drawing::Image> RSParticlesPainter::GetSharedCircleImage()
 {
     if (sharedCircleImage_ == nullptr) {
         sharedCircleImage_ = MakeCircleImage(DEFAULT_RADIUS);
@@ -67,7 +67,7 @@ std::shared_ptr<Drawing::Image> RSParticlesDrawable::GetSharedCircleImage()
     return sharedCircleImage_;
 }
 
-void RSParticlesDrawable::UpdateData(const std::shared_ptr<RSRenderParticlePool>& pool,
+void RSParticlesPainter::UpdateData(const std::shared_ptr<RSRenderParticlePool>& pool,
     const std::vector<std::shared_ptr<RSImage>>& imageVector, size_t imageCount)
 {
     const bool poolChanged = (pool_ != pool);
@@ -90,7 +90,7 @@ void RSParticlesDrawable::UpdateData(const std::shared_ptr<RSRenderParticlePool>
     }
 }
 
-std::shared_ptr<Drawing::Image> RSParticlesDrawable::GetCachedDrawingImage(
+std::shared_ptr<Drawing::Image> RSParticlesPainter::GetCachedDrawingImage(
     size_t imageIndex, const std::shared_ptr<RSImage>& rsImage)
 {
     if (rsImage == nullptr || imageIndex >= drawingImageCache_.size()) {
@@ -111,7 +111,7 @@ std::shared_ptr<Drawing::Image> RSParticlesDrawable::GetCachedDrawingImage(
     return entry.image;
 }
 
-const std::shared_ptr<RSImage>& RSParticlesDrawable::ImageForSlot(size_t slot) const
+const std::shared_ptr<RSImage>& RSParticlesPainter::ImageForSlot(size_t slot) const
 {
     static const std::shared_ptr<RSImage> empty;
     if (pool_ == nullptr || slot >= pool_->Count()) {
@@ -121,7 +121,7 @@ const std::shared_ptr<RSImage>& RSParticlesDrawable::ImageForSlot(size_t slot) c
     return index < imageVector_.size() ? imageVector_[index] : empty;
 }
 
-std::shared_ptr<Drawing::Image> RSParticlesDrawable::MakeCircleImage(int radius)
+std::shared_ptr<Drawing::Image> RSParticlesPainter::MakeCircleImage(int radius)
 {
     Drawing::Bitmap bitmap;
     Drawing::BitmapFormat format { Drawing::ColorType::COLORTYPE_RGBA_8888, Drawing::AlphaType::ALPHATYPE_OPAQUE };
@@ -151,7 +151,7 @@ std::shared_ptr<Drawing::Image> RSParticlesDrawable::MakeCircleImage(int radius)
  *  [ sin      cos    ty ]
  *  [  0        0      1 ]
  */
-Drawing::RSXform RSParticlesDrawable::MakeRSXform(
+Drawing::RSXform RSParticlesPainter::MakeRSXform(
     Vector2f center, Vector2f position, float cosValue, float sinValue, float scale)
 {
     const float cos = cosValue * scale;
@@ -161,7 +161,7 @@ Drawing::RSXform RSParticlesDrawable::MakeRSXform(
     return Drawing::RSXform::Make(cos, sin, tx, ty);
 }
 
-void RSParticlesDrawable::CaculatePointAtlsArry(size_t slot, Vector2f position, float opacity, float scale)
+void RSParticlesPainter::CaculatePointAtlsArry(size_t slot, Vector2f position, float opacity, float scale)
 {
     if (pool_ == nullptr || slot >= pool_->Count()) {
         return;
@@ -178,7 +178,7 @@ void RSParticlesDrawable::CaculatePointAtlsArry(size_t slot, Vector2f position, 
     pointCount_++;
 }
 
-void RSParticlesDrawable::ResolveFittedSize(size_t imageIndex, const std::shared_ptr<RSImage>& image,
+void RSParticlesPainter::ResolveFittedSize(size_t imageIndex, const std::shared_ptr<RSImage>& image,
     const Vector2f& imageSize, const Vector2f& position, float& drawWidth, float& drawHeight)
 {
     const uint64_t uniqueId = image->GetUniqueId();
@@ -210,7 +210,7 @@ void RSParticlesDrawable::ResolveFittedSize(size_t imageIndex, const std::shared
     }
 }
 
-float RSParticlesDrawable::CalculateImageDepth(size_t slot, const Vector2f& position, float scale)
+float RSParticlesPainter::CalculateImageDepth(size_t slot, const Vector2f& position, float scale)
 {
     if (pool_ == nullptr || slot >= pool_->Count()) {
         return 0.f;
@@ -234,7 +234,7 @@ float RSParticlesDrawable::CalculateImageDepth(size_t slot, const Vector2f& posi
     return width * height * scale * scale;
 }
 
-void RSParticlesDrawable::MeasureImageParticle(size_t slot, const Vector2f& position, float scale,
+void RSParticlesPainter::MeasureImageParticle(size_t slot, const Vector2f& position, float scale,
     bool listedLastFrame)
 {
     if (pool_ == nullptr || slot >= pool_->Count()) {
@@ -253,7 +253,7 @@ void RSParticlesDrawable::MeasureImageParticle(size_t slot, const Vector2f& posi
     }
 }
 
-void RSParticlesDrawable::BuildImageSprites()
+void RSParticlesPainter::BuildImageSprites()
 {
     if (pool_ == nullptr) {
         imageSlots_.clear();
@@ -280,7 +280,7 @@ void RSParticlesDrawable::BuildImageSprites()
     rebuildImageOrder_ = false;
 }
 
-bool RSParticlesDrawable::IsAtlasCacheValid() const
+bool RSParticlesPainter::IsAtlasCacheValid() const
 {
     // Compares in place to avoid building a key vector on every frame.
     if (!atlasEvaluated_ || atlasKey_.size() != imageCount_) {
@@ -296,7 +296,7 @@ bool RSParticlesDrawable::IsAtlasCacheValid() const
     return true;
 }
 
-void RSParticlesDrawable::RefreshAtlasKey()
+void RSParticlesPainter::RefreshAtlasKey()
 {
     atlasKey_.resize(imageCount_);
     for (size_t i = 0; i < imageCount_; i++) {
@@ -310,7 +310,7 @@ void RSParticlesDrawable::RefreshAtlasKey()
     atlasImage_ = nullptr;
 }
 
-bool RSParticlesDrawable::CollectAtlasSources(std::vector<AtlasSource>& sources)
+bool RSParticlesPainter::CollectAtlasSources(std::vector<AtlasSource>& sources)
 {
     for (size_t i = 0; i < imageCount_; i++) {
         if (i >= imageVector_.size()) {
@@ -330,7 +330,7 @@ bool RSParticlesDrawable::CollectAtlasSources(std::vector<AtlasSource>& sources)
     return !sources.empty();
 }
 
-bool RSParticlesDrawable::MeasureAtlas(std::vector<AtlasSource>& sources, int& atlasWidth)
+bool RSParticlesPainter::MeasureAtlas(std::vector<AtlasSource>& sources, int& atlasWidth)
 {
     if (sources.empty()) {
         return false;
@@ -348,7 +348,7 @@ bool RSParticlesDrawable::MeasureAtlas(std::vector<AtlasSource>& sources, int& a
         const int cellH = static_cast<int>(source.image->GetHeight()) + ATLAS_PADDING * 2;
         const int64_t cellArea = static_cast<int64_t>(cellW) * cellH;
         if (cellW > ATLAS_MAX_DIM || cellH > ATLAS_MAX_DIM || totalArea + cellArea > ATLAS_MAX_PIXELS) {
-            ROSEN_LOGD("RSParticlesDrawable::BuildAtlas image %{public}zu cannot fit the atlas budget, falling back",
+            ROSEN_LOGD("RSParticlesPainter::BuildAtlas image %{public}zu cannot fit the atlas budget, falling back",
                 source.index);
             return false;
         }
@@ -360,7 +360,7 @@ bool RSParticlesDrawable::MeasureAtlas(std::vector<AtlasSource>& sources, int& a
     return true;
 }
 
-bool RSParticlesDrawable::PlaceAtlasSources(const std::vector<AtlasSource>& sources, int atlasWidth,
+bool RSParticlesPainter::PlaceAtlasSources(const std::vector<AtlasSource>& sources, int atlasWidth,
     std::vector<AtlasPlacement>& placements, int& atlasHeight)
 {
     int penX = 0;
@@ -375,7 +375,7 @@ bool RSParticlesDrawable::PlaceAtlasSources(const std::vector<AtlasSource>& sour
             rowHeight = 0;
         }
         if (penY + cellH > ATLAS_MAX_DIM) {
-            ROSEN_LOGD("RSParticlesDrawable::BuildAtlas image %{public}zu does not fit the shelves, falling back",
+            ROSEN_LOGD("RSParticlesPainter::BuildAtlas image %{public}zu does not fit the shelves, falling back",
                 source.index);
             return false;
         }
@@ -395,13 +395,13 @@ bool RSParticlesDrawable::PlaceAtlasSources(const std::vector<AtlasSource>& sour
     return atlasHeight > 0;
 }
 
-bool RSParticlesDrawable::RasterizeAtlas(const std::vector<AtlasPlacement>& placements, int atlasWidth,
+bool RSParticlesPainter::RasterizeAtlas(const std::vector<AtlasPlacement>& placements, int atlasWidth,
     int atlasHeight)
 {
     Drawing::Bitmap bitmap;
     Drawing::BitmapFormat format { Drawing::ColorType::COLORTYPE_RGBA_8888, Drawing::AlphaType::ALPHATYPE_PREMUL };
     if (!bitmap.Build(atlasWidth, atlasHeight, format)) {
-        ROSEN_LOGD("RSParticlesDrawable::BuildAtlas bitmap build failed");
+        ROSEN_LOGD("RSParticlesPainter::BuildAtlas bitmap build failed");
         return false;
     }
     bitmap.ClearWithColor(Drawing::Color::COLOR_TRANSPARENT);
@@ -424,13 +424,13 @@ bool RSParticlesDrawable::RasterizeAtlas(const std::vector<AtlasPlacement>& plac
 
     atlasImage_ = bitmap.MakeImage();
     if (atlasImage_ == nullptr) {
-        ROSEN_LOGD("RSParticlesDrawable::BuildAtlas make image failed");
+        ROSEN_LOGD("RSParticlesPainter::BuildAtlas make image failed");
         return false;
     }
     return true;
 }
 
-bool RSParticlesDrawable::BuildAtlas()
+bool RSParticlesPainter::BuildAtlas()
 {
     // A valid cache also memoises a failure: a set that cannot be packed is not retried until the images change.
     if (IsAtlasCacheValid()) {
@@ -454,7 +454,7 @@ bool RSParticlesDrawable::BuildAtlas()
     return RasterizeAtlas(placements, atlasWidth, atlasHeight);
 }
 
-void RSParticlesDrawable::CollectSprites()
+void RSParticlesPainter::CollectSprites()
 {
     if (pool_ != nullptr && poolGeneration_ != pool_->Generation()) {
         RemapImageSlots();
@@ -468,13 +468,13 @@ void RSParticlesDrawable::CollectSprites()
             frameStamp_ = 1;
         }
         if (!BuildAtlas()) {
-            ROSEN_LOGD("RSParticlesDrawable::CollectSprites atlas unavailable, falling back to per-sprite draws");
+            ROSEN_LOGD("RSParticlesPainter::CollectSprites atlas unavailable, falling back to per-sprite draws");
         }
         newImageSlots_.clear();
     }
 }
 
-void RSParticlesDrawable::RemapImageSlots()
+void RSParticlesPainter::RemapImageSlots()
 {
     if (pool_ == nullptr) {
         imageSlots_.clear();
@@ -499,13 +499,13 @@ void RSParticlesDrawable::RemapImageSlots()
     poolGeneration_ = pool_->Generation();
 }
 
-bool RSParticlesDrawable::HasAtlasSlot(size_t imageIndex) const
+bool RSParticlesPainter::HasAtlasSlot(size_t imageIndex) const
 {
     return imageIndex < atlasSlots_.size() && atlasSlots_[imageIndex].width_ > 0.f &&
         atlasSlots_[imageIndex].height_ > 0.f;
 }
 
-bool RSParticlesDrawable::HasBucketedSprites() const
+bool RSParticlesPainter::HasBucketedSprites() const
 {
     const size_t count = std::min({ imageCount_, count_.size(), imageRsxform_.size() });
     for (size_t i = 0; i < count; i++) {
@@ -516,7 +516,7 @@ bool RSParticlesDrawable::HasBucketedSprites() const
     return false;
 }
 
-bool RSParticlesDrawable::ResolveSpriteSource(size_t imageIndex, Drawing::Rect& tex)
+bool RSParticlesPainter::ResolveSpriteSource(size_t imageIndex, Drawing::Rect& tex)
 {
     // Atlas slot if packed, otherwise the whole source image, so per-sprite draws still have a texture.
     if (HasAtlasSlot(imageIndex)) {
@@ -533,7 +533,7 @@ bool RSParticlesDrawable::ResolveSpriteSource(size_t imageIndex, Drawing::Rect& 
     return true;
 }
 
-float RSParticlesDrawable::SafeScaleFactor(float fittedWidth, float sourceWidth)
+float RSParticlesPainter::SafeScaleFactor(float fittedWidth, float sourceWidth)
 {
     if (sourceWidth > 0.0f) {
         return fittedWidth / sourceWidth;
@@ -541,7 +541,7 @@ float RSParticlesDrawable::SafeScaleFactor(float fittedWidth, float sourceWidth)
     return 0.0f;
 }
 
-bool RSParticlesDrawable::BuildImageSprite(size_t slot, ImageSprite& sprite)
+bool RSParticlesPainter::BuildImageSprite(size_t slot, ImageSprite& sprite)
 {
     if (pool_ == nullptr || slot >= pool_->Count()) {
         return false;
@@ -579,7 +579,7 @@ bool RSParticlesDrawable::BuildImageSprite(size_t slot, ImageSprite& sprite)
     return true;
 }
 
-bool RSParticlesDrawable::AppendImageSprite(size_t slot)
+bool RSParticlesPainter::AppendImageSprite(size_t slot)
 {
     ImageSprite sprite;
     if (!BuildImageSprite(slot, sprite)) {
@@ -591,7 +591,7 @@ bool RSParticlesDrawable::AppendImageSprite(size_t slot)
     return true;
 }
 
-void RSParticlesDrawable::AppendImageSpriteToBucket(size_t slot, size_t imageIndex)
+void RSParticlesPainter::AppendImageSpriteToBucket(size_t slot, size_t imageIndex)
 {
     ImageSprite sprite;
     if (!BuildImageSprite(slot, sprite)) {
@@ -603,7 +603,7 @@ void RSParticlesDrawable::AppendImageSpriteToBucket(size_t slot, size_t imageInd
     count_[imageIndex]++;
 }
 
-void RSParticlesDrawable::AppendImageParticleSprite(Drawing::Canvas& canvas, size_t slot)
+void RSParticlesPainter::AppendImageParticleSprite(Drawing::Canvas& canvas, size_t slot)
 {
     if (pool_ == nullptr || slot >= pool_->Count()) {
         return;
@@ -633,7 +633,7 @@ void RSParticlesDrawable::AppendImageParticleSprite(Drawing::Canvas& canvas, siz
     AppendImageSpriteToBucket(slot, imageIndex);
 }
 
-void RSParticlesDrawable::ReserveBuffers(size_t maxCount)
+void RSParticlesPainter::ReserveBuffers(size_t maxCount)
 {
     pointRsxform_.reserve(maxCount);
     pointTex_.reserve(maxCount);
@@ -644,11 +644,11 @@ void RSParticlesDrawable::ReserveBuffers(size_t maxCount)
         spriteTex_.reserve(maxCount);
         spriteColor_.reserve(maxCount);
         imageSlots_.reserve(maxCount);
-        imageSlots_.reserve(maxCount);
+        newImageSlots_.reserve(maxCount);
     }
 }
 
-void RSParticlesDrawable::ClipToBounds(Drawing::Canvas& canvas, const std::shared_ptr<RectF>& bounds)
+void RSParticlesPainter::ClipToBounds(Drawing::Canvas& canvas, const std::shared_ptr<RectF>& bounds)
 {
     if (bounds) {
         canvas.Save();
@@ -657,7 +657,7 @@ void RSParticlesDrawable::ClipToBounds(Drawing::Canvas& canvas, const std::share
     }
 }
 
-void RSParticlesDrawable::DrawImageFill(Drawing::Canvas& canvas, size_t slot, Vector2f position, float opacity,
+void RSParticlesPainter::DrawImageFill(Drawing::Canvas& canvas, size_t slot, Vector2f position, float opacity,
     float scale)
 {
     if (pool_ == nullptr || slot >= pool_->Count()) {
@@ -690,10 +690,10 @@ void RSParticlesDrawable::DrawImageFill(Drawing::Canvas& canvas, size_t slot, Ve
     canvas.Restore();
 }
 
-void RSParticlesDrawable::Draw(Drawing::Canvas& canvas, std::shared_ptr<RectF> bounds)
+void RSParticlesPainter::Draw(Drawing::Canvas& canvas, std::shared_ptr<RectF> bounds)
 {
     if (pool_ == nullptr || pool_->Count() == 0) {
-        ROSEN_LOGE("RSParticlesDrawable::Draw pool is empty");
+        ROSEN_LOGE("RSParticlesPainter::Draw pool is empty");
         return;
     }
     const uint32_t previousStamp = frameStamp_;
@@ -730,7 +730,7 @@ void RSParticlesDrawable::Draw(Drawing::Canvas& canvas, std::shared_ptr<RectF> b
     ClearBuffers();
 }
 
-void RSParticlesDrawable::DrawParticlesInOrder(Drawing::Canvas& canvas)
+void RSParticlesPainter::DrawParticlesInOrder(Drawing::Canvas& canvas)
 {
     if (pointCount_ > 0) {
         DrawCircle(canvas);
@@ -755,7 +755,7 @@ void RSParticlesDrawable::DrawParticlesInOrder(Drawing::Canvas& canvas)
     DrawImages(canvas);
 }
 
-void RSParticlesDrawable::DrawSpriteRange(Drawing::Canvas& canvas, size_t begin, size_t end)
+void RSParticlesPainter::DrawSpriteRange(Drawing::Canvas& canvas, size_t begin, size_t end)
 {
     // The three arrays are filled together, so one bounds check covers the range.
     if (atlasImage_ == nullptr || begin >= end || end > spriteRsxform_.size() || end > spriteTex_.size() ||
@@ -779,7 +779,7 @@ void RSParticlesDrawable::DrawSpriteRange(Drawing::Canvas& canvas, size_t begin,
     canvas.DetachBrush();
 }
 
-void RSParticlesDrawable::DrawCircle(Drawing::Canvas& canvas)
+void RSParticlesPainter::DrawCircle(Drawing::Canvas& canvas)
 {
     auto circleImage = GetSharedCircleImage();
     if (circleImage == nullptr) {
@@ -809,7 +809,7 @@ void RSParticlesDrawable::DrawCircle(Drawing::Canvas& canvas)
     canvas.DetachBrush();
 }
 
-void RSParticlesDrawable::DrawImages(Drawing::Canvas& canvas)
+void RSParticlesPainter::DrawImages(Drawing::Canvas& canvas)
 {
     size_t imageCountCopy = imageCount_;
     const Drawing::SamplingOptions samplingOptions(Drawing::FilterMode::LINEAR);
@@ -826,7 +826,7 @@ void RSParticlesDrawable::DrawImages(Drawing::Canvas& canvas)
         auto image = GetCachedDrawingImage(i, imageVector_[i]);
         if (image == nullptr) {
             // Retried on the next frame by the per-image path, so keep this at debug level.
-            ROSEN_LOGD("RSParticlesDrawable::Draw image %{public}d is not resolvable", static_cast<int32_t>(i));
+            ROSEN_LOGD("RSParticlesPainter::Draw image %{public}d is not resolvable", static_cast<int32_t>(i));
             continue;
         }
 
@@ -853,7 +853,7 @@ void RSParticlesDrawable::DrawImages(Drawing::Canvas& canvas)
     }
 }
 
-void RSParticlesDrawable::ClearBuffers()
+void RSParticlesPainter::ClearBuffers()
 {
     pointRsxform_.clear();
     pointTex_.clear();

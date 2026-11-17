@@ -514,7 +514,7 @@ HWTEST_F(RSPropertyDrawableForegroundTest, DrawBorderTest002, TestSize.Level1)
 
 /**
  * @tc.name: RSParticleDrawableOnUpdateCacheTest001
- * @tc.desc: Test RSParticleDrawable::OnUpdate caching - first call creates cachedDrawable_
+ * @tc.desc: Test RSParticleDrawable::OnUpdate caching - first call creates cachedPainter_
  * @tc.type: FUNC
  */
 HWTEST_F(RSPropertyDrawableForegroundTest, RSParticleDrawableOnUpdateCacheTest001, TestSize.Level1)
@@ -522,7 +522,7 @@ HWTEST_F(RSPropertyDrawableForegroundTest, RSParticleDrawableOnUpdateCacheTest00
     std::shared_ptr<DrawableV2::RSParticleDrawable> particleDrawable =
         std::make_shared<DrawableV2::RSParticleDrawable>();
     EXPECT_NE(particleDrawable, nullptr);
-    EXPECT_EQ(particleDrawable->cachedDrawable_, nullptr);
+    EXPECT_EQ(particleDrawable->cachedPainter_, nullptr);
 
     RSRenderNode renderNode(0);
     auto pool = std::make_shared<RSRenderParticlePool>();
@@ -536,12 +536,12 @@ HWTEST_F(RSPropertyDrawableForegroundTest, RSParticleDrawableOnUpdateCacheTest00
 
     bool result = particleDrawable->OnUpdate(renderNode);
     EXPECT_TRUE(result);
-    EXPECT_NE(particleDrawable->cachedDrawable_, nullptr);
+    EXPECT_NE(particleDrawable->cachedPainter_, nullptr);
 }
 
 /**
  * @tc.name: RSParticleDrawableOnUpdateCacheTest002
- * @tc.desc: Test RSParticleDrawable::OnUpdate caching - second call reuses cachedDrawable_
+ * @tc.desc: Test RSParticleDrawable::OnUpdate caching - second call reuses cachedPainter_
  * @tc.type: FUNC
  */
 HWTEST_F(RSPropertyDrawableForegroundTest, RSParticleDrawableOnUpdateCacheTest002, TestSize.Level1)
@@ -562,16 +562,16 @@ HWTEST_F(RSPropertyDrawableForegroundTest, RSParticleDrawableOnUpdateCacheTest00
 
     // First call
     particleDrawable->OnUpdate(renderNode);
-    auto firstCachedDrawable = particleDrawable->cachedDrawable_;
-    EXPECT_NE(firstCachedDrawable, nullptr);
+    auto firstCachedPainter = particleDrawable->cachedPainter_;
+    EXPECT_NE(firstCachedPainter, nullptr);
 
-    // Second call - should reuse cached drawable (UpdateData branch)
+    // Second call - should reuse cached painter (UpdateData branch)
     pool->Acquire();
     renderNode.GetMutableRenderProperties().SetParticles(particles);
 
     bool result = particleDrawable->OnUpdate(renderNode);
     EXPECT_TRUE(result);
-    EXPECT_EQ(particleDrawable->cachedDrawable_, firstCachedDrawable);
+    EXPECT_EQ(particleDrawable->cachedPainter_, firstCachedPainter);
 }
 
 /**
