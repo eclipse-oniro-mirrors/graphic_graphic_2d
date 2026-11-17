@@ -4480,33 +4480,51 @@ HWTEST_F(RsRenderComposerTest, ProcessComposerFrame_DoRepaintTrue, TestSize.Leve
 }
 
 /**
- * Function: ProcessComposerFrame_HasPrivacyLayerChanged
+ * Function: UpdateReadBackDisable_HasPrivacyLayerChanged
  * Type: Function
  * Rank: Important(2)
  * EnvConditions: N/A
  * CaseDescription: 1. create RSRenderComposer
  *                  2. set hasPrivacyLayer = true in PipelineParam
- *                  3. call ProcessComposerFrame
+ *                  3. call UpdateReadBackDisable
  *                  4. verify readBackDisabled_ changed to true
  */
-HWTEST_F(RsRenderComposerTest, ProcessComposerFrame_HasPrivacyLayerChanged, TestSize.Level1)
+HWTEST_F(RsRenderComposerTest, UpdateReadBackDisable_HasPrivacyLayerChanged, TestSize.Level1)
 {
     auto output = std::make_shared<HdiOutput>(1u);
     output->Init();
     sptr<RSScreenProperty> property = new RSScreenProperty();
     auto tmpRsRenderComposer = std::make_shared<RSRenderComposer>(output, property);
 
-    std::shared_ptr<RSRenderSurfaceLayer> layer = std::make_shared<RSRenderSurfaceLayer>();
-    layer->SetLayerSize({ 100, 100, 100, 100 });
-    layer->SetUniRenderFlag(false);
-    tmpRsRenderComposer->rsRenderComposerContext_->AddRSRenderLayer(1, layer);
-
     PipelineParam param;
     param.hasPrivacyLayer = true;
-    uint32_t currentRate = 60;
-    tmpRsRenderComposer->ProcessComposerFrame(currentRate, param);
+    tmpRsRenderComposer->UpdateReadBackDisable(param);
 
     EXPECT_TRUE(tmpRsRenderComposer->hdiOutput_->GetReadBackDisabled());
+}
+
+/**
+ * Function: UpdateReadBackDisable_HasPrivacyLayerNotChanged
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create RSRenderComposer
+ *                  2. set hasPrivacyLayer = false in PipelineParam (same as default)
+ *                  3. call UpdateReadBackDisable
+ *                  4. verify readBackDisabled_ stays false
+ */
+HWTEST_F(RsRenderComposerTest, UpdateReadBackDisable_HasPrivacyLayerNotChanged, TestSize.Level1)
+{
+    auto output = std::make_shared<HdiOutput>(1u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    auto tmpRsRenderComposer = std::make_shared<RSRenderComposer>(output, property);
+
+    PipelineParam param;
+    param.hasPrivacyLayer = false;
+    tmpRsRenderComposer->UpdateReadBackDisable(param);
+
+    EXPECT_FALSE(tmpRsRenderComposer->hdiOutput_->GetReadBackDisabled());
 }
 
 /**
