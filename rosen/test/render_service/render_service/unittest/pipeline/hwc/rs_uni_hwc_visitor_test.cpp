@@ -5312,4 +5312,171 @@ HWTEST_F(RSUniHwcVisitorTest, CollectHwcAndFilterNodesForCrossNode005, TestSize.
     ASSERT_NE(mirrored, nullptr);
     EXPECT_EQ(mirrored->GetId(), sourceChild->GetId());
 }
+
+/**
+ * @tc.name: IsSurfaceOpaque_001
+ * @tc.desc: Test IsSurfaceOpaque returns false when the surface has no consumer
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcVisitorTest, IsSurfaceOpaque_001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    surfaceConfig.name = "surfaceOpaqueTest001";
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode(surfaceConfig);
+    ASSERT_NE(surfaceNode, nullptr);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
+    ASSERT_NE(rsUniHwcVisitor, nullptr);
+ 
+    // No consumer: the framework type cannot be read, so the node is not opaque
+    surfaceNode->GetRSSurfaceHandler()->consumer_ = nullptr;
+    RsCommonHook::Instance().SetSurfaceOpaqueType("video");
+    EXPECT_FALSE(rsUniHwcVisitor->IsSurfaceOpaque(*surfaceNode));
+    RsCommonHook::Instance().SetSurfaceOpaqueType("");
+}
+ 
+/**
+ * @tc.name: IsSurfaceOpaque_002
+ * @tc.desc: Test IsSurfaceOpaque returns true when the framework type contains the opaque type
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcVisitorTest, IsSurfaceOpaque_002, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    surfaceConfig.name = "surfaceOpaqueTest002";
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode(surfaceConfig);
+    ASSERT_NE(surfaceNode, nullptr);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
+    ASSERT_NE(rsUniHwcVisitor, nullptr);
+ 
+    auto consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    consumer->SetSurfaceAppFrameworkType("video_player");
+    surfaceNode->GetRSSurfaceHandler()->consumer_ = consumer;
+ 
+    // framework type "video_player" contains opaque type "video"
+    RsCommonHook::Instance().SetSurfaceOpaqueType("video");
+    EXPECT_TRUE(rsUniHwcVisitor->IsSurfaceOpaque(*surfaceNode));
+ 
+    // framework type contains the whole opaque type as a substring
+    RsCommonHook::Instance().SetSurfaceOpaqueType("player");
+    EXPECT_TRUE(rsUniHwcVisitor->IsSurfaceOpaque(*surfaceNode));
+    RsCommonHook::Instance().SetSurfaceOpaqueType("");
+}
+ 
+/**
+ * @tc.name: IsSurfaceOpaque_003
+ * @tc.desc: Test IsSurfaceOpaque returns false when the framework type does not contain the opaque type
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcVisitorTest, IsSurfaceOpaque_003, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    surfaceConfig.name = "surfaceOpaqueTest003";
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode(surfaceConfig);
+    ASSERT_NE(surfaceNode, nullptr);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
+    ASSERT_NE(rsUniHwcVisitor, nullptr);
+ 
+    auto consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    consumer->SetSurfaceAppFrameworkType("video_player");
+    surfaceNode->GetRSSurfaceHandler()->consumer_ = consumer;
+ 
+    RsCommonHook::Instance().SetSurfaceOpaqueType("audio");
+    EXPECT_FALSE(rsUniHwcVisitor->IsSurfaceOpaque(*surfaceNode));
+ 
+    // Unset framework type (default empty) with non-empty opaque type: no match
+    auto emptyConsumer = IConsumerSurface::Create();
+    ASSERT_NE(emptyConsumer, nullptr);
+    surfaceNode->GetRSSurfaceHandler()->consumer_ = emptyConsumer;
+    RsCommonHook::Instance().SetSurfaceOpaqueType("video");
+    EXPECT_FALSE(rsUniHwcVisitor->IsSurfaceOpaque(*surfaceNode));
+    RsCommonHook::Instance().SetSurfaceOpaqueType("");
+}
+ 
+/**
+ * @tc.name: IsSurfaceOpaque_004
+ * @tc.desc: Test IsSurfaceOpaque returns true when the opaque type is empty (empty substring always matches)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcVisitorTest, IsSurfaceOpaque_004, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    surfaceConfig.name = "surfaceOpaqueTest004";
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode(surfaceConfig);
+    ASSERT_NE(surfaceNode, nullptr);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
+    ASSERT_NE(rsUniHwcVisitor, nullptr);
+ 
+    auto consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    consumer->SetSurfaceAppFrameworkType("video_player");
+    surfaceNode->GetRSSurfaceHandler()->consumer_ = consumer;
+ 
+    // find("") returns 0, so an unset opaque type matches every framework type
+    RsCommonHook::Instance().SetSurfaceOpaqueType("");
+    EXPECT_TRUE(rsUniHwcVisitor->IsSurfaceOpaque(*surfaceNode));
+}
+ 
+/**
+ * @tc.name: UpdateHwcNodeEnableByBackgroundAlpha_OpaqueSurface_001
+ * @tc.desc: Test UpdateHwcNodeEnableByBackgroundAlpha returns early for an opaque surface
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByBackgroundAlpha_OpaqueSurface_001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    surfaceConfig.name = "opaqueSurfaceAlphaTest001";
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode(surfaceConfig);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetAncoForceDoDirect(false);
+    auto& renderProperties = surfaceNode->GetMutableRenderProperties();
+    renderProperties.SetBackgroundColor(Color(136, 136, 136, 255));
+    renderProperties.SetAlpha(1);
+ 
+    auto consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    consumer->SetSurfaceAppFrameworkType("video_player");
+    surfaceNode->GetRSSurfaceHandler()->consumer_ = consumer;
+ 
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->curSurfaceNode_ = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsUniRenderVisitor->curSurfaceNode_, nullptr);
+    NodeId screenNodeId = 1;
+    auto rsContext = std::make_shared<RSContext>();
+    auto displayNode = std::make_shared<RSScreenRenderNode>(screenNodeId, 0, rsContext->weak_from_this());
+    displayNode->curMainAndLeashSurfaceNodes_.push_back(nullptr);
+    rsUniRenderVisitor->curScreenNode_ = displayNode;
+    ASSERT_NE(rsUniRenderVisitor->curScreenNode_, nullptr);
+    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
+    ASSERT_NE(rsUniHwcVisitor, nullptr);
+ 
+    RsCommonHook::Instance().SetSurfaceOpaqueType("video");
+    rsUniHwcVisitor->UpdateHwcNodeEnableByBackgroundAlpha(*surfaceNode);
+ 
+    // Early return before the solid layer decision: solid layer stays disabled
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(surfaceNode->GetStagingRenderParams().get());
+    ASSERT_NE(stagingSurfaceParams, nullptr);
+    EXPECT_FALSE(stagingSurfaceParams->GetIsHwcEnabledBySolidLayer());
+    RsCommonHook::Instance().SetSurfaceOpaqueType("");
+}
 } // namespace OHOS::Rosen
