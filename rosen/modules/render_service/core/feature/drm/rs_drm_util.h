@@ -30,20 +30,17 @@ public:
     static void ClearDrmNodes();
     static void AddDrmCloneCrossNode(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         DrawablesVec& hardwareEnabledDrawables);
-    // Conversion of the drm layers of a cross node from the frame of the display owning the cross node into the frame
-    // of screenNode, where the clone of the cross node is composed. Returns false when the cross node has no drm node.
+    // 从真实父链累计坐标系转换到 screenNode 的局部坐标系；跨屏节点未收集 DRM 时不计算。
     static bool CalcCrossNodeLayerConversion(const RSSurfaceRenderNode& sourceNode,
         const RSSurfaceRenderNode& cloneNode, const RSScreenRenderNode& screenNode, Drawing::Matrix& conversion);
     static void UpdateDrmCrossNodeConversion(const RSSurfaceRenderNode& crossNode, NodeId screenNodeId,
         const Drawing::Matrix& conversion);
-    // Records the display whose frame the dst rect of a drm node of a cross node is in, so the render thread can move
-    // it back before converting it. It is recorded on every prepare, so it always describes the last one; the offset
-    // added to that rect is recorded where it is added. Only the drm nodes record it, a null screenNode or any other
-    // node records none.
+    // 将 DRM 全局定位节点的局部 dst 与本次 prepare 屏及其转换配对，主屏也记录，offset 字段清零。
+    // 无屏幕、非 DRM、非全局定位或矩阵不可逆时使记录失效。
     static void RecordDstRectDisplay(RSSurfaceRenderNode& node,
         const std::shared_ptr<RSScreenRenderNode>& screenNode);
-    // Converts the layer info of a drm cross node composed on screenNodeId with the conversion recorded for that
-    // screen. Returns false when there is no such conversion, then the layer info is left unchanged.
+    // matrix 从真实父链累计坐标系转换，dst 从产生屏的 prepare 局部坐标系转换，不加减 offset。
+    // 产生屏或目标屏记录缺失、矩阵不可逆时返回 false，且不修改 layerInfo。
     static bool ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, NodeId screenNodeId,
         RSLayerInfo& layerInfo);
     static void ApplyCrossNodeLayerConversion(const Drawing::Matrix& conversion, RSLayerInfo& layerInfo,
@@ -76,8 +73,7 @@ private:
     static bool IsDrmNode(const RSRenderNode& node);
     static void PreAllocProtectedFrameBuffers(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         const sptr<SurfaceBuffer>& buffer, const std::shared_ptr<RSComposerClientManager>& clientManager);
-    // Moves the dstRect back into the frame the conversions start from, and returns true when it already is in the
-    // local frame of screenNodeId, so it must not be converted again.
+    // 将 dst 直接转换到 screenNodeId 的局部坐标系，返回转换是否成功；失败时不修改 layerInfo。
     static bool RestoreCrossNodeDstRect(const RSSurfaceRenderParams& params, NodeId screenNodeId,
         RSLayerInfo& layerInfo);
     inline static std::unordered_map<NodeId, // map<first level node ID, drm surface node>

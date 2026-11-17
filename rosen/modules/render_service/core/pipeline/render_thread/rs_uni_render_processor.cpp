@@ -379,13 +379,11 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     bool isCrossNodeLayer = false;
     if (params.GetHwcGlobalPositionEnabled()) {
         if (RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId_, layerInfo)) {
-            // a drm cross node composed on this screen, converted with the matrix recorded for this screen
+            // DRM 全局定位层在主屏与副屏都按各自的 prepare 坐标系转换，并进入成对裁剪路径。
             isCrossNodeLayer = true;
         } else {
-            // dst and matrix transform to screen position
+            // 转换记录缺失时保留 matrix 的既有回退；dst 已为 prepare 局部坐标，不能再次扣 offset。
             layerInfo.matrix.PostTranslate(-offsetX_, -offsetY_);
-            layerInfo.dstRect.x -= offsetX_;
-            layerInfo.dstRect.y -= offsetY_;
         }
     }
     // Temporary log of the cross node conversion, removed after the cross screen issue is located.
@@ -495,6 +493,12 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     bool forceClient = RSSystemProperties::IsForceClient() || forceClientForDRM;
     layer->SetCompositionType(forceClient ? GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT :
         GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    if (params.GetHwcGlobalPositionEnabled()) {
+        RS_LOGW("[RSCrossNode] composition node:%{public}" PRIu64 " screen:%{public}" PRIu64
+            " clientRequested:%{public}d forceClientForDRM:%{public}d rotationFixed:%{public}d offline:%{public}d",
+            params.GetId(), screenNodeId_, static_cast<int32_t>(forceClient), static_cast<int32_t>(forceClientForDRM),
+            static_cast<int32_t>(params.GetFixRotationByUser()), static_cast<int32_t>(offlineResult != nullptr));
+    }
     layer->SetCornerRadiusInfoForDRM(params.GetCornerRadiusInfoForDRM());
     layer->SetVcldInfo(params.GetVcldInfo());
     auto bufferBackgroundColor = params.GetBackgroundColor();

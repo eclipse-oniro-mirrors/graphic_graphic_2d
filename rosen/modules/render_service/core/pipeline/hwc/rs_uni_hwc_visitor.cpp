@@ -136,9 +136,7 @@ void RSUniHwcVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absR
     // Set the destination rectangle of the node
     node.SetDstRect(dstRect);
     node.SetDstRectWithoutRenderFit(dstRect);
-    // Every prepare builds the dst rect in the frame of the prepared display and adds the offset of that display,
-    // so the display is recorded on every prepare, not only on the prepare of the clone: the layer uses the rect of
-    // the last prepare of the node, which is usually the one of the display owning it.
+    // dst 始终保留本次 prepare 屏的局部坐标；每次记录产生屏，供合成时换算到目标屏。
     RSDrmUtil::RecordDstRectDisplay(node, uniRenderVisitor_.curScreenNode_);
     // Temporary log of the cross node conversion, removed after the cross screen issue is located.
     if (node.GetHwcGlobalPositionEnabled()) {
@@ -1545,29 +1543,22 @@ void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
         return;
     }
     UpdateHwcNodeByTransform(node, absMatrix);
-    // dstRect transform to global position after UpdateHwcNodeByTransform
+    // 保留变换后的局部 dst 诊断，确认拖动时未叠加屏幕 offset。
     UpdateDstRectByGlobalPosition(node);
     UpdateHwcNodeEnableByBufferSize(node);
 }
 
 void RSUniHwcVisitor::UpdateDstRectByGlobalPosition(RSSurfaceRenderNode& node)
 {
-    // dstRect transform to globalposition when node is move
+    // 暂留入口用于跨屏问题诊断；全局定位只影响 matrix，不能再给 prepare 局部 dst 加 offset。
     if (node.GetHwcGlobalPositionEnabled()) {
-        auto dstRect = node.GetDstRect();
+        const auto dstRect = node.GetDstRect();
         const auto& screenProperty = uniRenderVisitor_.curScreenNode_->GetScreenProperty();
-        dstRect.left_ += screenProperty.GetOffsetX();
-        dstRect.top_ += screenProperty.GetOffsetY();
-        if (node.GetDstRectDisplayNodeId() != INVALID_NODEID) {
-            node.SetDstRectDisplay(node.GetDstRectDisplayNodeId(), screenProperty.GetOffsetX(),
-                screenProperty.GetOffsetY());
-        }
         RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " dstRect:[%s]",
             node.GetName().c_str(), node.GetId(), dstRect.ToString().c_str());
-        node.SetDstRect(dstRect);
         // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-        RS_LOGW("[RSCrossNode] globalPos node:%{public}" PRIu64 " screen:%{public}" PRIu64
-            " offset:[%{public}d,%{public}d] dst:[%d,%d,%d,%d] dstDisplay:%{public}" PRIu64,
+        RS_LOGW("[RSCrossNode] localDst node:%{public}" PRIu64 " screen:%{public}" PRIu64
+            " screenOffset:[%{public}d,%{public}d] dst:[%d,%d,%d,%d] dstDisplay:%{public}" PRIu64,
             node.GetId(), uniRenderVisitor_.curScreenNode_->GetId(), screenProperty.GetOffsetX(),
             screenProperty.GetOffsetY(), dstRect.left_, dstRect.top_, dstRect.width_, dstRect.height_,
             node.GetDstRectDisplayNodeId());

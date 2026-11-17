@@ -21,6 +21,7 @@
 #include "common/rs_background_thread.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
+#include "feature/hwc/rs_uni_hwc_compute_util.h"
 #include "graphic_feature_param_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
@@ -51,18 +52,42 @@ std::string DebugMatrix(const Drawing::Matrix& matrix)
     return result;
 }
 
-// Absolute matrix of a node in the frame of the display owning it. The cached absolute matrix of a cross node is
-// rewritten by every prepare, including the prepare under the parent of the clone on another display, so it is rebuilt
-// from the matrix relative to the real parent and the cached matrix of that parent, which no such prepare touches.
-Drawing::Matrix CalcOwnDisplayAbsMatrix(const RSSurfaceRenderNode& node)
+// 与 UpdateHwcNodeProperty 一致，沿真实父链累计 layer matrix；父节点缓存的 AbsMatrix 可能属于另一屏的 prepare。
+bool CalcLayerMatrix(const RSSurfaceRenderNode& node, Drawing::Matrix& matrix)
 {
-    auto geo = node.GetRenderProperties().GetBoundsGeometry();
-    Drawing::Matrix absMatrix = geo ? geo->GetMatrix() : Drawing::Matrix();
-    if (auto parent = node.GetParent().lock()) {
-        auto parentGeo = parent->GetRenderProperties().GetBoundsGeometry();
-        absMatrix.PostConcat(parentGeo ? parentGeo->GetAbsMatrix() : Drawing::Matrix());
+    const auto geo = node.GetRenderProperties().GetBoundsGeometry();
+    if (geo == nullptr) {
+        return false;
     }
-    return absMatrix;
+    matrix = geo->GetMatrix();
+    for (auto parent = node.GetParent().lock(); parent != nullptr; parent = parent->GetParent().lock()) {
+        if (parent->GetRenderProperties().GetBoundsGeometry() == nullptr) {
+            return false;
+        }
+        if (parent->GetRenderProperties().GetSandBox().has_value()) {
+            auto ancestor = parent->GetParent().lock();
+            if (ancestor != nullptr && ancestor->GetRenderProperties().GetBoundsGeometry() == nullptr) {
+                return false;
+            }
+        }
+        if (auto relativeMatrix = RSUniHwcComputeUtil::GetMatrix(parent)) {
+            matrix.PostConcat(*relativeMatrix);
+        }
+        if (parent->GetType() == RSRenderNodeType::SCREEN_NODE) {
+            break;
+        }
+    }
+    return true;
+}
+
+void RecordLayerConversion(RSSurfaceRenderNode& node, NodeId screenNodeId, const Drawing::Matrix& conversion)
+{
+    node.UpdateCrossNodeLayerConversionMatrices(screenNodeId, conversion);
+    auto params = static_cast<RSSurfaceRenderParams*>(node.GetStagingRenderParams().get());
+    if (params != nullptr) {
+        params->SetCrossNodeLayerConversionMatrix(screenNodeId, conversion);
+    }
+    node.AddToPendingSyncList();
 }
 
 // Absolute matrix of the source node under the parent of the clone, in the frame of the display composing the clone.
@@ -210,10 +235,9 @@ bool RSDrmUtil::CalcCrossNodeLayerConversion(const RSSurfaceRenderNode& sourceNo
     if (drmNodes_.find(sourceNode.GetFirstLevelNodeId()) == drmNodes_.end()) {
         return false;
     }
-    // The layer matrix is accumulated along the real parent chain, so the conversion starts from the frame of the
-    // display owning the source node rather than from its cached absolute matrix.
-    const Drawing::Matrix ownMatrix = CalcOwnDisplayAbsMatrix(sourceNode);
-    if (!ownMatrix.Invert(conversion)) {
+    // 所有屏共用真实父链累计坐标系作为转换起点，不能将它当作归属屏 prepare 的局部坐标系。
+    Drawing::Matrix ownMatrix;
+    if (!CalcLayerMatrix(sourceNode, ownMatrix) || !ownMatrix.Invert(conversion)) {
         return false;
     }
     const Drawing::Matrix cloneMatrix = CalcCloneDisplayAbsMatrix(sourceNode, cloneNode, screenNode);
@@ -252,36 +276,38 @@ void RSDrmUtil::UpdateDrmCrossNodeConversion(const RSSurfaceRenderNode& crossNod
         }
         // The drm nodes are prepared under the cross node before this call, so their params are already filled.
         // Record the matrix on the params directly, otherwise it would only reach the render thread a frame later.
-        node->UpdateCrossNodeLayerConversionMatrices(screenNodeId, conversion);
-        auto nodeParams = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
-        if (nodeParams != nullptr) {
-            nodeParams->SetCrossNodeLayerConversionMatrix(screenNodeId, conversion);
-        }
-        node->AddToPendingSyncList();
+        RecordLayerConversion(*node, screenNodeId, conversion);
     }
 }
 
 void RSDrmUtil::RecordDstRectDisplay(RSSurfaceRenderNode& node,
     const std::shared_ptr<RSScreenRenderNode>& screenNode)
 {
-    // The layers of the drm nodes are the only ones converted, so only they need the display whose frame their dst
-    // rect is in. Every prepare rebuilds the dst rect in the frame of the display being prepared and adds the offset of
-    // that display to it, so the display is recorded on every prepare, not only on the prepare of the clone: the layer
-    // is composed with the rect of the last prepare of the node, which is usually the one of the display owning it. The
-    // other nodes record none, which keeps the record of a node that is no longer composed on another display from
-    // outliving the composition.
-    if (screenNode == nullptr || !IsDrmNode(node)) {
-        node.SetDstRectDisplay(INVALID_NODEID);
+    node.SetDstRectDisplay(INVALID_NODEID);
+    if (screenNode == nullptr || !node.GetHwcGlobalPositionEnabled() || !IsDrmNode(node)) {
         return;
     }
-    // The offset of that display is recorded where it is added to the rect, so a prepare that skips the global position
-    // update keeps a zero offset here.
+    Drawing::Matrix layerMatrix;
+    Drawing::Matrix conversion;
+    if (!CalcLayerMatrix(node, layerMatrix) || !layerMatrix.Invert(conversion)) {
+        return;
+    }
+    const auto& prepareMatrix = node.GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix();
+    conversion.PostConcat(prepareMatrix);
+    Drawing::Matrix inverse;
+    if (!conversion.Invert(inverse)) {
+        return;
+    }
+    // Cp = Mp * inverse(Mg)。主屏也必须记录，否则旋转后的局部 dst 会被当作全局 matrix 的坐标。
+    RecordLayerConversion(node, screenNode->GetId(), conversion);
+    // dst 保持 prepare 局部坐标，现有 offset 字段统一清零，不再参与 dst 换算。
     node.SetDstRectDisplay(screenNode->GetId());
     const auto& screenProperty = screenNode->GetScreenProperty();
-    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
     RS_LOGW("[RSCrossNode] recordDstDisplay node:%{public}" PRIu64 " screen:%{public}" PRIu64
-        " dstDisplay:%{public}" PRIu64 " screenOffset:[%{public}d,%{public}d]", node.GetId(), screenNode->GetId(),
-        node.GetDstRectDisplayNodeId(), screenProperty.GetOffsetX(), screenProperty.GetOffsetY());
+        " dstDisplay:%{public}" PRIu64 " screenOffset:[%{public}d,%{public}d]"
+        " layer:[%{public}s] prepare:[%{public}s] conversion:[%{public}s]", node.GetId(), screenNode->GetId(),
+        node.GetDstRectDisplayNodeId(), screenProperty.GetOffsetX(), screenProperty.GetOffsetY(),
+        DebugMatrix(layerMatrix).c_str(), DebugMatrix(prepareMatrix).c_str(), DebugMatrix(conversion).c_str());
 }
 
 bool RSDrmUtil::ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, NodeId screenNodeId,
@@ -292,54 +318,46 @@ bool RSDrmUtil::ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, N
     if (conversion == conversionMatrices.end()) {
         return false;
     }
-    // When the rect is restored into the local frame of this screen, only the matrix still has to be converted.
-    const bool dstInThisFrame = RestoreCrossNodeDstRect(params, screenNodeId, layerInfo);
-    ApplyCrossNodeLayerConversion(conversion->second, layerInfo, !dstInThisFrame);
+    if (!RestoreCrossNodeDstRect(params, screenNodeId, layerInfo)) {
+        return false;
+    }
+    // dst 已转到目标屏；matrix 则从真实父链累计坐标系转换，二者不能使用同一个起点。
+    ApplyCrossNodeLayerConversion(conversion->second, layerInfo, false);
     return true;
 }
 
 bool RSDrmUtil::RestoreCrossNodeDstRect(const RSSurfaceRenderParams& params, NodeId screenNodeId,
     RSLayerInfo& layerInfo)
 {
-    // The dstRect is built in the frame of the display the node was last prepared on and the offset of that display is
-    // added to it, while the conversions start from the frame of the display owning the node. The rect is moved back
-    // by the offset of the display that built it first: it is already in this frame when this screen built it, and it
-    // is in the frame of the owning display otherwise, or moved back to it with the inverse of the conversion
-    // recorded for that display.
     const NodeId dstDisplayId = params.GetLayerDstDisplayNodeId();
     // Temporary log of the cross node conversion, removed after the cross screen issue is located.
     RS_LOGW("[RSCrossNode] restore node:%{public}" PRIu64 " screen:%{public}" PRIu64 " dstDisplay:%{public}" PRIu64
-        " offset:[%{public}d,%{public}d] dstIn:[%{public}d,%{public}d,%{public}d,%{public}d]", params.GetId(),
-        screenNodeId, dstDisplayId, params.GetLayerDstDisplayOffsetX(), params.GetLayerDstDisplayOffsetY(),
+        " localDstIn:[%{public}d,%{public}d,%{public}d,%{public}d]", params.GetId(), screenNodeId, dstDisplayId,
         layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h);
     if (dstDisplayId == INVALID_NODEID) {
         return false;
     }
-    layerInfo.dstRect.x -= params.GetLayerDstDisplayOffsetX();
-    layerInfo.dstRect.y -= params.GetLayerDstDisplayOffsetY();
-    if (dstDisplayId == screenNodeId) {
-        // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-        RS_LOGW("[RSCrossNode] restore same screen dstOut:[%{public}d,%{public}d,%{public}d,%{public}d]",
-            layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h);
-        return true;
-    }
     const auto& conversionMatrices = params.GetCrossNodeLayerConversionMatrices();
-    const auto conversion = conversionMatrices.find(dstDisplayId);
-    Drawing::Matrix inverse;
-    if (conversion == conversionMatrices.end() || !conversion->second.Invert(inverse)) {
-        // No conversion ends on the display that built the rect, so the node is owned by that display and the rect is
-        // already in the frame the conversions start from.
-        // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-        RS_LOGW("[RSCrossNode] restore own display dstOut:[%{public}d,%{public}d,%{public}d,%{public}d]",
-            layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h);
+    const auto prepared = conversionMatrices.find(dstDisplayId);
+    const auto target = conversionMatrices.find(screenNodeId);
+    Drawing::Matrix dstConversion;
+    Drawing::Matrix inverseTarget;
+    if (prepared == conversionMatrices.end() || target == conversionMatrices.end() ||
+        !prepared->second.Invert(dstConversion) || !target->second.Invert(inverseTarget)) {
+        // 缺失产生屏转换不代表 identity；失败时保持 layer 完整，供调用方执行原有回退。
+        RS_LOGW("[RSCrossNode] restore missing or singular conversion node:%{public}" PRIu64, params.GetId());
         return false;
     }
-    layerInfo.dstRect = MapCrossNodeDstRect(inverse, layerInfo.dstRect);
-    // Temporary log of the cross node conversion, removed after the cross screen issue is located.
-    RS_LOGW("[RSCrossNode] restore map dstOut:[%{public}d,%{public}d,%{public}d,%{public}d] inverse:[%{public}s]",
-        layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h,
-        DebugMatrix(inverse).c_str());
-    return false;
+    auto dstRect = layerInfo.dstRect;
+    if (dstDisplayId != screenNodeId) {
+        // Dt = Ct * inverse(Cp) * Dprepare，合并矩阵后仅向外取整一次。
+        dstConversion.PostConcat(target->second);
+        dstRect = MapCrossNodeDstRect(dstConversion, dstRect);
+    }
+    layerInfo.dstRect = dstRect;
+    RS_LOGW("[RSCrossNode] restore target dstOut:[%{public}d,%{public}d,%{public}d,%{public}d]",
+        dstRect.x, dstRect.y, dstRect.w, dstRect.h);
+    return true;
 }
 
 void RSDrmUtil::ApplyCrossNodeLayerConversion(const Drawing::Matrix& conversion, RSLayerInfo& layerInfo,

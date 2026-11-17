@@ -17,8 +17,10 @@
 #include "gtest/gtest.h"
 
 #include "common/rs_common_def.h"
+#include "common/rs_obj_abs_geometry.h"
 #include "composer/composer_client/pipeline/rs_composer_client_manager.h"
 #include "drawable/rs_screen_render_node_drawable.h"
+#include "pipeline/hwc/rs_uni_hwc_visitor.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_processor_factory.h"
@@ -37,6 +39,57 @@ constexpr int32_t CROSS_SCREEN_OFFSET_Y = 1854;
 }
 
 namespace OHOS::Rosen {
+namespace {
+struct DrmDragSample {
+    float layerX;
+    float layerY;
+    float prepareX;
+    float prepareY;
+    int32_t offsetX;
+    int32_t offsetY;
+    GraphicIRect localDst;
+    float targetX;
+    float targetY;
+    GraphicIRect targetDst;
+    GraphicIRect croppedDst;
+    GraphicIRect croppedSrc;
+};
+
+// 三组设备日志的同帧几何：matrix 为真实父链累计值，dst 已去除旧日志额外叠加的屏幕 offset。
+const DrmDragSample DRM_DRAG_SAMPLES[] = {
+    { 460, 2, 460, 2, 0, 0, { 844, -1333, 560, 1335 }, -2, 372,
+        { -2, 756, 1335, 560 }, { 0, 756, 1333, 560 }, { 2, 0, 1918, 804 } },
+    { 1564, 2503, -596, 2628, 125, 2160, { -212, 1293, 560, 1335 }, 793, 1564,
+        { 793, 1948, 1335, 560 }, { 793, 1948, 1335, 212 }, { 0, 0, 1920, 305 } },
+    { 1032, -410, 1032, 3430, 3840, 0, { 1416, 2095, 560, 1335 }, 3706, 1015,
+        { 3706, 1399, 1335, 560 }, { 3706, 1399, 134, 560 }, { 0, 0, 193, 804 } },
+};
+const GraphicIRect DRM_VIDEO_SRC = { 0, 0, 1920, 804 };
+const Drawing::Rect DRM_SECONDARY_SCREEN(0, 0, 3840, 2160);
+const Drawing::Rect DRM_PRIMARY_SCREEN(0, 0, 2472, 3296);
+
+Drawing::Matrix MakeDrmLayerMatrix(float x, float y)
+{
+    Drawing::Matrix matrix;
+    matrix.SetMatrix(0, 1, x, -1, 0, y, 0, 0, 1);
+    return matrix;
+}
+
+void ExpectDrmRect(const GraphicIRect& actual, const GraphicIRect& expected)
+{
+    EXPECT_EQ(actual.x, expected.x);
+    EXPECT_EQ(actual.y, expected.y);
+    EXPECT_EQ(actual.w, expected.w);
+    EXPECT_EQ(actual.h, expected.h);
+}
+
+void CropDrmLayer(const Drawing::Rect& screen, RSLayerInfo& layer)
+{
+    const auto dst = layer.dstRect;
+    RSDrmUtil::CropCrossNodeLayerInfo(Drawing::Rect(dst.x, dst.y, dst.x + dst.w, dst.y + dst.h), screen, layer);
+}
+} // namespace
+
 class RSDrmUtilTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -57,6 +110,8 @@ public:
     }
 
     std::shared_ptr<DrawableV2::RSScreenRenderNodeDrawable> CreateScreenDrawable();
+    std::shared_ptr<RSSurfaceRenderNode> CreateRecordedDrmNode(const Drawing::Matrix& layerMatrix,
+        const Drawing::Matrix& prepareMatrix, const std::shared_ptr<RSScreenRenderNode>& screen);
 };
 
 void RSDrmUtilTest::SetUpTestCase()
@@ -64,8 +119,30 @@ void RSDrmUtilTest::SetUpTestCase()
     RSTestUtil::InitRenderNodeGC();
 }
 void RSDrmUtilTest::TearDownTestCase() {}
-void RSDrmUtilTest::SetUp() {}
-void RSDrmUtilTest::TearDown() {}
+void RSDrmUtilTest::SetUp()
+{
+    RSDrmUtil::ClearDrmNodes();
+}
+void RSDrmUtilTest::TearDown()
+{
+    RSDrmUtil::ClearDrmNodes();
+}
+
+std::shared_ptr<RSSurfaceRenderNode> RSDrmUtilTest::CreateRecordedDrmNode(const Drawing::Matrix& layerMatrix,
+    const Drawing::Matrix& prepareMatrix, const std::shared_ptr<RSScreenRenderNode>& screen)
+{
+    auto node = RSTestUtil::CreateSurfaceNode();
+    if (node == nullptr) {
+        return nullptr;
+    }
+    node->firstLevelNodeId_ = node->GetId();
+    node->isOnTheTree_ = true;
+    node->SetHwcGlobalPositionEnabled(true);
+    node->GetMutableRenderProperties().GetBoundsGeometry()->ReplaceMatrix(layerMatrix, prepareMatrix);
+    RSDrmUtil::drmNodes_[node->GetId()].push_back(node);
+    RSDrmUtil::RecordDstRectDisplay(*node, screen);
+    return node;
+}
 
 std::shared_ptr<DrawableV2::RSScreenRenderNodeDrawable> RSDrmUtilTest::CreateScreenDrawable()
 {
@@ -968,6 +1045,9 @@ HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo002, TestSize.Level1)
     conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
     const NodeId screenNodeId = GenerateNodeId();
     params.SetCrossNodeLayerConversionMatrix(screenNodeId, conversion);
+    const NodeId preparedScreenId = GenerateNodeId();
+    params.SetCrossNodeLayerConversionMatrix(preparedScreenId, Drawing::Matrix());
+    params.SetLayerDstDisplay(preparedScreenId, 0, 0);
     RSLayerInfo layerInfo;
     layerInfo.dstRect = { 3300, 10, 100, 50 };
     EXPECT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId, layerInfo));
@@ -980,7 +1060,7 @@ HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo002, TestSize.Level1)
 
 /**
  * @tc.name: ConvertCrossNodeLayerInfo003
- * @tc.desc: Test a dst rect built on the composing screen only loses the offset, while the matrix is converted
+ * @tc.desc: 本屏产生的局部 dst 保持不变，matrix 仍需转换到本屏
  * @tc.type:FUNC
  * @tc.require:
  */
@@ -991,9 +1071,9 @@ HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo003, TestSize.Level1)
     conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
     const NodeId screenNodeId = GenerateNodeId();
     params.SetCrossNodeLayerConversionMatrix(screenNodeId, conversion);
-    params.SetLayerDstDisplay(screenNodeId, static_cast<int32_t>(CROSS_SCREEN_OFFSET_X), 0);
+    params.SetLayerDstDisplay(screenNodeId, 0, 0);
     RSLayerInfo layerInfo;
-    layerInfo.dstRect = { 3300, 10, 100, 50 };
+    layerInfo.dstRect = { 60, 10, 100, 50 };
     EXPECT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId, layerInfo));
     EXPECT_EQ(layerInfo.dstRect.x, 60);
     EXPECT_EQ(layerInfo.dstRect.y, 10);
@@ -1002,8 +1082,7 @@ HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo003, TestSize.Level1)
 
 /**
  * @tc.name: ConvertCrossNodeLayerInfo004
- * @tc.desc: Test a dst rect built on the display owning the node loses that display offset before the conversion, even
- *           when no conversion is recorded for it
+ * @tc.desc: 产生屏未记录转换时不假定 identity，失败时保持局部 dst 和 matrix 不变
  * @tc.type:FUNC
  * @tc.require:
  */
@@ -1014,16 +1093,14 @@ HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo004, TestSize.Level1)
     conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
     const NodeId screenNodeId = GenerateNodeId();
     params.SetCrossNodeLayerConversionMatrix(screenNodeId, conversion);
-    // the rect was built on the display owning the node, which records no conversion towards itself
-    params.SetLayerDstDisplay(GenerateNodeId(), 0, CROSS_SCREEN_OFFSET_Y);
+    // 归属屏也必须提供转换，不能再沿用缺失即 identity 的假设。
+    params.SetLayerDstDisplay(GenerateNodeId(), 0, 0);
     RSLayerInfo layerInfo;
-    layerInfo.dstRect = { 3300, CROSS_SCREEN_OFFSET_Y + 10, 100, 50 };
-    EXPECT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId, layerInfo));
-    EXPECT_EQ(layerInfo.dstRect.x, 60);
-    EXPECT_EQ(layerInfo.dstRect.y, 10);
-    EXPECT_EQ(layerInfo.dstRect.w, 100);
-    EXPECT_EQ(layerInfo.dstRect.h, 50);
-    EXPECT_FLOAT_EQ(layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_X), -CROSS_SCREEN_OFFSET_X);
+    layerInfo.dstRect = { 3300, 10, 100, 50 };
+    const auto originalDst = layerInfo.dstRect;
+    EXPECT_FALSE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId, layerInfo));
+    ExpectDrmRect(layerInfo.dstRect, originalDst);
+    EXPECT_TRUE(layerInfo.matrix.IsIdentity());
 }
 
 /**
@@ -1043,9 +1120,9 @@ HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfo005, TestSize.Level1)
     otherConversion.Translate(0, -CROSS_SCREEN_OFFSET_Y);
     const NodeId otherDisplayId = GenerateNodeId();
     params.SetCrossNodeLayerConversionMatrix(otherDisplayId, otherConversion);
-    params.SetLayerDstDisplay(otherDisplayId, 0, CROSS_SCREEN_OFFSET_Y);
+    params.SetLayerDstDisplay(otherDisplayId, 0, 0);
     RSLayerInfo layerInfo;
-    layerInfo.dstRect = { 3300, CROSS_SCREEN_OFFSET_Y + 10, 100, 50 };
+    layerInfo.dstRect = { 3300, 10, 100, 50 };
     EXPECT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, screenNodeId, layerInfo));
     EXPECT_EQ(layerInfo.dstRect.x, 60);
     EXPECT_EQ(layerInfo.dstRect.y, CROSS_SCREEN_OFFSET_Y + 10);
@@ -1155,7 +1232,9 @@ HWTEST_F(RSDrmUtilTest, RecordDstRectDisplay001, TestSize.Level1)
     ASSERT_NE(otherNode, nullptr);
     crossNode->firstLevelNodeId_ = crossNode->GetId();
     drmNode->firstLevelNodeId_ = crossNode->GetId();
+    drmNode->SetHwcGlobalPositionEnabled(true);
     otherNode->firstLevelNodeId_ = crossNode->GetId();
+    otherNode->SetHwcGlobalPositionEnabled(true);
     auto screenNode = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
     RSDrmUtil::ClearDrmNodes();
     RSDrmUtil::drmNodes_[crossNode->GetId()].push_back(drmNode);
@@ -1277,5 +1356,306 @@ HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfo005, TestSize.Level1)
     EXPECT_EQ(layerInfo.srcRect.x, 0);
     EXPECT_EQ(layerInfo.srcRect.w, 800);
     EXPECT_EQ(layerInfo.srcRect.h, 400);
+}
+
+// 记录失效或矩阵不可逆时，dst、src、matrix 和 transform 均不得被部分改写。
+HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfoInvalidRecord, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(GenerateNodeId());
+    const NodeId targetId = GenerateNodeId();
+    const NodeId preparedId = GenerateNodeId();
+    Drawing::Matrix conversion;
+    conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
+    params.SetCrossNodeLayerConversionMatrix(targetId, conversion);
+    RSLayerInfo layer;
+    layer.dstRect = DRM_DRAG_SAMPLES[0].localDst;
+    layer.srcRect = DRM_VIDEO_SRC;
+    layer.matrix = MakeDrmLayerMatrix(1, 1);
+    layer.transformType = GraphicTransformType::GRAPHIC_ROTATE_270;
+    const auto original = layer;
+    EXPECT_FALSE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, targetId, layer));
+    Drawing::Matrix singular;
+    singular.Scale(0, 1, 0, 0);
+    params.SetLayerDstDisplay(preparedId, 0, 0);
+    params.SetCrossNodeLayerConversionMatrix(preparedId, singular);
+    EXPECT_FALSE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, targetId, layer));
+    params.SetCrossNodeLayerConversionMatrix(preparedId, Drawing::Matrix());
+    params.SetCrossNodeLayerConversionMatrix(targetId, singular);
+    EXPECT_FALSE(RSDrmUtil::ConvertCrossNodeLayerInfo(params, targetId, layer));
+    ExpectDrmRect(layer.dstRect, original.dstRect);
+    ExpectDrmRect(layer.srcRect, original.srcRect);
+    EXPECT_TRUE(layer.matrix == original.matrix);
+    EXPECT_EQ(layer.transformType, original.transformType);
+}
+
+// prepare 记录清除历史 offset；屏幕 offset 非零和重复调用均不能改写局部 dst。
+HWTEST_F(RSDrmUtilTest, PrepareKeepsLocalDst, TestSize.Level1)
+{
+    auto visitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(visitor->hwcVisitor_, nullptr);
+    for (const auto& sample : DRM_DRAG_SAMPLES) {
+        auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+        RSScreenProperty property;
+        property.Set<ScreenPropertyType::OFFSET>({ sample.offsetX, sample.offsetY });
+        screen->SetScreenProperty(property);
+        visitor->curScreenNode_ = screen;
+        const auto raw = MakeDrmLayerMatrix(sample.layerX, sample.layerY);
+        auto node = CreateRecordedDrmNode(raw, MakeDrmLayerMatrix(sample.prepareX, sample.prepareY), screen);
+        ASSERT_NE(node, nullptr);
+        node->SetDstRectDisplay(screen->GetId(), sample.offsetX, sample.offsetY);
+        node->SetHwcCrossNode(true);
+        const RectI localDst(sample.localDst.x, sample.localDst.y, sample.localDst.w, sample.localDst.h);
+        visitor->hwcVisitor_->UpdateDstRect(*node, localDst, localDst);
+        visitor->hwcVisitor_->UpdateDstRectByGlobalPosition(*node);
+        visitor->hwcVisitor_->UpdateDstRectByGlobalPosition(*node);
+        EXPECT_EQ(node->GetDstRect(), localDst);
+        EXPECT_EQ(node->GetDstRectDisplayNodeId(), screen->GetId());
+        EXPECT_EQ(node->dstRectDisplayOffsetX_, 0);
+        EXPECT_EQ(node->dstRectDisplayOffsetY_, 0);
+        node->SetHwcGlobalPositionEnabled(false);
+        visitor->hwcVisitor_->UpdateDstRectByGlobalPosition(*node);
+        EXPECT_EQ(node->GetDstRect(), localDst);
+        RSDrmUtil::RecordDstRectDisplay(*node, screen);
+        EXPECT_EQ(node->GetDstRectDisplayNodeId(), INVALID_NODEID);
+    }
+}
+
+// 三组实测数据经真实记录入口进入 staging params，再执行副屏转换与裁剪。
+HWTEST_F(RSDrmUtilTest, ConvertCrossNodeLayerInfoDeviceSamples, TestSize.Level1)
+{
+    for (const auto& sample : DRM_DRAG_SAMPLES) {
+        SCOPED_TRACE(sample.offsetX);
+        auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+        const auto raw = MakeDrmLayerMatrix(sample.layerX, sample.layerY);
+        auto node = CreateRecordedDrmNode(raw, MakeDrmLayerMatrix(sample.prepareX, sample.prepareY), screen);
+        ASSERT_NE(node, nullptr);
+        auto params = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
+        ASSERT_NE(params, nullptr);
+        ASSERT_EQ(node->GetDstRectDisplayNodeId(), screen->GetId());
+        params->SetLayerDstDisplay(node->GetDstRectDisplayNodeId(), 0, 0);
+        Drawing::Matrix target;
+        target.Translate(sample.targetX, sample.targetY);
+        Drawing::Matrix conversion;
+        ASSERT_TRUE(raw.Invert(conversion));
+        conversion.PostConcat(target);
+        const NodeId targetId = GenerateNodeId();
+        RSDrmUtil::UpdateDrmCrossNodeConversion(*node, targetId, conversion);
+        RSLayerInfo layer;
+        layer.matrix = raw;
+        layer.dstRect = sample.localDst;
+        layer.srcRect = DRM_VIDEO_SRC;
+        layer.transformType = GraphicTransformType::GRAPHIC_ROTATE_270;
+        params->SetLayerInfo(layer);
+        ASSERT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(*params, targetId, layer));
+        ExpectDrmRect(layer.dstRect, sample.targetDst);
+        EXPECT_TRUE(layer.matrix == target);
+        EXPECT_EQ(layer.transformType, GraphicTransformType::GRAPHIC_ROTATE_NONE);
+        CropDrmLayer(DRM_SECONDARY_SCREEN, layer);
+        ExpectDrmRect(layer.dstRect, sample.croppedDst);
+        ExpectDrmRect(layer.srcRect, sample.croppedSrc);
+        ExpectDrmRect(params->GetLayerInfo().dstRect, sample.localDst);
+        EXPECT_TRUE(params->GetLayerInfo().matrix == raw);
+    }
+}
+
+// 没有 clone 的主屏同样应命中转换，matrix 消除旋转后的 offset，局部 dst 保持不变。
+HWTEST_F(RSDrmUtilTest, RecordDstRectDisplayPrimaryWithoutClone, TestSize.Level1)
+{
+    for (const auto& sample : DRM_DRAG_SAMPLES) {
+        auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+        const auto raw = MakeDrmLayerMatrix(sample.layerX, sample.layerY);
+        const auto prepare = MakeDrmLayerMatrix(sample.prepareX, sample.prepareY);
+        auto node = CreateRecordedDrmNode(raw, prepare, screen);
+        ASSERT_NE(node, nullptr);
+        auto params = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
+        ASSERT_NE(params, nullptr);
+        params->SetLayerDstDisplay(node->GetDstRectDisplayNodeId(), 0, 0);
+        RSLayerInfo layer;
+        layer.matrix = raw;
+        layer.dstRect = sample.localDst;
+        layer.srcRect = DRM_VIDEO_SRC;
+        ASSERT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(*params, screen->GetId(), layer));
+        EXPECT_TRUE(layer.matrix == prepare);
+        ExpectDrmRect(layer.dstRect, sample.localDst);
+        EXPECT_EQ(layer.transformType, GraphicTransformType::GRAPHIC_ROTATE_270);
+    }
+}
+
+// 产生屏先后变化时，同一帧的主副屏转换使用同一个真实父链基准，不依赖哪一屏最后 prepare。
+HWTEST_F(RSDrmUtilTest, RecordDstRectDisplayPrepareOrder, TestSize.Level1)
+{
+    const auto& sample = DRM_DRAG_SAMPLES[1];
+    auto primary = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    auto secondary = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    const auto raw = MakeDrmLayerMatrix(sample.layerX, sample.layerY);
+    const auto primaryMatrix = MakeDrmLayerMatrix(sample.prepareX, sample.prepareY);
+    Drawing::Matrix secondaryMatrix;
+    secondaryMatrix.Translate(sample.targetX, sample.targetY);
+    auto node = CreateRecordedDrmNode(raw, primaryMatrix, primary);
+    ASSERT_NE(node, nullptr);
+    auto params = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
+    ASSERT_NE(params, nullptr);
+    for (const bool preparePrimary : { false, true }) {
+        auto screen = preparePrimary ? primary : secondary;
+        node->ClearCrossNodeLayerConversionMatrices();
+        params->crossNodeLayerConversionMatrices_.clear();
+        node->GetMutableRenderProperties().GetBoundsGeometry()->SetAbsMatrix(
+            preparePrimary ? primaryMatrix : secondaryMatrix);
+        RSDrmUtil::RecordDstRectDisplay(*node, screen);
+        Drawing::Matrix skippedConversion;
+        ASSERT_TRUE(raw.Invert(skippedConversion));
+        skippedConversion.PostConcat(preparePrimary ? secondaryMatrix : primaryMatrix);
+        RSDrmUtil::UpdateDrmCrossNodeConversion(*node, (preparePrimary ? secondary : primary)->GetId(),
+            skippedConversion);
+        params->SetLayerDstDisplay(node->GetDstRectDisplayNodeId(), 0, 0);
+        RSLayerInfo original;
+        original.matrix = raw;
+        original.dstRect = preparePrimary ? sample.localDst : sample.targetDst;
+        for (const auto& target : { primary, secondary }) {
+            auto layer = original;
+            ASSERT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(*params, target->GetId(), layer));
+            EXPECT_TRUE(layer.matrix == (target == primary ? primaryMatrix : secondaryMatrix));
+            ExpectDrmRect(layer.dstRect, target == primary ? sample.localDst : sample.targetDst);
+        }
+    }
+}
+
+// 旋转和双轴 offset 必须通过矩阵换算，不能按某一种布局交换或硬编码 x/y。
+HWTEST_F(RSDrmUtilTest, RecordDstRectDisplayQuarterTurns, TestSize.Level1)
+{
+    const float rotations[] = { RS_ROTATION_0, RS_ROTATION_90, RS_ROTATION_180, RS_ROTATION_270 };
+    const Drawing::Point offsets[] = { { 0, 0 }, { 125, 2160 }, { 3840, 17 }, { -3840, -17 } };
+    const GraphicIRect localDst = { 567, 789, 560, 1335 };
+    constexpr float LAYER_X = 467;
+    constexpr float LAYER_Y = 733;
+    for (const auto rotation : rotations) {
+        for (const auto& offset : offsets) {
+            Drawing::Matrix raw;
+            raw.PreRotate(rotation);
+            raw.PostTranslate(LAYER_X, LAYER_Y);
+            auto prepare = raw;
+            prepare.PostTranslate(-raw.Get(Drawing::Matrix::SCALE_X) * offset.GetX() -
+                raw.Get(Drawing::Matrix::SKEW_X) * offset.GetY(),
+                -raw.Get(Drawing::Matrix::SKEW_Y) * offset.GetX() -
+                raw.Get(Drawing::Matrix::SCALE_Y) * offset.GetY());
+            auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+            auto node = CreateRecordedDrmNode(raw, prepare, screen);
+            ASSERT_NE(node, nullptr);
+            auto params = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
+            ASSERT_NE(params, nullptr);
+            params->SetLayerDstDisplay(node->GetDstRectDisplayNodeId(), 0, 0);
+            RSLayerInfo layer;
+            layer.matrix = raw;
+            layer.dstRect = localDst;
+            ASSERT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(*params, screen->GetId(), layer));
+            EXPECT_TRUE(layer.matrix == prepare);
+            ExpectDrmRect(layer.dstRect, localDst);
+        }
+    }
+}
+
+// 深层 DRM 节点不能使用父节点已被另一屏 prepare 改写的 AbsMatrix 作为 layer 的原始坐标系。
+HWTEST_F(RSDrmUtilTest, RecordDstRectDisplayRealParentChain, TestSize.Level1)
+{
+    auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    auto parent = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(parent, nullptr);
+    const Drawing::Point childPosition(20, 30);
+    const Drawing::Point parentPosition(40, 50);
+    const Drawing::Point stalePosition(-700, 800);
+    Drawing::Matrix local;
+    local.Translate(childPosition.GetX(), childPosition.GetY());
+    Drawing::Matrix parentLocal;
+    parentLocal.Translate(parentPosition.GetX(), parentPosition.GetY());
+    Drawing::Matrix staleParent;
+    staleParent.Translate(stalePosition.GetX(), stalePosition.GetY());
+    const auto screenMatrix = MakeDrmLayerMatrix(0, DRM_PRIMARY_SCREEN.GetHeight());
+    screen->GetMutableRenderProperties().GetBoundsGeometry()->ReplaceMatrix(screenMatrix, screenMatrix);
+    parent->GetMutableRenderProperties().GetBoundsGeometry()->ReplaceMatrix(parentLocal, staleParent);
+    parent->parent_ = screen;
+    auto raw = local;
+    raw.PostConcat(parentLocal);
+    raw.PostConcat(screenMatrix);
+    auto prepare = raw;
+    prepare.PostTranslate(-DRM_DRAG_SAMPLES[1].offsetY, DRM_DRAG_SAMPLES[1].offsetX);
+    auto node = CreateRecordedDrmNode(local, prepare, screen);
+    ASSERT_NE(node, nullptr);
+    node->parent_ = parent;
+    RSDrmUtil::RecordDstRectDisplay(*node, screen);
+    auto params = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
+    ASSERT_NE(params, nullptr);
+    params->SetLayerDstDisplay(node->GetDstRectDisplayNodeId(), 0, 0);
+    RSLayerInfo layer;
+    layer.matrix = raw;
+    layer.dstRect = DRM_DRAG_SAMPLES[0].localDst;
+    ASSERT_TRUE(RSDrmUtil::ConvertCrossNodeLayerInfo(*params, screen->GetId(), layer));
+    EXPECT_TRUE(layer.matrix == prepare);
+    Drawing::Matrix conversion;
+    ASSERT_TRUE(RSDrmUtil::CalcCrossNodeLayerConversion(*node, *node, *screen, conversion));
+    auto cloneMatrix = local;
+    cloneMatrix.PostConcat(staleParent);
+    raw.PostConcat(conversion);
+    EXPECT_TRUE(raw == cloneMatrix);
+}
+
+HWTEST_F(RSDrmUtilTest, RecordDstRectDisplayDisabledOrSingular, TestSize.Level1)
+{
+    const auto& sample = DRM_DRAG_SAMPLES[0];
+    auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    const auto raw = MakeDrmLayerMatrix(sample.layerX, sample.layerY);
+    auto node = CreateRecordedDrmNode(raw, raw, screen);
+    ASSERT_NE(node, nullptr);
+    ASSERT_EQ(node->GetDstRectDisplayNodeId(), screen->GetId());
+    node->SetHwcGlobalPositionEnabled(false);
+    RSDrmUtil::RecordDstRectDisplay(*node, screen);
+    EXPECT_EQ(node->GetDstRectDisplayNodeId(), INVALID_NODEID);
+    node->SetHwcGlobalPositionEnabled(true);
+    Drawing::Matrix singular;
+    singular.Scale(0, 1, 0, 0);
+    node->GetMutableRenderProperties().GetBoundsGeometry()->SetAbsMatrix(singular);
+    RSDrmUtil::RecordDstRectDisplay(*node, screen);
+    EXPECT_EQ(node->GetDstRectDisplayNodeId(), INVALID_NODEID);
+    node->GetMutableRenderProperties().GetBoundsGeometry()->ReplaceMatrix(singular, raw);
+    RSDrmUtil::RecordDstRectDisplay(*node, screen);
+    EXPECT_EQ(node->GetDstRectDisplayNodeId(), INVALID_NODEID);
+}
+
+HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfoQuarterTurns, TestSize.Level1)
+{
+    const GraphicIRect dst = { -100, -50, 400, 200 };
+    const GraphicIRect src = { 0, 0, 800, 400 };
+    const GraphicIRect expectedDst = { 0, 0, 300, 150 };
+    const GraphicTransformType transforms[] = { GraphicTransformType::GRAPHIC_ROTATE_NONE,
+        GraphicTransformType::GRAPHIC_ROTATE_90, GraphicTransformType::GRAPHIC_ROTATE_180,
+        GraphicTransformType::GRAPHIC_ROTATE_270 };
+    const GraphicIRect expectedSources[] = { { 200, 100, 600, 300 }, { 200, 0, 600, 300 },
+        { 0, 0, 600, 300 }, { 0, 100, 600, 300 } };
+    size_t index = 0;
+    for (const auto transform : transforms) {
+        RSLayerInfo layer;
+        layer.dstRect = dst;
+        layer.srcRect = src;
+        layer.transformType = transform;
+        CropDrmLayer(DRM_PRIMARY_SCREEN, layer);
+        ExpectDrmRect(layer.dstRect, expectedDst);
+        ExpectDrmRect(layer.srcRect, expectedSources[index++]);
+    }
+}
+
+// 问题 1：刚越过边界和仅剩 2 像素时，不能继续把完整的 1920 像素源宽缩放进裁剪后的 dst。
+HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfoPrimaryCompression, TestSize.Level1)
+{
+    const GraphicIRect destinations[] = { { 919, -9, 560, 1335 }, { 844, -1333, 560, 1335 } };
+    const GraphicIRect expectedSources[] = { { 0, 0, 1908, 804 }, { 0, 0, 3, 804 } };
+    size_t index = 0;
+    for (const auto& dst : destinations) {
+        RSLayerInfo layer;
+        layer.dstRect = dst;
+        layer.srcRect = DRM_VIDEO_SRC;
+        layer.transformType = GraphicTransformType::GRAPHIC_ROTATE_270;
+        CropDrmLayer(DRM_PRIMARY_SCREEN, layer);
+        ExpectDrmRect(layer.dstRect, { dst.x, 0, dst.w, dst.y + dst.h });
+        ExpectDrmRect(layer.srcRect, expectedSources[index++]);
+    }
 }
 }
