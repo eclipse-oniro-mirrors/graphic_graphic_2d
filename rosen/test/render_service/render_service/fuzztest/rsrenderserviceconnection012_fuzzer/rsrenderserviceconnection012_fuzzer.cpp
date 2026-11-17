@@ -175,6 +175,7 @@ void DoCreateNodeAndSurface()
     bool isTextureExportNode = GetData<bool>();
     bool isSync = GetData<bool>();
     bool unobscured = GetData<bool>();
+    bool isSceneBoard = GetData<bool>();
     dataParcel.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     dataParcel.WriteUint64(id);
     dataParcel.WriteString("SurfaceName");
@@ -183,6 +184,7 @@ void DoCreateNodeAndSurface()
     dataParcel.WriteBool(isSync);
     dataParcel.WriteUint8(surfaceWindowType);
     dataParcel.WriteBool(unobscured);
+    dataParcel.WriteBool(isSceneBoard);
     g_renderConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 

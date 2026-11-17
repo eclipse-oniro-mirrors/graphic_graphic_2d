@@ -29,8 +29,9 @@ bool DoUnionNodeCommand(FuzzedDataProvider& fdp)
     RSContext context;
     NodeId id = fdp.ConsumeIntegral<NodeId>();
     bool isTextureExportNode = fdp.ConsumeBool();
+    uint64_t token = fdp.ConsumeIntegral<uint64_t>();
 
-    UnionNodeCommandHelper::Create(context, id, isTextureExportNode);
+    UnionNodeCommandHelper::Create(context, id, isTextureExportNode, token);
     return true;
 }
 } // namespace Rosen

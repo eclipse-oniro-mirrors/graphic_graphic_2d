@@ -35,7 +35,7 @@ bool DoRootNodeCommand(FuzzedDataProvider& fdp)
     float width = fdp.ConsumeFloatingPoint<float>();
     float height = fdp.ConsumeFloatingPoint<float>();
 
-    RootNodeCommandHelper::Create(context, id, isTextureExportNode);
+    RootNodeCommandHelper::Create(context, id, isTextureExportNode, token);
     RootNodeCommandHelper::AttachRSSurfaceNode(context, id, surfaceNodeId, token);
     RootNodeCommandHelper::AttachToUniSurfaceNode(context, id, surfaceNodeId);
     RootNodeCommandHelper::SetEnableRender(context, id, flag);

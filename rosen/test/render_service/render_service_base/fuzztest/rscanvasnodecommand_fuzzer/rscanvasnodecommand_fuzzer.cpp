@@ -29,11 +29,12 @@ bool DoCanvasNodeCommand(FuzzedDataProvider& fdp)
     RSContext context;
     NodeId id = fdp.ConsumeIntegral<NodeId>();
     bool isTextureExportNode = fdp.ConsumeBool();
+    uint64_t token = fdp.ConsumeIntegral<uint64_t>();
     bool hdrPresent = fdp.ConsumeBool();
     uint32_t colorGamut = fdp.ConsumeIntegral<uint32_t>();
     uint16_t modifierType = fdp.ConsumeIntegral<uint16_t>();
 
-    RSCanvasNodeCommandHelper::Create(context, id, isTextureExportNode);
+    RSCanvasNodeCommandHelper::Create(context, id, isTextureExportNode, token);
     RSCanvasNodeCommandHelper::SetHDRPresent(context, id, hdrPresent);
     RSCanvasNodeCommandHelper::SetColorGamut(context, id, colorGamut);
     RSCanvasNodeCommandHelper::ClearRecording(context, id);
