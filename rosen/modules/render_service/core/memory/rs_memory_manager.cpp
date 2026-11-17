@@ -24,6 +24,7 @@
 #include <sstream>
 #include <string>
 #include <sys/prctl.h>
+#include <v1_0/imemory_tracker_interface.h>
 #include "include/core/SkGraphics.h"
 #include "rs_trace.h"
 #include "cJSON.h"
@@ -746,7 +747,24 @@ void MemoryManager::DumpGpuNodeMemory(DfxString& log)
 
 static int64_t MemoryTrackerGetGLByPid(int32_t pid)
 {
-    return pid;
+    using namespace HDI::Memorytracker::V1_0;
+    const int bytePerKb = 1024;
+    sptr<IMemoryTrackerInterface> memtrack = IMemoryTrackerInterface::Get(true);
+    if (memtrack == nullptr) {
+        return 0;
+    }
+    std::vector<MemoryRecord> records;
+    if (memtrack->GetDevMem(pid, MEMORY_TRACKER_TYPE_GL, records) != HDF_SUCCESS) {
+        return 0;
+    }
+    auto it = std::find_if(records.begin(), records.end(), [](const auto &record) -> bool {
+        return (static_cast<uint32_t>(record.flags) & FLAG_UNMAPPED) == FLAG_UNMAPPED;
+    });
+    if (it == records.end()) {
+        return 0;
+    }
+    HILOG_DEBUG(LOG_CORE, "MemoryTrackerGetGLByPid(%{public}d) = %{public}" PRId64, pid, it->size);
+    return it->size / bytePerKb;
 }
 
 void MemoryManager::DumpAllGpuInfoNew(DfxString& log, const Drawing::GPUContext* gpuContext,

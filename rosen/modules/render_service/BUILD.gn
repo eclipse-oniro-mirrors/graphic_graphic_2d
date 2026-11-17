@@ -633,6 +633,7 @@ ohos_shared_library("librender_service") {
   }
 
   external_deps = [
+    "drivers_interface_memorytracker:libmemorytracker_proxy_1.0",
     "ability_runtime:app_manager",
     "cJSON:cjson",
     "c_utils:utils",
