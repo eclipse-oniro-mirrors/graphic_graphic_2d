@@ -443,15 +443,8 @@ void RSUniRenderThread::Render()
 
 void RSUniRenderThread::ReleaseSurfaceOpItemBuffer()
 {
-    int32_t fenceFd = INVALID_FD;
-    if (acquireFence_ && acquireFence_->GetStatus() != SIGNALED) {
-        fenceFd = acquireFence_->Dup();
-    }
-    RSSurfaceBufferCallbackManager::Instance().SetReleaseFence(fenceFd);
+    RSSurfaceBufferCallbackManager::Instance().SetReleaseFence(acquireFence_);
     RSSurfaceBufferCallbackManager::Instance().RunSurfaceBufferCallback();
-    if (fenceFd != INVALID_FD) {
-        ::close(fenceFd);
-    }
 }
 
 void RSUniRenderThread::ReleaseSurface()
