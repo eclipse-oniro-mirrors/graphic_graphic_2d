@@ -185,6 +185,11 @@ bool RSSystemProperties::GetVirtualExpandScreenSkipEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetHeteroProjectionScreenSkipEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetOcclusionEnabled()
 {
     return {};
@@ -553,11 +558,6 @@ int RSSystemProperties::GetEdrGainEnabled()
 bool RSSystemProperties::GetWideColorSpaceEnabled()
 {
     return true;
-}
-
-bool RSSystemProperties::GetSecurityPermissionCheckEnabled()
-{
-    return false;
 }
 
 bool RSSystemProperties::GetEffectMergeEnabled()

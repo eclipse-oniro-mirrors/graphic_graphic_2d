@@ -120,7 +120,9 @@ void RSUniHwcVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absR
     if ((node.IsHardwareEnabledType() || node.IsHardwareEnabledTopSurface()) && !node.IsHwcCrossNode()) {
         dstRect = dstRect.IntersectRect(clipRect);
     }
-    if (node.IsHardwareEnabledTopSurface()) {
+    const auto& screenProperty = uniRenderVisitor_.curScreenNode_->GetScreenProperty();
+    // Scale dstRect logical->physical only for hardware top surfaces under HDI ROG; hard-cursor surfaces are excluded.
+    if (node.IsHardwareEnabledTopSurface() && !node.GetHardCursorStatus() && screenProperty.GetHdiRogEnable()) {
         auto widthRatio = uniRenderVisitor_.curScreenNode_->GetScreenInfo().GetRogWidthRatio();
         auto heightRatio = uniRenderVisitor_.curScreenNode_->GetScreenInfo().GetRogHeightRatio();
         dstRect.left_ = static_cast<int32_t>(std::floor(dstRect.left_ * widthRatio));
@@ -398,6 +400,12 @@ void RSUniHwcVisitor::DisableSolidLayerByDstRectNEBounds(RSSurfaceRenderNode& no
     if (stagingSurfaceParams == nullptr || !stagingSurfaceParams->GetIsHwcEnabledBySolidLayer()) {
         return;
     }
+    // A no-buffer surface node does not clip a hole (no self-drawing area), so it is
+    // not subject to the dstRect-vs-bounds disable below.
+    bool hasBuffer = node.GetRSSurfaceHandler() && node.GetRSSurfaceHandler()->GetBuffer();
+    if (IsSolidLayerEnabledNoBuffer(node, hasBuffer)) {
+        return;
+    }
     // Disable solidLayer when dstRect (self-drawing area) is smaller than boundsRect (hole area)
     if (!node.GetRenderProperties().GetBoundsGeometry()->GetAbsRect().IsInsideOf(node.GetDstRect())) {
         node.SetHardwareForcedDisabledState(true);
@@ -408,6 +416,21 @@ void RSUniHwcVisitor::DisableSolidLayerByDstRectNEBounds(RSSurfaceRenderNode& no
         RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by solidLayer and "
             "dstRect smaller than boundsRect", node.GetName().c_str(), node.GetId());
     }
+}
+
+bool RSUniHwcVisitor::IsSurfaceOpaque(RSSurfaceRenderNode& node)
+{
+    auto surfaceHandler = node.GetMutableRSSurfaceHandler();
+    auto consumer = surfaceHandler->GetConsumer();
+    if (consumer != nullptr) {
+        auto fwkType = consumer->GetSurfaceAppFrameworkType();
+        auto surfaceOpaqueType = RsCommonHook::Instance().GetSurfaceOpaqueType();
+        bool surfaceType = fwkType.find(surfaceOpaqueType) != std::string::npos;
+        if (surfaceType) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool RSUniHwcVisitor::IsTargetSolidLayer(RSSurfaceRenderNode& node)
@@ -465,7 +488,7 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& 
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node.GetStagingRenderParams().get());
     stagingSurfaceParams->SetIsHwcEnabledBySolidLayer(false);
     node.SetNodeHasBackgroundColorAlpha(false);
-    if (node.GetAncoForceDoDirect()) {
+    if (node.GetAncoForceDoDirect() || IsSurfaceOpaque(node)) {
         return;
     }
     if (ProcessSolidLayerEnabledByTag(node, stagingSurfaceParams)) {
@@ -1274,6 +1297,60 @@ bool RSUniHwcVisitor::IsFindRootSuccess(std::shared_ptr<RSRenderNode>& parent, c
         isFindInRootSubTree |= parent->GetId() == rootNode.GetId();
     } while (!isFindInRootSubTree && parent != uniRenderVisitor_.curSurfaceNode_);
     return isFindInRootSubTree;
+}
+
+void RSUniHwcVisitor::CollectHwcAndFilterNodesInSkippedSubTree(RSRenderNode& node)
+{
+    // Rebuild the aggregated list from children's lists; drop last frame's stale entries first.
+    node.ClearAllHwcNodeAndFilterNode();
+    auto children = node.GetSortedChildren();
+    std::for_each((*children).begin(), (*children).end(), [this, &node](
+        const std::shared_ptr<RSRenderNode>& child) {
+        if (!child) {
+            return;
+        }
+        // Forward order: append at the end
+        node.GetAllHwcNodeAndFilterNode().insert(node.GetAllHwcNodeAndFilterNode().end(),
+            child->GetAllHwcNodeAndFilterNode().begin(), child->GetAllHwcNodeAndFilterNode().end());
+    });
+}
+
+void RSUniHwcVisitor::CollectHwcAndFilterNodesToParent(RSRenderNode& node, bool isParentPrepareInReverseOrder,
+    bool isBlendNeedFilter)
+{
+    if (isBlendNeedFilter || node.IsHardwareEnabledType()) {
+        node.GetAllHwcNodeAndFilterNode().insert(node.GetAllHwcNodeAndFilterNode().begin(),
+            node.weak_from_this());
+    }
+    if (auto nodeParent = node.GetParent().lock()) {
+        auto& parentList = nodeParent->GetAllHwcNodeAndFilterNode();
+        auto& childList = node.GetAllHwcNodeAndFilterNode();
+        if (isParentPrepareInReverseOrder) {
+            parentList.insert(parentList.begin(), childList.begin(), childList.end());
+        } else {
+            parentList.insert(parentList.end(), childList.begin(), childList.end());
+        }
+    }
+}
+
+void RSUniHwcVisitor::CollectHwcAndFilterNodesForCrossNode(RSSurfaceRenderNode& node,
+    bool isParentPrepareInReverseOrder)
+{
+    auto sourceRenderNode = node.GetSourceCrossNode().lock();
+    auto sourceSurfaceNode = sourceRenderNode ?
+        sourceRenderNode->ReinterpretCastTo<RSSurfaceRenderNode>() : nullptr;
+    if (sourceSurfaceNode) {
+        // Clone: mirror the source's aggregated list into the current node.
+        auto& cloneNodeList = node.GetAllHwcNodeAndFilterNode();
+        cloneNodeList = sourceSurfaceNode->GetAllHwcNodeAndFilterNode();
+    } else if (node.IsCloneCrossNode()) {
+        // Error case: no resolvable source, drop stale data.
+        node.ClearAllHwcNodeAndFilterNode();
+    }
+    if (uniRenderVisitor_.curScreenNode_ && uniRenderVisitor_.curScreenNode_->GetId() != node.GetId()) {
+        CollectHwcAndFilterNodesToParent(node, isParentPrepareInReverseOrder,
+            RSUniHwcComputeUtil::IsBlendNeedFilter(node));
+    }
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeClipRect(const std::shared_ptr<RSRenderNode>& hwcNodeParent,

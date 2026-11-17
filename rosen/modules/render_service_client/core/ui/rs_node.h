@@ -1870,6 +1870,8 @@ public:
 
     void SetFrameNodeInfo(int32_t id, std::string tag);
 
+    void AppSetNodeRate(int32_t nodeTargetRate);
+
     virtual void SetTextureExport(bool isTextureExportNode);
 
     void SyncTextureExport(bool isTextureExportNode);
@@ -2142,7 +2144,14 @@ protected:
         bool isOnTheTree = false);
     explicit RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode = false,
         std::shared_ptr<RSUIContext> rsUIContext = nullptr, bool isOnTheTree = false);
-    
+
+    /**
+     * @brief RSUIContext token, or 0 for the context-less legacy path. Derived classes only.
+     *
+     * @return The token, or 0 when this node has no context.
+     */
+    uint64_t GetUIContextToken() const;
+
     virtual void CreateRenderNode() {}
     virtual void DumpSubClass(std::string& out) const {}
 
@@ -2530,6 +2539,8 @@ private:
     bool isNodeGroup_ = false;
     bool isExcludedFromNodeGroup_ = false;
     bool isRepaintBoundary_ = false;
+
+    int32_t nodeTargetRate_ = -1;
 
     bool isSuggestOpincNode_ = false;
     bool isLayer_ = false;

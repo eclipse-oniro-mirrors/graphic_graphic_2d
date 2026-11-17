@@ -18,6 +18,8 @@
 #include "gtest/gtest.h"
 #include "common/rs_common_def.h"
 #include "include/command/rs_display_node_command.h"
+#include "common/rs_common_def.h"
+#include "command/rs_ui_director_command.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "screen_manager/rs_screen_property.h"
@@ -428,6 +430,7 @@ HWTEST_F(RSDisplayNodeCommandTest, SetDisplayModeInvalidRotation001, TestSize.Le
 }
 
 /**
+/**
  * @tc.name: SetWindowRecordConfigMissingNode001
  * @tc.desc: SetWindowRecordConfig is a no-op for a missing display node.
  * @tc.type: FUNC
@@ -668,4 +671,27 @@ HWTEST_F(RSDisplayNodeCommandTest, SetDisplayModeMirrorRestoresAfterRecordSessio
     ASSERT_NE(mirrorSource, nullptr);
     EXPECT_EQ(mirrorSource->GetId(), mirrorSourceId);
 }
+
+/**
+ * @tc.name: CreateSceneBoardBranchTest001
+ * @tc.desc: Create with a marked token covers the SceneBoard branch.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDisplayNodeCommandTest, CreateSceneBoardBranchTest001, TestSize.Level1)
+{
+    constexpr pid_t pid = 816;
+    constexpr uint64_t token = 817;
+    constexpr NodeId directorNodeId = MakeNodeId(pid, 0);
+    constexpr NodeId nodeId = MakeNodeId(pid, 1);
+    RSContext context;
+    RSUIDirectorCommandHelper::GoCreate(context, directorNodeId, token);
+    RSUIDirectorCommandHelper::MarkSceneBoard(context, directorNodeId, token);
+    RSDisplayNodeConfig config = {};
+    DisplayNodeCommandHelper::Create(context, nodeId, config, token);
+    auto node = context.GetNodeMap().GetRenderNode<RSLogicalDisplayRenderNode>(nodeId);
+    ASSERT_NE(node, nullptr);
+    EXPECT_TRUE(node->IsSceneBoard());
+    EXPECT_EQ(node->GetUIContextToken(), token);
+}
+
 } // namespace OHOS::Rosen

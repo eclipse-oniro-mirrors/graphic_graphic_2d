@@ -158,6 +158,10 @@ public:
     void AddActiveNode(const std::shared_ptr<RSRenderNode>& node);
     bool HasActiveNode(const std::shared_ptr<RSRenderNode>& node);
     std::unordered_map<NodeId, std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>>> GetActiveNodes();
+    // Record the DisplayNode that owns a dirty node, for skipping displays without dirty children.
+    void AddDirtyDisplayNode(NodeId displayNodeId);
+    // Take and clear the dirty DisplayNode set of the current frame.
+    std::unordered_set<NodeId> GetAndClearDirtyDisplayNodes();
 
     void AddPendingSyncNode(const std::shared_ptr<RSRenderNode> node);
 
@@ -294,6 +298,9 @@ public:
     void CreateUIRenderDirector(pid_t pid, uint64_t token);
     void DestroyUIRenderDirector(pid_t pid, uint64_t token);
     void DestoryUIRenderDirectorByPid(pid_t pid);
+    // SceneBoard is a process identity: true when the token's own mirror or any sibling
+    // instance of the same pid is marked; mirror flags stay untouched.
+    bool IsSceneBoardToken(pid_t pid, uint64_t token) const;
 
     std::unordered_map<std::string, pid_t> GetUIFrameworkDirtyNodeNameMap();
 private:
@@ -328,6 +335,8 @@ private:
     // Collect all active Nodes sorted by root node id in this frame.
     std::unordered_map<NodeId, std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>>> activeNodesInRoot_;
     std::mutex activeNodesInRootMutex_;
+    // DisplayNodes that have dirty children in the current frame, guarded by activeNodesInRootMutex_.
+    std::unordered_set<NodeId> dirtyDisplayNodes_;
 
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> pendingSyncNodes_;
     std::vector<SubSurfaceCntUpdateInfo> subSurfaceCntUpdateInfo_;
@@ -339,7 +348,7 @@ private:
     RSPersistentPropertyManager persistentPropertyManager_;
 
     std::unordered_map<pid_t, std::unordered_map<uint64_t, std::shared_ptr<RSUIRenderDirector>>> uiRenderDirectors_;
-    std::mutex uiRenderDirectorsMutex_;
+    mutable std::mutex uiRenderDirectorsMutex_;
 
     friend class RSRenderThread;
     friend class RSMainThread;

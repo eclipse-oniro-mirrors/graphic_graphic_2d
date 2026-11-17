@@ -354,8 +354,6 @@ HWTEST_F(RSMultiScreenUtilTest, HandleMirrorDisplayTest003, TestSize.Level1)
     EXPECT_NE(uniParam, nullptr);
 
     virtualProcessor_->isMirror_ = false;
-    bool res = virtualProcessor_->UpdateMirrorInfo(*displayDrawable_);
-    EXPECT_TRUE(res);
     RSMultiScreenUtil::HandleMirrorDisplay(*displayDrawable_, *displayParams_, virtualProcessor_);
 
     // when compositeType_ of params is UNI_RENDER_COMPOSITE
@@ -1905,6 +1903,53 @@ HWTEST_F(RSMultiScreenUtilTest, DrawVirtualExtendTest003, TestSize.Level1)
     // we hope offscreenImage finally got is not nullptr
     displayDrawable_->offscreenSurface_ = std::make_shared<Drawing::Surface>();
     RSMultiScreenUtil::DrawVirtualExtend(*displayDrawable_, *displayParams_, virtualProcessor_);
+}
+
+/**
+ * @tc.name: DrawVirtualExtendTest004
+ * @tc.desc: Test DrawVirtualExtend releases temporary offscreen state in multi-surface mode
+ * @tc.type: FUNC
+ * @tc.require: #26773
+ */
+HWTEST_F(RSMultiScreenUtilTest, DrawVirtualExtendTest004, TestSize.Level1)
+{
+    auto surface = Drawing::Surface::MakeRasterN32Premul(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    ASSERT_NE(surface, nullptr);
+    ASSERT_NE(surface->MakeSurface(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE), nullptr);
+    auto originalCanvas = std::make_shared<RSPaintFilterCanvas>(surface.get());
+    displayDrawable_->curCanvas_ = originalCanvas.get();
+    displayParams_->frameRect_ = { 0.f, 0.f, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE };
+    virtualProcessor_->needsOffscreenRender_ = true;
+
+    RSMultiScreenUtil::DrawVirtualExtend(*displayDrawable_, *displayParams_, virtualProcessor_);
+
+    EXPECT_EQ(displayDrawable_->curCanvas_, originalCanvas.get());
+    EXPECT_EQ(displayDrawable_->canvasBackup_, nullptr);
+    EXPECT_EQ(displayDrawable_->offscreenCanvas_, nullptr);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_, nullptr);
+}
+
+/**
+ * @tc.name: DrawVirtualExtendTest005
+ * @tc.desc: Test DrawVirtualExtend preserves the original canvas when offscreen preparation fails
+ * @tc.type: FUNC
+ * @tc.require: #26773
+ */
+HWTEST_F(RSMultiScreenUtilTest, DrawVirtualExtendTest005, TestSize.Level1)
+{
+    auto originalCanvas = displayDrawable_->curCanvas_;
+    displayParams_->frameRect_ = { 0.f, 0.f, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE };
+    displayDrawable_->offscreenCanvas_ = std::make_shared<RSPaintFilterCanvas>(canvas_.get());
+    displayDrawable_->offscreenSurface_ = std::make_shared<Drawing::Surface>();
+    virtualProcessor_->needsOffscreenRender_ = true;
+    ASSERT_EQ(displayDrawable_->curCanvas_->GetSurface(), nullptr);
+
+    RSMultiScreenUtil::DrawVirtualExtend(*displayDrawable_, *displayParams_, virtualProcessor_);
+
+    EXPECT_EQ(displayDrawable_->curCanvas_, originalCanvas);
+    EXPECT_EQ(displayDrawable_->canvasBackup_, nullptr);
+    EXPECT_EQ(displayDrawable_->offscreenCanvas_, nullptr);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_, nullptr);
 }
 
 /**

@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <map>   
 #include <memory>
 #include <mutex>
 #include <set>
@@ -369,6 +370,19 @@ RSRenderNode::RSRenderNode(
     drawableVec_(std::make_unique<RSDrawable::Vec>())
 {
     RS_PROFILER_RENDERNODE_INC(isOnTheTree_);
+}
+
+void RSRenderNode::ApplyInstanceIdentity(uint64_t token, bool isSceneBoard)
+{
+    if (token != 0) {
+        SetUIContextToken(token); // idempotent: list dedups repeated tokens
+    }
+    if (isSceneBoard) {
+        MarkSceneBoard();
+    } else if (token != 0) {
+        ROSEN_LOGD("RSRenderNode::ApplyInstanceIdentity sceneboard check miss, nodeId:%{public}" PRIu64
+            ", token:%{public}" PRIu64, GetId(), token);
+    }
 }
 
 void RSRenderNode::AddUIExtensionChild(SharedPtr child)
@@ -1327,6 +1341,8 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     } else {
         out += ", RSUIContextToken: NO_RSUIContext";
     }
+    // Birth identity; may differ from RSUIContextToken after migration.
+    out += ", isSceneBoard: " + std::to_string(IsSceneBoard());
     if (GetBootAnimation()) {
         out += ", GetBootAnimation: true";
     }
@@ -1472,64 +1488,23 @@ void RSRenderNode::ChildrenListDump(std::string& out) const
 
 void RSRenderNode::DumpNodeType(RSRenderNodeType nodeType, std::string& out)
 {
-    switch (nodeType) {
-        case RSRenderNodeType::SCREEN_NODE: {
-            out += "SCREEN_NODE";
-            break;
-        }
-        case RSRenderNodeType::RS_NODE: {
-            out += "RS_NODE";
-            break;
-        }
-        case RSRenderNodeType::SURFACE_NODE: {
-            out += "SURFACE_NODE";
-            break;
-        }
-        case RSRenderNodeType::CANVAS_NODE: {
-            out += "CANVAS_NODE";
-            break;
-        }
-        case RSRenderNodeType::ROOT_NODE: {
-            out += "ROOT_NODE";
-            break;
-        }
-        case RSRenderNodeType::PROXY_NODE: {
-            out += "PROXY_NODE";
-            break;
-        }
-        case RSRenderNodeType::CANVAS_DRAWING_NODE: {
-            out += "CANVAS_DRAWING_NODE";
-            break;
-        }
-        case RSRenderNodeType::EFFECT_NODE: {
-            out += "EFFECT_NODE";
-            break;
-        }
-        case RSRenderNodeType::LOGICAL_DISPLAY_NODE: {
-            out += "LOGICAL_DISPLAY_NODE";
-            break;
-        }
-        case RSRenderNodeType::DEPTH_NODE: {
-            out += "DEPTH_NODE";
-            break;
-        }
-        case RSRenderNodeType::UNION_NODE: {
-            out += "UNION_NODE";
-            break;
-        }
-        case RSRenderNodeType::WINDOW_KEYFRAME_NODE: {
-            out += "WINDOW_KEYFRAME_NODE";
-            break;
-        }
-        case RSRenderNodeType::PROTECTIVE_SOLID_NODE: {
-            out += "PROTECTIVE_SOLID_NODE";
-            break;
-        }
-        default: {
-            out += "UNKNOWN_NODE";
-            break;
-        }
-    }
+    static const std::map<RSRenderNodeType, std::string> NODE_TYPE_NAMES = {
+        { RSRenderNodeType::SCREEN_NODE,           "SCREEN_NODE"           },
+        { RSRenderNodeType::RS_NODE,               "RS_NODE"               },
+        { RSRenderNodeType::SURFACE_NODE,          "SURFACE_NODE"          },
+        { RSRenderNodeType::CANVAS_NODE,           "CANVAS_NODE"           },
+        { RSRenderNodeType::ROOT_NODE,             "ROOT_NODE"             },
+        { RSRenderNodeType::PROXY_NODE,            "PROXY_NODE"            },
+        { RSRenderNodeType::CANVAS_DRAWING_NODE,   "CANVAS_DRAWING_NODE"   },
+        { RSRenderNodeType::EFFECT_NODE,           "EFFECT_NODE"           },
+        { RSRenderNodeType::LOGICAL_DISPLAY_NODE,  "LOGICAL_DISPLAY_NODE"  },
+        { RSRenderNodeType::DEPTH_NODE,            "DEPTH_NODE"            },
+        { RSRenderNodeType::UNION_NODE,            "UNION_NODE"            },
+        { RSRenderNodeType::WINDOW_KEYFRAME_NODE,  "WINDOW_KEYFRAME_NODE"  },
+        { RSRenderNodeType::PROTECTIVE_SOLID_NODE, "PROTECTIVE_SOLID_NODE" },
+    };
+    auto it = NODE_TYPE_NAMES.find(nodeType);
+    out += (it != NODE_TYPE_NAMES.end()) ? it->second : "UNKNOWN_NODE";
 }
 
 void RSRenderNode::DumpSubClassNode(std::string& out) const
@@ -1666,11 +1641,21 @@ void RSRenderNode::SetContentDirty()
 
 void RSRenderNode::SetDirty(bool forceAddToActiveList)
 {
+    auto context = GetContext().lock();
     // TO avoid redundant add, only add if both: 1. on-tree node 2. newly dirty node (or forceAddToActiveList = true)
     if (dirtyStatus_ == NodeDirty::CLEAN || dirtyTypesNG_.none() || forceAddToActiveList) {
-        if (auto context = GetContext().lock()) {
+        if (context) {
             context->AddActiveNode(shared_from_this());
         }
+    }
+    if (context) {
+        auto displayNodeId = GetLogicalDisplayNodeId();
+        if (displayNodeId == INVALID_NODEID && IsOnTheTree() &&
+            GetType() == RSRenderNodeType::SURFACE_NODE) {
+            RS_LOGE("RSRenderNode::SetDirty on-tree surface[%{public}" PRIu64 "] has no display node",
+                GetId());
+        }
+        context->AddDirtyDisplayNode(displayNodeId);
     }
     isParentTreeDirty_ = true;
     SetParentSubTreeDirty();
@@ -2646,7 +2631,7 @@ bool RSRenderNode::CheckAndUpdateAIBarCacheStatus(bool intersectHwcDamage) const
     if (filterDrawable == nullptr) {
         return false;
     }
-    return filterDrawable->CheckAndUpdateAIBarCacheStatus(intersectHwcDamage);
+    return filterDrawable->MarkAIBarCacheStatus(intersectHwcDamage);
 #endif
 return false;
 }
@@ -2664,7 +2649,7 @@ bool RSRenderNode::ForceReduceAIBarCacheInterval(bool intersectHwcDamage)
     if (filterDrawable == nullptr) {
         return false;
     }
-    return filterDrawable->ForceReduceAIBarCacheInterval(intersectHwcDamage);
+    return filterDrawable->MarkForceReduceAIBarCacheInterval(intersectHwcDamage);
 #else
     return false;
 #endif
@@ -3027,14 +3012,14 @@ void RSRenderNode::UpdatePendingPurgeFilterDirtyRect(RSDirtyRegionManager& dirty
 
         RS_OPTIONAL_TRACE_NAME_FMT("UpdatePendingPurgeFilterDirtyRect:node[%llu],"
             " needPendingPurge:%d, lastHpaeClearCache: %d, pendingPurgeFilterRegion: %s",
-            GetId(), filterDrawable->NeedPendingPurge(), filterDrawable->LastHpaeClearCache(),
+            GetId(), filterDrawable->IsPendingPurge(), filterDrawable->IsLastHpaeClearCache(),
             pendingPurgeFilterRegion.GetRegionInfo().c_str());
-        // mainly based on the pendingPurge_ within NeedPendingPurge().
+        // mainly based on the pendingPurge_ within IsPendingPurge().
         // because stagingFilterInteractWithDirty_ (whether filter intersects with the dirty region)
         // also AddPendingPurgeFilterRegion if HpaeBlur clear cache
         // may become true later in CheckMergeFilterDirtyWithPreDirty().
         if (!filterDrawable->IsAIBarFilter() &&
-            (filterDrawable->NeedPendingPurge() || filterDrawable->LastHpaeClearCache())) {
+            (filterDrawable->IsPendingPurge() || filterDrawable->IsLastHpaeClearCache())) {
             dirtyManager.GetFilterCollector().AddPendingPurgeFilterRegion(
                 Occlusion::Region(Occlusion::Rect(lastFilterRegion_)));
         }
@@ -3093,16 +3078,16 @@ void RSRenderNode::MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDraw
     auto snapshotRegion = filterDrawable->GetVisibleSnapshotRegion(GetFilterRegion());
     RS_OPTIONAL_TRACE_NAME_FMT("MarkFilterCacheFlags:node[%llu], NeedPendingPurge:%d,"
         " forceClearWithoutNextVsync:%d, filterRegion: %s, filterDrawable snapshotRegion: %s",
-        GetId(), filterDrawable->NeedPendingPurge(), (!needRequestNextVsync && filterDrawable->IsSkippingFrame()),
+        GetId(), filterDrawable->IsPendingPurge(), (!needRequestNextVsync && filterDrawable->IsSkippingFrame()),
         filterRegion.ToString().c_str(), snapshotRegion.ToString().c_str());
     // force update if last frame hpae-blur clear cache
-    if (filterDrawable->LastHpaeClearCache()) {
+    if (filterDrawable->IsLastHpaeClearCache()) {
         dirtyManager.MergeDirtyRect(filterRegion);
         isDirtyRegionUpdated_ = true;
     }
 
     // force update if last frame use cache because skip-frame and current frame background is not dirty
-    if (filterDrawable->NeedPendingPurge()) {
+    if (filterDrawable->IsPendingPurge()) {
         dirtyManager.MergeDirtyRect(filterRegion);
         isDirtyRegionUpdated_ = true;
         return;
@@ -4924,8 +4909,8 @@ void RSRenderNode::NodeDrawLargeAreaBlur(std::pair<bool, bool>& nodeDrawLargeAre
     for (auto slotType : drawableSlotTypes) {
         auto drawable = GetFilterDrawable(slotType);
         if (drawable) {
-            flagPredict = flagPredict || drawable->WouldDrawLargeAreaBlur();
-            flagCurrent = flagCurrent || drawable->WouldDrawLargeAreaBlurPrecisely();
+            flagPredict = flagPredict || drawable->IsDrawLargeAreaBlur();
+            flagCurrent = flagCurrent || drawable->IsDrawLargeAreaBlurPrecisely();
         }
     }
     nodeDrawLargeAreaBlur.first = flagPredict;
@@ -5114,12 +5099,12 @@ void RSRenderNode::MarkBlurIntersectWithDRM(bool intersectWithDRM, bool isDark)
     const auto& properties = GetRenderProperties();
     if (properties.GetMaterialFilter()) {
         if (auto filterDrawable = GetFilterDrawable(RSDrawableSlot::MATERIAL_FILTER)) {
-            filterDrawable->MarkBlurIntersectWithDRM(intersectWithDRM, isDark);
+            filterDrawable->SetBlurIntersectWithDRM(intersectWithDRM, isDark);
         }
     }
     if (properties.GetBackgroundFilter()) {
         if (auto filterDrawable = GetFilterDrawable(RSDrawableSlot::BACKGROUND_FILTER)) {
-            filterDrawable->MarkBlurIntersectWithDRM(intersectWithDRM, isDark);
+            filterDrawable->SetBlurIntersectWithDRM(intersectWithDRM, isDark);
         }
     }
 #endif
@@ -5160,7 +5145,7 @@ void RSRenderNode::UpdatePointLightDirtySlot()
             return;
         }
         drawablePtr->OnUpdate(*shared_from_this());
-        UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::COVERAGE_NG_SHADER);
+        UpdateDirtySlotsAndPendingNodes(slot);
         enableHdrEffect = enableHdrEffect || drawablePtr->GetEnableEDR();
         hasPointLightDrawable = true;
     }

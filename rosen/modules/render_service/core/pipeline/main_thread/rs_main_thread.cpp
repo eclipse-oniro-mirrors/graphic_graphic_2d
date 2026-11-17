@@ -98,6 +98,8 @@
 #include "metadata_helper.h"
 #include "monitor/self_drawing_node_monitor.h"
 #include "params/rs_surface_render_params.h"
+#include "feature/filter_cache_manager/rs_filter_cache_manager.h"
+#include "feature/filter_cache_manager/rs_cache_update_manager.h"
 #include "pipeline/render_thread/rs_base_surface_util.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
@@ -278,6 +280,7 @@ constexpr uint64_t ONE_SECOND_TIMESTAMP = 1e9;
 constexpr int SKIP_FIRST_FRAME_DRAWING_NUM = 1;
 constexpr uint32_t MAX_ANIMATED_SCENES_NUM = 0xFFFF;
 constexpr size_t MAX_SURFACE_OCCLUSION_LISTENERS_SIZE = std::numeric_limits<uint16_t>::max();
+constexpr int MAX_SURFACE_OCCLUSION_LISTENERS_PER_PID = 256;
 constexpr uint32_t MAX_DROP_FRAME_PID_LIST_SIZE = 1024;
 const std::string  FORCE_REFRESH_ONE_FRAME_TASK_NAME = "ForceRefreshOneFrameIfNoRNV";
 constexpr uint32_t MAX_BUFFER_RECLAIM_NUMS_IN_SINGLE_FRAME = 1;
@@ -1001,6 +1004,13 @@ void RSMainThread::ClearRebuildTransactionData(pid_t pid)
 {
     pendingCommandsDuringRebuild_.erase(pid);
     pendingSplitTransactions_.erase(pid);
+}
+
+void RSMainThread::SetAdapterLtpoConfig(const std::unordered_map<std::string, std::string>& config)
+{
+    if (hgmRenderContext_ != nullptr) {
+        hgmRenderContext_->SetAdapterLtpoConfig(config);
+    }
 }
 
 void RSMainThread::CleanResources(pid_t pid, bool forRefresh)
@@ -3157,6 +3167,24 @@ void RSMainThread::ProcessWindowCapTasks()
     }
 }
 
+bool RSMainThread::CheckForceAllDisplayDirty() const
+{
+    bool pendingCaptureTask = !pendingNonSystemUiCaptureTasks_.empty() || !nonSystemUiCaptureTasks_.empty() ||
+        !pendingSystemUiCaptureTasks_.empty() || !systemUiCaptureTasks_.empty() ||
+        !pendingSyncWindowCaptureTasks_.empty() || !syncWindowCaptureTasks_.empty() ||
+        !pendingWindowCapTasks_.empty() || !windowCapTasks_.empty();
+    bool force = isForceRefresh_ || forceUpdateUniRenderFlag_ || screenPowerOnChanged_.load() ||
+        isAccessibilityConfigChanged_ || isCachedSurfaceUpdated_ || pendingCaptureTask;
+    if (force) {
+        RS_TRACE_NAME_FMT("RSUniRender:force all display dirty isForceRefresh[%d] forceUpdateUniRender[%d] "
+            "screenPowerOnChanged[%d] accessibilityChanged[%d] cachedSurfaceUpdated[%d] captureTask[%d]",
+            static_cast<int>(isForceRefresh_), static_cast<int>(forceUpdateUniRenderFlag_),
+            static_cast<int>(screenPowerOnChanged_.load()), static_cast<int>(isAccessibilityConfigChanged_),
+            static_cast<int>(isCachedSurfaceUpdated_), static_cast<int>(pendingCaptureTask));
+    }
+    return force;
+}
+
 void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 {
 #ifdef RS_ENABLE_GPU
@@ -3175,7 +3203,10 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     if (receiver_) {
         receiver_->GetVSyncPeriod(rsPeriod);
     }
-    rsVsyncRateReduceManager_.ResetFrameValues(impl::CalculateRefreshRate(rsPeriod));
+    uint32_t refreshRate = impl::CalculateRefreshRate(rsPeriod);
+    rsVsyncRateReduceManager_.ResetFrameValues(refreshRate);
+    RS_TRACE_NAME_FMT("RSMainThread::UniRender refreshRate -> %u", refreshRate);
+    RSCacheUpdateManager::SetCurrentVsyncRefreshRate(refreshRate);
 
     if (isHardwareForcedDisabled_) {
         uniVisitor->MarkHardwareForcedDisabled();
@@ -3277,7 +3308,17 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         rsVsyncRateReduceManager_.SetFocusedNodeId(focusNodeId_);
         RSSpatialEffectManager::Instance()->ProcessDepthNodeAndSpatialEffectNodeDirty();
+        auto dirtyDisplayNodes = GetContext().GetAndClearDirtyDisplayNodes();
+        RS_TRACE_NAME_FMT("RSUniRender:hetero display skip forceAll[%d] dirtyDisplayNum[%zu]",
+            static_cast<int>(forceAllDisplayDirty_), dirtyDisplayNodes.size());
+        uniVisitor->SetForceAllDisplayDirty(forceAllDisplayDirty_);
+        uniVisitor->SetSkippedDisplayNodesLastFrame(std::move(skippedDisplayNodesLastFrame_));
+        if (!forceAllDisplayDirty_) {
+            uniVisitor->SetDirtyDisplayNodes(std::move(dirtyDisplayNodes));
+        }
         rootNode->QuickPrepare(uniVisitor);
+        skippedDisplayNodesLastFrame_ = uniVisitor->GetSkippedDisplayNodes();
+        uniVisitor->CheckUnmatchedDirtyDisplays();
         uniVisitor->ResetCrossNodesVisitedStatus();
 
 #ifdef RES_SCHED_ENABLE
@@ -3670,6 +3711,8 @@ void RSMainThread::Render()
         RSTvMetadataManager::Instance().SetUniRenderThreadParam(renderThreadParams_);
 #endif
         // If use DoDirectComposition, we do not sync renderThreadParams,
+        // Evaluate before isForceRefresh_ is cleared below, because UniRender consumes the result.
+        forceAllDisplayDirty_ = CheckForceAllDisplayDirty();
         pipelineParam_.isForceRefresh = isForceRefresh_;
         isForceRefresh_ = false;
         uint64_t fastComposeTimeStampDiff = 0;
@@ -4761,7 +4804,7 @@ void RSMainThread::UnRegisterOcclusionChangeCallback(pid_t pid)
     occlusionListeners_.erase(pid);
 }
 
-void RSMainThread::RegisterSurfaceOcclusionChangeCallback(
+bool RSMainThread::RegisterSurfaceOcclusionChangeCallback(
     NodeId id, pid_t pid, sptr<RSISurfaceOcclusionChangeCallback> callback, std::vector<float>& partitionPoints)
 {
     std::lock_guard<std::mutex> lock(surfaceOcclusionMutex_);
@@ -4772,17 +4815,39 @@ void RSMainThread::RegisterSurfaceOcclusionChangeCallback(
     auto it = surfaceOcclusionListeners_.find(id);
     if (it != surfaceOcclusionListeners_.end()) {
         it->second = std::make_tuple(pid, callback, partitionPoints, level);
-    } else if (surfaceOcclusionListeners_.size() < MAX_SURFACE_OCCLUSION_LISTENERS_SIZE) {
-        surfaceOcclusionListeners_.emplace(id, std::make_tuple(pid, callback, partitionPoints, level));
-    } else {
-        RS_LOGW("%{public}s: register failed because surfaceOcclusionListeners_ reached max size", __func__);
+        return true;
     }
+    if (surfaceOcclusionListeners_.size() >= MAX_SURFACE_OCCLUSION_LISTENERS_SIZE) {
+        RS_LOGW("%{public}s: register failed because surfaceOcclusionListeners_ reached max size", __func__);
+        return false;
+    }
+    auto countIt = surfaceOcclusionListenerCount_.find(pid);
+    if (countIt != surfaceOcclusionListenerCount_.end() &&
+        countIt->second >= MAX_SURFACE_OCCLUSION_LISTENERS_PER_PID) {
+        RS_LOGW("%{public}s: register failed because pid:%{public}d reached the per-pid limit %{public}d",
+            __func__, pid, MAX_SURFACE_OCCLUSION_LISTENERS_PER_PID);
+        return false;
+    }
+    surfaceOcclusionListeners_.emplace(id, std::make_tuple(pid, callback, partitionPoints, level));
+    if (countIt != surfaceOcclusionListenerCount_.end()) {
+        ++countIt->second;
+    } else {
+        surfaceOcclusionListenerCount_.emplace(pid, 1);
+    }
+    return true;
 }
 
 void RSMainThread::UnRegisterSurfaceOcclusionChangeCallback(NodeId id)
 {
     std::lock_guard<std::mutex> lock(surfaceOcclusionMutex_);
-    surfaceOcclusionListeners_.erase(id);
+    auto it = surfaceOcclusionListeners_.find(id);
+    if (it != surfaceOcclusionListeners_.end()) {
+        auto countIt = surfaceOcclusionListenerCount_.find(std::get<0>(it->second));
+        if (countIt != surfaceOcclusionListenerCount_.end() && --countIt->second <= 0) {
+            surfaceOcclusionListenerCount_.erase(countIt);
+        }
+        surfaceOcclusionListeners_.erase(it);
+    }
     savedAppWindowNode_.erase(id);
 }
 
@@ -4799,6 +4864,7 @@ void RSMainThread::ClearSurfaceOcclusionChangeCallback(pid_t pid)
             it++;
         }
     }
+    surfaceOcclusionListenerCount_.erase(pid);
 }
 
 void RSMainThread::SurfaceOcclusionChangeCallback(VisibleData& dstCurVisVec)

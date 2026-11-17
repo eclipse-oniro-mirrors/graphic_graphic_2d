@@ -388,8 +388,15 @@ std::shared_ptr<RSScreenRenderNode> RSMainThreadTest::GetAndInitScreenRenderNode
     RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
     screenNode->UpdateScreenProperty(ScreenPropertyType::STATE,
         sptr<ScreenProperty<uint8_t>>::MakeSptr(static_cast<uint8_t>(ScreenState::HDI_OUTPUT_ENABLE)));
-
+    // PhysicalScreenInit() now calls RSLuminanceControl::Get().IsHdrPicEnable(id). A previous test may
+    // have left rSLuminanceControlInterface_ pointing at an already-destroyed local mock (use-after-free),
+    // which crashes the virtual call during RSScreen construction. Force the interface to nullptr while
+    // constructing the screen so IsHdrPicEnable safely returns false; restore afterwards.
+    auto& luminanceInterface = RSLuminanceControl::Get().rSLuminanceControlInterface_;
+    auto savedLuminanceInterface = luminanceInterface;
+    luminanceInterface = nullptr;
     auto rsScreen = std::make_shared<RSScreen>(screenId);
+    luminanceInterface = savedLuminanceInterface;
     if (rsScreen == nullptr) {
         return screenNode;
     }
@@ -4059,7 +4066,7 @@ HWTEST_F(RSMainThreadTest, RegisterSurfaceOcclusionChangeCallBack001, TestSize.L
     std::vector<float> partitionPoints = {};
     mainThread->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints);
     ASSERT_NE(mainThread->surfaceOcclusionListeners_.size(), 0);
-    mainThread->surfaceOcclusionListeners_.clear();
+    mainThread->ClearSurfaceOcclusionChangeCallback(pid);
 }
 
 /**
@@ -4078,7 +4085,7 @@ HWTEST_F(RSMainThreadTest, RegisterSurfaceOcclusionChangeCallBack002, TestSize.L
     std::vector<float> partitionPoints = {1.0f};
     mainThread->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints);
     ASSERT_NE(mainThread->surfaceOcclusionListeners_.size(), 0);
-    mainThread->surfaceOcclusionListeners_.clear();
+    mainThread->ClearSurfaceOcclusionChangeCallback(pid);
 }
 
 /**
@@ -4091,18 +4098,192 @@ HWTEST_F(RSMainThreadTest, RegisterSurfaceOcclusionChangeCallBack003, TestSize.L
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
-    NodeId id = 0;
+    std::tuple<pid_t, sptr<RSISurfaceOcclusionChangeCallback>, std::vector<float>, uint8_t> info(
+        0, nullptr, {}, 0);
+    for (size_t i = 0; i < std::numeric_limits<uint16_t>::max(); ++i) {
+        mainThread->surfaceOcclusionListeners_.emplace(i, info);
+    }
+    NodeId id = std::numeric_limits<uint16_t>::max();
     pid_t pid = 0;
     sptr<RSISurfaceOcclusionChangeCallback> callback = nullptr;
     std::vector<float> partitionPoints;
-    mainThread->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints);
-    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 1);
-    for (; id <= std::numeric_limits<uint16_t>::max(); ++id) {
-        mainThread->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints);
-    }
-    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), std::numeric_limits<uint16_t>::max());
-    mainThread->surfaceOcclusionListeners_.clear();
+    EXPECT_FALSE(mainThread->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints));
+    mainThread->ClearSurfaceOcclusionChangeCallback(pid);
     EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+}
+
+/**
+ * @tc.name: RegisterSurfaceOcclusionChangeCallBack004
+ * @tc.desc: Test RegisterSurfaceOcclusionChangeCallBack with the per-pid listener limit
+ * @tc.type: FUNC
+ * @tc.require: issue26722
+ */
+HWTEST_F(RSMainThreadTest, RegisterSurfaceOcclusionChangeCallBack004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    constexpr pid_t pid = TEST_PID_1;
+    constexpr size_t perPidLimit = 256;
+    NodeId id = 0;
+    sptr<RSISurfaceOcclusionChangeCallback> callback = nullptr;
+    std::vector<float> partitionPoints;
+    for (size_t i = 0; i < perPidLimit; ++i) {
+        EXPECT_TRUE(mainThread->RegisterSurfaceOcclusionChangeCallback(id++, pid, callback, partitionPoints));
+    }
+    EXPECT_FALSE(mainThread->RegisterSurfaceOcclusionChangeCallback(id++, pid, callback, partitionPoints));
+    // Another pid is not affected by the exhausted quota.
+    EXPECT_TRUE(mainThread->RegisterSurfaceOcclusionChangeCallback(id++, TEST_PID_2, callback, partitionPoints));
+    // Releasing one listener frees a quota slot.
+    mainThread->UnRegisterSurfaceOcclusionChangeCallback(0);
+    EXPECT_TRUE(mainThread->RegisterSurfaceOcclusionChangeCallback(id++, pid, callback, partitionPoints));
+    mainThread->ClearSurfaceOcclusionChangeCallback(pid);
+    mainThread->ClearSurfaceOcclusionChangeCallback(TEST_PID_2);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+    EXPECT_TRUE(mainThread->surfaceOcclusionListenerCount_.empty());
+}
+
+/**
+ * @tc.name: RegisterSurfaceOcclusionChangeCallBack005
+ * @tc.desc: Test re-registering an existing id updates the listener without changing the count
+ * @tc.type: FUNC
+ * @tc.require: issue26722
+ */
+HWTEST_F(RSMainThreadTest, RegisterSurfaceOcclusionChangeCallBack005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    constexpr NodeId id = 9001;
+    constexpr pid_t pid = TEST_PID_1;
+    sptr<RSISurfaceOcclusionChangeCallback> callback = nullptr;
+    std::vector<float> partitionPoints;
+    EXPECT_TRUE(mainThread->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints));
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 1);
+    EXPECT_EQ(mainThread->surfaceOcclusionListenerCount_[pid], 1);
+    EXPECT_EQ(std::get<3>(mainThread->surfaceOcclusionListeners_[id]), 1);
+
+    // Re-registering an existing id updates the entry in place and keeps the per-pid count.
+    partitionPoints = {0.2f, 0.5f};
+    EXPECT_TRUE(mainThread->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints));
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 1);
+    EXPECT_EQ(mainThread->surfaceOcclusionListenerCount_[pid], 1);
+    EXPECT_EQ(std::get<3>(mainThread->surfaceOcclusionListeners_[id]), static_cast<uint8_t>(partitionPoints.size()));
+
+    mainThread->ClearSurfaceOcclusionChangeCallback(pid);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+    EXPECT_TRUE(mainThread->surfaceOcclusionListenerCount_.empty());
+}
+
+/**
+ * @tc.name: RegisterSurfaceOcclusionChangeCallBack006
+ * @tc.desc: Test a new id is rejected by the max-size branch when surfaceOcclusionListeners_ is full
+ * @tc.type: FUNC
+ * @tc.require: issue26722
+ */
+HWTEST_F(RSMainThreadTest, RegisterSurfaceOcclusionChangeCallBack006, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    // Keep this case independent from listener state left by other cases in the suite.
+    mainThread->ClearSurfaceOcclusionChangeCallback(0);
+    mainThread->ClearSurfaceOcclusionChangeCallback(TEST_PID_1);
+    mainThread->ClearSurfaceOcclusionChangeCallback(TEST_PID_2);
+    ASSERT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+    std::tuple<pid_t, sptr<RSISurfaceOcclusionChangeCallback>, std::vector<float>, uint8_t> info(
+        TEST_PID_1, nullptr, {}, 0);
+    for (NodeId i = 0; i < std::numeric_limits<uint16_t>::max(); ++i) {
+        mainThread->surfaceOcclusionListeners_.emplace(i, info);
+    }
+    constexpr NodeId newId = 70000;
+    sptr<RSISurfaceOcclusionChangeCallback> callback = nullptr;
+    std::vector<float> partitionPoints;
+
+    ASSERT_EQ(mainThread->surfaceOcclusionListeners_.size(), std::numeric_limits<uint16_t>::max());
+    // newId is absent, and the per-pid count map is empty, so only the max-size branch can reject the register.
+    EXPECT_FALSE(mainThread->RegisterSurfaceOcclusionChangeCallback(newId, TEST_PID_1, callback, partitionPoints));
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), std::numeric_limits<uint16_t>::max());
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.count(newId), 0);
+    EXPECT_TRUE(mainThread->surfaceOcclusionListenerCount_.empty());
+
+    mainThread->ClearSurfaceOcclusionChangeCallback(TEST_PID_1);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+}
+
+/**
+ * @tc.name: UnRegisterSurfaceOcclusionChangeCallback001
+ * @tc.desc: Test UnRegisterSurfaceOcclusionChangeCallback for missing id, existing id and count-missing pid
+ * @tc.type: FUNC
+ * @tc.require: issue26722
+ */
+HWTEST_F(RSMainThreadTest, UnRegisterSurfaceOcclusionChangeCallback001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    constexpr NodeId missingId = 9100;
+    constexpr NodeId id = 9101;
+    constexpr pid_t pid = TEST_PID_1;
+    sptr<RSISurfaceOcclusionChangeCallback> callback = nullptr;
+    std::vector<float> partitionPoints;
+
+    // Unregistering an id which was never registered is a no-op.
+    mainThread->UnRegisterSurfaceOcclusionChangeCallback(missingId);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+    EXPECT_TRUE(mainThread->surfaceOcclusionListenerCount_.empty());
+
+    // Unregistering the last listener of a pid erases its count entry.
+    EXPECT_TRUE(mainThread->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints));
+    EXPECT_EQ(mainThread->surfaceOcclusionListenerCount_[pid], 1);
+    mainThread->UnRegisterSurfaceOcclusionChangeCallback(id);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+    EXPECT_TRUE(mainThread->surfaceOcclusionListenerCount_.empty());
+
+    // A listener whose pid has no count entry is removed without touching the count map.
+    std::tuple<pid_t, sptr<RSISurfaceOcclusionChangeCallback>, std::vector<float>, uint8_t> info(
+        TEST_PID_2, nullptr, {}, 0);
+    mainThread->surfaceOcclusionListeners_.emplace(id, info);
+    mainThread->UnRegisterSurfaceOcclusionChangeCallback(id);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+    EXPECT_TRUE(mainThread->surfaceOcclusionListenerCount_.empty());
+}
+
+/**
+ * @tc.name: UnRegisterSurfaceOcclusionChangeCallback002
+ * @tc.desc: Test the per-pid count entry is decremented and erased only after the last listener is removed
+ * @tc.type: FUNC
+ * @tc.require: issue26722
+ */
+HWTEST_F(RSMainThreadTest, UnRegisterSurfaceOcclusionChangeCallback002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    // Keep this case independent from listener state left by other cases in the suite.
+    mainThread->ClearSurfaceOcclusionChangeCallback(0);
+    mainThread->ClearSurfaceOcclusionChangeCallback(TEST_PID_1);
+    mainThread->ClearSurfaceOcclusionChangeCallback(TEST_PID_2);
+    ASSERT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+    ASSERT_TRUE(mainThread->surfaceOcclusionListenerCount_.empty());
+
+    constexpr NodeId firstId = 9200;
+    constexpr NodeId secondId = 9201;
+    constexpr pid_t pid = TEST_PID_1;
+    sptr<RSISurfaceOcclusionChangeCallback> callback = nullptr;
+    std::vector<float> partitionPoints;
+    ASSERT_TRUE(mainThread->RegisterSurfaceOcclusionChangeCallback(firstId, pid, callback, partitionPoints));
+    ASSERT_TRUE(mainThread->RegisterSurfaceOcclusionChangeCallback(secondId, pid, callback, partitionPoints));
+    ASSERT_EQ(mainThread->surfaceOcclusionListeners_.size(), 2);
+    ASSERT_EQ(mainThread->surfaceOcclusionListenerCount_[pid], 2);
+
+    // Removing one of two listeners only decrements the count entry, so it must still exist.
+    mainThread->UnRegisterSurfaceOcclusionChangeCallback(firstId);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 1);
+    ASSERT_EQ(mainThread->surfaceOcclusionListenerCount_.count(pid), 1);
+    EXPECT_EQ(mainThread->surfaceOcclusionListenerCount_[pid], 1);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.count(firstId), 0);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.count(secondId), 1);
+
+    // Removing the last listener of the pid erases the count entry.
+    mainThread->UnRegisterSurfaceOcclusionChangeCallback(secondId);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+    EXPECT_TRUE(mainThread->surfaceOcclusionListenerCount_.empty());
 }
 
 /**
@@ -10092,6 +10273,121 @@ HWTEST_F(RSMainThreadTest, CheckCmdOverThreshold_Combined006, TestSize.Level1)
     EXPECT_TRUE(mainThread->lastCommandReportTimeMap_.count(TEST_PID_2) > 0);
 }
 
+static void ResetMainThreadForceAllDisplayDirtyInputs(RSMainThread* mainThread)
+{
+    mainThread->isForceRefresh_ = false;
+    mainThread->forceUpdateUniRenderFlag_ = false;
+    mainThread->screenPowerOnChanged_.store(false);
+    mainThread->isAccessibilityConfigChanged_ = false;
+    mainThread->isCachedSurfaceUpdated_ = false;
+    mainThread->pendingNonSystemUiCaptureTasks_.clear();
+    mainThread->nonSystemUiCaptureTasks_ = {};
+    mainThread->pendingSystemUiCaptureTasks_.clear();
+    mainThread->systemUiCaptureTasks_ = {};
+    mainThread->pendingSyncWindowCaptureTasks_.clear();
+    mainThread->syncWindowCaptureTasks_ = {};
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = {};
+}
+
+/**
+ * @tc.name: CheckForceAllDisplayDirty001
+ * @tc.desc: Test CheckForceAllDisplayDirty returns true when any single force condition is set
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckForceAllDisplayDirty001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+
+    EXPECT_FALSE(mainThread->CheckForceAllDisplayDirty());
+}
+
+/**
+ * @tc.name: CheckForceAllDisplayDirty002
+ * @tc.desc: Test CheckForceAllDisplayDirty with the public setters of the force conditions
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckForceAllDisplayDirty002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->isForceRefresh_ = true;
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->forceUpdateUniRenderFlag_ = true;
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->screenPowerOnChanged_.store(true);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->isAccessibilityConfigChanged_ = true;
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->isCachedSurfaceUpdated_ = true;
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+}
+
+/**
+ * @tc.name: CheckForceAllDisplayDirty003
+ * @tc.desc: Each pending capture task container alone forces all displays to be prepared.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckForceAllDisplayDirty003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    constexpr NodeId nodeId{6001};
+    auto task = std::make_tuple(nodeId, std::function<void()>([]() {}));
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->pendingNonSystemUiCaptureTasks_.emplace_back(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->nonSystemUiCaptureTasks_.emplace(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->pendingSystemUiCaptureTasks_.emplace_back(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->systemUiCaptureTasks_.emplace(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->pendingSyncWindowCaptureTasks_.emplace_back(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->syncWindowCaptureTasks_.emplace(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->pendingWindowCapTasks_.emplace_back(
+        std::make_tuple(nodeId, std::function<void()>([]() {}), uint64_t{0}, uint64_t{0}, false));
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+    mainThread->windowCapTasks_.emplace(task);
+    EXPECT_TRUE(mainThread->CheckForceAllDisplayDirty());
+
+    ResetMainThreadForceAllDisplayDirtyInputs(mainThread);
+}
+
 /**
  * @tc.name: CleanResourcesReportTimeMap001
  * @tc.desc: Test CleanResources erases per-pid entries in report time maps
@@ -10120,6 +10416,34 @@ HWTEST_F(RSMainThreadTest, CleanResourcesReportTimeMap001, TestSize.Level1)
     EXPECT_EQ(mainThread->lastCommandReportTimeMap_.count(pidB), 0u);
     mainThread->lastDrawOpReportTimeMap_.clear();
     mainThread->lastCommandReportTimeMap_.clear();
+}
+
+/**
+ * @tc.name: SetAdapterLtpoConfig_NullAndNotNull
+ * @tc.desc: Test SetAdapterLtpoConfig with hgmRenderContext_ null and not null
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, SetAdapterLtpoConfig_NullAndNotNull, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    auto savedHgmRenderContext = mainThread->hgmRenderContext_;
+    std::unordered_map<std::string, std::string> config = {
+        { "key1", "value1" }, { "key2", "value2" }
+    };
+
+    // Branch 1: hgmRenderContext_ != nullptr, SetAdapterLtpoConfig should be called
+    mainThread->hgmRenderContext_ = std::make_shared<HgmRenderContext>(nullptr);
+    mainThread->SetAdapterLtpoConfig(config);
+    EXPECT_NE(mainThread->hgmRenderContext_, nullptr);
+
+    // Branch 2: hgmRenderContext_ == nullptr, should not crash (guard check)
+    mainThread->hgmRenderContext_ = nullptr;
+    mainThread->SetAdapterLtpoConfig(config);
+
+    mainThread->hgmRenderContext_ = savedHgmRenderContext;
 }
 } // namespace OHOS::Rosen
 #endif
