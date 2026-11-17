@@ -615,7 +615,7 @@ int32_t RSRenderInterface::GetMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& max
         RSRenderThread::Instance().PostSyncTask(queryGpuLimits);
         return querySuccess ? 0 : -1;
     } else {
-        RS_LOGI("UniRender, using render pipeline");
+        RS_LOGD("UniRender, using render pipeline");
         return renderPipelineClient_->GetMaxGpuBufferSize(maxWidth, maxHeight);
     }
 }

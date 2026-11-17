@@ -216,7 +216,7 @@ template <typename CommandType, typename... ExtraArgs>
 void RSUIDirector::AddUIDirectorCommand(ExtraArgs&&... extraArgs)
 {
     if (rsUIContext_ == nullptr) {
-        RS_LOGE("RSUIDirector::AddUIDirectorCommand, RSUIContext is nullptr");
+        RS_LOGE("AddUIDirectorCommand RSUICxt nullptr");
         return;
     }
 
@@ -322,13 +322,13 @@ void RSUIDirector::GoForeground(bool isTextureExport)
 {
     RS_TRACE_NAME_FMT("RSUIDirector::GoForeground CurrentState:%d, UIContext:%" PRIu64 "",
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
-    RS_LOGI("RSUIDirector::GoForeground CurrentState:%{public}d, UIContext:%{public}" PRIu64,
+    RS_LOGI("GoForeground state:%{public}d, token:%{public}" PRIu64,
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
     // Invalid states
     if (currentUIDirectorState_ == RSUIDirectorLifecycleState::DESTROYED ||
         currentUIDirectorState_ == RSUIDirectorLifecycleState::CREATE ||
         currentUIDirectorState_ == RSUIDirectorLifecycleState::STOP) {
-        RS_LOGE("RSUIDirector::GoForeground, CurrentState %{public}d is invalid.",
+        RS_LOGE("GoForeground state:%{public}d is invalid.",
             static_cast<int>(currentUIDirectorState_));
         return;
     }
@@ -377,11 +377,11 @@ void RSUIDirector::GoBackground(bool isTextureExport)
 {
     RS_TRACE_NAME_FMT("RSUIDirector::GoBackground CurrentState:%d, UIContext:%" PRIu64 "",
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
-    RS_LOGI("RSUIDirector::GoBackground CurrentState:%{public}d, UIContext:%{public}" PRIu64,
+    RS_LOGI("GoBackground state:%{public}d, token:%{public}" PRIu64,
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
     // Invalid states
     if (currentUIDirectorState_ != RSUIDirectorLifecycleState::FOREGROUND) {
-        RS_LOGE("RSUIDirector::GoBackground, currentUIDirectorState_ is not FOREGROUND.");
+        RS_LOGE("GoBackground currentState_ is not FOREGROUND.");
         return;
     }
     ExecuteGoBackground(isTextureExport);
@@ -504,7 +504,7 @@ void RSUIDirector::Destroy(bool isTextureExport)
 {
     RS_TRACE_NAME_FMT("RSUIDirector::Destroy CurrentState:%d, UIContext:%" PRIu64 "",
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
-    RS_LOGI("RSUIDirector::Destroy CurrentState:%{public}d, UIContext:%{public}" PRIu64,
+    RS_LOGI("Destroy state:%{public}d, token:%{public}" PRIu64,
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
     ExecuteGoDestroy(isTextureExport);
     currentUIDirectorState_ = RSUIDirectorLifecycleState::DESTROYED;

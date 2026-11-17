@@ -14,6 +14,8 @@
  */
 
 #include "rs_client_to_service_connection_stub.h"
+#include <atomic>
+#include <chrono>
 #include <memory>
 #include "ivsync_connection.h"
 #ifdef RES_SCHED_ENABLE
@@ -373,7 +375,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
         code != static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO) &&
         code != static_cast<uint32_t>(
             RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID)) {
-        RS_LOGE("RSClientToServiceConnectionStub::OnRemoteRequest no permission code:%{public}u", code);
+        RS_LOGE_LIMIT(__func__, __line__,
+            "RSClientToServiceConnectionStub::OnRemoteRequest no permission code:%{public}u", code);
         return ERR_INVALID_STATE;
     }
     int ret = ERR_NONE;

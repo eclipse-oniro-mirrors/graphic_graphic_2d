@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#include <atomic>
+#include <chrono>
+
 #include "pipeline/main_thread/rs_render_service_listener.h"
 
 #include "common/rs_optional_trace.h"
@@ -258,7 +261,7 @@ void RSRenderServiceListener::OnGoBackground()
                 return;
             }
             if (node == nullptr) {
-                RS_LOGE("RSRenderServiceListener::OnGoBackground node is nullptr");
+                RS_LOGE_LIMIT(__func__, __line__, "RSRenderServiceListener::OnGoBackground node is nullptr");
                 handler->ResetBufferAvailableCount();
                 handler->CleanCache();
                 return;

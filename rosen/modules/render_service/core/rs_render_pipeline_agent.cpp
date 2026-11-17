@@ -1087,7 +1087,7 @@ int32_t RSRenderPipelineAgent::RemoveGlobalBlackList(const std::vector<NodeId>& 
 ErrCode RSRenderPipelineAgent::GetMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& maxHeight)
 {
     auto pipeline = rsRenderPipeline_.lock();
-    RS_LOGI("RSRenderPipelineAgent::GetMaxGpuBufferSize");
+    RS_LOGD("RSRenderPipelineAgent::GetMaxGpuBufferSize");
     if (!pipeline) {
         RS_LOGE("GetMaxGpuBufferSize: rsRenderPipeline_ is nullptr");
         return ERR_INVALID_VALUE;

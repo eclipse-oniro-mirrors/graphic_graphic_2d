@@ -481,9 +481,9 @@ bool BlurPixelMapOnRenderThread(
     RS_TRACE_NAME_FMT("BlurPixelMapOnRenderThread blurRadius:%f, w:%d, h:%d",
         blurRadius, pixelMap->GetWidth(), pixelMap->GetHeight());
     RS_LOGI("BlurPixelMapOnRenderThread start, blurRadius:%{public}f, w:%{public}d, h:%{public}d, "
-        "allocatorType:%{public}d, fd:%{public}p",
+        "allocatorType:%{public}d",
         blurRadius, pixelMap->GetWidth(), pixelMap->GetHeight(),
-        static_cast<int>(pixelMap->GetAllocatorType()), pixelMap->GetFd());
+        static_cast<int>(pixelMap->GetAllocatorType()));
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if (renderEngine == nullptr) {
         RS_LOGE("BlurPixelMapOnRenderThread: renderEngine is nullptr");
