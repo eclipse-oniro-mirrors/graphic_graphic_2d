@@ -758,6 +758,9 @@ int32_t RSScreenManager::SetVirtualScreenSecurityExemptionList(
     }
     virtualScreen->SetSecurityExemptionList(securityExemptionList);
     virtualScreen->SetSecurityExemptAll(exemptAll);
+    // audit trace: callers carry full state, log the security switch value on each call
+    RS_LOGI("%{public}s: security exemptAll switch set to %{public}d on virtual screen(id %{public}" PRIu64 ")",
+        __func__, exemptAll, id);
     for (const auto& exemption : securityExemptionList) {
         RS_LOGW("%{public}s: virtual screen(id %{public}" PRIu64 "), nodeId %{public}" PRIu64,
             __func__, id, exemption);

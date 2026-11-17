@@ -2530,17 +2530,19 @@ HWTEST_F(RSScreenManagerTest, SetVirtualScreenSecurityExemptionList003, TestSize
     ASSERT_NE(nullptr, screenManager_);
 
     ScreenId id = 1;
-    std::vector<uint64_t> securityExemptionList = {};  // empty list, exempt all security layers
+    std::vector<uint64_t> securityExemptionList = {1, 2};  // non-empty: exemptAll coexists with list
     auto screen = std::make_shared<RSScreen>(0);
     screenManager_->screens_[id] = screen;
     screen->property_.SetIsVirtual(true);
     auto ret = screenManager_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList, true);
     ASSERT_EQ(ret, StatusCode::SUCCESS);
     ASSERT_EQ(screen->property_.GetSecurityExemptAll(), true);
+    ASSERT_EQ(screen->property_.GetSecurityExemptionList().size(), securityExemptionList.size());
 
     ret = screenManager_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList, false);
     ASSERT_EQ(ret, StatusCode::SUCCESS);
     ASSERT_EQ(screen->property_.GetSecurityExemptAll(), false);
+    ASSERT_EQ(screen->property_.GetSecurityExemptionList().size(), securityExemptionList.size());
 }
 
 /*
