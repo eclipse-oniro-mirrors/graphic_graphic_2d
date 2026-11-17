@@ -842,6 +842,7 @@ void InstallSizeInsufficientStubs(const std::shared_ptr<RsVulkanInterface>& vkIn
         req->size = IMAGE_MEMORY_REQUIREMENT_SIZE;
     };
     vkInterface->vkDestroyImage = [](VkDevice, VkImage, const VkAllocationCallbacks*) {};
+    vkInterface->vkFreeMemory = [](VkDevice, VkDeviceMemory, const VkAllocationCallbacks*) {};
 }
 } // namespace
 
@@ -867,6 +868,7 @@ HWTEST_F(NativeBufferUtilsTest, CreateSurfaceFromNativeBuffer006, TestSize.Level
     auto origBindImageMemory2 = vkInterface->vkBindImageMemory2;
     auto origGetImageMemReq = vkInterface->vkGetImageMemoryRequirements;
     auto origDestroyImage = vkInterface->vkDestroyImage;
+    auto origFreeMemory = vkInterface->vkFreeMemory;
 
     InstallSizeInsufficientStubs(vkInterface);
 
@@ -885,6 +887,7 @@ HWTEST_F(NativeBufferUtilsTest, CreateSurfaceFromNativeBuffer006, TestSize.Level
     vkInterface->vkBindImageMemory2 = origBindImageMemory2;
     vkInterface->vkGetImageMemoryRequirements = origGetImageMemReq;
     vkInterface->vkDestroyImage = origDestroyImage;
+    vkInterface->vkFreeMemory = origFreeMemory;
 }
 
 } // namespace Rosen
