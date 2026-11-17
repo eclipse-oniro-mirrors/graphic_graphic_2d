@@ -5221,6 +5221,17 @@ void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifi
     RemoveModifierInner(modifier);
 }
 
+void RSNode::RemoveModifiers(
+    const std::vector<std::shared_ptr<ModifierNG::RSModifier>>& modifiers)
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    for (auto &modifier : modifiers) {
+        if (modifier) {
+            RemoveModifierInner(modifier, false);
+        }
+    }
+}
+ 
 void RSNode::RemoveModifierInner(const std::shared_ptr<ModifierNG::RSModifier> modifier, bool needLock)
 {
     {

@@ -20,6 +20,8 @@
 #include <securec.h>
 
 #include "common/rs_rect.h"
+#include "modifier_ng/appearance/rs_pixel_stretch_modifier.h"
+#include "modifier_ng/background/rs_background_image_modifier.h"
 #include "ui/rs_canvas_node.h"
 #include "ui/rs_display_node.h"
 #include "ui/rs_node.h"
@@ -319,6 +321,82 @@ void RSNodeFuzzTestClipShape(std::shared_ptr<RSCanvasNode> canvasNode)
     canvasNode->SetClipShape(negShape);
 }
 
+void RSNodeFuzzTestPixelStretch(std::shared_ptr<RSNode> node)
+{
+    if (!node) {
+        return;
+    }
+    Vector4f stretchSize(GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>());
+    constexpr uint32_t TILE_MODE_COUNT = 4; // CLAMP/REPEAT/MIRROR/DECAL in Drawing::TileMode
+    Drawing::TileMode tileMode = static_cast<Drawing::TileMode>(GetData<uint32_t>() % TILE_MODE_COUNT);
+ 
+    // fuzz legacy setters
+    node->SetPixelStretch(stretchSize, tileMode);
+    node->SetPixelStretchPercent(stretchSize, tileMode);
+ 
+    // fuzz batch config setter, both percent and size paths
+    PixelStretchConfig percentConfig;
+    percentConfig.vector = stretchSize;
+    percentConfig.usePercent = GetData<bool>();
+    node->SetPixelStretch(percentConfig, tileMode);
+ 
+    PixelStretchConfig sizeConfig;
+    sizeConfig.vector = Vector4f(GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>());
+    sizeConfig.usePercent = !percentConfig.usePercent;
+    node->SetPixelStretch(sizeConfig, tileMode);
+}
+
+void RSNodeFuzzTestBgImageConfig(std::shared_ptr<RSNode> node)
+{
+    if (!node) {
+        return;
+    }
+    // fuzz batch bg image config
+    BgImageConfig config;
+    config.width = GetData<float>();
+    config.height = GetData<float>();
+    config.positionX = GetData<float>();
+    config.positionY = GetData<float>();
+    config.innerRect = Vector4f(GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>());
+    node->SetBgImageConfig(config);
+ 
+    // fuzz repeated call to hit the update path of the same modifier
+    BgImageConfig config2;
+    config2.width = GetData<float>();
+    config2.height = GetData<float>();
+    config2.positionX = GetData<float>();
+    config2.positionY = GetData<float>();
+    node->SetBgImageConfig(config2);
+}
+
+void RSNodeFuzzTestModifierLifecycle(std::shared_ptr<RSNode> node)
+{
+    if (!node) {
+        return;
+    }
+    auto bgImageModifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    auto pixelStretchModifier = std::make_shared<ModifierNG::RSPixelStretchModifier>();
+ 
+    // fuzz add/remove, including duplicated and null entries
+    node->AddModifier(bgImageModifier);
+    node->AddModifier(bgImageModifier);
+    node->RemoveModifier(pixelStretchModifier);
+    node->RemoveModifier(nullptr);
+ 
+    // fuzz batch remove with null mixed in
+    std::vector<std::shared_ptr<ModifierNG::RSModifier>> modifiers = { bgImageModifier, nullptr };
+    node->AddModifier(pixelStretchModifier);
+    node->RemoveModifiers(modifiers);
+    node->RemoveModifiers({});
+ 
+    // fuzz swap paths: normal, same, null-old, null-new
+    node->AddModifier(bgImageModifier);
+    node->SwapModifier(bgImageModifier, pixelStretchModifier);
+    node->SwapModifier(pixelStretchModifier, pixelStretchModifier);
+    node->SwapModifier(nullptr, bgImageModifier);
+    node->SwapModifier(bgImageModifier, nullptr);
+}
+
 bool RSNodeFuzzTest()
 {
     RSSurfaceNodeConfig surfaceNodeConfig;
@@ -337,6 +415,10 @@ bool RSNodeFuzzTest()
     auto canvasNode = RSCanvasNode::Create();
     RSNodeFuzzTestClipShape(canvasNode);
 
+    // Fuzz pixel stretch / bg image config / modifier lifecycle on the surface node
+    RSNodeFuzzTestPixelStretch(surfaceNode);
+    RSNodeFuzzTestBgImageConfig(surfaceNode);
+    RSNodeFuzzTestModifierLifecycle(surfaceNode);
     return true;
 }
 
