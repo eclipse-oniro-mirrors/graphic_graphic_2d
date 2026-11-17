@@ -199,13 +199,13 @@ void RsFrameReport::BlurPredict(const std::unordered_map<std::string, std::strin
 void RsFrameReport::ReceiveVSync()
 {
     std::call_once(initFlag_, &RsFrameReport::InitSched);
-    GraphReportSchedEvent(OHOS::RME::FrameSchedEvent::RS_DDGR_TASK, {});
+    GraphReportSchedEvent(OHOS::RME::FrameSchedEvent::RS_RECEIVE_VSYNC, {});
 }
 
 void RsFrameReport::RequestNextVSync()
 {
     std::call_once(initFlag_, &RsFrameReport::InitSched);
-    GraphReportSchedEvent(OHOS::RME::FrameSchedEvent::RS_DDGR_TASK, {});
+    GraphReportSchedEvent(OHOS::RME::FrameSchedEvent::RS_REQUEST_NEXT_VSYNC, {});
 }
 
 void RsFrameReport::ReportAddScreenId(const int screenId)
