@@ -62,14 +62,14 @@ public:
 HWTEST_F(SkLRUCacheTest, SkLRUCacheDuplicateInsert001, TestSize.Level0)
 {
     TestLRUCache cache(MAX_CACHE_COUNT);
-    cache.insert(DUPLICATE_KEY, MakeValue(DUPLICATE_KEY));
-    cache.insert(DUPLICATE_KEY, MakeValue(DUPLICATE_KEY));
+    cache.insert_or_update(DUPLICATE_KEY, MakeValue(DUPLICATE_KEY));
+    cache.insert_or_update(DUPLICATE_KEY, MakeValue(DUPLICATE_KEY));
 
     for (uint32_t k = 1; k <= static_cast<uint32_t>(MAX_CACHE_COUNT); k++) {
-        cache.insert(100 + k, MakeValue(100 + k));
+        cache.insert_or_update(100 + k, MakeValue(100 + k));
     }
 
-    std::shared_ptr<std::string>* out = cache.insert(DUPLICATE_KEY, MakeValue(DUPLICATE_KEY));
+    std::shared_ptr<std::string>* out = cache.insert_or_update(DUPLICATE_KEY, MakeValue(DUPLICATE_KEY));
     ASSERT_NE(out, nullptr);
     std::shared_ptr<std::string> copied = *out;
     EXPECT_NE(copied, nullptr);
@@ -86,18 +86,18 @@ HWTEST_F(SkLRUCacheTest, SkLRUCacheDuplicateInsert001, TestSize.Level0)
 HWTEST_F(SkLRUCacheTest, SkLRUCacheDuplicateInsert002, TestSize.Level0)
 {
     TestLRUCache cache(MAX_CACHE_COUNT);
-    cache.insert(9, MakeValue(9));
-    cache.insert(9, MakeValue(9));
+    cache.insert_or_update(9, MakeValue(9));
+    cache.insert_or_update(9, MakeValue(9));
     EXPECT_EQ(cache.count(), 1);
 
     for (uint32_t k = 1; k <= 3; k++) {
-        cache.insert(100 + k, MakeValue(100 + k));
+        cache.insert_or_update(100 + k, MakeValue(100 + k));
     }
     EXPECT_EQ(cache.count(), MAX_CACHE_COUNT);
     EXPECT_NE(cache.find(9), nullptr);
 
     for (uint32_t k = 200; k < 220; k++) {
-        cache.insert(k, MakeValue(k));
+        cache.insert_or_update(k, MakeValue(k));
     }
     EXPECT_LE(cache.count(), MAX_CACHE_COUNT);
 }
@@ -116,7 +116,7 @@ HWTEST_F(SkLRUCacheTest, SkLRUCacheEvictionOrder001, TestSize.Level0)
     SkLRUCache<int, std::shared_ptr<int>> cache(kSize);
     for (int key : seq) {
         if (!cache.find(key)) {
-            cache.insert(key, std::make_shared<int>(key));
+            cache.insert_or_update(key, std::make_shared<int>(key));
         }
     }
     ASSERT_EQ(cache.count(), kSize);
@@ -152,7 +152,7 @@ HWTEST_F(SkLRUCacheTest, SkLRUCacheConcurrentInsert001, TestSize.Level0)
                 if (!cached) {
                     std::this_thread::sleep_for(std::chrono::microseconds(50));
                     std::lock_guard<std::mutex> lock(cacheMutex);
-                    cache.insert(key, std::make_shared<std::string>("t" + std::to_string(t)));
+                    cache.insert_or_update(key, std::make_shared<std::string>("t" + std::to_string(t)));
                 }
             }
         });
