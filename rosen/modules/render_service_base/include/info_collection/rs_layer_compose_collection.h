@@ -28,16 +28,19 @@ struct LayerComposeInfo {
     int32_t offlineComposeFrameNumber = 0;
     int32_t redrawFrameNumber = 0;
     int32_t drawImageNumber = 0;
+    int32_t directCompositionFrameNumber = 0;
     LayerComposeInfo() = default;
     LayerComposeInfo(int32_t uniformRenderFrameNumber_, int32_t offlineComposeFrameNumber_,
-        int32_t redrawFrameNumber_, int32_t drawImageNumber_)
+        int32_t redrawFrameNumber_, int32_t drawImageNumber_, int32_t directCompositionFrameNumber_ = 0)
         : uniformRenderFrameNumber(uniformRenderFrameNumber_), offlineComposeFrameNumber(offlineComposeFrameNumber_),
-          redrawFrameNumber(redrawFrameNumber_), drawImageNumber(drawImageNumber_) {}
+          redrawFrameNumber(redrawFrameNumber_), drawImageNumber(drawImageNumber_),
+          directCompositionFrameNumber(directCompositionFrameNumber_) {}
     LayerComposeInfo& operator+=(const LayerComposeInfo& other) noexcept
     {
         uniformRenderFrameNumber += other.uniformRenderFrameNumber;
         offlineComposeFrameNumber += other.offlineComposeFrameNumber;
         redrawFrameNumber += other.redrawFrameNumber;
+        directCompositionFrameNumber += other.directCompositionFrameNumber;
         return *this;
     }
 };
@@ -46,9 +49,10 @@ class RSB_EXPORT LayerComposeCollection {
 public:
     static LayerComposeCollection& GetInstance();
 
-    void UpdateUniformOrOfflineComposeFrameNumberForDFX(size_t layerSize);
+    void UpdateUniformOrOfflineComposeFrameNumberForDFX(size_t layerSize, bool hasRcdLayer = false);
     void UpdateRedrawFrameNumberForDFX();
     void UpdateDrawImageNumberForDFX();
+    void UpdateDirectCompositionFrameNumberForDFX();
     LayerComposeInfo GetLayerComposeInfo() const;
     void ResetLayerComposeInfo();
 

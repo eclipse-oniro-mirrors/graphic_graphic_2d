@@ -55,18 +55,7 @@ struct MemoryStats {
     };
 }
 
-MemoryNodeOfPid::MemoryNodeOfPid(size_t size, NodeId id, size_t drawableNodeSize)
-    : nodeSize_(size), nodeId_(id), drawableNodeSize_(drawableNodeSize) {}
-
-size_t MemoryNodeOfPid::GetDrawableMemSize() const
-{
-    return drawableNodeSize_;
-}
-
-void MemoryNodeOfPid::SetDrawableMemSize(size_t size)
-{
-    drawableNodeSize_ += size;
-}
+MemoryNodeOfPid::MemoryNodeOfPid(size_t size, NodeId id) : nodeSize_(size), nodeId_(id) {}
 
 size_t MemoryNodeOfPid::GetMemSize()
 {
@@ -89,7 +78,7 @@ MemoryTrack& MemoryTrack::Instance()
     return instance;
 }
 
-void MemoryTrack::RegisterNodeMem(const pid_t pid, size_t size, MEMORY_TYPE type)
+void MemoryTrack::RegisterNodeMem(pid_t pid, size_t size, MEMORY_TYPE type)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (pid == 0) {
@@ -100,51 +89,48 @@ void MemoryTrack::RegisterNodeMem(const pid_t pid, size_t size, MEMORY_TYPE type
         std::to_string(nodeMemOfPid_.size()).c_str());
     auto& memData = nodeMemOfPid_[pid];
     switch (type) {
-        case MEMORY_TYPE::MEM_RENDER_NODE:
-            memData.first += size;
-            break;
-        case MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE:
-            memData.second += size;
-            break;
-        case MEMORY_TYPE::MEM_PIXELMAP:
-        case MEMORY_TYPE::MEM_SKIMAGE:
-        default:
-            RS_LOGE("MemoryTrack::RegisterNodeMem: invalid memory type");
-            break;
+    case MEMORY_TYPE::MEM_RENDER_NODE:
+        memData.first += size;
+        break;
+    case MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE:
+        memData.second += size;
+        break;
+    default:
+        RS_LOGE("MemoryTrack::RegisterNodeMem: invalid memory type");
+        break;
     }
 }
 
-void MemoryTrack::UnRegisterNodeMem(const pid_t pid, size_t size, MEMORY_TYPE type)
+void MemoryTrack::UnRegisterNodeMem(pid_t pid, size_t size, MEMORY_TYPE type)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = nodeMemOfPid_.find(pid);
-    if (it != nodeMemOfPid_.end()) {
+    if (it != nodeMemOfPid_.end())
+    {
         auto& memData = it->second;
         switch (type) {
-            case MEMORY_TYPE::MEM_RENDER_NODE:
-                if (memData.first >= size) {
-                    memData.first -= size;
-                } else {
-                    RS_LOGE("MemoryTrack::UnRegisterNodeMem: MEM_RENDER_NODE size exceeds current value");
-                    memData.first = 0;
-                }
-                break;
-            case MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE:
-                if (memData.second >= size) {
-                    memData.second -= size;
-                } else {
-                    RS_LOGE("MemoryTrack::UnRegisterNodeMem: MEM_RENDER_DRAWABLE_NODE size exceeds current value");
-                    memData.second = 0;
-                }
-                break;
-            case MEMORY_TYPE::MEM_PIXELMAP:
-            case MEMORY_TYPE::MEM_SKIMAGE:
-            default:
-                RS_LOGE("MemoryTrack::UnRegisterNodeMem: invalid memory type");
-                break;
+        case MEMORY_TYPE::MEM_RENDER_NODE:
+            if (memData.first >= size) {
+                memData.first -= size;
+            } else {
+                RS_LOGE("MemoryTrack::UnRegisterNodeMem: MEM_RENDER_NODE size exceeds current value");
+                memData.first = 0;
+            }
+            break;
+        case MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE:
+            if (memData.second >= size) {
+                memData.second -= size;
+            } else {
+                RS_LOGE("MemoryTrack::UnRegisterNodeMem: MEM_RENDER_DRAWABLE_NODE size exceeds current value");
+                memData.second = 0;
+            }
+            break;
+        default:
+            RS_LOGE("MemoryTrack::UnRegisterNodeMem: invalid memory type");
+            break;
         }
-        // remove no exist pid
-        if (memData.first == 0 && memData.second == 0) {
+        //remove no exist pid
+        if (memData.first == 0 && memData.second ==0) {
             nodeMemOfPid_.erase(it);
         }
     }
@@ -158,17 +144,15 @@ size_t MemoryTrack::GetNodeMemoryOfPid(const pid_t pid, MEMORY_TYPE type)
         return 0;
     }
     switch (type) {
-        case MEMORY_TYPE::MEM_RENDER_NODE:
-            return itr->second.first / BYTE_CONVERT;
-            break;
-        case MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE:
-            return itr->second.second / BYTE_CONVERT;
-            break;
-        case MEMORY_TYPE::MEM_PIXELMAP:
-        case MEMORY_TYPE::MEM_SKIMAGE:
-        default:
-            RS_LOGE("MemoryTrack::GetNodeMemoryOfPid: invalid memory type");
-            break;
+    case MEMORY_TYPE::MEM_RENDER_NODE:
+        return itr->second.first / BYTE_CONVERT;
+        break;
+    case MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE:
+        return itr->second.second / BYTE_CONVERT;
+        break;
+    default:
+        RS_LOGE("MemoryTrack::GetNodeMemoryOfPid: invalid memory type");
+        break;
     }
     return 0;
 }

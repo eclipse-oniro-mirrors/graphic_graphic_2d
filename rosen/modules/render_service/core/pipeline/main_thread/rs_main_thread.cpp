@@ -59,6 +59,7 @@
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "graphic_feature_param_manager.h"
 #include "info_collection/rs_gpu_dirty_region_collection.h"
+#include "info_collection/rs_layer_compose_collection.h"
 #include "memory/rs_memory_manager.h"
 #include "memory/rs_memory_track.h"
 #include "memory/rs_netlink_manager.h"
@@ -3407,6 +3408,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         RSFrameStatsCollection::GetInstance().Increment(
             FrameStatsCounter::ToIndex(FrameStatsCounter::RSMainThread::DirectCompositionFrames));
     }
+    LayerComposeCollection::GetInstance().UpdateDirectCompositionFrameNumberForDFX();
     std::shared_ptr<RSScreenRenderNode> screenNode = nullptr;
     for (const auto& child : children) {
         auto node = child.lock();

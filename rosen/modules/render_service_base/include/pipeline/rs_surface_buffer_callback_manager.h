@@ -66,7 +66,10 @@ public:
     void SetVSyncFuncs(VSyncFuncs vSyncFuncs);
     void SetIsUniRender(bool isUniRender);
 #ifdef ROSEN_OHOS
+    // fence fd is owned by caller
     void SetReleaseFence(int releaseFenceFd, NodeId rootNodeId = INVALID_NODEID);
+    // prefer acquireFence when valid and not signaled
+    void SetReleaseFence(const sptr<SyncFence>& acquireFence, NodeId rootNodeId = INVALID_NODEID);
 #endif
 
     void RunSurfaceBufferCallback();
@@ -115,6 +118,10 @@ private:
 #ifdef ROSEN_OHOS
     void OnAfterAcquireBuffer(const Drawing::DrawSurfaceBufferAfterAcquireCbData& data);
     void OnFinish(const Drawing::DrawSurfaceBufferFinishCbData& data);
+    // releaseFenceFd is the fallback when acquireFence is null or already signaled,
+    // caller keeps its ownership, only the fd dup'ed inside is closed here
+    void SetReleaseFenceInner(int32_t releaseFenceFd, NodeId rootNodeId,
+        const sptr<SyncFence>& acquireFence = nullptr);
 #endif
 
 #ifdef ROSEN_OHOS
