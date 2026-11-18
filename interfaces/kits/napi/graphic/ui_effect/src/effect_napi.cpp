@@ -173,7 +173,11 @@ bool MirrorProperties(napi_env env, napi_value src, napi_value dst,
         if (status != napi_ok) {
             return false;
         }
-        status = napi_set_named_property(env, dst, keys[i], value);
+        napi_property_descriptor desc = {};
+        desc.utf8name = keys[i];
+        desc.value = value;
+        desc.attributes = napi_default_jsproperty;
+        status = napi_define_property(env, dst, &desc);
         if (status != napi_ok) {
             return false;
         }
