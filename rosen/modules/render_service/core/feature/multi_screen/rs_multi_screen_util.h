@@ -158,7 +158,6 @@ private:
 
     static void CaptureWindowRecordSurfaces(
         RSPaintFilterCanvas& canvas,
-        RSLogicalDisplayRenderNodeDrawable& drawable,
         RSScreenRenderParams* screenParams,
         RSLogicalDisplayRenderParams& params,
         RSRenderNodeDrawable& sourceDrawable,

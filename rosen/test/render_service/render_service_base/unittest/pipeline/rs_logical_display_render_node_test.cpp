@@ -63,8 +63,6 @@ public:
     static std::shared_ptr<RSSurfaceRenderNode> CreateRecordSurface(const std::shared_ptr<RSContext>& rsContext,
         const std::shared_ptr<RSRenderNode>& parent, NodeId id, RSSurfaceNodeType type, bool onTree,
         bool shouldPaint = true, bool withDrawable = true, NodeId stampedDisplayId = INVALID_NODEID);
-    static void RegisterRenderNode(const std::shared_ptr<RSContext>& rsContext,
-        const std::shared_ptr<RSRenderNode>& node);
 
     static inline NodeId id;
     static inline std::weak_ptr<RSContext> context = {};
@@ -82,7 +80,7 @@ std::shared_ptr<RSLogicalDisplayRenderNode> RSLogicalDisplayRenderNodeTest::Crea
     RSDisplayNodeConfig config;
     auto display = std::make_shared<RSLogicalDisplayRenderNode>(id, config, rsContext);
     display->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(display);
-    RegisterRenderNode(rsContext, display);
+    rsContext->GetMutableNodeMap().renderNodeMap_[ExtractPid(display->GetId())][display->GetId()] = display;
     return display;
 }
 
@@ -99,14 +97,8 @@ std::shared_ptr<RSSurfaceRenderNode> RSLogicalDisplayRenderNodeTest::CreateRecor
     node->logicalDisplayNodeId_ = stampedDisplayId == INVALID_NODEID ? parent->GetId() : stampedDisplayId;
     node->shouldPaint_ = shouldPaint;
     parent->AddChild(node);
-    RegisterRenderNode(rsContext, node);
-    return node;
-}
-
-void RSLogicalDisplayRenderNodeTest::RegisterRenderNode(const std::shared_ptr<RSContext>& rsContext,
-    const std::shared_ptr<RSRenderNode>& node)
-{
     rsContext->GetMutableNodeMap().renderNodeMap_[ExtractPid(node->GetId())][node->GetId()] = node;
+    return node;
 }
 
 /**

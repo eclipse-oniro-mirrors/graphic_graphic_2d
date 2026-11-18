@@ -91,8 +91,6 @@ public:
         const DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr& output,
         const DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr& source,
         const DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr& bbox);
-    DrawSkipType RunWindowRecordScreen();
-    void ResetWindowRecordScreenGates(RSLogicalDisplayRenderParams& params);
 };
 
 void RSMultiScreenUtilTest::SetUpTestCase()
@@ -237,24 +235,6 @@ void RSMultiScreenUtilTest::ArmWindowRecordScreenGates(RSLogicalDisplayRenderPar
     params.hasPaintableRecordSurface_ = true;
     params.recordSurfaceDrawables_ = { bbox };
     bbox->GetRenderParams()->SetAbsDrawRect({ 0, 0, 100, 100 });
-    screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
-}
-
-DrawSkipType RSMultiScreenUtilTest::RunWindowRecordScreen()
-{
-    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
-    return screenDrawable_->GetDrawSkipType();
-}
-
-void RSMultiScreenUtilTest::ResetWindowRecordScreenGates(RSLogicalDisplayRenderParams& params)
-{
-    screenParams_->logicalDisplayNodeDrawables_ = { displayNode_->GetRenderDrawable() };
-    params.SetWindowRecordConfig(RSWindowRecordConfig{});
-    params.SetOnVirtualScreen(false);
-    params.recordWhiteListIds_.clear();
-    params.recordSourceDisplayDrawable_.reset();
-    params.hasPaintableRecordSurface_ = false;
-    params.recordSurfaceDrawables_.clear();
     screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
 }
 
@@ -2150,28 +2130,31 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenGatesTest001, TestSize.L
     displayParams_->recordSourceDisplayDrawable_.reset();
     EXPECT_FALSE(displayParams_->IsRecordSessionActive());
     ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
     // No display drawable at all: no record-active display, so no buffer is requested.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     screenParams_->logicalDisplayNodeDrawables_.clear();
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
     // Null and wrong-type entries are ignored before any downcast.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     screenParams_->logicalDisplayNodeDrawables_ = { nullptr, screenNode_->GetRenderDrawable() };
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
     // Active session and a populated whitelist, but no resolved source display: SKIP_FRAME.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     displayParams_->recordSourceDisplayDrawable_.reset();
     ASSERT_TRUE(displayParams_->GetRecordSourceDisplayDrawable().expired());
     ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
     sourceDrawable->GetRenderParams()->SetShouldPaint(prevShouldPaint);
     bboxDrawable->GetRenderParams()->SetAbsDrawRect(prevBBoxRect);
-    ResetWindowRecordScreenGates(*displayParams_);
 }
 
 /**
@@ -2199,29 +2182,32 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenSnapshotGatesTest001, Te
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     sourceDrawable->GetRenderParams()->SetShouldPaint(false);
     EXPECT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
     // A non-paintable configured surface skips before the processor gate.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     displayParams_->hasPaintableRecordSurface_ = false;
     EXPECT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
     EXPECT_TRUE(sourceDrawable->GetRenderParams()->GetShouldPaint());
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
     // Live source snapshot with an empty whitelist: SKIP_FRAME.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     displayParams_->recordWhiteListIds_.clear();
     ASSERT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
     ASSERT_TRUE(displayParams_->GetRecordWhiteListIds().empty());
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
     // Every loop gate satisfied: execution reaches the processor gate.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::RENDER_ENGINE_NULL);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
 
     sourceDrawable->GetRenderParams()->SetShouldPaint(prevShouldPaint);
     bboxDrawable->GetRenderParams()->SetAbsDrawRect(prevBBoxRect);
-    ResetWindowRecordScreenGates(*displayParams_);
 }
 
 /**
@@ -2254,29 +2240,32 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenGeometryGatesTest001, Te
     displayParams_->recordSurfaceDrawables_.clear();
     ASSERT_TRUE(displayParams_->HasPaintableRecordSurface());
     ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
     // A zero-area main window yields a degenerate bbox and no output buffer.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     bboxParams.SetAbsDrawRect({ 0, 0, 0, 0 });
     ASSERT_TRUE(bboxParams.GetAbsDrawRect().IsEmpty());
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
     // Valid geometry reaches the processor gate and is shared with the display pass.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     ASSERT_FALSE(bboxParams.GetAbsDrawRect().IsEmpty());
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::RENDER_ENGINE_NULL);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
     EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), Drawing::RectI(0, 0, 100, 100));
 
     // A later invalid frame clears the cached bbox instead of reusing it.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     bboxParams.SetAbsDrawRect({ 0, 0, 0, 0 });
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
     EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), Drawing::RectI());
 
     sourceDrawable->GetRenderParams()->SetShouldPaint(prevShouldPaint);
     bboxParams.SetAbsDrawRect(prevBBoxRect);
-    ResetWindowRecordScreenGates(*displayParams_);
 }
 
 /**
@@ -2450,14 +2439,16 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenBBoxSkipsInvalidRectTest
     validRectParams.SetAbsDrawRect({ 100, 100, 100, 100 });
     degenerateRectParams.SetAbsDrawRect({ 500, 500, 0, 0 });
     displayParams_->recordSurfaceDrawables_ = { validRectDrawable, degenerateRectDrawable };
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::RENDER_ENGINE_NULL);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
     EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), Drawing::RectI(100, 100, 200, 200));
 
     // All contributors degenerate: no bbox, so the frame is skipped and the cache stays cleared.
     validRectParams.SetAbsDrawRect({ 0, 0, 0, 0 });
     degenerateRectParams.SetAbsDrawRect({ 500, 500, 0, 0 });
     displayParams_->recordSurfaceDrawables_ = { validRectDrawable, degenerateRectDrawable };
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
     EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), Drawing::RectI());
 }
 
@@ -2495,13 +2486,15 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenBBoxRejectsOverflowingRe
     normalRectParams.SetAbsDrawRect({ 100, 100, 100, 100 });
     overflowRectParams.SetAbsDrawRect(overflowingRect);
     displayParams_->recordSurfaceDrawables_ = { normalRectDrawable, overflowRectDrawable };
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::RENDER_ENGINE_NULL);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
     EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), Drawing::RectI(100, 100, 200, 200));
 
     // No representable contributor: no bbox, so the frame is skipped and the cache stays cleared.
     normalRectParams.SetAbsDrawRect({ 500, 500, 0, 0 });
     displayParams_->recordSurfaceDrawables_ = { overflowRectDrawable, normalRectDrawable };
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
     EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), Drawing::RectI());
 }
 
@@ -2528,9 +2521,11 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenOutputGateAndMuteTest001
 
     // A non-paintable output is rejected before the processor, muted or not.
     mirrorSourceDisplayParams_->SetShouldPaint(false);
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
     mirrorSourceDisplayParams_->virtualScreenMuteStatus_ = true;
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
     // A muted paintable output draws only the security mask and bypasses the content gates.
     mirrorSourceDisplayParams_->SetShouldPaint(true);
@@ -2538,11 +2533,13 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenOutputGateAndMuteTest001
     mirrorSourceDisplayParams_->recordWhiteListIds_.clear();
     mirrorSourceDisplayParams_->hasPaintableRecordSurface_ = false;
     mirrorSourceDisplayParams_->recordSurfaceDrawables_.clear();
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::RENDER_ENGINE_NULL);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
     EXPECT_EQ(mirrorSourceDisplayDrawable_->GetWindowRecordBBox(), Drawing::RectI());
 
     mirrorSourceDisplayParams_->virtualScreenMuteStatus_ = false;
-    EXPECT_EQ(RunWindowRecordScreen(), DrawSkipType::SKIP_FRAME);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 }
 
 /**

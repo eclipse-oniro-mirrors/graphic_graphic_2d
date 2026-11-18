@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common/rs_thread_handler.h"
@@ -300,31 +301,32 @@ public:
         sptr<SyncFence> fence_ = SyncFence::InvalidFence();
     };
 
-    // Restores the render-thread filter lists and complete capture state on scope exit.
+    // Restores the special-layer state and complete capture state on scope exit.
     struct NodeListGuard {
         NodeListGuard()
-            : whiteList_(RSUniRenderThread::Instance().GetWhiteList()),
-              blackList_(RSUniRenderThread::Instance().GetBlackList()),
-              typeBlackList_(RSUniRenderThread::Instance().GetTypeBlackList()),
+            : hadRenderThreadParams_(RSUniRenderThread::Instance().GetRSRenderThreadParams() != nullptr),
               captureParam_(RSUniRenderThread::GetCaptureParam())
         {
+            auto& params = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+            if (params != nullptr) {
+                specialLayerParam_ = std::exchange(params->GetMutableSpecialLayerRenderParam(), {});
+            }
         }
 
         ~NodeListGuard()
         {
-            auto& instance = RSUniRenderThread::Instance();
-            instance.SetWhiteList(whiteList_);
-            instance.SetBlackList(blackList_);
-            instance.SetTypeBlackList(typeBlackList_);
+            auto& params = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+            if (hadRenderThreadParams_ && params != nullptr) {
+                params->GetMutableSpecialLayerRenderParam() = std::move(specialLayerParam_);
+            }
             RSUniRenderThread::SetCaptureParam(captureParam_);
         }
 
         NodeListGuard(const NodeListGuard&) = delete;
         NodeListGuard& operator=(const NodeListGuard&) = delete;
 
-        std::unordered_set<NodeId> whiteList_;
-        std::unordered_set<NodeId> blackList_;
-        std::unordered_set<NodeType> typeBlackList_;
+        SpecialLayerRenderParam specialLayerParam_;
+        bool hadRenderThreadParams_ = false;
         CaptureParam captureParam_;
     };
     using CommitDoneCallback = std::function<void(ScreenId)>;

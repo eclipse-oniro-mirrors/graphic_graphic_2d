@@ -1196,52 +1196,11 @@ private:
     bool disarmed_ = false;
 };
 
-// Entry names passed by the two entry points below so trace and log text stays unchanged.
-constexpr char WINDOW_RECORD_SCREEN_FUNC[] = "HandleWindowRecordScreen";
-constexpr char WINDOW_RECORD_DISPLAY_FUNC[] = "HandleWindowRecord";
-
 enum class WindowRecordDisplayOutcome {
     NOT_RECORD_ACTIVE,
     SKIP_FRAME,
     RECORD_ACTIVE,
 };
-
-// Source-side gates; returns false after arming SKIP_FRAME. Reads only the main-thread snapshot, so
-// no RSRenderNode/RSRenderNodeMap state is touched on the render thread.
-bool PassRecordSourceGates(RSScreenRenderNodeDrawable& outputDrawable,
-    RSLogicalDisplayRenderParams& displayParams)
-{
-    // Resolved on the RS main thread; an empty snapshot means no drawable main window this frame.
-    auto sourceDisplayDrawable = displayParams.GetRecordSourceDisplayDrawable().lock();
-    if (sourceDisplayDrawable == nullptr) {
-        RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s no drawable main, skip without buffer request",
-            WINDOW_RECORD_SCREEN_FUNC);
-        outputDrawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
-        return false;
-    }
-    const auto& sourceParams = sourceDisplayDrawable->GetRenderParams();
-    if (sourceParams == nullptr || !sourceParams->GetShouldPaint()) {
-        RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s source not paintable, skip without buffer request",
-            WINDOW_RECORD_SCREEN_FUNC);
-        outputDrawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
-        return false;
-    }
-    // An empty whitelist means "draw everything" (IsWhiteListNode true for empty), which would
-    // record the whole source display instead of the configured windows.
-    if (displayParams.GetRecordWhiteListIds().empty()) {
-        RS_LOGD("RSMultiScreenUtil::%{public}s no recordable id, skip without buffer request",
-            WINDOW_RECORD_SCREEN_FUNC);
-        outputDrawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
-        return false;
-    }
-    if (!displayParams.HasPaintableRecordSurface()) {
-        RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s no paintable record surface, skip without buffer request",
-            WINDOW_RECORD_SCREEN_FUNC);
-        outputDrawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
-        return false;
-    }
-    return true;
-}
 
 // Per-display gate: NOT_RECORD_ACTIVE outside a session, SKIP_FRAME once DrawSkipType::SKIP_FRAME
 // is armed, and RECORD_ACTIVE after refreshing the bbox (muted outputs keep it cleared).
@@ -1263,7 +1222,7 @@ WindowRecordDisplayOutcome PrepareRecordDisplayBBox(RSScreenRenderNodeDrawable& 
     // buffer so the consumer surface is not cleared.
     if (!displayParams->GetShouldPaint()) {
         RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s output not paintable, skip without buffer request",
-            WINDOW_RECORD_SCREEN_FUNC);
+            __func__);
         outputDrawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
         return WindowRecordDisplayOutcome::SKIP_FRAME;
     }
@@ -1272,7 +1231,26 @@ WindowRecordDisplayOutcome PrepareRecordDisplayBBox(RSScreenRenderNodeDrawable& 
     if (displayParams->GetVirtualScreenMuteStatus()) {
         return WindowRecordDisplayOutcome::RECORD_ACTIVE;
     }
-    if (!PassRecordSourceGates(outputDrawable, *displayParams)) {
+    auto sourceDisplayDrawable = displayParams->GetRecordSourceDisplayDrawable().lock();
+    if (sourceDisplayDrawable == nullptr) {
+        RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s no drawable main, skip without buffer request", __func__);
+        outputDrawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
+        return WindowRecordDisplayOutcome::SKIP_FRAME;
+    }
+    const auto& sourceParams = sourceDisplayDrawable->GetRenderParams();
+    if (sourceParams == nullptr || !sourceParams->GetShouldPaint()) {
+        RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s source not paintable, skip without buffer request", __func__);
+        outputDrawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
+        return WindowRecordDisplayOutcome::SKIP_FRAME;
+    }
+    if (displayParams->GetRecordWhiteListIds().empty()) {
+        RS_LOGD("RSMultiScreenUtil::%{public}s no recordable id, skip without buffer request", __func__);
+        outputDrawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
+        return WindowRecordDisplayOutcome::SKIP_FRAME;
+    }
+    if (!displayParams->HasPaintableRecordSurface()) {
+        RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s no paintable record surface, skip without buffer request", __func__);
+        outputDrawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
         return WindowRecordDisplayOutcome::SKIP_FRAME;
     }
     // No visible main-window geometry leaves no rect for the producer metadata; retain the previous
@@ -1280,7 +1258,7 @@ WindowRecordDisplayOutcome PrepareRecordDisplayBBox(RSScreenRenderNodeDrawable& 
     auto recordBBox = ComputeRecordBBox(displayParams->GetRecordSurfaceDrawables());
     if (!recordBBox.IsValid()) {
         RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s no valid record bbox, skip without buffer request",
-            WINDOW_RECORD_SCREEN_FUNC);
+            __func__);
         outputDrawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
         return WindowRecordDisplayOutcome::SKIP_FRAME;
     }
@@ -1301,7 +1279,7 @@ void RSMultiScreenUtil::RenderWindowRecordFrame(
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if (!recordProcessor.InitForRenderThread(drawable, renderEngine, 0)) {
         drawable.SetDrawSkipType(DrawSkipType::RENDER_ENGINE_NULL);
-        RS_LOGE("RSMultiScreenUtil::%{public}s processor init failed", WINDOW_RECORD_SCREEN_FUNC);
+        RS_LOGE("RSMultiScreenUtil::%{public}s processor init failed", __func__);
         return;
     }
     drawable.syncDirtyManager_->ResetDirtyAsSurfaceSize();
@@ -1309,7 +1287,7 @@ void RSMultiScreenUtil::RenderWindowRecordFrame(
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if (!uniParam) {
         drawable.SetDrawSkipType(DrawSkipType::RENDER_PARAMS_OR_UNI_PARAMS_NULL);
-        RS_LOGE("RSMultiScreenUtil::%{public}s uniParam is null", WINDOW_RECORD_SCREEN_FUNC);
+        RS_LOGE("RSMultiScreenUtil::%{public}s uniParam is null", __func__);
         return;
     }
 
@@ -1318,7 +1296,7 @@ void RSMultiScreenUtil::RenderWindowRecordFrame(
     drawable.curCanvas_ = recordProcessor.GetCanvas();
     auto& curCanvas = drawable.curCanvas_;
     if (!curCanvas) {
-        RS_LOGE("RSMultiScreenUtil::%{public}s canvas is null", WINDOW_RECORD_SCREEN_FUNC);
+        RS_LOGE("RSMultiScreenUtil::%{public}s canvas is null", __func__);
         return;
     }
     curCanvas->Save();
@@ -1347,12 +1325,12 @@ bool ResolveWindowRecordSource(RSLogicalDisplayRenderNodeDrawable& drawable, RSL
 {
     auto sourceDisplayDrawable = params.GetRecordSourceDisplayDrawable().lock();
     if (!sourceDisplayDrawable || sourceDisplayDrawable->GetNodeType() != RSRenderNodeType::LOGICAL_DISPLAY_NODE) {
-        RS_LOGE("RSMultiScreenUtil::%{public}s source display drawable invalid", WINDOW_RECORD_DISPLAY_FUNC);
+        RS_LOGE("RSMultiScreenUtil::%{public}s source display drawable invalid", __func__);
         return false;
     }
     auto sourceDrawable = std::static_pointer_cast<RSRenderNodeDrawable>(sourceDisplayDrawable);
     if (!sourceDrawable->ShouldPaint() || !sourceDrawable->GetRenderParams()) {
-        RS_LOGE("RSMultiScreenUtil::%{public}s source drawable invalid", WINDOW_RECORD_DISPLAY_FUNC);
+        RS_LOGE("RSMultiScreenUtil::%{public}s source drawable invalid", __func__);
         return false;
     }
     auto bbox = drawable.GetWindowRecordBBox();
@@ -1361,7 +1339,7 @@ bool ResolveWindowRecordSource(RSLogicalDisplayRenderNodeDrawable& drawable, RSL
         bbox = ComputeRecordBBox(params.GetRecordSurfaceDrawables());
     }
     if (!bbox.IsValid()) {
-        RS_LOGE("RSMultiScreenUtil::%{public}s no valid record bbox", WINDOW_RECORD_DISPLAY_FUNC);
+        RS_LOGE("RSMultiScreenUtil::%{public}s no valid record bbox", __func__);
         return false;
     }
     // The type gate above guarantees these are logical display params.
@@ -1450,11 +1428,11 @@ void UpdateWindowRecordFrameRect(RSUniRenderVirtualProcessor& processor, const D
         if (ret != GSERROR_OK) {
             // The frame content is still valid; only the accompanying metadata is missing.
             RS_LOGE("RSMultiScreenUtil::%{public}s SetScreenInfoForWindowRecord failed ret=%{public}d",
-                WINDOW_RECORD_DISPLAY_FUNC, static_cast<int>(ret));
+                __func__, static_cast<int>(ret));
         }
     }
     RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s originalRect[%d,%d,%d,%d] currentFrameRect[%d,%d,%d,%d]",
-        WINDOW_RECORD_DISPLAY_FUNC, bbox.GetLeft(), bbox.GetTop(), bbox.GetRight(), bbox.GetBottom(),
+        __func__, bbox.GetLeft(), bbox.GetTop(), bbox.GetRight(), bbox.GetBottom(),
         curFrameRect.GetLeft(), curFrameRect.GetTop(), curFrameRect.GetRight(), curFrameRect.GetBottom());
 }
 
@@ -1463,50 +1441,34 @@ void UpdateWindowRecordFrameRect(RSUniRenderVirtualProcessor& processor, const D
 // Captures recorded surfaces with the record-only filter state; NodeListGuard restores the shared
 // filter lists/record flag and the render flags are restored below, on every exit path.
 void RSMultiScreenUtil::CaptureWindowRecordSurfaces(RSPaintFilterCanvas& canvas,
-    RSLogicalDisplayRenderNodeDrawable& drawable, RSScreenRenderParams* screenParams,
-    RSLogicalDisplayRenderParams& params, RSRenderNodeDrawable& sourceDrawable,
-    const RSWindowRecordConfig& config)
+    RSScreenRenderParams* screenParams, RSLogicalDisplayRenderParams& params,
+    RSRenderNodeDrawable& sourceDrawable, const RSWindowRecordConfig& config)
 {
+    std::unordered_set<NodeId> ids(params.GetRecordWhiteListIds());
     RSUniRenderThread::NodeListGuard nodeListGuard;
-    // Mixed leash persistent ids and surface node ids are resolved on the main thread; the
-    // record-only capture flag also matches a leashless window by its own surface node id.
-    RSUniRenderThread::Instance().SetWhiteList(params.GetRecordWhiteListIds());
-    if (screenParams) {
-        const auto& screenProperty = screenParams->GetScreenProperty();
-        drawable.currentBlackList_ = RSSpecialLayerUtils::GetMergeBlackListInRenderThread(screenProperty);
-        RSUniRenderThread::Instance().SetBlackList(drawable.currentBlackList_);
-        RSUniRenderThread::Instance().SetTypeBlackList(screenProperty.GetTypeBlackList());
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    if (!uniParam || !screenParams) {
+        RS_LOGE("RSMultiScreenUtil::%{public}s render thread or screen params is null", __func__);
+        canvas.Restore();
+        return;
     }
-    const bool secExemption = params.GetSecurityExemption();
+    auto state = RSSpecialLayerUtils::BuildSpecialLayerRenderParam(*screenParams, params, false);
+    state.whiteList = std::move(ids);
+    state.securityDisplay = true;
+    uniParam->GetMutableSpecialLayerRenderParam() = state;
     RSUniRenderThread::SetCaptureParam(CaptureParam(false, false, true));
     RSUniRenderThread::GetCaptureParam().virtualScreenId_ = params.GetScreenId();
     RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
-    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    // Save and restore the shared render-thread state overridden below (OpDropped / SecurityDisplay
-    // / SecExemption / parentSurfaceMatrix).
-    bool isOpDropped = false;
-    bool prevSecurityDisplay = false;
-    bool prevSecExemption = false;
-    if (uniParam) {
-        isOpDropped = uniParam->IsOpDropped();
-        prevSecurityDisplay = uniParam->IsSecurityDisplay();
-        prevSecExemption = uniParam->GetSecExemption();
-        uniParam->SetOpDropped(false);
-        uniParam->SetSecurityDisplay(true);
-        uniParam->SetSecExemption(secExemption);
-    }
+    const bool isOpDropped = uniParam->IsOpDropped();
+    uniParam->SetOpDropped(false);
     const Drawing::Matrix parentSurfaceMatrix = RSRenderParams::GetParentSurfaceMatrix();
     RSRenderParams::SetParentSurfaceMatrix(canvas.GetTotalMatrix());
     sourceDrawable.RSRenderNodeDrawable::OnCapture(canvas);
     RSRenderParams::SetParentSurfaceMatrix(parentSurfaceMatrix);
-    if (uniParam) {
-        uniParam->SetOpDropped(isOpDropped);
-        uniParam->SetSecurityDisplay(prevSecurityDisplay);
-        uniParam->SetSecExemption(prevSecExemption);
-    }
+    uniParam->SetOpDropped(isOpDropped);
     canvas.Restore();
     RSUniRenderThread::ResetCaptureParam();
-    RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s surfaces[%zu] fit[%d]", WINDOW_RECORD_DISPLAY_FUNC,
+    RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s surfaces[%zu] fit[%d]", __func__,
         config.surfaceNodeIds.size(), static_cast<int>(config.renderFit));
 }
 
@@ -1592,7 +1554,7 @@ void RSMultiScreenUtil::HandleWindowRecord(
     // display coords, currentFrameRect where content lands in buffer coords.
     UpdateWindowRecordFrameRect(processor, source.bbox, rotMatrix, canvasW, canvasH, config.renderFit, rotation);
     curCanvas->ConcatMatrix(source.params->GetMatrix());
-    CaptureWindowRecordSurfaces(*curCanvas, drawable, screenParams, params, *source.renderDrawable, config);
+    CaptureWindowRecordSurfaces(*curCanvas, screenParams, params, *source.renderDrawable, config);
 }
 
 } // namespace OHOS::Rosen::DrawableV2

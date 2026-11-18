@@ -96,16 +96,14 @@ public:
         return isPointerCanSkipFrame_.compare_exchange_weak(expectChanged, changeFlag);
     }
 
-    // Atomic: read on RSUniRenderThread (window record white list), written under mtx_ on a binder
-    // thread (SET_POINTER_POSITION). A plain NodeId here is a data race.
     NodeId GetRsNodeId() const
     {
-        return rsNodeId_.load(std::memory_order_relaxed);
+        return rsNodeId_;
     }
 
     void SetRsNodeId(NodeId id)
     {
-        rsNodeId_.store(id, std::memory_order_relaxed);
+        rsNodeId_ = id;
     }
 
     bool GetBoundHasUpdate() const
@@ -173,7 +171,7 @@ private:
     std::atomic<bool> isPointerCanSkipFrame_ = false;
     std::atomic<bool> boundHasUpdate_ = false;
     BoundParam bound_ = {0.0f, 0.0f, 0.0f, 0.0f};
-    std::atomic<NodeId> rsNodeId_ = INVALID_NODEID;
+    NodeId rsNodeId_ = INVALID_NODEID;
     bool isTuiEnabled_ = false;
 };
 } // namespace Rosen

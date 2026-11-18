@@ -17,12 +17,15 @@
 #include <parameters.h>
 #include <thread>
 
+#include "common/rs_common_def.h"
+#include "common/rs_special_layer_manager.h"
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "drawable/rs_render_node_drawable.h"
 #include "feature/uifirst/rs_sub_thread.h"
 #include "graphic_feature_param_manager.h"
 #include "memory/rs_memory_manager.h"
+#include "params/rs_render_thread_params.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "engine/rs_base_render_engine.h"
@@ -42,8 +45,47 @@ constexpr NodeId NODE_LIST_GUARD_WHITE_OUTER = 101;
 constexpr NodeId NODE_LIST_GUARD_BLACK_OUTER = 102;
 constexpr NodeId NODE_LIST_GUARD_WHITE_INNER = 103;
 constexpr NodeId NODE_LIST_GUARD_BLACK_INNER = 104;
-constexpr NodeType NODE_LIST_GUARD_TYPE_OUTER = 1;
-constexpr NodeType NODE_LIST_GUARD_TYPE_INNER = 2;
+
+// NodeListGuard protects per-frame global state shared by every screen on the render thread. These
+// tests install a non-null RSRenderThreadParams, then restore the exact prior special-layer param and
+// capture param. A params object created here is removed on scope exit so tests that expect the
+// default null thread-local state are unaffected.
+class ScopedNodeListGuardState {
+public:
+    ScopedNodeListGuardState()
+        : savedCaptureParam_(RSUniRenderThread::GetCaptureParam())
+    {
+        createdParams_ = RSUniRenderThread::Instance().GetRSRenderThreadParams() == nullptr;
+        if (createdParams_) {
+            RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(
+                std::make_unique<RSRenderThreadParams>());
+        }
+        savedSpecialLayerParam_ = Params().GetSpecialLayerRenderParam();
+    }
+
+    ~ScopedNodeListGuardState()
+    {
+        RSUniRenderThread::SetCaptureParam(savedCaptureParam_);
+        if (createdParams_) {
+            RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
+        } else {
+            Params().GetMutableSpecialLayerRenderParam() = savedSpecialLayerParam_;
+        }
+    }
+
+    ScopedNodeListGuardState(const ScopedNodeListGuardState&) = delete;
+    ScopedNodeListGuardState& operator=(const ScopedNodeListGuardState&) = delete;
+
+    RSRenderThreadParams& Params()
+    {
+        return *RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    }
+
+private:
+    CaptureParam savedCaptureParam_;
+    SpecialLayerRenderParam savedSpecialLayerParam_;
+    bool createdParams_ = false;
+};
 } // namespace
 
 class RSUniRenderThreadTest : public testing::Test {
@@ -118,45 +160,50 @@ HWTEST_F(RSUniRenderThreadTest, SetAndGetCaptureParam001, TestSize.Level1)
 
 /**
  * @tc.name: NodeListGuardRestoresSharedState001
- * @tc.desc: Test NodeListGuard restores the render-thread filter lists and record flag
+ * @tc.desc: Test NodeListGuard restores the whole special-layer state and record flag
  * @tc.type: FUNC
  * @tc.require: issues/26744
  */
 HWTEST_F(RSUniRenderThreadTest, NodeListGuardRestoresSharedState001, TestSize.Level1)
 {
-    auto& instance = RSUniRenderThread::Instance();
-    const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
-    const auto savedWhiteList = instance.GetWhiteList();
-    const auto savedBlackList = instance.GetBlackList();
-    const auto savedTypeBlackList = instance.GetTypeBlackList();
-
-    const std::unordered_set<NodeId> outerWhiteList = {NODE_LIST_GUARD_WHITE_OUTER};
-    const std::unordered_set<NodeId> outerBlackList = {NODE_LIST_GUARD_BLACK_OUTER};
-    const std::unordered_set<NodeType> outerTypeBlackList = {NODE_LIST_GUARD_TYPE_OUTER};
-    instance.SetWhiteList(outerWhiteList);
-    instance.SetBlackList(outerBlackList);
-    instance.SetTypeBlackList(outerTypeBlackList);
-    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
+    ScopedNodeListGuardState guardState;
+    auto& params = guardState.Params();
+    const SpecialLayerRenderParam outerState {
+        .blackList = { NODE_LIST_GUARD_BLACK_OUTER },
+        .whiteList = { NODE_LIST_GUARD_WHITE_OUTER },
+        .cursorMode = RSVirtualScreenCursorMode::HIDE,
+        .securityDisplay = true,
+        .secExemption = true,
+    };
+    const SpecialLayerRenderParam innerState {
+        .blackList = { NODE_LIST_GUARD_BLACK_INNER },
+        .whiteList = { NODE_LIST_GUARD_WHITE_INNER },
+        .cursorMode = RSVirtualScreenCursorMode::FORCE_RENDER,
+        .securityDisplay = false,
+        .secExemption = false,
+    };
+    params.GetMutableSpecialLayerRenderParam() = outerState;
+    CaptureParam outerCapture(true, true, true);
+    outerCapture.virtualScreenId_ = NODE_LIST_GUARD_WHITE_OUTER;
+    outerCapture.endNodeId_ = NODE_LIST_GUARD_BLACK_OUTER;
+    outerCapture.isSelfCapture_ = true;
+    outerCapture.isWindowRecord_ = true;
+    RSUniRenderThread::SetCaptureParam(outerCapture);
     {
         RSUniRenderThread::NodeListGuard guard;
-        instance.SetWhiteList({NODE_LIST_GUARD_WHITE_INNER});
-        instance.SetBlackList({NODE_LIST_GUARD_BLACK_INNER});
-        instance.SetTypeBlackList({NODE_LIST_GUARD_TYPE_INNER});
-        RSUniRenderThread::GetCaptureParam().isWindowRecord_ = false;
-        EXPECT_EQ(instance.GetWhiteList(), std::unordered_set<NodeId>({NODE_LIST_GUARD_WHITE_INNER}));
-        EXPECT_EQ(instance.GetBlackList(), std::unordered_set<NodeId>({NODE_LIST_GUARD_BLACK_INNER}));
-        EXPECT_EQ(instance.GetTypeBlackList(), std::unordered_set<NodeType>({NODE_LIST_GUARD_TYPE_INNER}));
+        params.GetMutableSpecialLayerRenderParam() = innerState;
+        RSUniRenderThread::SetCaptureParam(CaptureParam{});
+        EXPECT_EQ(params.GetSpecialLayerRenderParam(), innerState);
         EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
     }
-    EXPECT_EQ(instance.GetWhiteList(), outerWhiteList);
-    EXPECT_EQ(instance.GetBlackList(), outerBlackList);
-    EXPECT_EQ(instance.GetTypeBlackList(), outerTypeBlackList);
+    EXPECT_EQ(params.GetSpecialLayerRenderParam(), outerState);
     EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
-
-    RSUniRenderThread::SetCaptureParam(savedCaptureParam);
-    instance.SetWhiteList(savedWhiteList);
-    instance.SetBlackList(savedBlackList);
-    instance.SetTypeBlackList(savedTypeBlackList);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSingleSurface_);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isMirror_);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSelfCapture_);
+    EXPECT_EQ(RSUniRenderThread::GetCaptureParam().virtualScreenId_, NODE_LIST_GUARD_WHITE_OUTER);
+    EXPECT_EQ(RSUniRenderThread::GetCaptureParam().endNodeId_, NODE_LIST_GUARD_BLACK_OUTER);
 }
 
 /**
@@ -167,70 +214,53 @@ HWTEST_F(RSUniRenderThreadTest, NodeListGuardRestoresSharedState001, TestSize.Le
  */
 HWTEST_F(RSUniRenderThreadTest, NodeListGuardRestoresSharedState002, TestSize.Level1)
 {
-    auto& instance = RSUniRenderThread::Instance();
-    const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
-    const auto savedWhiteList = instance.GetWhiteList();
-    const auto savedBlackList = instance.GetBlackList();
-    const auto savedTypeBlackList = instance.GetTypeBlackList();
-
-    const std::unordered_set<NodeId> baselineWhiteList = {NODE_LIST_GUARD_WHITE_OUTER};
-    const std::unordered_set<NodeId> baselineBlackList = {NODE_LIST_GUARD_BLACK_OUTER};
-    const std::unordered_set<NodeType> baselineTypeBlackList = {NODE_LIST_GUARD_TYPE_OUTER};
-    instance.SetWhiteList(baselineWhiteList);
-    instance.SetBlackList(baselineBlackList);
-    instance.SetTypeBlackList(baselineTypeBlackList);
-    CaptureParam baselineCapture(true, true, true);
+    ScopedNodeListGuardState guardState;
+    auto& params = guardState.Params();
+    const SpecialLayerRenderParam baselineState {
+        .blackList = { NODE_LIST_GUARD_BLACK_OUTER },
+        .whiteList = { NODE_LIST_GUARD_WHITE_OUTER },
+        .cursorMode = RSVirtualScreenCursorMode::HIDE,
+        .securityDisplay = true,
+        .secExemption = true,
+    };
+    const SpecialLayerRenderParam outerScopeState {
+        .blackList = { NODE_LIST_GUARD_BLACK_INNER },
+        .whiteList = { NODE_LIST_GUARD_WHITE_INNER },
+        .cursorMode = RSVirtualScreenCursorMode::FORCE_RENDER,
+        .securityDisplay = false,
+        .secExemption = false,
+    };
+    params.GetMutableSpecialLayerRenderParam() = baselineState;
+    CaptureParam baselineCapture(true, false, true);
     baselineCapture.virtualScreenId_ = NODE_LIST_GUARD_WHITE_OUTER;
-    baselineCapture.endNodeId_ = NODE_LIST_GUARD_BLACK_OUTER;
-    baselineCapture.captureFinished_ = true;
     baselineCapture.isWindowRecord_ = true;
     RSUniRenderThread::SetCaptureParam(baselineCapture);
     {
         RSUniRenderThread::NodeListGuard outerGuard;
-        instance.SetWhiteList({NODE_LIST_GUARD_WHITE_INNER});
-        instance.SetBlackList({NODE_LIST_GUARD_BLACK_INNER});
-        instance.SetTypeBlackList({NODE_LIST_GUARD_TYPE_INNER});
-        CaptureParam outerCapture(false, false, true);
-        outerCapture.virtualScreenId_ = NODE_LIST_GUARD_WHITE_INNER;
-        outerCapture.endNodeId_ = NODE_LIST_GUARD_BLACK_INNER;
-        outerCapture.isWindowRecord_ = true;
-        RSUniRenderThread::SetCaptureParam(outerCapture);
+        params.GetMutableSpecialLayerRenderParam() = outerScopeState;
+        auto outerScopeCapture = baselineCapture;
+        outerScopeCapture.virtualScreenId_ = NODE_LIST_GUARD_WHITE_INNER;
+        outerScopeCapture.isWindowRecord_ = false;
+        RSUniRenderThread::SetCaptureParam(outerScopeCapture);
         {
             RSUniRenderThread::NodeListGuard innerGuard;
-            instance.SetWhiteList({});
-            instance.SetBlackList({});
-            instance.SetTypeBlackList({});
+            params.GetMutableSpecialLayerRenderParam() = SpecialLayerRenderParam();
             RSUniRenderThread::SetCaptureParam(CaptureParam{});
-            EXPECT_TRUE(instance.GetWhiteList().empty());
-            EXPECT_TRUE(instance.GetBlackList().empty());
-            EXPECT_TRUE(instance.GetTypeBlackList().empty());
-            EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
+            RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
+            EXPECT_EQ(params.GetSpecialLayerRenderParam(), SpecialLayerRenderParam());
+            EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
         }
-        // The inner guard restores the lists and complete capture state saved by the outer guard.
-        EXPECT_EQ(instance.GetWhiteList(), std::unordered_set<NodeId>({NODE_LIST_GUARD_WHITE_INNER}));
-        EXPECT_EQ(instance.GetBlackList(), std::unordered_set<NodeId>({NODE_LIST_GUARD_BLACK_INNER}));
-        EXPECT_EQ(instance.GetTypeBlackList(), std::unordered_set<NodeType>({NODE_LIST_GUARD_TYPE_INNER}));
-        EXPECT_EQ(RSUniRenderThread::GetCaptureParam().virtualScreenId_, outerCapture.virtualScreenId_);
-        EXPECT_EQ(RSUniRenderThread::GetCaptureParam().endNodeId_, outerCapture.endNodeId_);
-        EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
-        EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().captureFinished_);
-        EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
+        // The inner guard restores the complete capture state installed between the two guards.
+        EXPECT_EQ(params.GetSpecialLayerRenderParam(), outerScopeState);
+        EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
+        EXPECT_EQ(RSUniRenderThread::GetCaptureParam().virtualScreenId_, NODE_LIST_GUARD_WHITE_INNER);
     }
-    EXPECT_EQ(instance.GetWhiteList(), baselineWhiteList);
-    EXPECT_EQ(instance.GetBlackList(), baselineBlackList);
-    EXPECT_EQ(instance.GetTypeBlackList(), baselineTypeBlackList);
-    EXPECT_EQ(RSUniRenderThread::GetCaptureParam().virtualScreenId_, baselineCapture.virtualScreenId_);
-    EXPECT_EQ(RSUniRenderThread::GetCaptureParam().endNodeId_, baselineCapture.endNodeId_);
-    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
-    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSingleSurface_);
-    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isMirror_);
-    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().captureFinished_);
+    EXPECT_EQ(params.GetSpecialLayerRenderParam(), baselineState);
     EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
-
-    RSUniRenderThread::SetCaptureParam(savedCaptureParam);
-    instance.SetWhiteList(savedWhiteList);
-    instance.SetBlackList(savedBlackList);
-    instance.SetTypeBlackList(savedTypeBlackList);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
+    EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isSingleSurface_);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isMirror_);
+    EXPECT_EQ(RSUniRenderThread::GetCaptureParam().virtualScreenId_, NODE_LIST_GUARD_WHITE_OUTER);
 }
 
 /**

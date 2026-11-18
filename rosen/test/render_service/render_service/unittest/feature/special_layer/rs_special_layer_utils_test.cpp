@@ -29,6 +29,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "screen_manager/rs_screen_property.h"
 #include "drawable/rs_render_node_drawable.h"
+#include "drawable/rs_screen_render_node_drawable.h"
 #include "engine/rs_base_render_engine.h"
 
 using namespace testing;
@@ -145,6 +146,71 @@ private:
     ColorFilterMode savedColorFilterMode_;
     bool hadRenderThreadParams_ = false;
     bool savedCurtainScreenOn_ = false;
+};
+
+// Installs the render-thread shape that activates non-snapshot special-layer filtering and restores
+// every process-wide value it touches: the two render-thread fields it changes, capture param and
+// white-list root stack. A params object created here is removed on scope exit so tests that expect
+// the default null thread-local state are unaffected.
+class ScopedCursorFilterState {
+public:
+    ScopedCursorFilterState()
+        : savedCaptureParam_(RSUniRenderThread::GetCaptureParam())
+    {
+        auto& manager = RSRenderThreadParamsManager::Instance();
+        createdParams_ = manager.GetRSRenderThreadParams() == nullptr;
+        if (createdParams_) {
+            manager.SetRSRenderThreadParams(std::make_unique<RSRenderThreadParams>());
+        }
+        auto& params = manager.GetRSRenderThreadParams();
+        savedIsMirrorScreen_ = params->IsMirrorScreen();
+        savedSpecialLayerParam_ = params->GetSpecialLayerRenderParam();
+        params->SetIsMirrorScreen(true);
+        params->GetMutableSpecialLayerRenderParam().securityDisplay = true;
+        RSUniRenderThread::SetCaptureParam(CaptureParam());
+        WhiteListRootIdStack::ClearWhiteListRootIds();
+    }
+
+    ~ScopedCursorFilterState()
+    {
+        RSUniRenderThread::SetCaptureParam(savedCaptureParam_);
+        WhiteListRootIdStack::ClearWhiteListRootIds();
+        auto& manager = RSRenderThreadParamsManager::Instance();
+        if (createdParams_) {
+            manager.SetRSRenderThreadParams(nullptr);
+            return;
+        }
+        auto& params = manager.GetRSRenderThreadParams();
+        if (params == nullptr) {
+            return;
+        }
+        params->SetIsMirrorScreen(savedIsMirrorScreen_);
+        params->GetMutableSpecialLayerRenderParam() = savedSpecialLayerParam_;
+    }
+
+    ScopedCursorFilterState(const ScopedCursorFilterState&) = delete;
+    ScopedCursorFilterState& operator=(const ScopedCursorFilterState&) = delete;
+
+    RSRenderThreadParams& Params()
+    {
+        return *RSRenderThreadParamsManager::Instance().GetRSRenderThreadParams();
+    }
+
+private:
+    CaptureParam savedCaptureParam_;
+    SpecialLayerRenderParam savedSpecialLayerParam_;
+    bool savedIsMirrorScreen_ = false;
+    bool createdParams_ = false;
+};
+
+struct CursorFilterCase {
+    const char* name;
+    RSSurfaceNodeType nodeType;
+    RSVirtualScreenCursorMode cursorMode;
+    std::unordered_set<NodeId> whiteList;
+    std::unordered_set<NodeId> blackList;
+    LeashPersistentId whiteListRootId;
+    bool expectSkip;
 };
 }
 class RSSpecialLayerUtilsTest : public testing::Test {
@@ -1906,5 +1972,155 @@ HWTEST_F(RSSpecialLayerUtilsTest, GetSpecialLayerStateInSubTreeEffectiveWhiteLis
     RSUniRenderThread::SetCaptureParam(normalCaptureParam);
     EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
         DisplaySpecialLayerState::NO_SPECIAL_LAYER);
+}
+
+/**
+ * @tc.name: CheckSurfaceSkipCursorMode001
+ * @tc.desc: Cursor mode outranks the id white list while any black-list id still drops the surface
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckSurfaceSkipCursorMode001, TestSize.Level1)
+{
+    constexpr NodeId screenNodeId = 8301;
+    constexpr ScreenId screenId = 8302;
+    constexpr NodeId surfaceId = 8303;
+    constexpr LeashPersistentId leashId = 8304;
+    constexpr NodeId otherId = 8305;
+
+    ScopedCursorFilterState filterState;
+    auto& state = filterState.Params().GetMutableSpecialLayerRenderParam();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(screenNodeId, screenId);
+    screenNode->InitRenderParams();
+    ASSERT_NE(screenNode->GetRenderDrawable(), nullptr);
+
+    RSSurfaceRenderParams surfaceParams(surfaceId);
+    surfaceParams.SetAncestorScreenNode(screenNode);
+    surfaceParams.leashPersistentId_ = leashId;
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+
+    const std::vector<CursorFilterCase> cases = {
+        { "hide cursor skips even when whitelisted", RSSurfaceNodeType::CURSOR_NODE,
+            RSVirtualScreenCursorMode::HIDE, { otherId }, {}, leashId, true },
+        { "force render bypasses a non-empty whitelist", RSSurfaceNodeType::CURSOR_NODE,
+            RSVirtualScreenCursorMode::FORCE_RENDER, { otherId }, {}, INVALID_LEASH_PERSISTENTID, false },
+        { "blacklist surface id outranks force render", RSSurfaceNodeType::CURSOR_NODE,
+            RSVirtualScreenCursorMode::FORCE_RENDER, { otherId }, { surfaceId }, INVALID_LEASH_PERSISTENTID, true },
+        { "blacklist leash persistent id outranks force render", RSSurfaceNodeType::CURSOR_NODE,
+            RSVirtualScreenCursorMode::FORCE_RENDER, { otherId }, { leashId }, INVALID_LEASH_PERSISTENTID, true },
+        { "default cursor mode draws with an empty whitelist", RSSurfaceNodeType::CURSOR_NODE,
+            RSVirtualScreenCursorMode::DEFAULT, {}, {}, INVALID_LEASH_PERSISTENTID, false },
+        { "default cursor mode skips outside a non-empty whitelist", RSSurfaceNodeType::CURSOR_NODE,
+            RSVirtualScreenCursorMode::DEFAULT, { otherId }, {}, INVALID_LEASH_PERSISTENTID, true },
+        { "default cursor mode draws under a whitelist root", RSSurfaceNodeType::CURSOR_NODE,
+            RSVirtualScreenCursorMode::DEFAULT, { otherId }, {}, leashId, false },
+        { "hide does not change a non-cursor whitelist miss", RSSurfaceNodeType::APP_WINDOW_NODE,
+            RSVirtualScreenCursorMode::HIDE, { otherId }, {}, INVALID_LEASH_PERSISTENTID, true },
+        { "force render does not bypass for non-cursor nodes", RSSurfaceNodeType::APP_WINDOW_NODE,
+            RSVirtualScreenCursorMode::FORCE_RENDER, { otherId }, {}, INVALID_LEASH_PERSISTENTID, true },
+        { "force render keeps an empty whitelist drawing", RSSurfaceNodeType::APP_WINDOW_NODE,
+            RSVirtualScreenCursorMode::FORCE_RENDER, {}, {}, INVALID_LEASH_PERSISTENTID, false },
+    };
+
+    for (const auto& testCase : cases) {
+        surfaceParams.rsSurfaceNodeType_ = testCase.nodeType;
+        state.cursorMode = testCase.cursorMode;
+        state.whiteList = testCase.whiteList;
+        state.blackList = testCase.blackList;
+        WhiteListRootIdStack::ClearWhiteListRootIds();
+        if (testCase.whiteListRootId != INVALID_LEASH_PERSISTENTID) {
+            WhiteListRootIdStack::SetWhiteListRootId(testCase.whiteListRootId);
+        }
+        EXPECT_EQ(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas),
+            testCase.expectSkip) << testCase.name;
+    }
+}
+
+/**
+ * @tc.name: CheckSurfaceSkipSecurityDisplayGate001
+ * @tc.desc: Non-snapshot filtering needs mirror or virtual output plus security display
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckSurfaceSkipSecurityDisplayGate001, TestSize.Level1)
+{
+    constexpr NodeId screenNodeId = 8401;
+    constexpr ScreenId screenId = 8402;
+    constexpr NodeId surfaceId = 8403;
+    constexpr NodeId otherId = 8404;
+
+    ScopedCursorFilterState filterState;
+    auto& params = filterState.Params();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(screenNodeId, screenId);
+    screenNode->InitRenderParams();
+    auto screenDrawable = std::static_pointer_cast<RSScreenRenderNodeDrawable>(screenNode->GetRenderDrawable());
+    ASSERT_NE(screenDrawable, nullptr);
+    auto* screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+
+    RSSurfaceRenderParams surfaceParams(surfaceId);
+    surfaceParams.SetAncestorScreenNode(screenNode);
+    surfaceParams.rsSurfaceNodeType_ = RSSurfaceNodeType::CURSOR_NODE;
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+
+    auto& state = params.GetMutableSpecialLayerRenderParam();
+    state.cursorMode = RSVirtualScreenCursorMode::HIDE;
+    state.blackList = { surfaceId };
+    WhiteListRootIdStack::ClearWhiteListRootIds();
+
+    state.securityDisplay = false;
+    EXPECT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+
+    state.securityDisplay = true;
+    EXPECT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+
+    state.blackList.clear();
+    state.whiteList = { otherId };
+    EXPECT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+
+    params.SetIsMirrorScreen(false);
+    EXPECT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+
+    screenParams->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    EXPECT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: BuildSpecialLayerRenderParamVirtualScreen001
+ * @tc.desc: A non-wired virtual screen carries cursor mode, whitelist and sec exemption; wired does not
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, BuildSpecialLayerRenderParamVirtualScreen001, TestSize.Level1)
+{
+    constexpr ScreenId screenId = 8501;
+    constexpr NodeId displayId = 8502;
+    constexpr NodeId blackListId = 8503;
+    constexpr NodeId whiteListId = 8504;
+
+    RSScreenRenderParams screenParams(screenId);
+    screenParams.screenProperty_.Set<ScreenPropertyType::BLACK_LIST>(std::unordered_set<NodeId>{ blackListId });
+    screenParams.screenProperty_.Set<ScreenPropertyType::WHITE_LIST>(std::unordered_set<NodeId>{ whiteListId });
+    screenParams.screenProperty_.Set<ScreenPropertyType::CURSOR_RENDER_MODE>(
+        static_cast<uint8_t>(RSVirtualScreenCursorMode::HIDE));
+    RSLogicalDisplayRenderParams displayParams(displayId);
+    displayParams.isSecurityDisplay_ = true;
+    displayParams.SetSecurityExemption(true);
+
+    auto virtualState = RSSpecialLayerUtils::BuildSpecialLayerRenderParam(screenParams, displayParams, false);
+    EXPECT_EQ(virtualState.blackList, std::unordered_set<NodeId>({ blackListId }));
+    EXPECT_EQ(virtualState.whiteList, std::unordered_set<NodeId>({ whiteListId }));
+    EXPECT_EQ(virtualState.cursorMode, RSVirtualScreenCursorMode::HIDE);
+    EXPECT_TRUE(virtualState.securityDisplay);
+    EXPECT_TRUE(virtualState.secExemption);
+
+    auto wiredState = RSSpecialLayerUtils::BuildSpecialLayerRenderParam(screenParams, displayParams, true);
+    EXPECT_EQ(wiredState.blackList, std::unordered_set<NodeId>({ blackListId }));
+    EXPECT_TRUE(wiredState.whiteList.empty());
+    EXPECT_EQ(wiredState.cursorMode, RSVirtualScreenCursorMode::DEFAULT);
+    EXPECT_TRUE(wiredState.securityDisplay);
+    EXPECT_FALSE(wiredState.secExemption);
 }
 } // namespace Rosen
