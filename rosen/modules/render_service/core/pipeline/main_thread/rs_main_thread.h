@@ -311,7 +311,6 @@ public:
         return curDrawStatusVec_;
     }
 
-    DeviceType GetDeviceType() const;
     bool HasMirrorDisplay() const;
     uint64_t GetFocusNodeId() const;
     uint64_t GetFocusLeashWindowId() const;
@@ -455,9 +454,7 @@ public:
     void SetAnimationOcclusionInfo(const std::string& sceneId, bool isStart);
     void InitVulkanErrorCallback(Drawing::GPUContext* gpuContext);
     void InitCreatePipelineTimeCallback(Drawing::GPUContext* gpuContext);
-#ifdef RS_ENABLE_GPU
     void InitGPUCacheManager();
-#endif
     void NotifyUnmarshalTask(int64_t uiTimestamp);
     void NotifyPackageEvent(const std::vector<std::string>& packageList);
     void SetBufferInfo(const BufferInfo& bufferInfo);
@@ -563,7 +560,6 @@ private:
     void ReleaseAllNodesBuffer();
     void Render();
     void OnUniRenderDraw();
-    void SetDeviceType();
     void UniRender(std::shared_ptr<RSBaseRenderNode> rootNode);
     bool CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces, std::shared_ptr<RSSurfaceRenderNode> curSurface);
     RSVisibleLevel CalcSurfaceNodeVisibleRegion(const std::shared_ptr<RSScreenRenderNode>& screenNode,
@@ -714,11 +710,9 @@ private:
     mutable std::atomic_bool hasWiredMirrorDisplay_ = false;
     mutable std::atomic_bool hasVirtualMirrorDisplay_ = false;
 
-#ifdef RS_ENABLE_GPU
     bool needDrawFrame_ = true;
     bool needPostAndWait_ = true;
     bool isLastFrameNeedPostAndWait_ = true;
-#endif
 
     bool isNeedResetClearMemoryTask_ = false;
     bool watermarkFlag_ = false;
@@ -726,7 +720,6 @@ private:
     std::shared_ptr<Drawing::Image> lastWatermarkImg_ = nullptr;
     bool hasProtectedLayer_ = false;
     bool hasSurfaceLockLayer_ = false;
-    DeviceType deviceType_ = DeviceType::PHONE;
     bool isCachedSurfaceUpdated_ = false;
     // used for informing hgm the bundle name of SurfaceRenderNodes
     bool forceUpdateUniRenderFlag_ = false;
@@ -848,9 +841,7 @@ private:
     RSEventManager rsEventManager_;
 
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> selfDrawingNodes_;
-#ifdef RS_ENABLE_GPU
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
-#endif
 
     // Enable HWCompose
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
@@ -933,9 +924,7 @@ private:
     friend class RSProfiler;
 #endif
     std::set<pid_t> exitedPidSet_;
-#ifdef RS_ENABLE_GPU
     RSDrawFrame drawFrame_;
-#endif
     std::unique_ptr<RSRenderThreadParams> renderThreadParams_ = nullptr; // sync to render thread
     std::unordered_map<int32_t, int32_t> surfacePidNeedDropFrame_;  // pid -> dropFrameLevel
     RSVsyncRateReduceManager rsVsyncRateReduceManager_;
