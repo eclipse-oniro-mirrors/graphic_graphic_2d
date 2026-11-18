@@ -421,7 +421,7 @@ void RSUniHwcVisitor::DisableSolidLayerByDstRectNEBounds(RSSurfaceRenderNode& no
 bool RSUniHwcVisitor::IsSurfaceOpaque(RSSurfaceRenderNode& node)
 {
     auto surfaceHandler = node.GetMutableRSSurfaceHandler();
-    if (auto consumer = surfaceHandler->GetConsumer(); consumer != nullptr) {
+    if (auto consumer = surfaceHandler->GetConsumer()) {
         auto fwkType = consumer->GetSurfaceAppFrameworkType();
         auto surfaceOpaqueType = RsCommonHook::Instance().GetSurfaceOpaqueType();
         return fwkType.find(surfaceOpaqueType) != std::string::npos;
