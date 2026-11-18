@@ -1507,6 +1507,14 @@ Drawing::ColorQuad RSPaintFilterCanvas::GetColorPicked(ColorPlaceholder placehol
     return RSColorPickerUtils::InterpolateColor(colorPair.first, colorPair.second, fraction);
 }
 
+float RSPaintFilterCanvas::GetColorPickedFraction() const
+{
+    if (envStack_.empty()) {
+        return -1.0f;
+    }
+    return static_cast<float>(envStack_.top().fractionColor_ & 0x000000FF) / 255.f;
+}
+
 RSPaintFilterCanvas::SaveStatus RSPaintFilterCanvas::SaveAllStatus(SaveType type)
 {
     // save and return status on demand
@@ -1695,7 +1703,6 @@ std::optional<Drawing::Rect> RSPaintFilterCanvas::GetLocalClipBounds(const Drawi
     inverse.MapRect(dst, bounds);
     return dst;
 }
-
 
 void RSPaintFilterCanvas::SetEffectData(const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData>& effectData)
 {

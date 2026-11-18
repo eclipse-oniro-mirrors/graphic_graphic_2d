@@ -31,6 +31,8 @@
 #include "property/rs_properties_def.h"
 #include "pipeline/rs_simple_draw_cmd_list.h"
 namespace OHOS::Rosen {
+class RSNGRenderBlenderBase;
+
 namespace DrawableV2 {
 class RSRenderNodeDrawableAdapter;
 // RSChildrenDrawable, for drawing children of RSRenderNode, updates on child add/remove
@@ -222,6 +224,8 @@ public:
     }
 
 private:
+    void UpdateAdaptiveBlender(float fraction) const;
+
     NodeId screenNodeId_ = INVALID_NODEID;
 
     bool needSync_ = false;
@@ -230,11 +234,17 @@ private:
     int blendApplyType_ = 0;
     bool isDangerous_ = false;
     std::string propertyDescription_;
+    std::shared_ptr<RSNGRenderBlenderBase> adaptiveDarkBlender_;
+    std::shared_ptr<RSNGRenderBlenderBase> adaptiveLightBlender_;
 
     std::shared_ptr<Drawing::Blender> stagingBlender_ = nullptr;
     int stagingBlendApplyType_ = 0;
     bool stagingIsDangerous_ = false;
     std::string stagingPropertyDescription_;
+    std::shared_ptr<RSNGRenderBlenderBase> stagingAdaptiveDarkBlender_;
+    std::shared_ptr<RSNGRenderBlenderBase> stagingAdaptiveLightBlender_;
+    mutable float lastFraction_ = -1.0f;
+    mutable std::shared_ptr<Drawing::Blender> activeBlender_ = nullptr;
 };
 
 class RSEndBlenderDrawable : public RSDrawable {

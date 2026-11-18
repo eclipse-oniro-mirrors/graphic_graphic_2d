@@ -2877,5 +2877,32 @@ HWTEST_F(RSPaintFilterCanvasTest, DrawParticleTest, TestSize.Level1)
     EXPECT_TRUE(paintFilterCanvas_);
 }
 
+/**
+ * @tc.name: GetColorPickedFractionTest
+ * @tc.desc: Cover GetColorPickedFraction / IsColorPickedReady for both the empty env stack and a
+ *           color-picked canvas.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPaintFilterCanvasTest, GetColorPickedFractionTest, TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    // the constructor pre-pushes one default env (fractionColor_ = 0, not ready)
+    EXPECT_EQ(paintFilterCanvas.GetColorPickedFraction(), 0.0f);
+    EXPECT_FALSE(paintFilterCanvas.IsColorPickedReady());
+
+    // explicity emptied env stack: both helpers takes the early-return branch
+    paintFilterCanvas.envStack_.pop();
+    EXPECT_EQ(paintFilterCanvas.GetColorPickedFraction(), -1.0f);
+    EXPECT_FALSE(paintFilterCanvas.IsColorPickedReady());
+
+    RSPaintFilterCanvas::Env env = { RSColor(), nullptr, nullptr, nullptr, false };
+    paintFilterCanvas.envStack_.push(env);
+    paintFilterCanvas.envStack_.top().fractionColor_ = 0x00000080;
+    paintFilterCanvas.envStack_.top().fractionColorReady_ = true;
+    EXPECT_NEAR(paintFilterCanvas.GetColorPickedFraction(), 128.f / 255.f, 1e-6f);
+    EXPECT_TRUE(paintFilterCanvas.IsColorPickedReady());
+}
+
 } // namespace Rosen
 } // namespace OHOS

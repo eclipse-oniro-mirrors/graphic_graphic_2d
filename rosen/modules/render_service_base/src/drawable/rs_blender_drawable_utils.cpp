@@ -187,7 +187,7 @@ constexpr char COLORFUL_BRIGHTNESS_BLENDER_PROG[] = R"(
         }
     )";
 
-std::shared_ptr<Drawing::Blender> MakeColorfulBrightnessFromNG(
+__attribute__((noinline)) RSColorfulBrightnessBlenderPara GetColorfulBrightnessPara(
     const std::shared_ptr<RSNGRenderBlenderBase>& blender)
 {
     auto colorfulBlender = std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(blender);
@@ -207,7 +207,39 @@ std::shared_ptr<Drawing::Blender> MakeColorfulBrightnessFromNG(
     params.hdrEnabled_ = colorfulBlender->Getter<ColorfulBrightnessBlenderHdrEnabledRenderTag>()->Get();
     params.tintedColorPercent_ =
         colorfulBlender->Getter<ColorfulBrightnessBlenderTintedColorPercentRenderTag>()->Get();
-    return RSBlenderDrawableUtils::MakeColorfulBrightnessBlender(params);
+    return params;
+}
+
+__attribute__((noinline)) RSColorfulBrightnessBlenderPara LerpColorfulBrightnessPara(
+    const RSColorfulBrightnessBlenderPara& from, const RSColorfulBrightnessBlenderPara& to, float fraction)
+{
+    auto lerp = [](float src, float dst, float ratio) { return src + (dst - src) * ratio; };
+    RSColorfulBrightnessBlenderPara result;
+    const float t = std::clamp(fraction, 0.0f, 1.0f);
+    result.darkenWeight_ = lerp(from.darkenWeight_, to.darkenWeight_, t);
+    result.fraction_ = std::clamp(lerp(from.fraction_, to.fraction_, t), 0.0f, 1.0f);
+    result.cubicRate_ = lerp(from.cubicRate_, to.cubicRate_, t);
+    result.quadRate_ = lerp(from.quadRate_, to.quadRate_, t);
+    result.linearRate_ = lerp(from.linearRate_, to.linearRate_, t);
+    result.degree_ = lerp(from.degree_, to.degree_, t);
+    result.saturation_ = lerp(from.saturation_, to.saturation_, t);
+    result.positiveCoeff_ = Vector3f(lerp(from.positiveCoeff_.x_, to.positiveCoeff_.x_, t),
+        lerp(from.positiveCoeff_.y_, to.positiveCoeff_.y_, t),
+        lerp(from.positiveCoeff_.z_, to.positiveCoeff_.z_, t));
+    result.negativeCoeff_ = Vector3f(lerp(from.negativeCoeff_.x_, to.negativeCoeff_.x_, t),
+        lerp(from.negativeCoeff_.y_, to.negativeCoeff_.y_, t),
+        lerp(from.negativeCoeff_.z_, to.negativeCoeff_.z_, t));
+    result.vibrancyStrength_ = lerp(from.vibrancyStrength_, to.vibrancyStrength_, t);
+    result.lumaDiff_ = lerp(from.lumaDiff_, to.lumaDiff_, t);
+    result.hdrEnabled_ = from.hdrEnabled_ && to.hdrEnabled_;
+    result.tintedColorPercent_ = lerp(from.tintedColorPercent_, to.tintedColorPercent_, t);
+    return result;
+}
+
+std::shared_ptr<Drawing::Blender> MakeColorfulBrightnessFromNG(
+    const std::shared_ptr<RSNGRenderBlenderBase>& blender)
+{
+    return RSBlenderDrawableUtils::MakeColorfulBrightnessBlender(GetColorfulBrightnessPara(blender));
 }
 
 std::shared_ptr<Drawing::Blender> MakeBrightnessFromNG(
@@ -272,21 +304,50 @@ std::shared_ptr<Drawing::Blender> RSBlenderDrawableUtils::MakeBlenderFromNG(
     return it->second(blender);
 }
 
+std::shared_ptr<Drawing::Blender> RSBlenderDrawableUtils::MakeAdaptiveBlenderFromNG(
+    const std::shared_ptr<RSNGRenderBlenderBase>& darkBlender,
+    const std::shared_ptr<RSNGRenderBlenderBase>& lightBlender, const float fraction)
+{
+    if (darkBlender == nullptr || lightBlender == nullptr) {
+        return nullptr;
+    }
+    auto darkParams = GetColorfulBrightnessPara(darkBlender);
+    auto lightParams = GetColorfulBrightnessPara(lightBlender);
+    auto interpolated = LerpColorfulBrightnessPara(darkParams, lightParams, fraction);
+    RS_OPTIONAL_TRACE_FMT("RSBlenderDrawableUtils::MakeAdaptiveBlenderFromNG fraction[%f]", fraction);
+    return RSBlenderDrawableUtils::MakeColorfulBrightnessBlender(interpolated);
+}
+
 bool RSBlenderDrawableUtils::GetNGBlenderEnableEDR(const RSProperties& properties)
 {
     const auto& ngBlender = properties.GetNGBlender();
-    if (ngBlender == nullptr) {
+    if (ngBlender != nullptr) {
+        if (ngBlender->GetType() == RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER) {
+            auto colorfulBlender = std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(ngBlender);
+            if (colorfulBlender->Getter<ColorfulBrightnessBlenderHdrEnabledRenderTag>()->Get()) {
+                return true;
+            }
+        } else if (ngBlender->GetType() == RSNGEffectType::BRIGHTNESS_BLENDER) {
+            auto brightnessBlender = std::static_pointer_cast<RSNGRenderBrightnessBlender>(ngBlender);
+            if (brightnessBlender->Getter<BrightnessBlenderHdrEnabledRenderTag>()->Get()) {
+                return true;
+            }
+        }
+    }
+    return GetNGAdaptiveBlenderEnableEDR(properties);
+}
+
+bool RSBlenderDrawableUtils::GetNGAdaptiveBlenderEnableEDR(const RSProperties& properties)
+{
+    const auto darkBlender = properties.GetNGAdaptiveDarkBlender();
+    const auto lightBlender = properties.GetNGAdaptiveLightBlender();
+    if (darkBlender == nullptr || lightBlender == nullptr) {
         return false;
     }
-    if (ngBlender->GetType() == RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER) {
-        auto colorfulBlender = std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(ngBlender);
-        return colorfulBlender->Getter<ColorfulBrightnessBlenderHdrEnabledRenderTag>()->Get();
-    }
-    if (ngBlender->GetType() == RSNGEffectType::BRIGHTNESS_BLENDER) {
-        auto brightnessBlender = std::static_pointer_cast<RSNGRenderBrightnessBlender>(ngBlender);
-        return brightnessBlender->Getter<BrightnessBlenderHdrEnabledRenderTag>()->Get();
-    }
-    return false;
+    auto darkColorful = std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(darkBlender);
+    auto lightColorful = std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(lightBlender);
+    return darkColorful->Getter<ColorfulBrightnessBlenderHdrEnabledRenderTag>()->Get() &&
+        lightColorful->Getter<ColorfulBrightnessBlenderHdrEnabledRenderTag>()->Get();
 }
 
 std::shared_ptr<Drawing::Blender> RSBlenderDrawableUtils::MakeDynamicBrightnessBlender(
