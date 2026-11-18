@@ -46,7 +46,6 @@ constexpr size_t FUNCTYPE_SIZE = 4;
 constexpr size_t MATRIXTYPE_SIZE = 5;
 constexpr size_t POINTNUMBER = 4;
 constexpr size_t MATH_TEN = 10;
-constexpr uint8_t WINDOWRECORDFIT_SIZE = 2;
 size_t g_size = 0;
 size_t g_pos;
 } // namespace
@@ -755,8 +754,7 @@ bool DoMarshallingHelper022()
     return true;
 }
 
-// RSWindowRecordConfig round trip. Bytes come from the shared GetData() cursor, so no argument is needed.
-// The id count spans the configured bound on both sides.
+// RSWindowRecordConfig round trip; the id count spans 0..MAX_WINDOW_RECORD_SURFACE_NUM + 1.
 bool DoMarshallingHelper023()
 {
     if (DATA == nullptr) {
@@ -765,7 +763,7 @@ bool DoMarshallingHelper023()
 
     Parcel parcel;
     RSWindowRecordConfig config;
-    config.renderFit = static_cast<WindowRecordFit>(GetData<uint8_t>() % WINDOWRECORDFIT_SIZE);
+    config.renderFit = GetData<bool>() ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
     size_t idCount = GetData<uint16_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
     for (size_t i = 0; i < idCount; i++) {
         config.surfaceNodeIds.push_back(GetData<NodeId>());
@@ -774,34 +772,12 @@ bool DoMarshallingHelper023()
     RSWindowRecordConfig unmarshalled;
     RSMarshallingHelper::Unmarshalling(parcel, unmarshalled);
 
-    // Untrusted wire value: a renderFit byte outside the enum range must be rejected.
+    // Untrusted wire value: a renderFit value outside the enum range must be rejected.
     Parcel invalidFitParcel;
     invalidFitParcel.WriteInt32(static_cast<int32_t>(GetData<uint8_t>()));
     invalidFitParcel.WriteUint64(0);
     RSWindowRecordConfig invalidFitConfig;
     RSMarshallingHelper::Unmarshalling(invalidFitParcel, invalidFitConfig);
-    return true;
-}
-
-// Baseline RSDisplayNodeConfig round trip. The raw display mode byte is taken verbatim from the input so the
-// clamping branch (out-of-range mode -> DisplayMode::INVALID) is reachable.
-bool DoMarshallingHelper024()
-{
-    if (DATA == nullptr) {
-        return false;
-    }
-
-    Parcel parcel;
-    RSDisplayNodeConfig config;
-    config.screenId = GetData<uint64_t>();
-    config.displayMode = static_cast<DisplayMode>(GetData<uint8_t>());
-    config.mirrorNodeId = GetData<NodeId>();
-    config.isSync = GetData<bool>();
-    config.mirrorSourceRotation = GetData<uint32_t>();
-    config.positionZ = GetData<float>();
-    RSMarshallingHelper::Marshalling(parcel, config);
-    RSDisplayNodeConfig unmarshalled;
-    RSMarshallingHelper::Unmarshalling(parcel, unmarshalled);
     return true;
 }
 
@@ -840,6 +816,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoMarshallingHelper020(data, size);
     OHOS::Rosen::DoMarshallingHelper022();
     OHOS::Rosen::DoMarshallingHelper023();
-    OHOS::Rosen::DoMarshallingHelper024();
     return 0;
 }

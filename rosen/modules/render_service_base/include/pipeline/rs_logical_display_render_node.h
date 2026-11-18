@@ -177,8 +177,8 @@ public:
     // Stores the record config only (main thread, command application). The ids are resolved
     // every frame in UpdateRenderParams() -> ResolveWindowRecordSnapshot(), so a config that
     // arrives before its window nodes exist is picked up on a later frame instead of being
-    // dropped permanently. Node ids that cannot be resolved are skipped for bbox and source-display
-    // resolution; the capture white list retains every nonzero id supplied by the client.
+    // dropped permanently. The capture white list keeps nonzero ids only while at least one main
+    // window resolves.
     void SetWindowRecordConfig(const RSWindowRecordConfig& config);
 
     const RSWindowRecordConfig& GetWindowRecordConfig() const { return windowRecordConfig_; }

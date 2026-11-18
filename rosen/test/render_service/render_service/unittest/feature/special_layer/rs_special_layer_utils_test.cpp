@@ -30,7 +30,6 @@
 #include "screen_manager/rs_screen_property.h"
 #include "drawable/rs_render_node_drawable.h"
 #include "drawable/rs_screen_render_node_drawable.h"
-#include "engine/rs_base_render_engine.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -54,14 +53,12 @@ constexpr int CANVAS_HEIGHT = 600;
 const Drawing::Rect DEFAULT_RECT {0, 0, 100, 100};
 
 // RSSpecialLayerUtils::GetSpecialLayerStateInSubTree reads ambient process state through
-// RSUniRenderThread: the capture param, the render-thread curtain flag, and the process-wide color
-// filter mode of RSBaseRenderEngine. This guard normalizes all three to off/non-snapshot and
-// restores the saved values on scope exit.
+// RSUniRenderThread: the capture param and the render-thread curtain flag. This guard normalizes
+// both to the non-snapshot, curtain-off state and restores the saved values on scope exit.
 class ScopedSubTreeSpecialLayerState {
 public:
     ScopedSubTreeSpecialLayerState()
-        : savedCaptureParam_(RSUniRenderThread::GetCaptureParam()),
-          savedColorFilterMode_(RSBaseRenderEngine::GetColorFilterMode())
+        : savedCaptureParam_(RSUniRenderThread::GetCaptureParam())
     {
         auto& manager = RSRenderThreadParamsManager::Instance();
         hadRenderThreadParams_ = manager.GetRSRenderThreadParams() != nullptr;
@@ -71,11 +68,6 @@ public:
         auto& renderThreadParams = manager.GetRSRenderThreadParams();
         savedCurtainScreenOn_ = renderThreadParams->IsCurtainScreenOn();
         renderThreadParams->SetCurtainScreenUsingStatus(false);
-        // Disable invert first so that a residual invert bit cannot survive the daltonization reset;
-        // DALTONIZATION_NORMAL_MODE then lands on COLOR_FILTER_END, which IsColorFilterModeOn treats
-        // as off for every starting mode.
-        RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
-        RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::DALTONIZATION_NORMAL_MODE);
         CaptureParam captureParam;
         captureParam.isSnapshot_ = false;
         RSUniRenderThread::SetCaptureParam(captureParam);
@@ -92,7 +84,6 @@ public:
         } else {
             manager.SetRSRenderThreadParams(nullptr);
         }
-        RestoreColorFilterMode(savedColorFilterMode_);
         RSUniRenderThread::SetCaptureParam(savedCaptureParam_);
     }
 
@@ -100,58 +91,15 @@ public:
     ScopedSubTreeSpecialLayerState& operator=(const ScopedSubTreeSpecialLayerState&) = delete;
 
 private:
-    // SetColorFilterMode is a state transition, not an assignment: COLOR_FILTER_END cannot be set
-    // directly, INVERT_DALTONIZATION_* falls through to END, INVERT_COLOR_DISABLE_MODE only clears
-    // the invert bit, and DALTONIZATION_NORMAL_MODE is a command rather than an observable state.
-    // The guard leaves the mode at END and replays the saved state from there in dependency order.
-    static void RestoreColorFilterMode(ColorFilterMode savedMode)
-    {
-        constexpr uint32_t invertBitMask = 1u;
-        switch (savedMode) {
-            case ColorFilterMode::COLOR_FILTER_END:
-                // END is the normalized state and is terminal; no call can or should be made.
-                break;
-            case ColorFilterMode::INVERT_COLOR_ENABLE_MODE:
-                // The only mode that leaves END, so it must be issued first for invert states.
-                RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
-                break;
-            case ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE:
-            case ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE:
-            case ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE:
-                // A base daltonization mode assigned while the invert bit is clear lands exactly.
-                RSBaseRenderEngine::SetColorFilterMode(savedMode);
-                break;
-            case ColorFilterMode::INVERT_DALTONIZATION_PROTANOMALY_MODE:
-            case ColorFilterMode::INVERT_DALTONIZATION_DEUTERANOMALY_MODE:
-            case ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE:
-                // INVERT_DALTONIZATION_* is not directly settable: enter invert first, then apply the
-                // matching base mode, which ORs the invert bit back in (3/5/9 -> 1 -> 3/5/9).
-                RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
-                RSBaseRenderEngine::SetColorFilterMode(static_cast<ColorFilterMode>(
-                    static_cast<uint32_t>(savedMode) & ~invertBitMask));
-                break;
-            case ColorFilterMode::INVERT_COLOR_DISABLE_MODE:
-                // DISABLE is a no-op at END; enter invert first, then clear the invert bit to 0.
-                RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
-                RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
-                break;
-            case ColorFilterMode::DALTONIZATION_NORMAL_MODE:
-            default:
-                // NORMAL is a command and unknown values are not reproducible; stay at END.
-                break;
-        }
-    }
-
     CaptureParam savedCaptureParam_;
-    ColorFilterMode savedColorFilterMode_;
     bool hadRenderThreadParams_ = false;
     bool savedCurtainScreenOn_ = false;
 };
 
 // Installs the render-thread shape that activates non-snapshot special-layer filtering and restores
-// every process-wide value it touches: the two render-thread fields it changes, capture param and
-// white-list root stack. A params object created here is removed on scope exit so tests that expect
-// the default null thread-local state are unaffected.
+// the two render-thread fields it changes plus the capture param on scope exit. The white-list root
+// stack is process-wide and is cleared rather than restored. A params object created here is removed
+// on scope exit so tests that expect the default null thread-local state are unaffected.
 class ScopedCursorFilterState {
 public:
     ScopedCursorFilterState()
@@ -1914,13 +1862,9 @@ HWTEST_F(RSSpecialLayerUtilsTest, GetSpecialLayerStateInVisibleRectEffectiveWhit
         DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
 
     screenParams.SetEffectiveWhiteList({});
-    std::unordered_set<NodeType> typeBlackList = { static_cast<NodeType>(0) };
-    screenParams.screenProperty_.Set<ScreenPropertyType::TYPE_BLACK_LIST>(typeBlackList);
     EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
-        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+        DisplaySpecialLayerState::NO_SPECIAL_LAYER);
 
-    typeBlackList.clear();
-    screenParams.screenProperty_.Set<ScreenPropertyType::TYPE_BLACK_LIST>(typeBlackList);
     displayParams.specialLayerManager_.SetHasSlInVisibleRect(screenId, true);
     EXPECT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
         DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
@@ -1941,11 +1885,10 @@ HWTEST_F(RSSpecialLayerUtilsTest, GetSpecialLayerStateInSubTreeEffectiveWhiteLis
     constexpr ScreenId screenId = 8201;
     constexpr NodeId displayId = 8202;
     constexpr NodeId whiteListId = 8203;
-    // Normalizes capture param, render-thread curtain flag and color filter mode for the whole case
-    // and restores them on every exit path.
+    // Normalizes the capture param and render-thread curtain flag for the whole case and restores
+    // them on every exit path.
     ScopedSubTreeSpecialLayerState scopedState;
     CaptureParam normalCaptureParam;
-    normalCaptureParam.isSnapshot_ = false;
 
     RSLogicalDisplayRenderParams displayParams(displayId);
     displayParams.SetScreenId(screenId);

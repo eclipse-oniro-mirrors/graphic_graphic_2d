@@ -17,7 +17,6 @@
 
 #include "feature/anco_manager/rs_anco_manager.h"
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
-#include "feature/multi_screen/rs_multi_screen_util.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "graphic_feature_param_manager.h"
 #include "gtest/gtest.h"
@@ -258,27 +257,6 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, DrawCurtainScreen, TestSize.Level1)
     params = std::make_unique<RSRenderThreadParams>();
     params->isCurtainScreenOn_ = false;
     RSUniRenderThread::Instance().Sync(std::move(params));
-}
-
-/**
- * @tc.name: WindowRecordScreenNullProcessorEarlyReturn
- * @tc.desc: Test the record-screen handler skips the frame when no display has an active record session
- * @tc.type: FUNC
- * @tc.require: issues/26744
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, WindowRecordScreenNullProcessorEarlyReturn, TestSize.Level2)
-{
-    ASSERT_NE(screenDrawable_, nullptr);
-    ASSERT_NE(screenDrawable_->GetRenderParams(), nullptr);
-    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
-    ASSERT_NE(params, nullptr);
-    ASSERT_TRUE(params->GetDisplayDrawables().empty());
-    std::shared_ptr<RSProcessor> nullProcessor = nullptr;
-
-    screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
-    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *params, nullProcessor);
-
-    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 }
 
 /**

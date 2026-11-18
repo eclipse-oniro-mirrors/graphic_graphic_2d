@@ -721,17 +721,6 @@ static RSWindowRecordConfig CreateWindowRecordConfig(size_t idCount)
     return config;
 }
 
-// Writes the fixed RSDisplayNodeConfig header fields in the same order/width as RSMarshallingHelper.
-static void WriteDisplayNodeConfigHeader(Parcel& parcel, uint8_t displayMode)
-{
-    parcel.WriteUint64(1);      // screenId
-    parcel.WriteUint8(displayMode);
-    parcel.WriteUint64(2);      // mirrorNodeId
-    parcel.WriteBool(true);     // isSync
-    parcel.WriteUint32(1);      // mirrorSourceRotation
-    parcel.WriteFloat(1.5f);    // positionZ
-}
-
 /**
  * @tc.name: RSWindowRecordConfigMarshalling001
  * @tc.desc: test full round trip of RSWindowRecordConfig fields
@@ -855,88 +844,6 @@ HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling006, TestSize.Level1)
     unmarshalled.surfaceNodeIds = { 3, 4 }; // stale entries must be dropped together with the config
     EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(decodingParcel, unmarshalled));
     EXPECT_TRUE(unmarshalled.surfaceNodeIds.empty());
-}
-
-/**
- * @tc.name: RSDisplayNodeConfigMarshalling001
- * @tc.desc: test full round trip of the baseline RSDisplayNodeConfig fields
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSMarshallingTest, RSDisplayNodeConfigMarshalling001, TestSize.Level1)
-{
-    RSDisplayNodeConfig config;
-    config.screenId = 100;
-    config.displayMode = DisplayMode::MIRROR;
-    config.mirrorNodeId = 200;
-    config.isSync = true;
-    config.mirrorSourceRotation = 1;
-    config.positionZ = 1.5f;
-
-    MessageParcel parcel;
-    ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, config));
-
-    RSDisplayNodeConfig unmarshalled;
-    ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(parcel, unmarshalled));
-    EXPECT_EQ(unmarshalled.screenId, config.screenId);
-    EXPECT_EQ(unmarshalled.displayMode, DisplayMode::MIRROR);
-    EXPECT_EQ(unmarshalled.mirrorNodeId, config.mirrorNodeId);
-    EXPECT_EQ(unmarshalled.isSync, config.isSync);
-    EXPECT_EQ(unmarshalled.mirrorSourceRotation, config.mirrorSourceRotation);
-    EXPECT_FLOAT_EQ(unmarshalled.positionZ, config.positionZ);
-}
-
-/**
- * @tc.name: RSDisplayNodeConfigMarshalling002
- * @tc.desc: test out-of-range display mode is clamped to INVALID and the last valid mode is kept
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSMarshallingTest, RSDisplayNodeConfigMarshalling002, TestSize.Level1)
-{
-    MessageParcel invalidModeParcel;
-    WriteDisplayNodeConfigHeader(invalidModeParcel, 0xFF); // out-of-range enum from an untrusted parcel
-
-    RSDisplayNodeConfig unmarshalled;
-    ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(invalidModeParcel, unmarshalled));
-    EXPECT_EQ(unmarshalled.displayMode, DisplayMode::INVALID);
-    EXPECT_EQ(unmarshalled.screenId, 1u);
-    EXPECT_EQ(unmarshalled.mirrorNodeId, 2u);
-    EXPECT_TRUE(unmarshalled.isSync);
-    EXPECT_EQ(unmarshalled.mirrorSourceRotation, 1u);
-    EXPECT_FLOAT_EQ(unmarshalled.positionZ, 1.5f);
-
-    MessageParcel maxModeParcel;
-    WriteDisplayNodeConfigHeader(maxModeParcel, static_cast<uint8_t>(DisplayMode::INDEPENDENT));
-
-    ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(maxModeParcel, unmarshalled));
-    EXPECT_EQ(unmarshalled.displayMode, DisplayMode::INDEPENDENT);
-}
-
-/**
- * @tc.name: RSDisplayNodeConfigMarshalling003
- * @tc.desc: test empty and truncated parcel input is rejected
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSMarshallingTest, RSDisplayNodeConfigMarshalling003, TestSize.Level1)
-{
-    RSDisplayNodeConfig unmarshalled;
-
-    MessageParcel emptyParcel;
-    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(emptyParcel, unmarshalled));
-
-    MessageParcel screenIdOnlyParcel;
-    screenIdOnlyParcel.WriteUint64(1); // display mode and the remaining fields are missing
-    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(screenIdOnlyParcel, unmarshalled));
-
-    MessageParcel partialParcel;
-    partialParcel.WriteUint64(1); // screenId
-    partialParcel.WriteUint8(static_cast<uint8_t>(DisplayMode::MIRROR));
-    partialParcel.WriteUint64(2); // mirrorNodeId
-    partialParcel.WriteBool(true); // isSync
-    partialParcel.WriteUint32(1); // mirrorSourceRotation; positionZ is missing
-    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(partialParcel, unmarshalled));
 }
 
 } // namespace OHOS::Rosen

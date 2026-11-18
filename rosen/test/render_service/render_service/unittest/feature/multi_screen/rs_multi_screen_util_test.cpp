@@ -58,6 +58,34 @@ constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
 constexpr ScreenId SCREEN_ID = 10086;
 constexpr uint32_t DEFAULT_CANVAS_WIDTH = 800;
 constexpr uint32_t DEFAULT_CANVAS_HEIGHT = 600;
+
+void ExpectRect(const Drawing::RectI& rect, int32_t left, int32_t top, int32_t right, int32_t bottom)
+{
+    EXPECT_EQ(rect.GetLeft(), left);
+    EXPECT_EQ(rect.GetTop(), top);
+    EXPECT_EQ(rect.GetRight(), right);
+    EXPECT_EQ(rect.GetBottom(), bottom);
+}
+
+// Record capture reads and rewrites the thread-local capture param; start from a clean value and
+// restore the caller's state on every exit.
+class ScopedCaptureParam {
+public:
+    ScopedCaptureParam()
+        : saved_(RSUniRenderThread::GetCaptureParam())
+    {
+        RSUniRenderThread::SetCaptureParam(CaptureParam());
+    }
+    ~ScopedCaptureParam()
+    {
+        RSUniRenderThread::SetCaptureParam(saved_);
+    }
+    ScopedCaptureParam(const ScopedCaptureParam&) = delete;
+    ScopedCaptureParam& operator=(const ScopedCaptureParam&) = delete;
+
+private:
+    CaptureParam saved_;
+};
 } // namespace
 class RSMultiScreenUtilTest : public testing::Test {
 public:
@@ -91,6 +119,9 @@ public:
         const DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr& output,
         const DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr& source,
         const DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr& bbox);
+
+    // Arms an active record capture with a distinct paintable source.
+    void ArmWindowRecordCapture(RSLogicalDisplayRenderParams& params);
 };
 
 void RSMultiScreenUtilTest::SetUpTestCase()
@@ -236,6 +267,21 @@ void RSMultiScreenUtilTest::ArmWindowRecordScreenGates(RSLogicalDisplayRenderPar
     params.recordSurfaceDrawables_ = { bbox };
     bbox->GetRenderParams()->SetAbsDrawRect({ 0, 0, 100, 100 });
     screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+}
+
+void RSMultiScreenUtilTest::ArmWindowRecordCapture(RSLogicalDisplayRenderParams& params)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayDrawable_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayParams_, nullptr);
+    displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
+    params.recordWhiteListIds_ = { RECORD_SURFACE_NODE_ID };
+    params.recordSourceDisplayDrawable_ = mirrorSourceDisplayNode_->GetRenderDrawable();
+    // The cached output bbox skips recomputation so the source needs no surface rects.
+    params.recordSurfaceDrawables_.clear();
+    displayDrawable_->SetWindowRecordBBox(Drawing::RectI(0, 0, 100, 100));
+    mirrorSourceDisplayParams_->SetShouldPaint(true);
 }
 
 /**
@@ -1994,24 +2040,18 @@ HWTEST_F(RSMultiScreenUtilTest, GetMultiScreenParamsTest001, TestSize.Level1)
  */
 HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectInvalidSizeTest, TestSize.Level1)
 {
-    auto expectEmptyRect = [](const Drawing::RectI& rect) {
-        EXPECT_EQ(rect.GetLeft(), 0);
-        EXPECT_EQ(rect.GetTop(), 0);
-        EXPECT_EQ(rect.GetRight(), 0);
-        EXPECT_EQ(rect.GetBottom(), 0);
-    };
-
     // content size is the divisor: zero and negative values must not reach the float scale path
-    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 0, 300, WindowRecordFit::ASPECT_FIT));
-    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 300, 0, WindowRecordFit::ASPECT_FIT));
-    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, -1, 300, WindowRecordFit::ASPECT_FIT));
-    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 300, -1, WindowRecordFit::ASPECT_FIT_TOP_LEFT));
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 0, 300, WindowRecordFit::ASPECT_FIT), 0, 0, 0, 0);
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 300, 0, WindowRecordFit::ASPECT_FIT), 0, 0, 0, 0);
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, -1, 300, WindowRecordFit::ASPECT_FIT), 0, 0, 0, 0);
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 300, -1, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
+        0, 0, 0, 0);
 
     // canvas size is guarded here so every caller can rely on the returned rect
-    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(0, 600, 300, 300, WindowRecordFit::ASPECT_FIT));
-    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, 0, 300, 300, WindowRecordFit::ASPECT_FIT));
-    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(-800, 600, 300, 300, WindowRecordFit::ASPECT_FIT));
-    expectEmptyRect(RSMultiScreenUtil::ComputeGravityRect(800, -600, 300, 300, WindowRecordFit::ASPECT_FIT));
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(0, 600, 300, 300, WindowRecordFit::ASPECT_FIT), 0, 0, 0, 0);
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 0, 300, 300, WindowRecordFit::ASPECT_FIT), 0, 0, 0, 0);
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(-800, 600, 300, 300, WindowRecordFit::ASPECT_FIT), 0, 0, 0, 0);
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, -600, 300, 300, WindowRecordFit::ASPECT_FIT), 0, 0, 0, 0);
 }
 
 /**
@@ -2022,24 +2062,17 @@ HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectInvalidSizeTest, TestSize.Leve
  */
 HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectAspectFitTest, TestSize.Level1)
 {
-    auto expectRect = [](const Drawing::RectI& rect, int32_t left, int32_t top, int32_t right, int32_t bottom) {
-        EXPECT_EQ(rect.GetLeft(), left);
-        EXPECT_EQ(rect.GetTop(), top);
-        EXPECT_EQ(rect.GetRight(), right);
-        EXPECT_EQ(rect.GetBottom(), bottom);
-    };
-
     // canvas 800x600, content 500x1000: scale 0.6 -> 300x600, centered horizontally
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT),
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT),
         250, 0, 550, 600);
     // aspect fit ignores rotation
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT,
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT,
         ScreenRotation::ROTATION_270), 250, 0, 550, 600);
 
     // canvas 800x600, content 1000x500: scale 0.8 -> 800x400, centered vertically
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT),
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT),
         0, 100, 800, 500);
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT,
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT,
         ScreenRotation::ROTATION_90), 0, 100, 800, 500);
 }
 
@@ -2051,31 +2084,24 @@ HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectAspectFitTest, TestSize.Level1
  */
 HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectTopLeftTest, TestSize.Level1)
 {
-    auto expectRect = [](const Drawing::RectI& rect, int32_t left, int32_t top, int32_t right, int32_t bottom) {
-        EXPECT_EQ(rect.GetLeft(), left);
-        EXPECT_EQ(rect.GetTop(), top);
-        EXPECT_EQ(rect.GetRight(), right);
-        EXPECT_EQ(rect.GetBottom(), bottom);
-    };
-
     // canvas 800x600, content 500x1000: scaled size 300x600
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
         0, 0, 300, 600);
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
         ScreenRotation::ROTATION_90), 0, 0, 300, 600);
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
         ScreenRotation::ROTATION_180), 500, 0, 800, 600);
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
         ScreenRotation::ROTATION_270), 500, 0, 800, 600);
 
     // canvas 800x600, content 1000x500: scaled size 800x400
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
         0, 0, 800, 400);
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
         ScreenRotation::ROTATION_90), 0, 200, 800, 600);
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
         ScreenRotation::ROTATION_180), 0, 200, 800, 600);
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
         ScreenRotation::ROTATION_270), 0, 0, 800, 400);
 }
 
@@ -2087,18 +2113,11 @@ HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectTopLeftTest, TestSize.Level1)
  */
 HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectInvalidRotationTest, TestSize.Level1)
 {
-    auto expectRect = [](const Drawing::RectI& rect, int32_t left, int32_t top, int32_t right, int32_t bottom) {
-        EXPECT_EQ(rect.GetLeft(), left);
-        EXPECT_EQ(rect.GetTop(), top);
-        EXPECT_EQ(rect.GetRight(), right);
-        EXPECT_EQ(rect.GetBottom(), bottom);
-    };
-
     // canvas 800x600, content 500x1000: scaled size 300x600
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
         ScreenRotation::INVALID_SCREEN_ROTATION), 0, 0, 300, 600);
     // default rotation argument behaves like ROTATION_0
-    expectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
         0, 0, 300, 600);
 }
 
@@ -2139,9 +2158,14 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenGatesTest001, TestSize.L
     RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
     EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
-    // Null and wrong-type entries are ignored before any downcast.
+    // A null entry and a wrong-type entry are rejected independently before any downcast.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
-    screenParams_->logicalDisplayNodeDrawables_ = { nullptr, screenNode_->GetRenderDrawable() };
+    screenParams_->logicalDisplayNodeDrawables_ = { nullptr };
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
+    screenParams_->logicalDisplayNodeDrawables_ = { screenNode_->GetRenderDrawable() };
     RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
     EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
 
@@ -2169,18 +2193,21 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenSnapshotGatesTest001, Te
     ASSERT_NE(screenParams_, nullptr);
     ASSERT_NE(displayParams_, nullptr);
     ASSERT_NE(displayNode_, nullptr);
-    auto sourceDrawable = displayNode_->GetRenderDrawable();
-    auto bboxDrawable = mirrorSourceDisplayNode_->GetRenderDrawable();
+    ASSERT_NE(screenNode_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayNode_, nullptr);
+    // The record config belongs to the output display; a distinct source drawable keeps the source
+    // paintability gate from being masked by the output gate.
+    auto sourceDrawable = mirrorSourceDisplayNode_->GetRenderDrawable();
+    auto bboxDrawable = screenNode_->GetRenderDrawable();
     ASSERT_NE(sourceDrawable, nullptr);
     ASSERT_NE(sourceDrawable->GetRenderParams(), nullptr);
     ASSERT_NE(bboxDrawable, nullptr);
     ASSERT_NE(bboxDrawable->GetRenderParams(), nullptr);
-    const bool prevShouldPaint = sourceDrawable->GetRenderParams()->GetShouldPaint();
-    const RectI prevBBoxRect = bboxDrawable->GetRenderParams()->GetAbsDrawRect();
 
     // A source display that should not be painted skips before the processor gate.
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     sourceDrawable->GetRenderParams()->SetShouldPaint(false);
+    EXPECT_TRUE(displayParams_->GetShouldPaint());
     EXPECT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
     RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
     EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
@@ -2205,9 +2232,6 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenSnapshotGatesTest001, Te
     ArmWindowRecordScreenGates(*displayParams_, displayNode_->GetRenderDrawable(), sourceDrawable, bboxDrawable);
     RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
     EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
-
-    sourceDrawable->GetRenderParams()->SetShouldPaint(prevShouldPaint);
-    bboxDrawable->GetRenderParams()->SetAbsDrawRect(prevBBoxRect);
 }
 
 /**
@@ -2295,7 +2319,6 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordGatesTest001, TestSize.Level1)
     auto sourceDrawable = std::static_pointer_cast<RSRenderNodeDrawable>(displayNode_->GetRenderDrawable());
     ASSERT_NE(sourceDrawable, nullptr);
     ASSERT_NE(sourceDrawable->GetRenderParams(), nullptr);
-    const bool prevShouldPaint = sourceDrawable->GetRenderParams()->GetShouldPaint();
 
     const uint32_t saveCount = paintFilterCanvas_->GetSaveCount();
     const bool prevWindowRecordFlag = RSUniRenderThread::GetCaptureParam().isWindowRecord_;
@@ -2364,14 +2387,6 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordGatesTest001, TestSize.Level1)
     displayParams_->recordSurfaceDrawables_.clear();
     runRecordGate();
     expectNoSideEffect();
-
-    RSUniRenderThread::ResetCaptureParam();
-    EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
-
-    sourceDrawable->GetRenderParams()->SetShouldPaint(prevShouldPaint);
-    displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
-    displayParams_->recordWhiteListIds_.clear();
-    displayParams_->recordSourceDisplayDrawable_.reset();
 }
 
 /**
@@ -2587,5 +2602,71 @@ HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordMuteDrawsMaskWithoutSourceTest
 
     displayParams_->virtualScreenMuteStatus_ = prevMute;
     displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
+}
+
+/**
+ * @tc.name: HandleWindowRecordScreenRejectsMultipleDisplaysTest001
+ * @tc.desc: Multiple output displays are rejected before touching display state or the processor
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenRejectsMultipleDisplaysTest001, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(screenParams_, nullptr);
+    ASSERT_NE(displayNode_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayNode_, nullptr);
+    auto ownerDrawable = displayNode_->GetRenderDrawable();
+    auto laterDrawable = mirrorSourceDisplayNode_->GetRenderDrawable();
+    ASSERT_NE(ownerDrawable, nullptr);
+    ASSERT_NE(laterDrawable, nullptr);
+    ASSERT_NE(ownerDrawable->GetRenderParams(), nullptr);
+    ASSERT_NE(laterDrawable->GetRenderParams(), nullptr);
+
+    ArmWindowRecordScreenGates(*displayParams_, ownerDrawable, ownerDrawable, ownerDrawable);
+    ArmWindowRecordScreenGates(*mirrorSourceDisplayParams_, laterDrawable, laterDrawable, laterDrawable);
+    const Drawing::RectI ownerSentinel(1, 2, 3, 4);
+    const Drawing::RectI laterSentinel(11, 22, 33, 44);
+    displayDrawable_->SetWindowRecordBBox(ownerSentinel);
+    mirrorSourceDisplayDrawable_->SetWindowRecordBBox(laterSentinel);
+    screenParams_->logicalDisplayNodeDrawables_ = { ownerDrawable, laterDrawable };
+
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+
+    EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), ownerSentinel);
+    EXPECT_EQ(mirrorSourceDisplayDrawable_->GetWindowRecordBBox(), laterSentinel);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+}
+
+/**
+ * @tc.name: HandleWindowRecordRestoresOffscreenMirrorFlagTest001
+ * @tc.desc: Capture restores the exact previous offscreen-mirror flag on both starting values
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordRestoresOffscreenMirrorFlagTest001, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayParams_, nullptr);
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+    ScopedCaptureParam captureParam;
+
+    ArmWindowRecordCapture(*displayParams_);
+    displayParams_->isSecurityDisplay_ = false;
+    ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
+    ASSERT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+
+    // The record redraw must not leak the offscreen flag into the processor canvas.
+    paintFilterCanvas_->SetIsDrawingOffscreenMirror(false);
+    RSMultiScreenUtil::HandleWindowRecord(*displayDrawable_, *displayParams_, *virtualProcessor_);
+    EXPECT_FALSE(paintFilterCanvas_->GetIsDrawingOffscreenMirror());
+
+    // A true previous value is restored exactly rather than being clobbered to false.
+    paintFilterCanvas_->SetIsDrawingOffscreenMirror(true);
+    RSMultiScreenUtil::HandleWindowRecord(*displayDrawable_, *displayParams_, *virtualProcessor_);
+    EXPECT_TRUE(paintFilterCanvas_->GetIsDrawingOffscreenMirror());
+
+    paintFilterCanvas_->SetIsDrawingOffscreenMirror(false);
 }
 } // namespace OHOS::Rosen

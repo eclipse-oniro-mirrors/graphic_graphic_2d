@@ -516,7 +516,6 @@ HWTEST_F(RSScreenRenderParamsTest, WindowRecordFieldsOnSync, TestSize.Level1)
     std::unique_ptr<RSRenderParams> target = std::make_unique<RSScreenRenderParams>(id);
     source.OnSync(target);
     auto targetParams = static_cast<RSScreenRenderParams*>(target.get());
-    ASSERT_NE(targetParams, nullptr);
     EXPECT_TRUE(targetParams->HasWindowRecordDisplay());
     EXPECT_EQ(targetParams->GetEffectiveWhiteList(), source.GetEffectiveWhiteList());
 }

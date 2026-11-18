@@ -52,60 +52,6 @@ private:
     ScreenId screenId_;
 };
 
-// Minimal stand-in for the main-thread screen visitor: after QuickPrepare has picked the record owner, it
-// replays the display-child staging sync in child order so the test asserts snapshots at that point.
-class WindowRecordPrepareVisitor : public RSNodeVisitor {
-public:
-    WindowRecordPrepareVisitor(std::vector<RSLogicalDisplayRenderNode::SharedPtr> displays,
-        std::function<void()> afterChildrenPrepared)
-        : displays_(std::move(displays)), afterChildrenPrepared_(std::move(afterChildrenPrepared))
-    {}
-    ~WindowRecordPrepareVisitor() override = default;
-
-    void QuickPrepareScreenRenderNode(RSScreenRenderNode& node,
-        bool isParentPrepareInReverseOrder) override
-    {
-        for (const auto& display : displays_) {
-            if (display != nullptr) {
-                display->UpdateRenderParams();
-            }
-        }
-        if (afterChildrenPrepared_ != nullptr) {
-            afterChildrenPrepared_();
-        }
-    }
-    void QuickPrepareChildren(RSRenderNode& node) override {}
-    void QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node, bool isParentPrepareInReverseOrder) override {}
-    void QuickPrepareLogicalDisplayRenderNode(RSLogicalDisplayRenderNode& node,
-        bool isParentPrepareInReverseOrder) override {}
-    void QuickPrepareEffectRenderNode(RSEffectRenderNode& node,
-        bool isParentPrepareInReverseOrder) override {}
-    void QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node,
-        bool isParentPrepareInReverseOrder) override {}
-
-    void PrepareChildren(RSRenderNode& node) override {}
-    void PrepareCanvasRenderNode(RSCanvasRenderNode& node) override {}
-    void PrepareScreenRenderNode(RSScreenRenderNode& node) override {}
-    void PrepareEffectRenderNode(RSEffectRenderNode& node) override {}
-    void PrepareLogicalDisplayRenderNode(RSLogicalDisplayRenderNode& node) override {}
-    void PrepareProxyRenderNode(RSProxyRenderNode& node) override {}
-    void PrepareRootRenderNode(RSRootRenderNode& node) override {}
-    void PrepareSurfaceRenderNode(RSSurfaceRenderNode& node) override {}
-
-    void ProcessChildren(RSRenderNode& node) override {}
-    void ProcessCanvasRenderNode(RSCanvasRenderNode& node) override {}
-    void ProcessScreenRenderNode(RSScreenRenderNode& node) override {}
-    void ProcessEffectRenderNode(RSEffectRenderNode& node) override {}
-    void ProcessLogicalDisplayRenderNode(RSLogicalDisplayRenderNode& node) override {}
-    void ProcessProxyRenderNode(RSProxyRenderNode& node) override {}
-    void ProcessRootRenderNode(RSRootRenderNode& node) override {}
-    void ProcessSurfaceRenderNode(RSSurfaceRenderNode& node) override {}
-
-private:
-    std::vector<RSLogicalDisplayRenderNode::SharedPtr> displays_;
-    std::function<void()> afterChildrenPrepared_;
-};
-
 constexpr uint32_t ROG_TEST_WIDTH = 1080;
 constexpr uint32_t ROG_TEST_HEIGHT = 2400;
 // 2 means physical resolution is twice of render resolution
@@ -1864,24 +1810,23 @@ HWTEST_F(RSScreenRenderNodeTest, NormalizeWindowRecordDisplaysKeepsSingleOwnerSa
 
     auto firstParams = static_cast<RSLogicalDisplayRenderParams*>(firstDisplay->stagingRenderParams_.get());
     auto secondParams = static_cast<RSLogicalDisplayRenderParams*>(secondDisplay->stagingRenderParams_.get());
-    ASSERT_NE(firstParams, nullptr);
-    ASSERT_NE(secondParams, nullptr);
-    auto visitor = std::make_shared<WindowRecordPrepareVisitor>(
-        std::vector<RSLogicalDisplayRenderNode::SharedPtr> { firstDisplay, secondDisplay },
-        [firstParams, secondParams, mainId]() {
-            EXPECT_TRUE(firstParams->IsRecordSessionActive());
-            EXPECT_EQ(firstParams->GetWindowRecordConfig().surfaceNodeIds, std::vector<NodeId>({ mainId }));
-            EXPECT_FALSE(secondParams->IsRecordSessionActive());
-            EXPECT_TRUE(secondParams->GetWindowRecordConfig().surfaceNodeIds.empty());
-            EXPECT_TRUE(secondParams->GetRecordWhiteListIds().empty());
-            EXPECT_TRUE(secondParams->GetRecordSurfaceDrawables().empty());
-            EXPECT_FALSE(secondParams->HasPaintableRecordSurface());
-            EXPECT_TRUE(secondParams->GetRecordSourceDisplayDrawable().expired());
-        });
 
+    // Production screen prepare picks the record owner before the display children publish params.
+    auto visitor = std::make_shared<RSRenderThreadVisitor>();
     screen->QuickPrepare(visitor);
+    firstDisplay->UpdateRenderParams();
+    secondDisplay->UpdateRenderParams();
+
     EXPECT_TRUE(firstDisplay->IsWindowRecordActive());
     EXPECT_FALSE(secondDisplay->IsWindowRecordActive());
+    EXPECT_TRUE(firstParams->IsRecordSessionActive());
+    EXPECT_EQ(firstParams->GetWindowRecordConfig().surfaceNodeIds, std::vector<NodeId>({ mainId }));
+    EXPECT_FALSE(secondParams->IsRecordSessionActive());
+    EXPECT_TRUE(secondParams->GetWindowRecordConfig().surfaceNodeIds.empty());
+    EXPECT_TRUE(secondParams->GetRecordWhiteListIds().empty());
+    EXPECT_TRUE(secondParams->GetRecordSurfaceDrawables().empty());
+    EXPECT_FALSE(secondParams->HasPaintableRecordSurface());
+    EXPECT_TRUE(secondParams->GetRecordSourceDisplayDrawable().expired());
 }
 
 /**

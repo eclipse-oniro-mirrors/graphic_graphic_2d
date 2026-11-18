@@ -224,8 +224,8 @@ void DisplayNodeCommandHelper::SetDisplayMode(RSContext& context, NodeId id, con
 
     DisplayMode mode = config.displayMode;
     node->SetDisplayMode(mode);
-    // Selecting another display mode ends any record session before mirror state is applied; the
-    // config itself is delivered only through SetWindowRecordConfig.
+    // Any display-mode update ends the record session before mirror state is applied; the config
+    // itself is delivered only through SetWindowRecordConfig.
     node->ClearWindowRecordSession();
     if (mode == DisplayMode::MIRROR) {
         NodeId mirroredNodeId = config.mirrorNodeId;
@@ -290,6 +290,12 @@ void DisplayNodeCommandHelper::SetWindowRecordConfig(RSContext& context, NodeId 
         return;
     }
     node->SetWindowRecordConfig(config);
+    // Only a config that actually starts a record session drops the mirror source. An empty config
+    // just stops recording and keeps the current mirror; an oversized config is rejected by the node
+    // setter and must not disturb the mirror either.
+    if (config.surfaceNodeIds.empty() || config.surfaceNodeIds.size() > MAX_WINDOW_RECORD_SURFACE_NUM) {
+        return;
+    }
     node->ResetMirrorSource();
 }
 

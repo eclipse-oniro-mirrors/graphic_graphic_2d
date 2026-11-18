@@ -83,8 +83,8 @@ public:
     // Effective white list of this screen, selected on the RS main thread in
     // RSScreenRenderNode::UpdateRenderParams: either the per-frame id snapshot of a record-active
     // display child, or the screen property white list -- one source or the other, never merged.
-    // The render-thread white list hand-off and the special-layer state checks all consume this
-    // single list.
+    // Feeds the special-layer state checks only; window-record capture replaces the special-layer
+    // white list with its own record list afterward.
     const std::unordered_set<NodeId>& GetEffectiveWhiteList() const
     {
         return effectiveWhiteList_;

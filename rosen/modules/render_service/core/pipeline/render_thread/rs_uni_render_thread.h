@@ -302,8 +302,8 @@ public:
     };
 
     // Restores the special-layer state and complete capture state on scope exit.
-    struct NodeListGuard {
-        NodeListGuard()
+    struct SpecialLayerCaptureGuard {
+        SpecialLayerCaptureGuard()
             : hadRenderThreadParams_(RSUniRenderThread::Instance().GetRSRenderThreadParams() != nullptr),
               captureParam_(RSUniRenderThread::GetCaptureParam())
         {
@@ -313,7 +313,7 @@ public:
             }
         }
 
-        ~NodeListGuard()
+        ~SpecialLayerCaptureGuard()
         {
             auto& params = RSUniRenderThread::Instance().GetRSRenderThreadParams();
             if (hadRenderThreadParams_ && params != nullptr) {
@@ -322,8 +322,8 @@ public:
             RSUniRenderThread::SetCaptureParam(captureParam_);
         }
 
-        NodeListGuard(const NodeListGuard&) = delete;
-        NodeListGuard& operator=(const NodeListGuard&) = delete;
+        SpecialLayerCaptureGuard(const SpecialLayerCaptureGuard&) = delete;
+        SpecialLayerCaptureGuard& operator=(const SpecialLayerCaptureGuard&) = delete;
 
         SpecialLayerRenderParam specialLayerParam_;
         bool hadRenderThreadParams_ = false;

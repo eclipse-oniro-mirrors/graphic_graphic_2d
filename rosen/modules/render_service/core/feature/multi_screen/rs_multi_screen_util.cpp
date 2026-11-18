@@ -1044,10 +1044,9 @@ std::pair<MultiScreenParams, bool> RSMultiScreenUtil::GetMultiScreenParams(RSLog
 }
 
 namespace {
-// Runs on the RSUniRenderThread and consumes only the main-thread snapshot of drawables (see
-// RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot). Drawables and their params are the
-// render-thread side representation, so this never touches RSRenderNodeMap or RSRenderNode.
-// The snapshot already contains main-window-type surfaces only, hence no node type check here.
+// Runs on the render thread and reads only the main-thread drawable snapshot (see
+// RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot), never RSRenderNodeMap or RSRenderNode.
+// The snapshot already holds main-window surfaces only, so no node type check is needed.
 Drawing::RectI ComputeRecordBBox(const std::vector<RSRenderNodeDrawableAdapter::WeakPtr>& recordDrawables)
 {
     int32_t left = INT32_MAX;
@@ -1268,13 +1267,10 @@ WindowRecordDisplayOutcome PrepareRecordDisplayBBox(RSScreenRenderNodeDrawable& 
 
 } // namespace
 
-// Draws one window-record frame; the cancel guard spans the acquired-frame lifetime and is disarmed
-// only after PostProcess publishes it.
+// Draws one window-record frame; the cancel guard is disarmed only after PostProcess publishes it.
 void RSMultiScreenUtil::RenderWindowRecordFrame(
     RSScreenRenderNodeDrawable& drawable, RSUniRenderVirtualProcessor& recordProcessor)
 {
-    // RSRenderFrame auto-flushes in its destructor; any exit below that skips PostProcess must cancel
-    // the acquired frames.
     WindowRecordFrameCancelGuard frameCancelGuard(recordProcessor);
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if (!recordProcessor.InitForRenderThread(drawable, renderEngine, 0)) {
@@ -1299,6 +1295,8 @@ void RSMultiScreenUtil::RenderWindowRecordFrame(
         RS_LOGE("RSMultiScreenUtil::%{public}s canvas is null", __func__);
         return;
     }
+    // The processor creates a fresh canvas per frame, so this flag cannot persist across modes.
+    curCanvas->SetDisableFilterCache(true);
     curCanvas->Save();
     curCanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
     drawable.RSRenderNodeDrawable::OnDraw(*curCanvas);
@@ -1318,8 +1316,7 @@ struct WindowRecordSourceSnapshot {
     Drawing::RectI bbox;
 };
 
-// Display-level source gates; reads only the main-thread drawable snapshot, staying off
-// RSRenderNode/RSRenderNodeMap on the render thread.
+// Display-level source gates over the same main-thread drawable snapshot.
 bool ResolveWindowRecordSource(RSLogicalDisplayRenderNodeDrawable& drawable, RSLogicalDisplayRenderParams& params,
     WindowRecordSourceSnapshot& source)
 {
@@ -1438,14 +1435,14 @@ void UpdateWindowRecordFrameRect(RSUniRenderVirtualProcessor& processor, const D
 
 } // namespace
 
-// Captures recorded surfaces with the record-only filter state; NodeListGuard restores the shared
-// filter lists/record flag and the render flags are restored below, on every exit path.
+// Captures recorded surfaces with the record-only filter state. The guard restores the shared
+// filter lists and capture flag and the render flags are restored below, on every exit path.
 void RSMultiScreenUtil::CaptureWindowRecordSurfaces(RSPaintFilterCanvas& canvas,
     RSScreenRenderParams* screenParams, RSLogicalDisplayRenderParams& params,
     RSRenderNodeDrawable& sourceDrawable, const RSWindowRecordConfig& config)
 {
     std::unordered_set<NodeId> ids(params.GetRecordWhiteListIds());
-    RSUniRenderThread::NodeListGuard nodeListGuard;
+    RSUniRenderThread::SpecialLayerCaptureGuard captureGuard;
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if (!uniParam || !screenParams) {
         RS_LOGE("RSMultiScreenUtil::%{public}s render thread or screen params is null", __func__);
@@ -1454,6 +1451,7 @@ void RSMultiScreenUtil::CaptureWindowRecordSurfaces(RSPaintFilterCanvas& canvas,
     }
     auto state = RSSpecialLayerUtils::BuildSpecialLayerRenderParam(*screenParams, params, false);
     state.whiteList = std::move(ids);
+    // Window record reuses the existing security-display whitelist gate.
     state.securityDisplay = true;
     uniParam->GetMutableSpecialLayerRenderParam() = state;
     RSUniRenderThread::SetCaptureParam(CaptureParam(false, false, true));
@@ -1463,11 +1461,14 @@ void RSMultiScreenUtil::CaptureWindowRecordSurfaces(RSPaintFilterCanvas& canvas,
     uniParam->SetOpDropped(false);
     const Drawing::Matrix parentSurfaceMatrix = RSRenderParams::GetParentSurfaceMatrix();
     RSRenderParams::SetParentSurfaceMatrix(canvas.GetTotalMatrix());
+    // Suppress color picking only for the offscreen record redraw, then restore the exact value.
+    const bool isDrawingOffscreenMirror = canvas.GetIsDrawingOffscreenMirror();
+    canvas.SetIsDrawingOffscreenMirror(true);
     sourceDrawable.RSRenderNodeDrawable::OnCapture(canvas);
+    canvas.SetIsDrawingOffscreenMirror(isDrawingOffscreenMirror);
     RSRenderParams::SetParentSurfaceMatrix(parentSurfaceMatrix);
     uniParam->SetOpDropped(isOpDropped);
     canvas.Restore();
-    RSUniRenderThread::ResetCaptureParam();
     RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s surfaces[%zu] fit[%d]", __func__,
         config.surfaceNodeIds.size(), static_cast<int>(config.renderFit));
 }
@@ -1477,22 +1478,19 @@ void RSMultiScreenUtil::HandleWindowRecordScreen(
     RSScreenRenderParams& params,
     const std::shared_ptr<RSProcessor>& processor)
 {
-    // No resolvable main window on this screen: skip before the processor requests an output
-    // buffer instead of publishing a blank frame.
-    bool hasRecordActiveDisplay = false;
-    for (const auto& displayDrawable : params.GetDisplayDrawables()) {
-        auto outcome = PrepareRecordDisplayBBox(drawable, displayDrawable);
-        if (outcome == WindowRecordDisplayOutcome::NOT_RECORD_ACTIVE) {
-            continue;
-        }
-        hasRecordActiveDisplay = true;
-        if (outcome == WindowRecordDisplayOutcome::SKIP_FRAME) {
-            return;
-        }
-    }
-    if (!hasRecordActiveDisplay) {
-        RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s no record-active display, skip without buffer request", __func__);
+    // Window record supports exactly one output display. Reject other topologies before changing
+    // display state or acquiring an output buffer.
+    const auto& displayDrawables = params.GetDisplayDrawables();
+    if (displayDrawables.size() != 1) {
         drawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
+        return;
+    }
+    auto outcome = PrepareRecordDisplayBBox(drawable, displayDrawables.front());
+    if (outcome != WindowRecordDisplayOutcome::RECORD_ACTIVE) {
+        if (outcome == WindowRecordDisplayOutcome::NOT_RECORD_ACTIVE) {
+            RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s no record-active display, skip without buffer request", __func__);
+            drawable.SetDrawSkipType(DrawSkipType::SKIP_FRAME);
+        }
         return;
     }
     if (!processor) {
@@ -1529,7 +1527,8 @@ void RSMultiScreenUtil::HandleWindowRecord(
         return;
     }
     const auto& config = params.GetWindowRecordConfig();
-    // An empty whitelist disables filtering; return before Save so the Save/Restore pair stays balanced.
+    // An empty record whitelist would disable filtering and capture every surface, so skip the
+    // frame; returning before Save also keeps the Save/Restore pair balanced.
     if (params.GetRecordWhiteListIds().empty()) {
         RS_LOGD("RSMultiScreenUtil::%{public}s empty record whitelist, skip frame", __func__);
         return;

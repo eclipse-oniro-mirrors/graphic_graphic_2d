@@ -29,38 +29,34 @@ namespace OHOS::Rosen {
 namespace {
 constexpr size_t MAX_RECORD_SURFACE_ANCESTOR_DEPTH = 256;
 
-struct WindowRecordSurfaceScope {
+struct WindowRecordSurface {
     bool paintable = false;
     NodeId displayId = INVALID_NODEID;
+    bool isMainWindow = false;
+    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable;
 };
 
 // Returns the real owning display and ancestor-aware paintability; stamped logicalDisplayNodeId_ is
 // stale after reparenting. Off-tree, display-less or over-deep chains fail closed.
-WindowRecordSurfaceScope ResolveWindowRecordSurfaceScope(const RSSurfaceRenderNode& surfaceNode)
+WindowRecordSurface ResolveWindowRecordSurfaceState(const RSSurfaceRenderNode& surfaceNode)
 {
-    WindowRecordSurfaceScope scope;
+    WindowRecordSurface surface;
     if (!surfaceNode.IsOnTheTree()) {
-        return scope;
+        return surface;
     }
-    scope.paintable = surfaceNode.ShouldPaint();
+    surface.paintable = surfaceNode.ShouldPaint();
     auto parent = surfaceNode.GetParent().lock();
     for (size_t depth = 0; parent != nullptr && depth < MAX_RECORD_SURFACE_ANCESTOR_DEPTH; ++depth) {
-        scope.paintable = scope.paintable && parent->ShouldPaint();
+        surface.paintable = surface.paintable && parent->ShouldPaint();
         if (parent->GetType() == RSRenderNodeType::LOGICAL_DISPLAY_NODE) {
-            scope.displayId = parent->GetId();
-            return scope;
+            surface.displayId = parent->GetId();
+            return surface;
         }
         parent = parent->GetParent().lock();
     }
     // Fail closed: a display-less or over-deep chain opens neither gate.
-    return WindowRecordSurfaceScope{};
+    return WindowRecordSurface{};
 }
-
-struct WindowRecordSurface {
-    WindowRecordSurfaceScope scope;
-    bool isMainWindow = false;
-    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable;
-};
 
 // Cache each configured node and its parent-chain state once for anchor selection and collection.
 std::vector<WindowRecordSurface> ResolveWindowRecordSurfaces(
@@ -73,10 +69,8 @@ std::vector<WindowRecordSurface> ResolveWindowRecordSurfaces(
         if (surfaceNode == nullptr) {
             continue;
         }
-        WindowRecordSurface surface {
-            .scope = ResolveWindowRecordSurfaceScope(*surfaceNode),
-            .isMainWindow = surfaceNode->IsMainWindowType(),
-        };
+        auto surface = ResolveWindowRecordSurfaceState(*surfaceNode);
+        surface.isMainWindow = surfaceNode->IsMainWindowType();
         if (surface.isMainWindow) {
             surface.drawable = surfaceNode->GetRenderDrawable();
         }
@@ -150,7 +144,8 @@ std::unordered_set<NodeId> RSLogicalDisplayRenderNode::BuildEffectiveRecordWhite
             hasMainWindow = surfaceNode && surfaceNode->IsMainWindowType();
         }
     }
-    // Capture needs a live main window for bbox and source-display resolution.
+    // Only keep the non-zero ids when at least one main window resolves: capture needs it for bbox
+    // and source-display resolution, and an empty list makes the caller skip the frame.
     if (!hasMainWindow) {
         return {};
     }
@@ -170,18 +165,18 @@ void RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot(RSLogicalDisplayRen
     if (!context) {
         return;
     }
-    // Main thread, per-frame prepare: the only place allowed to query RSRenderNodeMap and to walk
-    // the node tree. The render thread later consumes just the snapshots written here.
+    // Main thread, per-frame prepare: the only place that may query RSRenderNodeMap and walk the
+    // node tree. The render thread later consumes just the snapshots written here.
     auto& nodeMap = context->GetNodeMap();
     param.recordWhiteListIds_ = BuildEffectiveRecordWhiteListIds();
     auto surfaces = ResolveWindowRecordSurfaces(nodeMap, windowRecordConfig_.surfaceNodeIds);
     std::shared_ptr<RSLogicalDisplayRenderNode> sourceDisplay;
     for (const auto& surface : surfaces) {
-        // A valid scope implies on-tree; the first main window with both drawables owns the recording.
-        if (!surface.isMainWindow || surface.drawable == nullptr || surface.scope.displayId == INVALID_NODEID) {
+        // A valid displayId implies on-tree; the first main window with both drawables owns the recording.
+        if (!surface.isMainWindow || surface.drawable == nullptr || surface.displayId == INVALID_NODEID) {
             continue;
         }
-        auto candidate = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(surface.scope.displayId);
+        auto candidate = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(surface.displayId);
         auto sourceDrawable = candidate ? candidate->GetRenderDrawable() : nullptr;
         if (sourceDrawable == nullptr) {
             continue;
@@ -202,7 +197,7 @@ void RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot(RSLogicalDisplayRen
     param.recordSurfaceDrawables_.reserve(surfaces.size());
     // Filter after anchor selection so earlier non-main surfaces still contribute paintability.
     for (auto& surface : surfaces) {
-        if (surface.scope.displayId != anchorDisplayId || !surface.scope.paintable) {
+        if (surface.displayId != anchorDisplayId || !surface.paintable) {
             continue;
         }
         param.hasPaintableRecordSurface_ = true;

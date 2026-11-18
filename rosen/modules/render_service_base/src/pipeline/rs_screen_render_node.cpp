@@ -103,7 +103,7 @@ void RSScreenRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visi
     ApplyModifiers();
 #ifdef RS_ENABLE_GPU
     // The screen prepares before its children: pick the record owner now so a later record-active
-    // child is cleared before it can publish. Gated by RS_ENABLE_GPU, like the snapshot staging.
+    // child is cleared before it can publish.
     NormalizeWindowRecordDisplays();
 #endif
     visitor->QuickPrepareScreenRenderNode(*this, isParentPrepareInReverseOrder);
@@ -269,7 +269,8 @@ void RSScreenRenderNode::UpdateRenderParams()
     }
     screenParams->hasWindowRecordDisplay_ = hasWindowRecordChild;
     // Either/or, never merged: the first record-active display owns its mixed id list (later ones
-    // were cleared), otherwise the screen property white list applies. Consumers read this one list.
+    // were cleared), otherwise the screen property white list applies. The special-layer state
+    // checks read this one list.
     std::unordered_set<NodeId> effectiveWhiteList = recordDisplayNode != nullptr
         ? recordDisplayNode->BuildEffectiveRecordWhiteListIds()
         : screenProperty_.GetWhiteList();

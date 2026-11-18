@@ -49,7 +49,7 @@ T GetData()
     return object;
 }
 
-inline RSWindowRecordConfig GetRSWindowRecordConfigFromData()
+RSWindowRecordConfig GetWindowRecordConfigFromData()
 {
     RSWindowRecordConfig recordConfig;
     recordConfig.renderFit = GetData<bool>() ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
@@ -223,13 +223,12 @@ bool DoSetVirtualScreenMuteStatus()
 
 bool DoSetWindowRecordConfig()
 {
-    // test
     RSDisplayNodeConfig config;
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
     if (!displayNode) {
         return false;
     }
-    RSWindowRecordConfig recordConfig = GetRSWindowRecordConfigFromData();
+    RSWindowRecordConfig recordConfig = GetWindowRecordConfigFromData();
     displayNode->SetWindowRecordConfig(recordConfig);
     return true;
 }

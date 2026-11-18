@@ -566,32 +566,6 @@ public:
         return true;
     }
 
-    static bool Marshalling(Parcel& parcel, const RSDisplayNodeConfig& val)
-    {
-        return Marshalling(parcel, val.screenId) &&
-               Marshalling(parcel, static_cast<uint8_t>(val.displayMode)) &&
-               Marshalling(parcel, val.mirrorNodeId) &&
-               Marshalling(parcel, val.isSync) &&
-               Marshalling(parcel, val.mirrorSourceRotation) &&
-               Marshalling(parcel, val.positionZ);
-    }
-
-    static bool Unmarshalling(Parcel& parcel, RSDisplayNodeConfig& val)
-    {
-        uint8_t mode = 0;
-        if (!Unmarshalling(parcel, val.screenId) || !Unmarshalling(parcel, mode)) {
-            return false;
-        }
-        // Clamp out-of-range values to INVALID instead of storing an out-of-range enum value
-        // coming from an untrusted parcel.
-        val.displayMode = mode <= static_cast<uint8_t>(DisplayMode::INDEPENDENT)
-            ? static_cast<DisplayMode>(mode) : DisplayMode::INVALID;
-        return Unmarshalling(parcel, val.mirrorNodeId) &&
-               Unmarshalling(parcel, val.isSync) &&
-               Unmarshalling(parcel, val.mirrorSourceRotation) &&
-               Unmarshalling(parcel, val.positionZ);
-    }
-
     template<typename T, typename... Args>
     static bool Marshalling(Parcel& parcel, const T& first, const Args&... args)
     {

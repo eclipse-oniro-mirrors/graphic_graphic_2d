@@ -174,11 +174,9 @@ public:
         needSync_ = true;
     }
     const RSWindowRecordConfig& GetWindowRecordConfig() const { return windowRecordConfig_; }
-    // Window-record snapshots, resolved per frame on the RS main thread (see
-    // RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot). The render thread consumes only
-    // these: drawables are the render-thread side representation, so locking them and reading
-    // their params is safe. It must never touch RSRenderNodeMap or RSRenderNode, whose state
-    // (node map containers, parent chain, node members) is main-thread exclusive and unlocked.
+    // Window-record snapshots resolved per frame on the RS main thread (see
+    // RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot). The render thread must never touch
+    // RSRenderNodeMap or RSRenderNode, whose state is main-thread exclusive and unlocked.
     const std::vector<DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr>& GetRecordSurfaceDrawables() const
     {
         return recordSurfaceDrawables_;
@@ -233,11 +231,8 @@ private:
 
     RSWindowRecordConfig windowRecordConfig_;
     bool isOnVirtualScreen_ = false;
-    // Main-thread resolved window-record snapshots (thread contract: GetRecordSurfaceDrawables()).
-    // recordSurfaceDrawables_ holds only paintable main-window surfaces under the anchor, so the render
-    // thread needs no type check; recordWhiteListIds_ mixes persistent and surface node ids for
-    // record-only matching; recordSourceDisplayDrawable_ is a weak snapshot of the source display;
-    // hasPaintableRecordSurface_ requires the surface and all ancestors to paint.
+    // Main-thread resolved snapshots. The drawables are already filtered to paintable main
+    // windows under the anchor; the ids mix persistent and surface node ids for record-only matching.
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr> recordSurfaceDrawables_;
     std::unordered_set<NodeId> recordWhiteListIds_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr recordSourceDisplayDrawable_;

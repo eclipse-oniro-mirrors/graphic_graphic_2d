@@ -13,13 +13,10 @@
  * limitations under the License.
  */
 
-#include <vector>
-
 #include "gtest/gtest.h"
+#include "command/rs_ui_director_command.h"
 #include "common/rs_common_def.h"
 #include "include/command/rs_display_node_command.h"
-#include "common/rs_common_def.h"
-#include "command/rs_ui_director_command.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "screen_manager/rs_screen_property.h"
@@ -430,19 +427,29 @@ HWTEST_F(RSDisplayNodeCommandTest, SetDisplayModeInvalidRotation001, TestSize.Le
 }
 
 /**
-/**
  * @tc.name: SetWindowRecordConfigMissingNode001
- * @tc.desc: SetWindowRecordConfig is a no-op for a missing display node.
+ * @tc.desc: SetWindowRecordConfig for a missing display node leaves an existing virtual display untouched.
  * @tc.type: FUNC
  */
 HWTEST_F(RSDisplayNodeCommandTest, SetWindowRecordConfigMissingNode001, TestSize.Level1)
 {
     RSContext context;
+    constexpr ScreenId screenId = 1;
+    RegisterScreenNode(context, TEST_SCREEN_NODE_ID, screenId, true);
+    constexpr NodeId displayNodeId = 1;
+    RSDisplayNodeConfig config;
+    config.screenId = screenId;
+    DisplayNodeCommandHelper::Create(context, displayNodeId, config);
+    auto displayNode = context.GetNodeMap().GetRenderNode<RSLogicalDisplayRenderNode>(displayNodeId);
+    ASSERT_NE(displayNode, nullptr);
+    ASSERT_TRUE(displayNode->IsOnVirtualScreen());
+
+    constexpr NodeId missingId = displayNodeId + 1;
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = { 10, 11 };
-    NodeId missingId = static_cast<NodeId>(5);
     DisplayNodeCommandHelper::SetWindowRecordConfig(context, missingId, recordConfig);
-    EXPECT_EQ(context.GetNodeMap().GetRenderNode<RSLogicalDisplayRenderNode>(missingId), nullptr);
+    EXPECT_FALSE(displayNode->IsWindowRecordActive());
+    EXPECT_TRUE(displayNode->GetWindowRecordConfig().surfaceNodeIds.empty());
 }
 
 /**
@@ -559,6 +566,83 @@ HWTEST_F(RSDisplayNodeCommandTest, SetWindowRecordConfigTooManyIds001, TestSize.
     oversizedConfig.surfaceNodeIds.assign(MAX_WINDOW_RECORD_SURFACE_NUM + 1, 10);
     DisplayNodeCommandHelper::SetWindowRecordConfig(context, displayNodeId, oversizedConfig);
     EXPECT_EQ(displayNode->GetWindowRecordConfig(), recordConfig);
+}
+
+/**
+ * @tc.name: SetWindowRecordConfigOversizedKeepsMirror001
+ * @tc.desc: An oversized record config is rejected without dropping the mirror or the old record state.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDisplayNodeCommandTest, SetWindowRecordConfigOversizedKeepsMirror001, TestSize.Level1)
+{
+    RSContext context;
+    constexpr ScreenId screenId = 1;
+    RegisterScreenNode(context, TEST_SCREEN_NODE_ID, screenId, true);
+
+    constexpr NodeId mirrorSourceId = 2;
+    constexpr NodeId displayNodeId = 1;
+    RSDisplayNodeConfig config;
+    config.screenId = screenId;
+    DisplayNodeCommandHelper::Create(context, mirrorSourceId, config);
+    config.displayMode = DisplayMode::MIRROR;
+    config.mirrorNodeId = mirrorSourceId;
+    DisplayNodeCommandHelper::Create(context, displayNodeId, config);
+    auto displayNode = context.GetNodeMap().GetRenderNode<RSLogicalDisplayRenderNode>(displayNodeId);
+    ASSERT_NE(displayNode, nullptr);
+    ASSERT_TRUE(displayNode->IsOnVirtualScreen());
+    ASSERT_FALSE(displayNode->GetMirrorSource().expired());
+
+    RSWindowRecordConfig oversizedConfig;
+    oversizedConfig.surfaceNodeIds.assign(MAX_WINDOW_RECORD_SURFACE_NUM + 1, 10);
+    DisplayNodeCommandHelper::SetWindowRecordConfig(context, displayNodeId, oversizedConfig);
+    // The node setter keeps the previous (empty) config and the mirror must survive the rejection.
+    EXPECT_FALSE(displayNode->IsWindowRecordActive());
+    EXPECT_TRUE(displayNode->GetWindowRecordConfig().surfaceNodeIds.empty());
+    EXPECT_EQ(displayNode->GetDisplayMode(), DisplayMode::MIRROR);
+    auto mirrorSource = displayNode->GetMirrorSource().lock();
+    ASSERT_NE(mirrorSource, nullptr);
+    EXPECT_EQ(mirrorSource->GetId(), mirrorSourceId);
+
+    // An already stored record config is kept as well.
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { 10 };
+    DisplayNodeCommandHelper::SetWindowRecordConfig(context, displayNodeId, recordConfig);
+    ASSERT_TRUE(displayNode->IsWindowRecordActive());
+    DisplayNodeCommandHelper::SetWindowRecordConfig(context, displayNodeId, oversizedConfig);
+    EXPECT_EQ(displayNode->GetWindowRecordConfig(), recordConfig);
+}
+
+/**
+ * @tc.name: SetWindowRecordConfigEmptyKeepsMirror001
+ * @tc.desc: An empty record config only stops recording and keeps the virtual screen mirror and display mode.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDisplayNodeCommandTest, SetWindowRecordConfigEmptyKeepsMirror001, TestSize.Level1)
+{
+    RSContext context;
+    constexpr ScreenId screenId = 1;
+    RegisterScreenNode(context, TEST_SCREEN_NODE_ID, screenId, true);
+
+    constexpr NodeId mirrorSourceId = 2;
+    constexpr NodeId displayNodeId = 1;
+    RSDisplayNodeConfig config;
+    config.screenId = screenId;
+    DisplayNodeCommandHelper::Create(context, mirrorSourceId, config);
+    config.displayMode = DisplayMode::MIRROR;
+    config.mirrorNodeId = mirrorSourceId;
+    DisplayNodeCommandHelper::Create(context, displayNodeId, config);
+    auto displayNode = context.GetNodeMap().GetRenderNode<RSLogicalDisplayRenderNode>(displayNodeId);
+    ASSERT_NE(displayNode, nullptr);
+    ASSERT_TRUE(displayNode->IsOnVirtualScreen());
+    ASSERT_FALSE(displayNode->GetMirrorSource().expired());
+
+    DisplayNodeCommandHelper::SetWindowRecordConfig(context, displayNodeId, RSWindowRecordConfig{});
+    EXPECT_FALSE(displayNode->IsWindowRecordActive());
+    EXPECT_TRUE(displayNode->GetWindowRecordConfig().surfaceNodeIds.empty());
+    EXPECT_EQ(displayNode->GetDisplayMode(), DisplayMode::MIRROR);
+    auto mirrorSource = displayNode->GetMirrorSource().lock();
+    ASSERT_NE(mirrorSource, nullptr);
+    EXPECT_EQ(mirrorSource->GetId(), mirrorSourceId);
 }
 
 /**

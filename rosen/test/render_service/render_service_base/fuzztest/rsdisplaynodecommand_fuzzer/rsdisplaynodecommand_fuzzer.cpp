@@ -21,6 +21,8 @@
 
 #include "command/rs_display_node_command.h"
 #include "pipeline/rs_render_node_gc.h"
+#include "pipeline/rs_screen_render_node.h"
+#include "screen_manager/rs_screen_property.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -28,6 +30,19 @@ namespace {
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos;
+constexpr ScreenId TEST_SCREEN_ID = 1;
+constexpr NodeId TEST_SCREEN_NODE_ID = 100;
+constexpr NodeId TEST_DISPLAY_NODE_ID = 1;
+
+void RegisterScreenNode(RSContext& context)
+{
+    auto screenRenderNode = std::make_shared<RSScreenRenderNode>(TEST_SCREEN_NODE_ID, TEST_SCREEN_ID,
+        context.weak_from_this());
+    RSScreenProperty property;
+    property.Set(ScreenPropertyType::IS_VIRTUAL, sptr<ScreenProperty<bool>>::MakeSptr(true));
+    screenRenderNode->SetScreenProperty(property);
+    context.GetMutableNodeMap().RegisterRenderNode(screenRenderNode);
+}
 } // namespace
 
 /*
@@ -142,12 +157,20 @@ bool DoSetVirtualScreenMuteStatus(const uint8_t* data, size_t size, RSContext& c
     return true;
 }
 
-bool DoSetWindowRecordConfig(RSContext& context)
+bool DoSetWindowRecordConfig()
 {
-    NodeId id = GetData<NodeId>();
-    RSWindowRecordConfig recordConfig = GetWindowRecordConfigFromData();
-    DisplayNodeCommandHelper::SetWindowRecordConfig(context, id, recordConfig);
+    // A dedicated context keeps the fixed virtual screen and display away from the random fixtures above.
+    std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
+    RegisterScreenNode(*context);
+    RSDisplayNodeConfig displayConfig;
+    displayConfig.screenId = TEST_SCREEN_ID;
+    DisplayNodeCommandHelper::Create(*context, TEST_DISPLAY_NODE_ID, displayConfig);
 
+    RSWindowRecordConfig recordConfig = GetWindowRecordConfigFromData();
+    DisplayNodeCommandHelper::SetWindowRecordConfig(*context, TEST_DISPLAY_NODE_ID, recordConfig);
+
+    context = nullptr;
+    RSRenderNodeGC::Instance().ReleaseNodeMemory();
     return true;
 }
 } // namespace Rosen
@@ -168,7 +191,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSetDisplayMode(data, size, *context);
     OHOS::Rosen::DoSetBootAnimation(data, size, *context);
     OHOS::Rosen::DoSetVirtualScreenMuteStatus(data, size, *context);
-    OHOS::Rosen::DoSetWindowRecordConfig(*context);
+    OHOS::Rosen::DoSetWindowRecordConfig();
 
     context = nullptr;
     OHOS::Rosen::RSRenderNodeGC::Instance().ReleaseNodeMemory();

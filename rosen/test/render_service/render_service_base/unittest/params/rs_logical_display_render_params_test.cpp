@@ -151,7 +151,6 @@ HWTEST_F(RSLogicalDisplayRenderParamsTest, WindowRecordFieldsOnSync, TestSize.Le
     std::unique_ptr<RSRenderParams> target = std::make_unique<RSLogicalDisplayRenderParams>(id);
     source.OnSync(target);
     auto targetParams = static_cast<RSLogicalDisplayRenderParams*>(target.get());
-    ASSERT_NE(targetParams, nullptr);
     EXPECT_EQ(targetParams->GetWindowRecordConfig(), recordConfig);
     EXPECT_TRUE(targetParams->IsRecordSessionActive());
     ASSERT_EQ(targetParams->GetRecordSurfaceDrawables().size(), 1u);

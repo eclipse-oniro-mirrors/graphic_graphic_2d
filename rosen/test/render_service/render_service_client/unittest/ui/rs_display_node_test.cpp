@@ -539,7 +539,6 @@ HWTEST_F(RSDisplayNodeTest, SetWindowRecordConfigTest002, TestSize.Level1)
 
     RSWindowRecordConfig oversizedConfig;
     oversizedConfig.surfaceNodeIds.assign(MAX_WINDOW_RECORD_SURFACE_NUM + 1, 1);
-    ASSERT_GT(oversizedConfig.surfaceNodeIds.size(), MAX_WINDOW_RECORD_SURFACE_NUM);
 
     auto transactionProxy = RSTransactionProxy::GetInstance();
     ASSERT_NE(transactionProxy, nullptr);

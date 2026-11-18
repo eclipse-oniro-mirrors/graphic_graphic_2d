@@ -56,8 +56,9 @@ public:
     void SetUp() override;
     void TearDown() override;
 
-    // Builds record fixture nodes with the drawable, tree flag and display stamp the snapshot walk reads,
-    // registering each node in the context map; stampedDisplayId stamps a deliberately stale display.
+    // Builds record fixture nodes with the drawable and tree flag the snapshot walk reads, registering each node in
+    // the context map. The snapshot scopes records by the real parent chain; stampedDisplayId only lets a test inject
+    // a stale display stamp that is expected to be ignored.
     static std::shared_ptr<RSLogicalDisplayRenderNode> CreateRecordDisplay(
         const std::shared_ptr<RSContext>& rsContext, NodeId id);
     static std::shared_ptr<RSSurfaceRenderNode> CreateRecordSurface(const std::shared_ptr<RSContext>& rsContext,
@@ -1237,12 +1238,9 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordSnapshotWithoutMainWindowDi
     constexpr NodeId displayId = 30;
     constexpr NodeId childId = 31;
     constexpr LeashPersistentId childLeashId = 1003;
-    RSDisplayNodeConfig displayConfig;
-    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
-    RSSurfaceRenderNodeConfig childConfig { .id = childId, .nodeType = RSSurfaceNodeType::LEASH_WINDOW_NODE };
-    auto childNode = std::make_shared<RSSurfaceRenderNode>(childConfig, rsContext);
-    auto& nodeMap = rsContext->GetMutableNodeMap();
-    nodeMap.renderNodeMap_[ExtractPid(childId)][childId] = childNode;
+    auto display = CreateRecordDisplay(rsContext, displayId);
+    // Only a leash child is configured, so no main window can enable capture.
+    CreateRecordSurface(rsContext, display, childId, RSSurfaceNodeType::LEASH_WINDOW_NODE, false, true, false);
 
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = { childId, childLeashId };
@@ -1286,7 +1284,6 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordCreatedInactiveThenSetterAc
     display->SetWindowRecordConfig(recordConfig);
     EXPECT_TRUE(display->IsWindowRecordActive());
     EXPECT_EQ(display->GetWindowRecordConfig(), recordConfig);
-    EXPECT_EQ(display->GetWindowRecordConfig().surfaceNodeIds.size(), 2u);
 }
 
 /**
@@ -1331,7 +1328,8 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordVirtualPhysicalAndParentles
 
 /**
  * @tc.name: WindowRecordRejectsOverLimitConfigTest
- * @tc.desc: Verify 64 ids are accepted while 65 ids are rejected and the previous config is kept
+ * @tc.desc: Verify a config at MAX_WINDOW_RECORD_SURFACE_NUM ids is accepted while one id above the cap is
+ * rejected and the previously accepted config is kept
  * @tc.type: FUNC
  * @tc.require: issues/26744
  */
@@ -1365,18 +1363,8 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordEmptyAndZeroWhitelistTest, 
     constexpr NodeId displayId = 6500;
     constexpr NodeId mainId = 6501;
     auto rsContext = std::make_shared<RSContext>();
-    RSDisplayNodeConfig config;
-    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config, rsContext);
-    display->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(display);
-    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
-    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
-    mainNode->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(mainNode);
-    mainNode->isOnTheTree_ = true;
-    mainNode->logicalDisplayNodeId_ = displayId;
-    display->AddChild(mainNode);
-    auto& nodeMap = rsContext->GetMutableNodeMap();
-    nodeMap.renderNodeMap_[ExtractPid(displayId)][displayId] = display;
-    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+    auto display = CreateRecordDisplay(rsContext, displayId);
+    CreateRecordSurface(rsContext, display, mainId, RSSurfaceNodeType::APP_WINDOW_NODE, true);
 
     RSWindowRecordConfig emptyConfig;
     display->SetWindowRecordConfig(emptyConfig);
@@ -1445,15 +1433,9 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordMissingNodeAndDrawableTest,
     constexpr NodeId childId = 6702;
     constexpr NodeId missingId = 6703;
     auto rsContext = std::make_shared<RSContext>();
-    RSDisplayNodeConfig config;
-    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config, rsContext);
-    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
-    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
-    RSSurfaceRenderNodeConfig childConfig { .id = childId, .nodeType = RSSurfaceNodeType::LEASH_WINDOW_NODE };
-    auto childNode = std::make_shared<RSSurfaceRenderNode>(childConfig, rsContext);
-    auto& nodeMap = rsContext->GetMutableNodeMap();
-    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
-    nodeMap.renderNodeMap_[ExtractPid(childId)][childId] = childNode;
+    auto display = CreateRecordDisplay(rsContext, displayId);
+    CreateRecordSurface(rsContext, display, mainId, RSSurfaceNodeType::APP_WINDOW_NODE, true, true, false);
+    CreateRecordSurface(rsContext, display, childId, RSSurfaceNodeType::LEASH_WINDOW_NODE, true, true, false);
 
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = { mainId, childId, missingId };
@@ -1479,18 +1461,8 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordOffTreeSourceDisplayTest, T
     constexpr NodeId displayId = 6800;
     constexpr NodeId mainId = 6801;
     auto rsContext = std::make_shared<RSContext>();
-    RSDisplayNodeConfig config;
-    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config, rsContext);
-    display->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(display);
-    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
-    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
-    mainNode->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(mainNode);
-    mainNode->logicalDisplayNodeId_ = displayId;
-    mainNode->isOnTheTree_ = false;
-    display->AddChild(mainNode);
-    auto& nodeMap = rsContext->GetMutableNodeMap();
-    nodeMap.renderNodeMap_[ExtractPid(displayId)][displayId] = display;
-    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+    auto display = CreateRecordDisplay(rsContext, displayId);
+    auto mainNode = CreateRecordSurface(rsContext, display, mainId, RSSurfaceNodeType::APP_WINDOW_NODE, false);
 
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = { mainId };
@@ -1562,27 +1534,9 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordOffTreeMainExcludedFromGeom
     constexpr NodeId displayId = 7100;
     constexpr NodeId offTreeMainId = 7101;
     constexpr NodeId onTreeMainId = 7102;
-    RSDisplayNodeConfig displayConfig;
-    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
-    display->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(display);
-
-    RSSurfaceRenderNodeConfig offTreeConfig { .id = offTreeMainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
-    auto offTreeMain = std::make_shared<RSSurfaceRenderNode>(offTreeConfig, rsContext);
-    offTreeMain->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(offTreeMain);
-    offTreeMain->isOnTheTree_ = false;
-    offTreeMain->logicalDisplayNodeId_ = displayId;
-    display->AddChild(offTreeMain);
-    RSSurfaceRenderNodeConfig onTreeConfig { .id = onTreeMainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
-    auto onTreeMain = std::make_shared<RSSurfaceRenderNode>(onTreeConfig, rsContext);
-    onTreeMain->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(onTreeMain);
-    onTreeMain->isOnTheTree_ = true;
-    onTreeMain->logicalDisplayNodeId_ = displayId;
-    display->AddChild(onTreeMain);
-
-    auto& nodeMap = rsContext->GetMutableNodeMap();
-    nodeMap.renderNodeMap_[ExtractPid(displayId)][displayId] = display;
-    nodeMap.renderNodeMap_[ExtractPid(offTreeMainId)][offTreeMainId] = offTreeMain;
-    nodeMap.renderNodeMap_[ExtractPid(onTreeMainId)][onTreeMainId] = onTreeMain;
+    auto display = CreateRecordDisplay(rsContext, displayId);
+    CreateRecordSurface(rsContext, display, offTreeMainId, RSSurfaceNodeType::APP_WINDOW_NODE, false);
+    CreateRecordSurface(rsContext, display, onTreeMainId, RSSurfaceNodeType::APP_WINDOW_NODE, true);
 
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = { offTreeMainId, onTreeMainId };
@@ -1612,27 +1566,13 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordPaintableChildWithoutMainDr
     constexpr NodeId displayId = 7200;
     constexpr NodeId mainId = 7201;
     constexpr NodeId childId = 7202;
-    RSDisplayNodeConfig displayConfig;
-    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
-    display->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(display);
+    auto display = CreateRecordDisplay(rsContext, displayId);
 
     // On-tree and visible but drawable-less, so it cannot anchor and its child must not stand in.
-    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
-    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
-    mainNode->isOnTheTree_ = true;
-    mainNode->logicalDisplayNodeId_ = displayId;
-    display->AddChild(mainNode);
-    RSSurfaceRenderNodeConfig childConfig { .id = childId, .nodeType = RSSurfaceNodeType::LEASH_WINDOW_NODE };
-    auto childNode = std::make_shared<RSSurfaceRenderNode>(childConfig, rsContext);
-    childNode->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(childNode);
-    childNode->isOnTheTree_ = true;
-    childNode->logicalDisplayNodeId_ = displayId;
-    mainNode->AddChild(childNode);
-
-    auto& nodeMap = rsContext->GetMutableNodeMap();
-    nodeMap.renderNodeMap_[ExtractPid(displayId)][displayId] = display;
-    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
-    nodeMap.renderNodeMap_[ExtractPid(childId)][childId] = childNode;
+    auto mainNode = CreateRecordSurface(
+        rsContext, display, mainId, RSSurfaceNodeType::APP_WINDOW_NODE, true, true, false);
+    CreateRecordSurface(rsContext, mainNode, childId, RSSurfaceNodeType::LEASH_WINDOW_NODE, true,
+        true, true, displayId);
 
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = { mainId, childId };
@@ -1735,18 +1675,8 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, WindowRecordSessionClearingTest, TestSi
     constexpr NodeId displayId = 6900;
     constexpr NodeId mainId = 6901;
     auto rsContext = std::make_shared<RSContext>();
-    RSDisplayNodeConfig config;
-    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config, rsContext);
-    display->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(display);
-    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
-    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
-    mainNode->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterMock>(mainNode);
-    mainNode->isOnTheTree_ = true;
-    mainNode->logicalDisplayNodeId_ = displayId;
-    display->AddChild(mainNode);
-    auto& nodeMap = rsContext->GetMutableNodeMap();
-    nodeMap.renderNodeMap_[ExtractPid(displayId)][displayId] = display;
-    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+    auto display = CreateRecordDisplay(rsContext, displayId);
+    CreateRecordSurface(rsContext, display, mainId, RSSurfaceNodeType::APP_WINDOW_NODE, true);
 
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = { mainId };
