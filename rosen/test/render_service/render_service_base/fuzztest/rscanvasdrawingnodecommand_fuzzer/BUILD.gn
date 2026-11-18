@@ -47,8 +47,10 @@ ohos_fuzztest("RSCanvasDrawingNodeCommandFuzzTest") {
 
   external_deps = [
     "c_utils:utils",
+    "egl:libEGL",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
+    "opengles:libGLES",
     "zlib:libz",
   ]
 }

@@ -155,8 +155,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     // Node destruction is posted to RSBackgroundThread asynchronously. Wait for the queue to be
     // drained here, otherwise the background delete may overlap with the next iteration's node-map
     // traversal on the fuzzer thread, which ASan reports as heap-use-after-free.
-    if (RSSystemProperties::GetBgNodeReleaseEnabled()) {
-        RSBackgroundThread::Instance().PostSyncTask([]() {});
+    if (OHOS::Rosen::RSSystemProperties::GetBgNodeReleaseEnabled()) {
+        OHOS::Rosen::RSBackgroundThread::Instance().PostSyncTask([]() {});
     }
 
     return 0;
