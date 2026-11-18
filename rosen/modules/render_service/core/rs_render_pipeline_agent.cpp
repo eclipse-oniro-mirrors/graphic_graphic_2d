@@ -2241,10 +2241,11 @@ ErrCode RSRenderPipelineAgent::SetApsConfigParams(
     }
     if (event == ApsEventType::VCLD) {
         // FF_SURF:video content is opaque
-        auto it = params.find("FF_SURF");
-        if (it != params.end()) {
+        if (auto it = params.find("FF_SURF"); it != params.end()) {
             std::string surfaceOpaqueType = it->first;
-            RsCommonHook::Instance().SetSurfaceOpaqueType(surfaceOpaqueType);
+            RSMainThread::Instance()->PostTask([surfaceOpaqueType]() {
+                RsCommonHook::Instance().SetSurfaceOpaqueType(surfaceOpaqueType);
+            });
         }
         return ERR_OK;
     }
