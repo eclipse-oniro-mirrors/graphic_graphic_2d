@@ -262,7 +262,7 @@ int32_t RSInterfaces::SetScreenChangeCallback(const ScreenChangeCallback &callba
 
 sptr<IRemoteObject> RSInterfaces::GetConnectToRenderToken(ScreenId screenId)
 {
-    ROSEN_LOGD("RSInterfaces::%{public}s, %{public}" PRIu64, __func__, screenId);
+    RS_LOGI_LIMIT("RSInterfaces::%{public}s, %{public}" PRIu64, __func__, screenId);
     return renderServiceClient_->GetConnectToRenderToken(screenId);
 }
 
