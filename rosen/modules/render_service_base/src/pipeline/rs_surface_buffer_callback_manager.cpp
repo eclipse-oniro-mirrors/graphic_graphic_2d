@@ -25,6 +25,7 @@ namespace Rosen {
 constexpr uint64_t SURFACE_BUFFER_CALLBACK_LIMIT = 10000;
 #ifdef ROSEN_OHOS
 constexpr size_t MAX_BUFFERS_PER_PROCESS = 5;
+constexpr int32_t INVALID_FD = -1;
 #endif
 RSSurfaceBufferCallbackManager& RSSurfaceBufferCallbackManager::Instance()
 {
@@ -49,20 +50,49 @@ void RSSurfaceBufferCallbackManager::SetIsUniRender(bool isUniRender)
 }
 
 #ifdef ROSEN_OHOS
+// Set release fence for staged surface buffers, fence fd is owned by caller.
 void RSSurfaceBufferCallbackManager::SetReleaseFence(
     int releaseFenceFd, NodeId rootNodeId)
+{
+    SetReleaseFenceInner(releaseFenceFd, rootNodeId);
+}
+
+// Set release fence for staged surface buffers, prefer acquireFence when it is
+// valid and not signaled, otherwise fall back to releaseFenceFd (INVALID_FD here).
+void RSSurfaceBufferCallbackManager::SetReleaseFence(
+    const sptr<SyncFence>& acquireFence, NodeId rootNodeId)
+{
+    SetReleaseFenceInner(INVALID_FD, rootNodeId, acquireFence);
+}
+
+// Update release fences of staged buffers matching rootNodeId. Fence source:
+// dup'ed fd from acquireFence if valid and not signaled, releaseFenceFd otherwise.
+// releaseFenceFd keeps caller ownership, only the fd dup'ed inside is closed here.
+void RSSurfaceBufferCallbackManager::SetReleaseFenceInner(
+    int32_t releaseFenceFd, NodeId rootNodeId, const sptr<SyncFence>& acquireFence)
 {
     if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
         RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
         return;
     }
     std::lock_guard<std::mutex> lock { surfaceBufferOpItemMutex_ };
+    // no staged buffers, skip GetStatus/Dup syscalls for power saving
+    if (stagingSurfaceBufferIds_.empty()) {
+        return;
+    }
+    // dup once before the traversal and share it among matching entries
+    int32_t fenceFd = releaseFenceFd;
+    bool isFenceDuped = false;
+    if (acquireFence && acquireFence->GetStatus() != SIGNALED) {
+        fenceFd = acquireFence->Dup();
+        isFenceDuped = true;
+    }
     for (auto& [_, data] : stagingSurfaceBufferIds_) {
         auto& fences = data.releaseFences;
         size_t idx = 0;
         for (auto& fence : fences) {
             if (data.isRenderedFlags[idx] && data.rootNodeIds[idx] == rootNodeId) {
-                fence = new (std::nothrow) SyncFence(::dup(releaseFenceFd));
+                fence = new (std::nothrow) SyncFence(::dup(fenceFd));
                 if (!fence) {
                     RS_LOGE("RSSurfaceBufferCallbackManager::SetReleaseFence"
                         " Err on creating SyncFence");
@@ -70,6 +100,10 @@ void RSSurfaceBufferCallbackManager::SetReleaseFence(
             }
             ++idx;
         }
+    }
+    // close the fd dup'ed above, releaseFenceFd is owned by caller
+    if (isFenceDuped) {
+        ::close(fenceFd);
     }
 }
 #endif
