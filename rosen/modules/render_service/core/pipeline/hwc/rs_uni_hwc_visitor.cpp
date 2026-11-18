@@ -424,7 +424,7 @@ bool RSUniHwcVisitor::IsSurfaceOpaque(RSSurfaceRenderNode& node)
     if (auto consumer = surfaceHandler->GetConsumer()) {
         auto fwkType = consumer->GetSurfaceAppFrameworkType();
         auto surfaceOpaqueType = RsCommonHook::Instance().GetSurfaceOpaqueType();
-        return fwkType.find(surfaceOpaqueType) != std::string::npos;
+        return !surfaceOpaqueType.empty() && fwkType.find(surfaceOpaqueType) != std::string::npos;
     }
     return false;
 }
