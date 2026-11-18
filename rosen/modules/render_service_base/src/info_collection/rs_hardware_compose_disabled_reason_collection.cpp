@@ -14,10 +14,21 @@
  */
 
 #include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
+
+#include <cinttypes>
+#include <cstdarg>
+
+#include "common/rs_optional_trace.h"
 #include "platform/common/rs_log.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+// Buffer size for the formatted description, and for the final trace string that carries node name and id.
+constexpr size_t DESC_BUF_SIZE = 512;
+constexpr size_t FULL_BUF_SIZE = 1024;
+} // namespace
 HwcDisabledReasonCollection& HwcDisabledReasonCollection::GetInstance()
 {
     static HwcDisabledReasonCollection instance;
@@ -59,5 +70,31 @@ HwcDisabledReasonInfos HwcDisabledReasonCollection::GetHwcDisabledReasonInfo()
     return hwcDisabledReasonInfos;
 }
 // LCOV_EXCL_STOP
+
+void HwcDisabledReasonCollection::RecordHwcDisabledWithTrace(NodeId id, int32_t disabledReason,
+    const std::string& nodeName, const char* descFmt, ...)
+{
+    UpdateHwcDisabledReasonForDFX(id, disabledReason, nodeName);
+
+    char descBuf[DESC_BUF_SIZE] = {0};
+    char fullBuf[FULL_BUF_SIZE] = {0};
+
+    va_list vaList;
+    va_start(vaList, descFmt);
+    int ret = vsnprintf_s(descBuf, sizeof(descBuf), sizeof(descBuf) - 1, descFmt, vaList);
+    va_end(vaList);
+    if (ret < 0) {
+        RS_LOGE_LIMIT(__func__, __LINE__, "RecordHwcDisabledWithTrace vsnprintf_s desc failed, ret:%{public}d", ret);
+        return;
+    }
+
+    ret = snprintf_s(fullBuf, sizeof(fullBuf), sizeof(fullBuf) - 1,
+        "hwc debug: name:%s id:%" PRIu64 " %s", nodeName.c_str(), id, descBuf);
+    if (ret < 0) {
+        RS_LOGE_LIMIT(__func__, __LINE__, "RecordHwcDisabledWithTrace snprintf_s full failed, ret:%{public}d", ret);
+        return;
+    }
+    RS_OPTIONAL_TRACE_FMT("%s", fullBuf);
+}
 } // namespace Rosen
 } // namespace OHOS

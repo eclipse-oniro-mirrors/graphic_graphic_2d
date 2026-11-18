@@ -3068,7 +3068,9 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 !reply.WriteInt32(globalDirtyRegionInfo.commandCount) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.consumeBufferSize) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.frameAnimationCount) ||
-                !reply.WriteInt32(globalDirtyRegionInfo.mostSendingPidWhenDisplayNodeSkip)) {
+                !reply.WriteInt32(globalDirtyRegionInfo.mostSendingPidWhenDisplayNodeSkip) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.updateCacheSurfaceCount) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.skipCommitFrames)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_GLOBAL_DIRTY_REGION_INFO Write globalDirtyRegionInfo "
                         "failed!");
                 ret = ERR_INVALID_REPLY;
@@ -3080,7 +3082,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             if (!reply.WriteInt32(LayerComposeInfo.uniformRenderFrameNumber) ||
                 !reply.WriteInt32(LayerComposeInfo.offlineComposeFrameNumber) ||
                 !reply.WriteInt32(LayerComposeInfo.redrawFrameNumber) ||
-                !reply.WriteInt32(LayerComposeInfo.drawImageNumber)) {
+                !reply.WriteInt32(LayerComposeInfo.drawImageNumber) ||
+                !reply.WriteInt32(LayerComposeInfo.directCompositionFrameNumber)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_LAYER_COMPOSE_INFO Write LayerComposeInfo failed!");
                 ret = ERR_INVALID_REPLY;
             }

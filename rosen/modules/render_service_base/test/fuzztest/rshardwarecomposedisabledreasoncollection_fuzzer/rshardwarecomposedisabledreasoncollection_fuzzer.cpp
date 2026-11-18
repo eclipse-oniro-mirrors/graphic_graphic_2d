@@ -26,7 +26,8 @@ HwcDisabledReasonCollection* g_hwcdisabledreasoncollection = nullptr;
 
 namespace {
 constexpr uint8_t DO_METHOD_UPDATE_HWC_DISABLED_REASON = 0;
-constexpr uint8_t TARGET_SIZE = 1;
+constexpr uint8_t DO_METHOD_RECORD_HWC_DISABLED_WITH_TRACE = 1;
+constexpr uint8_t TARGET_SIZE = 2;
 
 void DoUpdateHwcDisabledReasonForDFX(FuzzedDataProvider& fdp)
 {
@@ -34,6 +35,15 @@ void DoUpdateHwcDisabledReasonForDFX(FuzzedDataProvider& fdp)
     int32_t disabledReason = fdp.ConsumeIntegral<int32_t>();
     std::string nodeName = fdp.ConsumeRandomLengthString(64);
     g_hwcdisabledreasoncollection->UpdateHwcDisabledReasonForDFX(id, disabledReason, nodeName);
+}
+
+void DoRecordHwcDisabledWithTrace(FuzzedDataProvider& fdp)
+{
+    NodeId id = fdp.ConsumeIntegral<NodeId>();
+    int32_t disabledReason = fdp.ConsumeIntegral<int32_t>();
+    std::string nodeName = fdp.ConsumeRandomLengthString(64);
+    g_hwcdisabledreasoncollection->RecordHwcDisabledWithTrace(id, disabledReason, nodeName,
+        "fuzz test reason:%d", disabledReason);
 }
 
 } // namespace
@@ -59,6 +69,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     switch (tarPos) {
         case OHOS::Rosen::DO_METHOD_UPDATE_HWC_DISABLED_REASON:
             OHOS::Rosen::DoUpdateHwcDisabledReasonForDFX(fdp);
+            break;
+        case OHOS::Rosen::DO_METHOD_RECORD_HWC_DISABLED_WITH_TRACE:
+            OHOS::Rosen::DoRecordHwcDisabledWithTrace(fdp);
             break;
         default:
             return -1;

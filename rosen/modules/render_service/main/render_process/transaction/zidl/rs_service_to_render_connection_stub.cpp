@@ -914,7 +914,9 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             if (!reply.WriteInt64(globalDirtyRegionInfo.globalDirtyRegionAreas) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.globalFramesNumber) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.skipProcessFramesNumber) ||
-                !reply.WriteInt32(globalDirtyRegionInfo.mostSendingPidWhenDisplayNodeSkip)) {
+                !reply.WriteInt32(globalDirtyRegionInfo.mostSendingPidWhenDisplayNodeSkip) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.updateCacheSurfaceCount) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.skipCommitFrames)) {
                 RS_LOGE(
                     "RSServiceToRenderStub::GET_GLOBAL_DIRTY_REGION_INFO Write globalDirtyRegionInfo failed!");
                 ret = ERR_INVALID_REPLY;
@@ -925,7 +927,8 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             const auto& layerComposeInfo = GetLayerComposeInfo();
             if (!reply.WriteInt32(layerComposeInfo.uniformRenderFrameNumber) ||
                 !reply.WriteInt32(layerComposeInfo.offlineComposeFrameNumber) ||
-                !reply.WriteInt32(layerComposeInfo.redrawFrameNumber)) {
+                !reply.WriteInt32(layerComposeInfo.redrawFrameNumber) ||
+                !reply.WriteInt32(layerComposeInfo.directCompositionFrameNumber)) {
                 RS_LOGE("RSServiceToRenderStub::GET_LAYER_COMPOSE_INFO Write LayerComposeInfo failed!");
                 ret = ERR_INVALID_REPLY;
             }
