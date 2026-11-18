@@ -153,16 +153,16 @@ HWTEST_F(RSSpecialLayerManagerTest, AutoSpecialLayerStateRecover, TestSize.Level
 {
     LeashPersistentId id1 = 1;
     LeashPersistentId id2 = 2;
-    RSSpecialLayerManager::ResetWhiteListRootId(id1);
+    WhiteListRootIdStack::ResetWhiteListRootId(id1);
     {
         AutoSpecialLayerStateRecover aslsr1(id1);
-        ASSERT_EQ(RSSpecialLayerManager::GetCurWhiteListRootId(), id1);
-        RSSpecialLayerManager::ResetWhiteListRootId(id2);
-        ASSERT_EQ(RSSpecialLayerManager::GetCurWhiteListRootId(), id1);
+        ASSERT_EQ(WhiteListRootIdStack::GetCurWhiteListRootId(), id1);
+        WhiteListRootIdStack::ResetWhiteListRootId(id2);
+        ASSERT_EQ(WhiteListRootIdStack::GetCurWhiteListRootId(), id1);
         AutoSpecialLayerStateRecover aslsr2(id2);
-        ASSERT_EQ(RSSpecialLayerManager::GetCurWhiteListRootId(), id2);
+        ASSERT_EQ(WhiteListRootIdStack::GetCurWhiteListRootId(), id2);
     }
-    ASSERT_EQ(RSSpecialLayerManager::GetCurWhiteListRootId(), INVALID_LEASH_PERSISTENTID);
+    ASSERT_EQ(WhiteListRootIdStack::GetCurWhiteListRootId(), INVALID_LEASH_PERSISTENTID);
 }
 
 /**
@@ -185,29 +185,30 @@ HWTEST_F(RSSpecialLayerManagerTest, AddIds002, TestSize.Level1)
 
 /**
  * @tc.name: ResetWhiteListRootId001
- * @tc.desc: test ResetWhiteListRootId while whiteListRootIds_ is empty
+ * @tc.desc: test ResetWhiteListRootId while the thread local whiteListRootId stack is empty
  * @tc.type: FUNC
  * @tc.require: issue19858
  */
 HWTEST_F(RSSpecialLayerManagerTest, ResetWhiteListRootId001, TestSize.Level2)
 {
-    // test whiteListRootIds_ is empty
-    RSSpecialLayerManager::ClearWhiteListRootIds();
+    // test the stack is empty
+    WhiteListRootIdStack::ClearWhiteListRootIds();
     LeashPersistentId persistentId = 1;
-    RSSpecialLayerManager::ResetWhiteListRootId(persistentId);
+    WhiteListRootIdStack::ResetWhiteListRootId(persistentId);
+    ASSERT_TRUE(WhiteListRootIdStack::IsWhiteListRootIdsEmpty());
 
-    // test top of whiteListRootIds_ mismatch
-    RSSpecialLayerManager::SetWhiteListRootId(persistentId);
-    RSSpecialLayerManager::ResetWhiteListRootId(persistentId + 1);
-    ASSERT_FALSE(RSSpecialLayerManager::whiteListRootIds_.empty());
+    // test top of the stack mismatch
+    WhiteListRootIdStack::SetWhiteListRootId(persistentId);
+    WhiteListRootIdStack::ResetWhiteListRootId(persistentId + 1);
+    ASSERT_FALSE(WhiteListRootIdStack::GetWhiteListRootIds().empty());
 
     // restore
-    RSSpecialLayerManager::ClearWhiteListRootIds();
+    WhiteListRootIdStack::ClearWhiteListRootIds();
 }
 
 /**
  * @tc.name: SetWhiteListRootId001
- * @tc.desc: test ResetWhiteListRootId while whiteListRootIds_ exceeds size limit
+ * @tc.desc: test ResetWhiteListRootId while the thread local whiteListRootId stack exceeds size limit
  * @tc.type: FUNC
  * @tc.require: issue19858
  */
@@ -215,12 +216,12 @@ HWTEST_F(RSSpecialLayerManagerTest, SetWhiteListRootId001, TestSize.Level2)
 {
     LeashPersistentId persistentId = 1;
     std::deque<LeashPersistentId> deq(MAX_SPECIAL_LAYER_NUM, persistentId);
-    RSSpecialLayerManager::whiteListRootIds_ = std::stack<LeashPersistentId>(deq);
+    WhiteListRootIdStack::GetWhiteListRootIds() = std::stack<LeashPersistentId>(deq);
 
-    RSSpecialLayerManager::SetWhiteListRootId(persistentId);
-    ASSERT_EQ(RSSpecialLayerManager::whiteListRootIds_.size(), MAX_SPECIAL_LAYER_NUM);
+    WhiteListRootIdStack::SetWhiteListRootId(persistentId);
+    ASSERT_EQ(WhiteListRootIdStack::GetWhiteListRootIds().size(), MAX_SPECIAL_LAYER_NUM);
     // restore
-    RSSpecialLayerManager::ClearWhiteListRootIds();
+    WhiteListRootIdStack::ClearWhiteListRootIds();
 }
 
 /**

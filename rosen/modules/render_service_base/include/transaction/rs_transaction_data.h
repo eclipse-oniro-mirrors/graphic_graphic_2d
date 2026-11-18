@@ -130,6 +130,11 @@ public:
         return marshallingIndex_;
     }
 
+    size_t GetSkippedCommandCount() const
+    {
+        return skippedCommandCount_;
+    }
+
     std::vector<std::tuple<NodeId, FollowType, std::unique_ptr<RSCommand>>>& GetPayload()
     {
         return payload_;
@@ -255,6 +260,7 @@ private:
     pid_t tid_ = 0;
     uint64_t index_ = 0;
     mutable size_t marshallingIndex_ = 0;
+    size_t skippedCommandCount_ = 0;
     bool needSync_ { false };
     bool needCloseSync_ { false };
     bool isCached_ { false };

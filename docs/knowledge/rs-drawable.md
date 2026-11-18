@@ -86,7 +86,6 @@ RSUniRenderProcessor::Process()
 
 - `OffscreenRotationInfo`：支持离屏旋转，临时创建 offscreen surface 绘制后旋转合并。
 - `RsSubThreadCache` / `RSDrawWindowCache`：UIFirst 子线程缓存绘制。
-- `CheckIfSurfaceSkipInMirrorOrScreenshot()`：镜像/截图时跳过特定 Surface。
 
 ## RenderNode 到 Drawable 的完整流程
 

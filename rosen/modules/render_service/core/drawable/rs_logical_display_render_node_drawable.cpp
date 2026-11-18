@@ -345,8 +345,8 @@ void RSLogicalDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     }
 
     auto specialLayerType = RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(*params, screenParam);
-    // Screenshot blackList, exclude surfaceNode in blackList while capturing displayNode
-    auto currentBlackList = RSUniRenderThread::Instance().GetBlackList();
+    const auto& currentBlackList = RSUniRenderThread::GetCaptureParam().isSnapshot_ ?
+        RSUniRenderThread::GetCaptureParam().blackList_ : RSUniRenderThread::Instance().GetBlackList();
     if (specialLayerType != DisplaySpecialLayerState::NO_SPECIAL_LAYER || screenProperty.GetIsSamplingOn() ||
         UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_) || screenDrawable->IsRenderSkipIfScreenOff() ||
         !currentBlackList.empty() || UNLIKELY(noBuffer)) {
@@ -557,10 +557,10 @@ std::vector<RectI> RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirty(
     auto mirrorDisplayParams =
         static_cast<RSLogicalDisplayRenderParams*>(mirrorDisplayDrawable->GetRenderParams().get());
 
-    bool specialLayerChange = lastTypeBlackList_ != currentTypeBlackList_ || lastBlackList_ != currentBlackList_ ||
+    // Special layer (cursor) redraws if global param, mirrored display flag, or culled visible/sec-layer rect changed.
+    bool specialLayerChange = lastSpecialLayerRenderParam_ != uniParam->GetSpecialLayerRenderParam() ||
         (mirrorDisplayParams && mirrorDisplayParams->IsSpecialLayerChanged()) ||
-        lastSecExemption_ != curSecExemption_ || (enableVisibleRect_ && (lastVisibleRect_ != curVisibleRect_ ||
-        params.HasSecLayerInVisibleRectChanged()));
+        (enableVisibleRect_ && (lastVisibleRect_ != curVisibleRect_ || params.HasSecLayerInVisibleRectChanged()));
     bool needRefresh = !(lastCanvasMatrix_ == canvasMatrix) || !(lastMirrorMatrix_ == mirrorParams->GetMatrix()) ||
         uniParam->GetForceMirrorScreenDirty() || uniParam->GetVirtualDirtyRefresh() || virtualDirtyNeedRefresh_ ||
         curScreenParams->GetHasMirroredScreenChanged() || specialLayerChange ||
@@ -589,9 +589,9 @@ std::vector<RectI> RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirty(
     RectI hwcRect = mirroredDrawable->GetSyncDirtyManager()->GetHwcDirtyRegion();
     const std::map<RSSurfaceNodeType, RectI>& typeHwcRectList =
         mirroredDrawable->GetSyncDirtyManager()->GetTypeHwcDirtyRegion();
+    bool hideCursor = uniParam->GetSpecialLayerRenderParam().cursorMode == RSVirtualScreenCursorMode::HIDE;
     for (auto& typeHwcRect : typeHwcRectList) {
-        NodeType nodeType = static_cast<NodeType>(typeHwcRect.first);
-        if (currentTypeBlackList_.find(nodeType) == currentTypeBlackList_.end()) {
+        if (!(hideCursor && typeHwcRect.first == RSSurfaceNodeType::CURSOR_NODE)) {
             hwcRect = hwcRect.JoinRect(typeHwcRect.second);
         }
     }
@@ -681,7 +681,8 @@ std::vector<RectI> RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirtyForW
     bool needRefresh = !(lastCanvasMatrix_ == canvasMatrix) || !(lastMirrorMatrix_ == mirroredParams->GetMatrix()) ||
         uniParam->GetForceMirrorScreenDirty() || lastEnableVisibleRect_ != enableVisibleRect_ ||
         (enableVisibleRect_ && lastVisibleRect_ != curVisibleRect_) ||
-        lastBlackList_ != currentBlackList_ || uniParam->GetVirtualDirtyRefresh() || virtualDirtyNeedRefresh_;
+        lastSpecialLayerRenderParam_.blackList != uniParam->GetSpecialLayerRenderParam().blackList ||
+        uniParam->GetVirtualDirtyRefresh() || virtualDirtyNeedRefresh_;
     if (needRefresh) {
         curScreenDrawable.GetSyncDirtyManager()->ResetDirtyAsSurfaceSize();
         virtualDirtyNeedRefresh_ = false;

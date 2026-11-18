@@ -175,41 +175,13 @@ public:
     }
     void SetVmaCacheStatus(bool flag); // dynmic flag
 
-    void SetBlackList(const std::unordered_set<NodeId>& blackList)
-    {
-        std::lock_guard<std::mutex> lock(nodeListMutex_);
-        blackList_ = blackList;
-    }
+    void SetBlackList(const std::unordered_set<NodeId>& blackList);
+    void SetWhiteList(const std::unordered_set<NodeId>& whiteList);
+    void SetCursorMode(RSVirtualScreenCursorMode mode);
 
-    void SetTypeBlackList(const std::unordered_set<NodeType>& typeBlackList)
-    {
-        std::lock_guard<std::mutex> lock(nodeListMutex_);
-        typeBlackList_ = typeBlackList;
-    }
-
-    const std::unordered_set<NodeId> GetBlackList() const
-    {
-        std::lock_guard<std::mutex> lock(nodeListMutex_);
-        return blackList_;
-    }
-
-    const std::unordered_set<NodeType> GetTypeBlackList() const
-    {
-        std::lock_guard<std::mutex> lock(nodeListMutex_);
-        return typeBlackList_;
-    }
-
-    void SetWhiteList(const std::unordered_set<NodeId>& whiteList)
-    {
-        std::lock_guard<std::mutex> lock(nodeListMutex_);
-        whiteList_ = whiteList;
-    }
-
-    const std::unordered_set<NodeId> GetWhiteList() const
-    {
-        std::lock_guard<std::mutex> lock(nodeListMutex_);
-        return whiteList_;
-    }
+    const std::unordered_set<NodeId>& GetBlackList() const;
+    const std::unordered_set<NodeId>& GetWhiteList() const;
+    RSVirtualScreenCursorMode GetCursorMode() const;
 
     void SetVisibleRect(const Drawing::RectI& visibleRect)
     {
@@ -417,9 +389,6 @@ private:
     std::mutex imageReleaseMutex_;
 
     mutable std::mutex nodeListMutex_;
-    std::unordered_set<NodeId> blackList_ = {};
-    std::unordered_set<NodeType> typeBlackList_ = {};
-    std::unordered_set<NodeId> whiteList_ = {};
     Drawing::RectI visibleRect_;
     std::unordered_set<ScreenId> hasProtectedLayerScreenIdSet_;
 

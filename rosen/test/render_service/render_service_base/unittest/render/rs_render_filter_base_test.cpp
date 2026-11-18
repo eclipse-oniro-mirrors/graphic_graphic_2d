@@ -1571,4 +1571,16 @@ HWTEST_F(RSRenderFilterBaseTest, PrepareForForeground001, TestSize.Level1)
 
     RSNGRenderFilterHelper::PrepareForForeground(contentLightFilter);
 }
+
+/**
+ * @tc.name: ParticleAggregationFilterCreate
+ * @tc.desc: Test RSNGRenderFilterBase::Create creates PARTICLE_AGGREGATION filter via creatorLUT
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, ParticleAggregationFilterCreate, TestSize.Level1)
+{
+    auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::PARTICLE_AGGREGATION);
+    ASSERT_NE(filter, nullptr);
+    EXPECT_EQ(filter->GetType(), RSNGEffectType::PARTICLE_AGGREGATION);
+}
 } // namespace OHOS::Rosen

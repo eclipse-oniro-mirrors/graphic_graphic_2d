@@ -60,7 +60,7 @@ private:
 ADD_COMMAND(RSCanvasNodeCreate,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, CANVAS_NODE, CANVAS_NODE_CREATE,
         RSCanvasNodeCommandHelper::Create, NodeId, bool, uint64_t))
-ADD_COMMAND(RSCanvasNodeUpdateRecording,
+ADD_PREFIX_COMMAND(RSCanvasNodeUpdateRecording,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, CANVAS_NODE, CANVAS_NODE_UPDATE_RECORDING,
         RSCanvasNodeCommandHelper::UpdateRecording, NodeId, std::shared_ptr<Drawing::DrawCmdList>, uint16_t))
 ADD_COMMAND(RSCanvasNodeClearRecording,

@@ -3775,7 +3775,8 @@ void RSUniRenderVisitor::CollectFilterInCrossDisplayWindow(
             surfaceNode->GetCrossNodeSkipDisplayConversionMatrix(curScreenNode_->GetId()))
                 .IntersectRect(curScreenNode_->GetScreenRect());
         curScreenDirtyManager_->GetFilterCollector().CollectFilterDirtyRegionInfo(
-            RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*filterNode, std::nullopt, true), true);
+            RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*filterNode, std::nullopt, true,
+                surfaceNode->GetGlobalPositionEnabled()), true);
     }
 }
 
@@ -4373,11 +4374,13 @@ void RSUniRenderVisitor::CollectFilterInfoAndUpdateDirty(RSRenderNode& node, RSD
     // case - 1. Deal with filter node self dirty.
     node.UpdateFilterCacheWithSelfDirty();
     // case - 2. Collect filter node with its current below dirty, process later.
+    const bool isSurface = curSurfaceNode_ != nullptr;
+    const bool forceDisablePartialRender = isSurface && curSurfaceNode_->GetGlobalPositionEnabled();
     dirtyManager.GetFilterCollector().CollectFilterDirtyRegionInfo(
         RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(
             node, Occlusion::Region(Occlusion::Rect(dirtyManager.GetCurrentFrameDirtyRegion())).Or(
                 dirtyManager.GetFilterCollector().GetPendingPurgeFilterRegion()),
-            curSurfaceNode_ != nullptr), false);
+            isSurface, forceDisablePartialRender), false);
     // case - 3. update pending purge dirty region with foreground filter.
     node.UpdatePendingPurgeFilterDirtyRect(dirtyManager, RSDrawableSlot::COMPOSITING_FILTER);
 }

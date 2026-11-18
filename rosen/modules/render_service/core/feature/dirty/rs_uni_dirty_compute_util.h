@@ -106,8 +106,11 @@ private:
 
 class RSUniFilterDirtyComputeUtil {
 public:
+    // forceDisablePartialRender: the filter will be drawn with filter cache disabled by the draw context,
+    // so its dirty region must be merged instead of being skipped by partial render.
     static FilterDirtyRegionInfo GenerateFilterDirtyRegionInfo(
-        RSRenderNode& filterNode, const std::optional<Occlusion::Region>& preDirty, bool isSurface);
+        RSRenderNode& filterNode, const std::optional<Occlusion::Region>& preDirty, bool isSurface,
+        bool forceDisablePartialRender);
     // Entry for filter dirty region process
     static void DealWithFilterDirtyRegion(Occlusion::Region& damageRegion, Occlusion::Region& drawRegion,
         DrawableV2::RSScreenRenderNodeDrawable& screenDrawable, const std::optional<Drawing::Matrix>& matrix,

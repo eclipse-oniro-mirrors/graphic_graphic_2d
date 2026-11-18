@@ -572,12 +572,12 @@ HWTEST_F(RSScreenManagerAgentTest, SetVirtualScreenBlackList001, TestSize.Level1
 }
 
 /*
- * @tc.name: SetVirtualScreenTypeBlackList001
- * @tc.desc: Test SetVirtualScreenTypeBlackList
+ * @tc.name: SetVirtualScreenCursorMode001
+ * @tc.desc: Test SetVirtualScreenCursorMode with the three modes and the invalid argument paths
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSScreenManagerAgentTest, SetVirtualScreenTypeBlackList001, TestSize.Level1)
+HWTEST_F(RSScreenManagerAgentTest, SetVirtualScreenCursorMode001, TestSize.Level1)
 {
     auto cSurface = IConsumerSurface::Create();
     ASSERT_NE(cSurface, nullptr);
@@ -594,17 +594,23 @@ HWTEST_F(RSScreenManagerAgentTest, SetVirtualScreenTypeBlackList001, TestSize.Le
         "virtual", defaultWidth, defaultHeight, pSurface, screenId, -1);
     EXPECT_NE(virtualScreenId, INVALID_SCREEN_ID);
 
-    std::vector<NodeType> typeBlackList = {1, 2, 3};
-    int32_t result = screenManagerAgent_->SetVirtualScreenTypeBlackList(virtualScreenId, typeBlackList);
-    ASSERT_EQ(result, 0);
+    ASSERT_EQ(screenManagerAgent_->SetVirtualScreenCursorMode(virtualScreenId, RSVirtualScreenCursorMode::HIDE),
+        StatusCode::SUCCESS);
+    ASSERT_EQ(screenManagerAgent_->SetVirtualScreenCursorMode(virtualScreenId,
+        RSVirtualScreenCursorMode::FORCE_RENDER), StatusCode::SUCCESS);
+    ASSERT_EQ(screenManagerAgent_->SetVirtualScreenCursorMode(virtualScreenId,
+        RSVirtualScreenCursorMode::DEFAULT), StatusCode::SUCCESS);
+
+    // an out of range mode is rejected before it reaches the screen property
+    ASSERT_EQ(screenManagerAgent_->SetVirtualScreenCursorMode(virtualScreenId, RSVirtualScreenCursorMode::MODE_MAX),
+        StatusCode::INVALID_ARGUMENTS);
     screenManagerAgent_->RemoveVirtualScreen(virtualScreenId);
 
+    // the interface reports SCREEN_NOT_FOUND when screenManager_ is nullptr
     auto screenManager = screenManagerAgent_->screenManager_;
     screenManagerAgent_->screenManager_ = nullptr;
-    std::vector<NodeType> typeBlackListMax(MAX_SPECIAL_LAYER_NUM + 1, 0);
-    std::vector<NodeType> typeBlackListEmpty = {};
-    screenManagerAgent_->SetVirtualScreenTypeBlackList(virtualScreenId, typeBlackListMax);
-    screenManagerAgent_->SetVirtualScreenTypeBlackList(virtualScreenId, typeBlackListEmpty);
+    ASSERT_EQ(screenManagerAgent_->SetVirtualScreenCursorMode(virtualScreenId, RSVirtualScreenCursorMode::HIDE),
+        StatusCode::SCREEN_NOT_FOUND);
     screenManagerAgent_->screenManager_ = screenManager;
 }
 

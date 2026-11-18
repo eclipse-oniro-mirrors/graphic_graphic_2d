@@ -5724,6 +5724,32 @@ HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty004, TestSize.Le
     ASSERT_FALSE(dirtyManager->GetFilterCollector().GetFilterDirtyRegionInfoList(false).empty());
 }
 
+/*
+ * @tc.name: CollectFilterInfoAndUpdateDirty005
+ * @tc.desc: Verify CollectFilterInfoAndUpdateDirty forces disable partial render for surface global position
+ * @tc.type: FUNC
+ * @tc.require: issue26800
+ */
+HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty005, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    NodeId surfaceNodeId = 1;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
+    surfaceNode->isGlobalPositionEnabled_ = true;
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+
+    auto dirtyManager = surfaceNode->GetDirtyManager();
+    ASSERT_NE(dirtyManager, nullptr);
+    NodeId nodeId = surfaceNodeId + 1;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+
+    rsUniRenderVisitor->CollectFilterInfoAndUpdateDirty(*node, *dirtyManager);
+    auto& filterList = dirtyManager->GetFilterCollector().GetFilterDirtyRegionInfoList(false);
+    ASSERT_FALSE(filterList.empty());
+    ASSERT_TRUE(filterList.front().forceDisablePartialRender_);
+}
+
 /**
  * @tc.name: UpdateHwcNodeDirtyRegionAndCreateLayer
  * @tc.desc: Test UpdateHwcNodeDirtyRegionAndCreateLayer with default surface node (empty child).

@@ -528,7 +528,7 @@ bool RSRenderNodeDrawableAdapter::QuickReject(Drawing::Canvas& canvas, const Rec
     }
     Drawing::Region dstRegion;
     if (!dstRegion.SetRect(dst.RoundOut()) && !dst.IsEmpty()) {
-        RS_LOGW("invalid dstDrawRect: %{public}s, RoundOut: %{public}s",
+        RS_LOGD("invalid dstDrawRect: %{public}s, RoundOut: %{public}s",
             dst.ToString().c_str(), dst.RoundOut().ToString().c_str());
         RS_OPTIONAL_TRACE_NAME_FMT("invalid dstDrawRect: %s, RoundOut: %s",
             dst.ToString().c_str(), dst.RoundOut().ToString().c_str());

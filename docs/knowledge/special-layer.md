@@ -22,7 +22,7 @@
 | 权限校验 | `rosen/modules/render_service/core/transaction/rs_iclient_to_service_connection_ipc_interface_code_access_verifier.cpp` | `IsSystemCalling` 注册 |
 | 全局黑名单跨进程同步 | `rosen/modules/render_service/main/render_process/transaction/zidl/rs_service_to_render_connection_proxy.cpp`（`OnGlobalBlacklistChanged`） | Service → Render Process（S2R）分发 |
 | 全局黑名单生效 | `rosen/modules/render_service/core/rs_render_pipeline_agent.cpp`（`OnGlobalBlacklistChanged`） | 主线程任务更新渲染侧状态 |
-| 渲染线程参数快照 | `rosen/modules/render_service_base/include/params/rs_render_thread_params.h`（`ScreenSpecialLayerParam`） | 全局黑名单/白名单矩形的渲染线程侧副本 |
+| 渲染线程参数快照 | `rosen/modules/render_service_base/include/params/rs_render_thread_params.h`（`ScreenSpecialLayerParam`、`SpecialLayerRenderParam`） | 全局黑名单/白名单矩形的渲染线程侧副本；绘制过程名单状态 |
 
 ## 核心模型
 
@@ -79,14 +79,31 @@ drawType = isSnapshot_ ? RSSpecialLayerUtils::GetDrawTypeInSnapshot(surfaceParam
 
 1. 并行绘制（parallel canvas）场景直接不跳过；
 2. 虚拟屏白名单为空则不跳过；节点是白名单节点则不跳过
-   （判据：白名单根 ID 栈 `RSSpecialLayerManager::whiteListRootIds_` 非空，
-   即祖先或自身已被记录为白名单根）；栈为空按命中处理；
+   （判据：白名单根 ID 栈 `WhiteListRootIdStack` 非空，即祖先或自身已被记录为白名单根）；
+   栈为空按命中处理；
 3. 命中跳绘时仅绘制子节点（`DrawChildren`）、跳过父节点本体；
 4. 其余情况跳绘。
 
-白名单根 ID 栈在每帧屏幕 drawable `PrepareForDraw`（`OnDraw` 第一步）开头
-`ClearWhiteListRootIds()`，绘制过程中由 `SetWhiteListRootId` / `ResetWhiteListRootId`
-维护；`AutoSpecialLayerStateRecover` 是其 RAII 恢复封装。
+栈为 thread_local（避免并行绘制/截屏线程互相污染），在每帧屏幕 drawable `PrepareForDraw`
+（`OnDraw` 第一步）开头 `ClearWhiteListRootIds()`，绘制过程中由 `SetWhiteListRootId` /
+`ResetWhiteListRootId` 维护；`AutoSpecialLayerStateRecover` 是其 RAII 恢复封装。
+
+### 镜像/截图逐 surface 跳绘判定
+
+`RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas)`
+是 surface drawable 在镜像屏、安全屏、整屏截图下的跳绘总入口（调用点：
+`rs_surface_render_node_drawable.cpp` 的 `OnDraw` / `OnCapture`）。
+先判生效门槛，再按固定优先级依次判定：
+
+1. 生效门槛：非镜像屏、非安全屏且非整屏截图（`isSnapshot_ && !isSingleSurface_`）时直接不跳绘；
+   `RSRenderThreadParams` 为空按“需要判定”处理；
+2. id 黑名单：截图用 `CaptureParam::blackList_`，镜像屏/安全屏用
+   `RSUniRenderThread::GetBlackList()`，两份名单不可混用；命中 `LeashPersistentId` 或 `Id` 即跳绘；
+3. cursorMode：仅对 `CURSOR_NODE` 生效，`HIDE` 跳绘，`FORCE_RENDER` 直接不跳绘
+   （只豁免下一条的 id 白名单，不越过任一黑名单），`DEFAULT` 与非法值继续往下；
+4. id 白名单：非并行 canvas 且 `IsWhiteListNode()` 为假时跳绘。
+
+`IsWhiteListNode()` 同样收敛在 `RSSpecialLayerUtils`，与 `SkipDrawByWhiteList` 共用同一份实现。
 
 ### 组件职责
 
@@ -105,13 +122,21 @@ drawType = isSnapshot_ ? RSSpecialLayerUtils::GetDrawTypeInSnapshot(surfaceParam
   `GetWhiteListRectByScreenId` / `ClearWhiteListRect`）；
   由主线程每帧填充（`RSUniRenderVisitor` 拷贝全局黑名单、`RSMainThread::AddWhiteListRect`
   收集白名单矩形），渲染线程只读，避免跨线程访问 `ScreenSpecialLayerInfo`。
+- **SpecialLayerRenderParam**（render_service_base，`RSRenderThreadParams` 内的绘制过程状态）：
+  聚合单次绘制/截屏 pass 的 `blackList`/`cursorMode`/`whiteList` 与 `securityDisplay`/`secExemption`，
+  带 `operator==` 供脏区域比较；thread_local 免锁。由 `RSMultiScreenUtil::Handle*` 在 pass 开始整体
+  写入、结束 `Clear()`（**唯一清理点**，pass 内部不要再单独 `SetBlackList({})`）。读取口是
+  `RSUniRenderThread::Get{BlackList,WhiteList,CursorMode}`，名单 getter 返回 params 内部引用
+  （params 为空时返回静态空集），**不要跨 pass 边界持有**；对应 setter 生产已无调用方，仅供单测注入。
 - **RSSpecialLayerUtils**（render_service，静态工具类）：
   绘制类型决策（`GetDrawTypeInSecurityDisplay` / `GetDrawTypeInSnapshot`）、
+  镜像/截图跳绘判定（`CheckIfSurfaceSkipInMirrorOrScreenshot` / `IsWhiteListNode`）、
   镜像屏交集检测（`CheckSpecialLayerIntersectMirrorDisplay`、`NeedProcessSecLayerInDisplay`、
   `HasMirrorDisplay`）、状态聚合（`GetSpecialLayerStateInVisibleRect` /
   `GetSpecialLayerStateInSubTree`、`DealWithSpecialLayer`、`UpdateScreenSpecialLayer`）、
   黑名单合并（`GetMergeBlackListInMainThread` / `GetMergeBlackListInRenderThread`、
-  `UpdateInfoWithGlobalBlackList`）、白名单矩形（`CollectWhiteListRect` /
+  `UpdateInfoWithGlobalBlackList`）、渲染参数组装（`BuildSpecialLayerRenderParam`，仅渲染线程，
+  `isWiredScreen` 为真时不填光标与白名单字段）、白名单矩形（`CollectWhiteListRect` /
   `SetWhiteListRectToMetaData`，矩形经 Metadata 传给 HWC）、调试 dump（`DumpScreenSpecialLayer`）。
 
 ## 黑白名单管理
@@ -124,7 +149,8 @@ drawType = isSnapshot_ ? RSSpecialLayerUtils::GetDrawTypeInSnapshot(surfaceParam
 | 全局黑名单（主线程登记表） | `ScreenSpecialLayerInfo::globalBlackList_` | 主线程任务更新的登记表 |
 | 全局黑名单（渲染线程快照） | `RSRenderThreadParams::screenSpecialLayerParam_`（`ScreenSpecialLayerParam`） | `RSUniRenderVisitor` 每帧从登记表拷贝，渲染线程只读 |
 | 单屏黑/白名单 | `RSScreen` → `RSScreenThreadSafeProperty` | 仅影响单个虚拟屏；`RSScreenManager` 的 Add 黑/白名单操作由 `specialLayerListMutex_` 保护 |
-| 类型黑名单 | `RSScreen` → `RSScreenThreadSafeProperty`（`GetTypeBlackList`） | 按节点类型过滤，单屏 |
+| 绘制过程名单状态 | `specialLayerRenderParam_` | thread_local，pass 开始写入、结束 `Clear()`，字段与约束见"组件职责" |
+| 光标渲染模式 | `RSScreenThreadSafeProperty::GetCursorMode` | `RSVirtualScreenCursorMode` 三态；属性槽位 `CURSOR_RENDER_MODE`(=20) 由原 `TYPE_BLACK_LIST` 改名，值类型从 `unordered_set<NodeType>` 改为 uint8_t，编号未变 |
 
 ### 接口与 IPC 链
 
@@ -150,14 +176,33 @@ RSInterfaces::Set/Add/RemoveVirtualScreenBlackList            (render_service_cl
 （全局黑名单语义寄生在虚拟屏接口之下）；具体屏幕则走 `RSScreen` 的单屏名单。
 全局黑名单变更经 `callbackMgr_->NotifyGlobalBlacklistChanged` 通知。
 
-族内接口形态约定（同类新增接口必须遵循）：五个名单命令码（Set 类型黑名单、Add/Remove 黑/白名单）
+族内接口形态约定（同类新增接口必须遵循）：五个名单/光标命令码（Set 光标模式、Add/Remove 黑/白名单）
 均为 `TF_ASYNC` fire-and-forget —— Proxy 统一 `repCode = SUCCESS`、Stub 不回写 reply，
 服务端状态码只落 RS 日志（Set 类 `RS_LOGE`，Add/Remove 类 `RS_LOGW`），调用方拿不到失败原因；
 接口签名仍保留 `repCode` 出参，勿据其判断服务端结果。确需感知结果时必须改 `TF_SYNC`
 并同步改 Stub 与 Proxy，不得只改单侧。
 
-权限：三个虚拟屏黑名单命令码在 access verifier 中注册 `IsSystemCalling`
-（系统应用 / native / shell 均放行）；两个白名单命令码
+同族但 wire 编码不同：id 名单（`SET/ADD/REMOVE_VIRTUAL_SCREEN_BLACKLIST`、
+`ADD/REMOVE_VIRTUAL_SCREEN_WHITELIST`）走 `WriteUInt64Vector`。光标命令码只有一个，
+且**复用**了原类型黑名单的码值，没有新增也没有保留废弃占位码值：
+
+- `SET_VIRTUAL_SCREEN_CURSOR_MODE = 0x00200D`：由 `SET_VIRTUAL_SCREEN_TYPE_BLACKLIST` 原地改名，
+  码值不变，wire 变成 `WriteUint64(screenId) + WriteUint8(mode)`，`mode` 取值见 `RSVirtualScreenCursorMode`。
+  加参数时不要退回 vector 编码：`Parcel::ReadVector` 用无出参的 `ReadInt32()` 取长度，parcel 耗尽时
+  长度为 0 并**返回 true**（截断包被当成空表，静默清空名单）；`ReadUint8(uint8_t&)` 走 `ReadPadded`
+  会**返回 false**，截断包被 Stub 判为 `ERR_INVALID_DATA`。
+- **码值复用 ⇒ 不可跨版本混布**：旧客户端仍按 vector 编码发 `0x00200D` 时，新 Stub 的
+  `ReadUint8` 读到的是 vector 长度前缀的字节而不是 `mode`，解析结果不可预期。
+  RS 客户端与服务端必须同源构建。
+- 越界校验没有统一辅助函数，各处内联比较 `mode >= RSVirtualScreenCursorMode::MODE_MAX`，仅两处收口：
+  Stub 返回 `ERR_INVALID_DATA`（跨进程非可信输入边界）；
+  `RSScreenManager::SetVirtualScreenCursorMode` 返回 `INVALID_ARGUMENTS` 且不写属性，
+  先于 `GetScreen` 判空，`RSScreenManagerAgent` 只做透传。校验收在 Manager 而非 Agent，
+  是为了让进程内直调 Manager（含 `rsscreenmanager05_fuzzer`）也走同一条拦截路径。
+
+权限：四个命令码（Set/Add/Remove 虚拟屏黑名单、Set 光标模式）
+在 access verifier 中注册 `IsSystemCalling`
+（系统应用 / native / shell 均放行）；两个 id 白名单命令码
 （`ADD/REMOVE_VIRTUAL_SCREEN_WHITELIST`）注册 `IsFoundationCalling`（仅 uid 5523），
 严于黑名单，同族策略不一致，新增接口前先确认调用方 uid。
 注意 `IsExclusiveVerificationPassed` 默认 `hasPermission = true`，
@@ -246,7 +291,9 @@ KB 对比实验中曾出现遗漏 stub token 校验注册（第 4 项）导致�
 | 全局黑名单独立于单屏黑名单 | `globalBlackList_` + `ScreenSpecialLayerInfo` 登记表 | 全局黑名单适用所有（开启跳窗的）虚拟屏，管理侧与渲染侧分离，经主线程任务同步 |
 | 渲染线程黑名单快照 | `ScreenSpecialLayerParam`（随 `RSRenderThreadParams` 传递） | 主线程每帧拷贝全局黑名单/白名单矩形，渲染线程只读快照，避免跨线程访问登记表 |
 | 全局黑名单仅对 `EnableSkipWindow` 屏生效 | `GetMergeBlackListIn*` 分支 | 跳窗能力是虚拟屏内容过滤的前提，未开启的屏不做名单过滤 |
-| 白名单根 ID 用栈 | `whiteListRootIds_` + `AutoSpecialLayerStateRecover` | 绘制过程嵌套进出白名单子树，RAII 保证状态恢复 |
+| 白名单根 ID 用栈 | `WhiteListRootIdStack` + `AutoSpecialLayerStateRecover` | 绘制过程嵌套进出白名单子树，RAII 保证状态恢复 |
+| 名单读取口保留为兼容层 | `RSUniRenderThread::Get*` 三个转发方法 | 转发 thread_local 渲染参数，既有调用方接口不变；setter 生产已无调用方，仅单测用 |
+| 光标策略收敛为单一的三值枚举（三个互斥状态，下文简称“三态”） + 单字段 last-writer-wins | `RSInterfaces::SetVirtualScreenCursorMode` 往下直到渲染侧都是 `RSVirtualScreenCursorMode`，三态存于同一属性 `CURSOR_RENDER_MODE` | 只有光标有跨屏差异化诉求，三态即最小表达；后写覆盖先写，旧类型黑/白名单接口只是兼容壳；判定序与越界校验点见上文 |
 | 截屏单 surface 用白遮罩 | `DRAW_WHITE`（单 surface 无 blur/自截屏） | 与多 surface 黑遮罩区分，保持单窗口截屏的视觉语义 |
 | 白名单矩形经 Metadata 传 HWC | `SetWhiteListRectToMetaData` | 虚拟屏白名单区域需要硬件合成侧感知 |
 | 黑名单变更异步生效 | `PostMainThreadTask` 更新主线程登记表 | 名单变更在服务端 IPC 线程发起，渲染状态必须在主线程更新 |

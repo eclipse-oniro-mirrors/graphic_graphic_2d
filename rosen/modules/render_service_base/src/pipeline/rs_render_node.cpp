@@ -74,6 +74,7 @@
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_painter.h"
 #include "property/rs_property_trace.h"
+#include "render/rs_drawing_filter.h"
 #include "render/rs_foreground_effect_filter.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "visitor/rs_node_visitor.h"
@@ -2545,7 +2546,8 @@ void RSRenderNode::SetChildrenTreeStateChangeDirty()
 bool RSRenderNode::IsContentDirty() const
 {
     // Considering renderNode, it should consider both basenode's case and its properties
-    return isContentDirty_ || GetRenderProperties().IsContentDirty();
+    return isContentDirty_ || (GetRenderProperties().IsContentDirty() &&
+        !GetRenderProperties().IgnorePropertiesContentDirty());
 }
 
 bool RSRenderNode::UpdateRenderStatus(RectI& dirtyRegion, bool isPartialRenderEnabled)

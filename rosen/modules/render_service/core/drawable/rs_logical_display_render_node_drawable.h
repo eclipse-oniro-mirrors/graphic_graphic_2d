@@ -128,13 +128,8 @@ private:
     RSPaintFilterCanvas* curCanvas_ = nullptr;
     // backup current canvas before offscreen render
     RSPaintFilterCanvas* canvasBackup_ = nullptr;
-    std::unordered_set<NodeId> currentBlackList_ = {};
-    std::unordered_set<NodeType> currentTypeBlackList_ = {};
-    std::unordered_set<NodeId> lastBlackList_ = {};
-    std::unordered_set<NodeType> lastTypeBlackList_ = {};
+    SpecialLayerRenderParam lastSpecialLayerRenderParam_;
 
-    bool curSecExemption_ = false;
-    bool lastSecExemption_ = false;
     bool virtualDirtyNeedRefresh_ = false;
     bool enableVisibleRect_ = false;
     bool lastEnableVisibleRect_ = false;

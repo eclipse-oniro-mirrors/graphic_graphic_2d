@@ -1058,7 +1058,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnCaptureTest008, TestSize.Leve
 
 /**
  * @tc.name: OnCaptureTest009
- * @tc.desc: Test OnCapture when blackList is not empty
+ * @tc.desc: Test OnCapture when the screen blackList carried by the render thread params is not empty
  * @tc.type: FUNC
  * @tc.require: #I9NVOG
  */
@@ -1070,12 +1070,18 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnCaptureTest009, TestSize.Leve
     ASSERT_NE(renderParams, nullptr);
     renderParams->shouldPaint_ = true;
     renderParams->contentEmpty_ = false;
+    RSUniRenderThread::SetCaptureParam(CaptureParam());
     std::unordered_set<NodeId> blackList {0};
     RSUniRenderThread::Instance().SetBlackList(blackList);
     displayDrawable_->OnCapture(*drawingFilterCanvas_);
     EXPECT_TRUE(displayDrawable_->ShouldPaint());
     EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
     EXPECT_FALSE(RSUniRenderThread::Instance().GetBlackList().empty());
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().blackList_.empty());
+
+    // restore, renderThreadParams and captureParam_ are thread_local and shared by the following cases
+    RSUniRenderThread::Instance().SetBlackList({});
+    RSUniRenderThread::ResetCaptureParam();
 }
 
 /**
@@ -1406,12 +1412,13 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, CalculateVirtualDirtyTest006, T
     auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
     Drawing::Matrix matrix;
     displayDrawable_->CalculateVirtualDirty(virtualProcesser, *screenDrawable_, *renderParams, matrix);
-    NodeType cursorType = 12;
-    std::unordered_set<NodeType> typeBlackList = {cursorType};
-    displayDrawable_->currentTypeBlackList_ = typeBlackList;
+    // HIDE mode filters the CURSOR_NODE type hwc dirty out and differs from lastSpecialLayerRenderParam_
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::HIDE);
     auto damageRects =
         displayDrawable_->CalculateVirtualDirty(virtualProcesser, *screenDrawable_, *renderParams, matrix);
     EXPECT_NE(damageRects.size(), 0);
+    // restore, renderThreadParams is thread_local and shared by the following cases
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::DEFAULT);
 }
 
 /**

@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#include <atomic>
+#include <chrono>
+
 #include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
 
 namespace OHOS {
@@ -39,7 +42,8 @@ bool RSInterfaceCodeAccessVerifierBase::IsInterfaceCodeAccessible(CodeUnderlying
         return false;
     }
     if (!IsExclusiveVerificationPassed(code)) {
-        RS_LOGE("RSInterfaceCodeAccessVerifierBase::IsInterfaceCodeAccessible exclusive verification not passed.");
+        RS_LOGE_LIMIT(__func__, __line__,
+            "RSInterfaceCodeAccessVerifierBase::IsInterfaceCodeAccessible exclusive verification not passed.");
         return false;
     }
 #endif
@@ -171,7 +175,8 @@ bool RSInterfaceCodeAccessVerifierBase::IsSystemCalling(const std::string& calli
         isSystemCalling = true;
     }
     if (!isSystemCalling) {
-        RS_LOGE("%{public}s ipc interface code access denied: not system calling", callingCode.c_str());
+        RS_LOGE_LIMIT(__func__, __line__,
+            "%{public}s ipc interface code access denied: not system calling", callingCode.c_str());
     }
     return isSystemCalling;
 }

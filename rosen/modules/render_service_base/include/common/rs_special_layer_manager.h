@@ -57,13 +57,32 @@ enum SpecialLayerType : SpecialLayerBitmask {
     HAS_WHITE_LIST = IS_WHITE_LIST << SPECIAL_TYPE_NUM,
 };
 
+struct RSB_EXPORT SpecialLayerRenderParam {
+    bool operator==(const SpecialLayerRenderParam& other) const
+    {
+        return blackList == other.blackList && cursorMode == other.cursorMode && whiteList == other.whiteList &&
+            securityDisplay == other.securityDisplay && secExemption == other.secExemption;
+    }
+
+    bool operator!=(const SpecialLayerRenderParam& other) const
+    {
+        return !(*this == other);
+    }
+
+    void Clear()
+    {
+        *this = SpecialLayerRenderParam();
+    }
+
+    std::unordered_set<NodeId> blackList;
+    std::unordered_set<NodeId> whiteList;
+    RSVirtualScreenCursorMode cursorMode = RSVirtualScreenCursorMode::DEFAULT;
+    bool securityDisplay = false;
+    bool secExemption = false;
+};
+
 class RSB_EXPORT RSSpecialLayerManager {
 public:
-    static void SetWhiteListRootId(LeashPersistentId id);
-    static void ResetWhiteListRootId(LeashPersistentId id);
-    static LeashPersistentId GetCurWhiteListRootId();
-    static bool IsWhiteListRootIdsEmpty();
-    static void ClearWhiteListRootIds();
     RSSpecialLayerManager() = default;
     ~RSSpecialLayerManager() = default;
 
@@ -89,8 +108,6 @@ public:
     void ClearScreenSpecialLayer();
     void Clear();
 private:
-    static std::stack<LeashPersistentId> whiteListRootIds_;
-
     SpecialLayerBitmask specialLayerType_ = SpecialLayerType::NONE;
     std::unordered_map<SpecialLayerBitmask, std::unordered_set<NodeId>> specialLayerIds_;
 
@@ -140,6 +157,17 @@ private:
     std::map<ScreenId, std::vector<Drawing::Rect>> whiteListRect_;
 };
 
+class RSB_EXPORT WhiteListRootIdStack {
+public:
+    static void SetWhiteListRootId(LeashPersistentId id);
+    static void ResetWhiteListRootId(LeashPersistentId id);
+    static LeashPersistentId GetCurWhiteListRootId();
+    static bool IsWhiteListRootIdsEmpty();
+    static void ClearWhiteListRootIds();
+private:
+    static std::stack<LeashPersistentId>& GetWhiteListRootIds();
+};
+
 class AutoSpecialLayerStateRecover {
 public:
     /** Preserve specialLayer state and recover. Used for whiteListRootId currently.
@@ -149,7 +177,7 @@ public:
     AutoSpecialLayerStateRecover(LeashPersistentId id)
         : currentRootId_(id)
     {
-        RSSpecialLayerManager::SetWhiteListRootId(id);
+        WhiteListRootIdStack::SetWhiteListRootId(id);
     }
 
     AutoSpecialLayerStateRecover(AutoSpecialLayerStateRecover&&) = delete;
@@ -159,7 +187,7 @@ public:
 
     ~AutoSpecialLayerStateRecover()
     {
-        RSSpecialLayerManager::ResetWhiteListRootId(currentRootId_);
+        WhiteListRootIdStack::ResetWhiteListRootId(currentRootId_);
     }
 
 private:

@@ -3279,9 +3279,9 @@
     "connectionType": 1
   },
   {
-    "testCaseDesc": "SET_VIRTUAL_SCREEN_TYPE_BLACKLIST_TEST_001",
-    "interfaceName": "SET_VIRTUAL_SCREEN_TYPE_BLACKLIST",
-    "inputParams": "WriteUint64;WriteUInt8Vector;WriteInt32",
+    "testCaseDesc": "SET_VIRTUAL_SCREEN_CURSOR_MODE_TEST_001",
+    "interfaceName": "SET_VIRTUAL_SCREEN_CURSOR_MODE",
+    "inputParams": "WriteUint64;WriteUint8",
     "writeInterfaceToken": true,
     "messageOption": "TF_ASYNC",
     "connectionType": 1

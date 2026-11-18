@@ -178,8 +178,8 @@ public:
     int32_t AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
     int32_t RemoveVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
 
-    // type blacklist
-    int32_t SetVirtualScreenTypeBlackList(ScreenId id, const std::vector<uint8_t>& typeBlackList);
+    // type black/white list: the node type list is collapsed to "contains CURSOR_NODE" by RSInterfaces
+    int32_t SetVirtualScreenCursorMode(ScreenId id, RSVirtualScreenCursorMode mode);
 
     // post processing shader
     int32_t SetPostProcessingShader(ScreenId id, const std::vector<uint8_t>& param);
