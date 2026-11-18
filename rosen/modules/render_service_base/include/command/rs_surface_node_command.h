@@ -339,9 +339,6 @@ ADD_COMMAND(RSSurfaceNodeRecreateNodeAndSurface,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_RECREATE_NODE_AND_SURFACE,
         SurfaceNodeCommandHelper::RecreateNodeAndSurface, RSSurfaceRenderNodeConfig, SurfaceId, bool))
 #endif
-ADD_COMMAND(RSSurfaceNodeSetDelegateMode,
-    ARG(PERMISSION_APP, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_SET_DELEGATE_MODE,
-        SurfaceNodeCommandHelper::SetDelegateMode, NodeId, bool))
 } // namespace Rosen
 } // namespace OHOS
 #endif // ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_SURFACE_NODE_COMMAND_H

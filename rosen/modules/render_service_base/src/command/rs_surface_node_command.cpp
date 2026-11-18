@@ -614,11 +614,5 @@ void SurfaceNodeCommandHelper::SetHidePrivacyContent(RSContext& context, NodeId 
         nodeId, consumer->GetUniqueId(), unobscured, node->GetBundleName().c_str());
 }
 #endif
-void SurfaceNodeCommandHelper::SetDelegateMode(RSContext& context, NodeId nodeId, bool isDelegateMode)
-{
-    if (const auto& node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
-        node->SetDelegateMode(isDelegateMode);
-    }
-}
 } // namespace Rosen
 } // namespace OHOS

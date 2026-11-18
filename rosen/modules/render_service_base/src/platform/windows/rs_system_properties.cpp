@@ -508,7 +508,7 @@ float RSSystemProperties::GetSplitTransactionMaxProcessTimeMs()
 {
     return 2.0f;
 }
- 
+
 size_t RSSystemProperties::GetSplitTransactionCheckInterval()
 {
     return 200;
@@ -883,7 +883,7 @@ bool RSSystemProperties::GetRebuildSceneEnabled()
 {
     return true;
 }
- 
+
 bool RSSystemProperties::IsRenderNodeRebuildEnabled()
 {
     return false;
