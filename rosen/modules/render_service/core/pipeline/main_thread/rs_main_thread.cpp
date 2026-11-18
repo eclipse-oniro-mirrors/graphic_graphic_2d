@@ -5136,44 +5136,6 @@ bool RSMainThread::IsResidentProcess(pid_t pid) const
     return pid == ExtractPid(context_->GetNodeMap().GetEntryViewNodeId());
 }
 
-void RSMainThread::DumpMem(std::unordered_set<std::u16string>& argSets, std::string& dumpString,
-    std::string& type, pid_t pid, bool isLite)
-{
-#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-    DfxString log;
-    if (pid != 0) {
-        RSUniRenderThread::Instance().PostSyncTask([&log, pid] {
-            RS_TRACE_NAME_FMT("Dumping memory of pid[%d]", pid);
-            MemoryManager::DumpPidMemory(log, pid,
-                RSUniRenderThread::Instance().GetRenderEngine()->GetRenderContext()->GetDrGPUContext());
-        });
-    } else {
-        MemoryManager::DumpMemoryUsage(log, type, isLite);
-    }
-
-    if ((type.empty() || type == MEM_GPU_TYPE) && RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
-        auto subThreadManager = RSSubThreadManager::Instance();
-        if (subThreadManager) {
-            subThreadManager->DumpMem(log, isLite);
-        }
-    }
-    dumpString.append("dumpMem: " + type + "\n");
-    const auto& nodeMap = context_->GetNodeMap();
-    nodeMap.TraverseScreenNodes([&dumpString](const auto& screenNode) {
-        const auto& screenProperty = screenNode->GetScreenProperty();
-        dumpString.append("\nScreenResolution: " + std::to_string(screenProperty.GetPhyWidth()) + "x" +
-            std::to_string(screenProperty.GetPhyHeight()) + "\n");
-    });
-
-    dumpString.append(log.GetString());
-    if (!isLite) {
-        RSUniRenderThread::Instance().DumpVkImageInfo(dumpString);
-    }
-#else
-    dumpString.append("No GPU in this device");
-#endif
-}
-
 void RSMainThread::CountMem(int pid, MemoryGraphic& mem)
 {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
@@ -5706,10 +5668,10 @@ void RSMainThread::ClearPersistentProperties(pid_t pid)
 }
 
 void RSMainThread::ClearSurfaceWatermarkForNodes(pid_t pid, const std::string& name,
-    const std::vector<NodeId>& nodeIdList, bool isSystemCalling)
+    const std::vector<NodeId>& nodeList, bool isSystemCalling)
 {
     std::lock_guard<std::mutex> lock(watermarkMutex_);
-    surfaceWatermarkHelper_.ClearSurfaceWatermarkForNodes(pid, name, nodeIdList, GetContext(), isSystemCalling);
+    surfaceWatermarkHelper_.ClearSurfaceWatermarkForNodes(pid, name, nodeList, GetContext(), isSystemCalling);
     SetDirtyFlag(true);
     RequestNextVSync();
 }
@@ -5869,15 +5831,6 @@ void RSMainThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface
 {
     std::lock_guard<std::mutex> lock(mutex_);
     tmpSurfaces_.push(std::move(surface));
-}
-
-void RSMainThread::GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize)
-{
-    RSUniRenderThread::Instance().PostSyncTask([&cpuMemSize, &gpuMemSize] {
-        gpuMemSize = MemoryManager::GetAppGpuMemoryInMB(
-            RSUniRenderThread::Instance().GetRenderEngine()->GetRenderContext()->GetDrGPUContext());
-        cpuMemSize = MemoryTrack::Instance().GetAppMemorySizeInMB();
-    });
 }
 
 void RSMainThread::SubscribeAppState()
