@@ -75,11 +75,13 @@ void HasFingerprintCmdModifier::UpdateToRender()
 
 void ColorSpaceCmdModifier::UpdateToRender()
 {
+#ifndef ROSEN_CROSS_PLATFORM
     auto node = std::static_pointer_cast<RSSurfaceNode>(GetNode());
     if (!node) return;
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetColorSpace>(
         node->GetId(), param_.colorSpace_);
     AddCommand(command, true);
+#endif
 }
 
 void AbilityBGAlphaCmdModifier::UpdateToRender()

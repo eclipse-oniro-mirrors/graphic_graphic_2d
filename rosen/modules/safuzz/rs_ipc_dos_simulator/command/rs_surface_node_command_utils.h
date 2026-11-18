@@ -51,7 +51,9 @@ public:
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeDetachToDisplay, Uint64, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSurfaceNodeSetSurfaceId, Uint64, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSurfaceNodeSetLeashPersistentId, Uint64, Uint64);
+#ifndef ROSEN_CROSS_PLATFORM
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetColorSpace, Uint64, GraphicColorGamut);
+#endif
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetForeground, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetForceUIFirst, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetAncoFlags, Uint64, Uint32);
