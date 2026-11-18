@@ -2822,6 +2822,9 @@ void RSProperties::ResetDirty()
     geoDirty_ = false;
     contentDirty_ = false;
     subTreeAllDirty_ = false;
+    if (effectProperties_ != nullptr) {
+        effectProperties_->SetIgnorePropertiesContentDirty(false);
+    }
 }
 
 void RSProperties::RecordCurDirtyStatus()

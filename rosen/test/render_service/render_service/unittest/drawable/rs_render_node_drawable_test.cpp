@@ -22,6 +22,7 @@
 #include "params/rs_render_params.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "render/rs_blur_filter.h"
+#include "render/rs_drawing_filter.h"
 
 #ifdef SUBTREE_PARALLEL_ENABLE
 #include "rs_parallel_manager.h"
@@ -2245,6 +2246,39 @@ HWTEST_F(RSRenderNodeDrawableTest, DrawCachedImageWithClipHoleTest, TestSize.Lev
     ASSERT_NE(drawable->GetRenderGroupCachedSurface(), nullptr);
 
     drawable->DrawCachedImage(paintFilterCanvas, params);
+}
+
+/**
+ * @tc.name: DrawCachedImageWithDrawingFilter001
+ * @tc.desc: Test DrawCachedImage with an IsDrawingFilter rsFilter (NGFilter cache path)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderNodeDrawableTest, DrawCachedImageWithDrawingFilter001, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+
+    RSRenderParams params(RSRenderNodeDrawableTest::id);
+    params.SetCacheSize({100.0f, 100.0f});
+    params.SetRSFreezeFlag(false);
+
+    auto surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
+    ASSERT_TRUE(surface);
+    auto canvasPtr = surface->GetCanvas();
+    ASSERT_NE(canvasPtr, nullptr);
+    canvasPtr->Clear(Drawing::Color::COLOR_BLUE);
+    auto image = surface->GetImageSnapshot();
+    ASSERT_NE(image, nullptr);
+    drawable->SetCacheImageByCapture(image);
+
+    // RSDrawingFilter::IsDrawingFilter() returns true. A default-constructed filter has no
+    // visualEffectContainer_, so SetGeometry/SetDisableFilterCache/DrawImageRect are no-ops,
+    // which exercises the new cache-path branch without GPU dependency.
+    std::shared_ptr<RSFilter> rsFilter = std::make_shared<RSDrawingFilter>();
+    drawable->DrawCachedImage(paintFilterCanvas, params, rsFilter);
+    drawable->ClearCachedSurface();
+    ASSERT_FALSE(RSSystemProperties::GetRecordingEnabled());
 }
 
 } // namespace OHOS::Rosen

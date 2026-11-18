@@ -6182,6 +6182,28 @@ HWTEST_F(RSRenderNodeTest, HasInfiniteGroupAnimationChild003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsContentDirty_IgnorePropertiesContentDirty001
+ * @tc.desc: Test IsContentDirty short-circuits via IgnorePropertiesContentDirty
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderNodeTest, IsContentDirty_IgnorePropertiesContentDirty001, TestSize.Level1)
+{
+    RSRenderNode node(id, context);
+    // avoid the base isContentDirty_ early short-circuit so the properties logic is exercised
+    node.isContentDirty_ = false;
+    auto& props = node.GetMutableRenderProperties();
+    props.contentDirty_ = true;
+    // force effectProperties_ creation, then set cache content ignore true
+    props.GetEffectProperties().SetIgnorePropertiesContentDirty(true);
+    // isContentDirty_ == false, IsContentDirty() == true, IgnorePropertiesContentDirty() == true
+    EXPECT_FALSE(node.IsContentDirty());
+
+    // restore ignore false -> IsContentDirty true again
+    props.GetEffectProperties().SetIgnorePropertiesContentDirty(false);
+    EXPECT_TRUE(node.IsContentDirty());
+}
+
+/**
  * @tc.name: ApplyInstanceIdentityTest
  * @tc.desc: ApplyInstanceIdentity marks/registers per (token, isSceneBoard) verdicts.
  * @tc.type: FUNC

@@ -35,6 +35,7 @@
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "platform/common/rs_log.h"
+#include "render/rs_drawing_filter.h"
 #include "rs_trace.h"
 #include "system/rs_system_parameters.h"
 #include "string_utils.h"
@@ -1110,10 +1111,24 @@ void RSRenderNodeDrawable::DrawCachedImage(
     if (rsFilter != nullptr) {
         RS_TRACE_NAME_FMT("RSRenderNodeDrawable::DrawCachedImage image width: %d, height: %d, %s, nodeID = %llu",
             cacheImage->GetWidth(), cacheImage->GetHeight(), rsFilter->GetDescription().c_str(), nodeId_);
-        auto foregroundFilter = std::static_pointer_cast<RSDrawingFilterOriginal>(rsFilter);
-        foregroundFilter->DrawImageRect(canvas, cacheImage,
-            Drawing::Rect(0, 0, cacheImage->GetWidth(), cacheImage->GetHeight()),
-            Drawing::Rect(0, 0, cacheImage->GetWidth(), cacheImage->GetHeight()));
+        Drawing::Rect imageRect(0, 0, cacheImage->GetWidth(), cacheImage->GetHeight());
+        if (rsFilter->IsDrawingFilter()) {
+            // NGFilter takes the RSDrawingFilter path (consistent with DrawForegroundFilter).
+            // SetGeometry and SetDisableFilterCache must be added here because the cache path does
+            // not go through RSForegroundFilterRestoreDrawable::OnDraw or DrawForegroundFilter.
+            // SetGeometry uses an identity matrix and clipBounds of the cacheImage size, aligned with
+            // the offscreen canvas matrix (identity) passed by RSForegroundFilterRestoreDrawable::OnDraw
+            // in the drawable path.
+            auto drawingFilter = std::static_pointer_cast<RSDrawingFilter>(rsFilter);
+            Drawing::RectI clipBounds(0, 0, cacheImage->GetWidth(), cacheImage->GetHeight());
+            drawingFilter->SetGeometry(Drawing::Matrix(), clipBounds,
+                Drawing::Rect {}, cacheImage->GetWidth(), cacheImage->GetHeight());
+            drawingFilter->SetDisableFilterCache(canvas.GetDisableFilterCache());
+            drawingFilter->DrawImageRect(canvas, cacheImage, imageRect, imageRect);
+        } else {
+            auto foregroundFilter = std::static_pointer_cast<RSDrawingFilterOriginal>(rsFilter);
+            foregroundFilter->DrawImageRect(canvas, cacheImage, imageRect, imageRect);
+        }
     } else {
         canvas.DrawImage(*cacheImage, 0.0, 0.0, samplingOptions);
     }
