@@ -51,7 +51,7 @@ public:
             return false;
         }
         if (!accessVerifier_->IsInterfaceCodeAccessible(code)) {
-            RS_LOGE("RSInterfaceCodeSecurityManager::IsInterfaceCodeAccessible verification failed.");
+            RS_LOGE("Access fail");
             return false;
         }
 #endif

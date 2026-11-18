@@ -132,6 +132,11 @@ DECLARE_NONANIMATABLE_PROPERTY_TAG(ParticleAblation, TurbEvo, int);
 DECLARE_NONANIMATABLE_PROPERTY_TAG(ParticleAblation, TurbAmp, int);
 DECLARE_NONANIMATABLE_PROPERTY_TAG(ParticleAblation, ExpansionSize, Vector2f);
 
+DECLARE_ANIMATABLE_PROPERTY_TAG(ParticleAggregation, Progress, float);
+DECLARE_NONANIMATABLE_PROPERTY_TAG(ParticleAggregation, Direction, float);
+DECLARE_NONANIMATABLE_PROPERTY_TAG(ParticleAggregation, MaxParticleCount, float);
+DECLARE_NONANIMATABLE_PROPERTY_TAG(ParticleAggregation, Mode, int);
+
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, BlurParams, Vector2f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, WeightsEmboss, Vector2f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, WeightsEdl, Vector2f);

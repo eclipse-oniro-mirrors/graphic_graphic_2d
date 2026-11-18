@@ -307,14 +307,15 @@ int32_t RSRenderServiceClient::SetVirtualScreenBlackList(ScreenId id, const std:
     return clientToService->SetVirtualScreenBlackList(id, blackList);
 }
 
-int32_t RSRenderServiceClient::SetVirtualScreenTypeBlackList(ScreenId id, std::vector<NodeType>& typeBlackListVector)
+int32_t RSRenderServiceClient::SetVirtualScreenCursorMode(ScreenId id, RSVirtualScreenCursorMode mode)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
     if (clientToService == nullptr) {
+        RS_LOGE("RSRenderServiceClient::%{public}s clientToService is null!", __func__);
         return RENDER_SERVICE_NULL;
     }
     int32_t repCode = SUCCESS;
-    clientToService->SetVirtualScreenTypeBlackList(id, typeBlackListVector, repCode);
+    clientToService->SetVirtualScreenCursorMode(id, mode, repCode);
     return repCode;
 }
 

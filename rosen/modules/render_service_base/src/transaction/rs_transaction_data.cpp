@@ -13,6 +13,14 @@
  * limitations under the License.
  */
 
+#include "transaction/rs_transaction_data.h"
+
+#include "info_collection/rs_gpu_dirty_region_collection.h"
+#include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
+#include "rs_profiler.h"
+#include "rs_trace.h"
+
+#include "animation/rs_animation_trace_utils.h"
 #include "command/rs_base_node_command.h"
 #include "command/rs_canvas_node_command.h"
 #include "command/rs_command.h"
@@ -20,25 +28,89 @@
 #include "command/rs_node_command.h"
 #include "command/rs_ui_director_command.h"
 #include "common/rs_optional_trace.h"
-#include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
-#include "rs_profiler.h"
-#include "rs_trace.h"
-#include "transaction/rs_transaction_data.h"
+#include "transaction/rs_marshalling_helper.h"
 #include "transaction/rs_transaction_data_callback_manager.h"
-#include "animation/rs_animation_trace_utils.h"
-#include "info_collection/rs_gpu_dirty_region_collection.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace {
 static constexpr size_t PARCEL_MAX_CAPACITY = 4000 * 1024; // upper bound of parcel capacity
 static constexpr size_t PARCEL_SPLIT_THRESHOLD = 1800 * 1024; // should be < PARCEL_MAX_CAPACITY
+static constexpr size_t MIN_COMMAND_BODY_SIZE = sizeof(uint16_t) * 2; // type + subtype, min valid commandLen
 static constexpr uint64_t MAX_ADVANCE_TIME = 1000000000; // one second advance most
 #ifndef ROSEN_TRACE_DISABLE
 constexpr int TRACE_LEVEL_THREE = 3;
 #endif
+
+// Marshals one command body, optionally preceded by a commandLen prefix which is backfilled
+// with the real body length after success. On failure, rewinds the parcel to recordPos to drop
+// the whole record and returns false, caller should skip to the next command.
+bool MarshallingCommandBody(Parcel& parcel, RSCommand& command)
+{
+    size_t lenPos = 0;
+    size_t bodyStart = 0;
+    // Step1 write the per-command prefix flag and a placeholder commandLen which is
+    // backfilled with the real body length after the body is marshalled
+    parcel.WriteBool(true);
+    lenPos = parcel.GetWritePosition();
+    parcel.WriteUint32(0);
+    bodyStart = parcel.GetWritePosition();
+
+    // Step2 marshal the command body
+    bool marshalOk = command.Marshalling(parcel);
+    
+    // Step3 prefix mode: backfill the real commandLen on success; on failure return false
+    // so the caller drops the whole record
+    if (!marshalOk) {
+        ROSEN_LOGE("RSTransactionData skip failed marshalling type:%{public}s",
+            command.PrintType().c_str());
+        return false;
+    }
+    // Step4 Write Command BodyLen
+    uint32_t bodyLen = static_cast<uint32_t>(parcel.GetWritePosition() - bodyStart);
+    *reinterpret_cast<uint32_t*>(parcel.GetData() + lenPos) = bodyLen;
+    return true;
+}
+
+// Validates the commandLen prefix of one command body: the length must be readable, at least
+// MIN_COMMAND_BODY_SIZE, and within the remaining parcel data. On success returns true and sets
+// cmdEnd to the end position of the command body, which the caller can RewindRead to when the
+// body fails to parse.
+bool ParseCommandLengthPrefix(Parcel& parcel, size_t& cmdEnd)
+{
+    uint32_t commandLen = 0;
+    if (!parcel.ReadUint32(commandLen)) {
+        ROSEN_LOGE("RSTransactionData::UnmarshallingCommand cannot read commandLen");
+        return false;
+    }
+    if (commandLen < MIN_COMMAND_BODY_SIZE) {
+        ROSEN_LOGE("RSTransactionData commandLen invalid len:%{public}u", commandLen);
+        return false;
+    }
+    size_t cmdStart = parcel.GetReadPosition();
+    if (commandLen > parcel.GetDataSize() - cmdStart) {
+        ROSEN_LOGE("RSTransactionData commandLen exceeds remaining len:%{public}u "
+            "remaining:%{public}zu", commandLen, parcel.GetDataSize() - cmdStart);
+        return false;
+    }
+    cmdEnd = cmdStart + commandLen;
+    return true;
+}
+
+// A command that fails to parse can be skipped by rewinding to cmdEnd (start of the next
+// command) when the length prefix is available; otherwise the parcel framing is untrusted
+// and the caller must abort. Returns true when the command was skipped.
+bool SkipFailedCommand(Parcel& parcel, bool prefixEnabled, size_t cmdEnd, size_t& skippedCount)
+{
+    if (!prefixEnabled) {
+        return false;
+    }
+    parcel.RewindRead(cmdEnd);
+    ++skippedCount;
+    return true;
+}
 }
 
 std::function<void(uint64_t, int, int)> RSTransactionData::alarmLogFunc = [](uint64_t nodeId, int count, int num) {
@@ -50,6 +122,12 @@ RSTransactionData* RSTransactionData::Unmarshalling(Parcel& parcel)
 {
     auto transactionData = new RSTransactionData();
     if (transactionData->UnmarshallingCommand(parcel)) {
+        if (transactionData->IsEmpty() && transactionData->GetSkippedCommandCount() > 0) {
+            ROSEN_LOGE("RSTransactionData all commands skipped count:%{public}zu",
+                transactionData->GetSkippedCommandCount());
+            delete transactionData;
+            return nullptr;
+        }
         // Do not process future data, limit data timestamps to a maximum of 1 second in advance
         uint64_t now = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count());
@@ -112,11 +190,17 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
     std::unique_lock<std::mutex> lock(commandMutex_);
     success = success && parcel.WriteInt32(static_cast<int32_t>(payload_.size()));
     size_t marshaledSize = 0;
+    size_t skippedMarshalCount = 0;
     static bool isUniRender = RSSystemProperties::GetUniRenderEnabled();
     success = success && parcel.WriteBool(isUniRender);
+    // The per-command prefix flag is written and read unconditionally (no version
+    // negotiation): sender and receiver must run the same build, and the flag value itself
+    // tells the receiver whether a commandLen prefix follows.
+    bool isLengthPrefixEnabled = RSSystemProperties::GetCommandLengthPrefixEnabled();
     while (marshallingIndex_ < payload_.size()) {
         auto& [nodeId, followType, command] = payload_[marshallingIndex_];
-        
+        // record start position of this command, failed command will be dropped by rewinding to it
+        size_t recordPos = parcel.GetWritePosition();
         if (!isUniRender) {
             success = success && parcel.WriteUint64(nodeId);
             success = success && parcel.WriteUint8(static_cast<uint8_t>(followType));
@@ -128,7 +212,8 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
             success = success && parcel.WriteUint8(0);
             RS_LOGW("failed RSTransactionData::Marshalling, indexVerifier is wrong, SIGSEGV may have occurred");
         } else {
-            success = success && parcel.WriteUint8(1);
+            bool isHeadWriteSuccess = true;
+            isHeadWriteSuccess = isHeadWriteSuccess && parcel.WriteUint8(1);
             if (Rosen::RSAnimationTraceUtils::GetTestModeEnabled()) {
                 RS_OPTIONAL_TRACE_NAME_TESTMODE("RSTransactionData::Marshalling nodeId:%ld type:%s",
                     command->GetNodeId(), command->PrintType().c_str());
@@ -144,7 +229,20 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
                 RS_LOGW("OffScreenIsSync RSTransactionData::Marshalling, nodeId:[%{public}" PRIu64 "] start",
                     command->GetNodeId());
             }
-            success = success && command->Marshalling(parcel);
+            bool useLengthPrefix = isLengthPrefixEnabled && command->UseLengthPrefix();
+            if (!useLengthPrefix) {
+                // same per-command flag as in MarshallingCommandBody, set to false here:
+                // this record keeps the origin format (no commandLen prefix follows).
+                parcel.WriteBool(false);
+                success = success && isHeadWriteSuccess && command->Marshalling(parcel);
+            } else if (!isHeadWriteSuccess || !MarshallingCommandBody(parcel, *command)) {
+                // drop the whole record (nodeId/followType/hasCommand/length prefix/partial body),
+                // command count recorded in parcel will be corrected after the loop
+                parcel.RewindWrite(recordPos);
+                ++skippedMarshalCount;
+                ++marshallingIndex_;
+                continue;
+            }
             if (isUiCapSyncCmd) {
                 RS_LOGW("OffScreenIsSync RSTransactionData::Marshalling, nodeId:[%{public}" PRIu64 "] "
                     "%{public}s", command->GetNodeId(), success ? "success" : "fail");
@@ -173,11 +271,15 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
         // correct command size recorded in Parcel
         *reinterpret_cast<int32_t*>(parcel.GetData() + recordPosition) = static_cast<int32_t>(marshaledSize);
         ROSEN_LOGW("RSTransactionData::Marshalling data split to several parcels"
-                   ", marshaledSize:%{public}zu, marshallingIndex_:%{public}zu, total count:%{public}zu"
-                   ", parcel size:%{public}zu, threshold:%{public}zu.",
+                ", marshaledSize:%{public}zu, marshallingIndex_:%{public}zu, total count:%{public}zu"
+                ", parcel size:%{public}zu, threshold:%{public}zu.",
             marshaledSize, marshallingIndex_, payload_.size(), parcel.GetDataSize(), PARCEL_SPLIT_THRESHOLD);
 
         AlarmRsNodeLog();
+        if (skippedMarshalCount > 0) {
+            ROSEN_LOGW("RSTransactionData::Marshalling dropped %{public}zu failed commands, total count:%{public}zu",
+                skippedMarshalCount, payload_.size());
+        }
     }
     success = success && parcel.WriteBool(needSync_);
     success = success && parcel.WriteBool(needCloseSync_);
@@ -243,6 +345,7 @@ void RSTransactionData::Clear()
     payload_.clear();
     payload_.shrink_to_fit();
     timestamp_ = 0;
+    skippedCommandCount_ = 0;
 }
 
 void RSTransactionData::AddCommand(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType)
@@ -408,16 +511,42 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
             return false;
         }
         if (hasCommand) {
+            size_t cmdEnd = 0;
+            // per-command flag written unconditionally by the sender: true means a commandLen
+            // prefix follows the flag, false means the origin format
+            bool prefixEnabled = false;
+            if (!parcel.ReadBool(prefixEnabled)) {
+                ROSEN_LOGE("RSTransactionData::UnmarshallingCommand cannot read prefixEnabled");
+                return false;
+            }
+            if (prefixEnabled && !ParseCommandLengthPrefix(parcel, cmdEnd)) {
+                ROSEN_LOGE("RSTransactionData::UnmarshallingCommand invalid commandLen prefix, abort");
+                return false;
+            }
             RS_PROFILER_PUSH_OFFSET(commandOffsets_, parcel.GetReadPosition());
             if (!(parcel.ReadUint16(commandType) && parcel.ReadUint16(commandSubType))) {
+                if (SkipFailedCommand(parcel, prefixEnabled, cmdEnd, skippedCommandCount_)) {
+                    ROSEN_LOGE("RSTransactionData skip command: cannot read type/subtype");
+                    continue;
+                }
                 return false;
             }
             auto func = RSCommandFactory::Instance().GetUnmarshallingFunc(commandType, commandSubType);
             if (func == nullptr) {
+                if (SkipFailedCommand(parcel, prefixEnabled, cmdEnd, skippedCommandCount_)) {
+                    ROSEN_LOGE("RSTransactionData skip unregistered command type=%{public}u subtype=%{public}u",
+                        commandType, commandSubType);
+                    continue;
+                }
                 return false;
             }
             auto command = (*func)(parcel);
             if (command == nullptr) {
+                if (SkipFailedCommand(parcel, prefixEnabled, cmdEnd, skippedCommandCount_)) {
+                    ROSEN_LOGE("RSTransactionData skip failed command type=%{public}u subtype=%{public}u",
+                        commandType, commandSubType);
+                    continue;
+                }
                 ROSEN_LOGE("failed RSTransactionData::UnmarshallingCommand, type=%{public}u subtype=%{public}u",
                     commandType, commandSubType);
                 return false;
@@ -437,6 +566,10 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
         } else {
             continue;
         }
+    }
+    if (skippedCommandCount_ > 0) {
+        ROSEN_LOGI("RSTransactionData skipped %{public}zu commands out of %{public}zu",
+            skippedCommandCount_, len);
     }
     int32_t pid;
     uint8_t scene = 0;

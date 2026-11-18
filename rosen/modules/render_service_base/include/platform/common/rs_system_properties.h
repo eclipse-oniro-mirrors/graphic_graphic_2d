@@ -192,6 +192,7 @@ public:
     static bool GetVirtualDirtyEnabled();
     static bool GetVirtualExpandScreenDirtyEnabled();
     static bool GetVirtualExpandScreenSkipEnabled();
+    static bool GetHeteroProjectionScreenSkipEnabled();
     static bool GetOcclusionEnabled();
     static bool GetUpdateDisplayListExtEnabled();
     static bool GetDynamicLayerSkipEnabled();
@@ -397,6 +398,7 @@ public:
     static bool GetPreparePhaseQuickSkipEnabled();
     static bool GetUnmarshalParallelEnabled();
     static uint32_t GetUnmarshalParallelMinDataSize();
+    static bool GetCommandLengthPrefixEnabled();
     static bool GetBootCompleted();
     static bool GetClipRRectOptimizationEnabled();
     static bool GetNodeMemClearEnabled();

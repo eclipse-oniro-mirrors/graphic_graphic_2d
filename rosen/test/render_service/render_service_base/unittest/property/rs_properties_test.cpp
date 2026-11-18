@@ -5176,5 +5176,24 @@ HWTEST_F(RSPropertiesTest, DumpColorNGFilter002, TestSize.Level1)
     std::string dumpInfo = properties.Dump();
     EXPECT_TRUE(dumpInfo.find("ColorNGFilter") != std::string::npos);
 }
+
+/**
+ * @tc.name: IgnorePropertiesContentDirtyReset001
+ * @tc.desc: Test ResetDirty restores ignorePropertiesContentDirty_ to false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, IgnorePropertiesContentDirtyReset001, TestSize.Level1)
+{
+    RSProperties properties;
+    // default: effectProperties_ is nullptr -> IgnorePropertiesContentDirty returns false (no suppression)
+    EXPECT_FALSE(properties.IgnorePropertiesContentDirty());
+    // force effectProperties_ creation, then set ignore true (particle cache active state)
+    properties.SetForegroundNGFilter(RSNGRenderFilterBase::Create(RSNGEffectType::BLUR));
+    properties.GetEffectProperties().SetIgnorePropertiesContentDirty(true);
+    EXPECT_TRUE(properties.IgnorePropertiesContentDirty());
+    // ResetDirty should restore ignorePropertiesContentDirty_ to false (normal consideration)
+    properties.ResetDirty();
+    EXPECT_FALSE(properties.IgnorePropertiesContentDirty());
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -1506,5 +1506,58 @@ HWTEST_F(RSEffectPropertiesTest, SetShadowClipType001, TestSize.Level1)
     properties.SetShadowClipType(ShadowClipType::DEFAULT_SHAPE);
     EXPECT_EQ(properties.GetShadow()->GetClipType(), ShadowClipType::DEFAULT_SHAPE);
 }
+
+/**
+ * @tc.name: IgnorePropertiesContentDirty001
+ * @tc.desc: Test IgnorePropertiesContentDirty/SetIgnorePropertiesContentDirty getter and setter
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectPropertiesTest, IgnorePropertiesContentDirty001, TestSize.Level1)
+{
+    RSEffectProperties properties;
+    // default false
+    EXPECT_FALSE(properties.IgnorePropertiesContentDirty());
+    properties.SetIgnorePropertiesContentDirty(false);
+    EXPECT_FALSE(properties.IgnorePropertiesContentDirty());
+    properties.SetIgnorePropertiesContentDirty(true);
+    EXPECT_TRUE(properties.IgnorePropertiesContentDirty());
+}
+
+/**
+ * @tc.name: GenerateForegroundFilter_ParticleAggregationCache001
+ * @tc.desc: Test PARTICLE_AGGREGATION foreground filter uses cache path and sets ignore true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectPropertiesTest, GenerateForegroundFilter_ParticleAggregationCache001, TestSize.Level1)
+{
+    RSEffectProperties properties;
+    properties.SetForegroundNGFilter(RSNGRenderFilterBase::Create(RSNGEffectType::PARTICLE_AGGREGATION));
+    // default ignore false; cache-path branch sets it true, so no need to pre-set
+    ForegroundFilterParams params;
+    params.needGenFgFilterCache = true;
+    params.hdrUIBrightness = 1.0f; // avoid HDR branch so the NG filter branch is reached
+    properties.GenerateForegroundFilter(params);
+    // cache path writes into foregroundFilterCache_ and leaves foregroundFilter_ null,
+    // and sets ignorePropertiesContentDirty_ true to suppress per-frame content dirty
+    EXPECT_EQ(properties.GetForegroundFilter(), nullptr);
+    EXPECT_TRUE(properties.IgnorePropertiesContentDirty());
+}
+
+/**
+ * @tc.name: GenerateForegroundFilter_ParticleAggregationNoCache001
+ * @tc.desc: Test PARTICLE_AGGREGATION foreground filter uses drawable path when cache disabled
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectPropertiesTest, GenerateForegroundFilter_ParticleAggregationNoCache001, TestSize.Level1)
+{
+    RSEffectProperties properties;
+    properties.SetForegroundNGFilter(RSNGRenderFilterBase::Create(RSNGEffectType::PARTICLE_AGGREGATION));
+    ForegroundFilterParams params;
+    params.needGenFgFilterCache = false; // useCachePath false -> drawable path, dirty stays default
+    params.hdrUIBrightness = 1.0f;
+    properties.GenerateForegroundFilter(params);
+    // not cache path: ignorePropertiesContentDirty_ keeps default false (no suppression)
+    EXPECT_FALSE(properties.IgnorePropertiesContentDirty());
+}
 } // namespace Rosen
 } // namespace OHOS

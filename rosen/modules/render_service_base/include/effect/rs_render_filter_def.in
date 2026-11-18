@@ -157,6 +157,13 @@ DECLARE_FILTER(ParticleAblation, PARTICLE_ABLATION,
     ADD_PROPERTY_TAG(ParticleAblation, ExpansionSize)
 );
 
+DECLARE_FILTER(ParticleAggregation, PARTICLE_AGGREGATION,
+    ADD_PROPERTY_TAG(ParticleAggregation, Progress),
+    ADD_PROPERTY_TAG(ParticleAggregation, Direction),
+    ADD_PROPERTY_TAG(ParticleAggregation, MaxParticleCount),
+    ADD_PROPERTY_TAG(ParticleAggregation, Mode)
+);
+
 DECLARE_FILTER(FrostedGlass, FROSTED_GLASS,
     ADD_PROPERTY_TAG(FrostedGlass, BlurParams),
     ADD_PROPERTY_TAG(FrostedGlass, WeightsEmboss),

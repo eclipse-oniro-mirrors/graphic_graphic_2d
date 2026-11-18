@@ -30,7 +30,7 @@ namespace {
 constexpr uint8_t DO_SET_CAST_SCREEN_ENABLE_SKIP_WINDOW = 0;
 constexpr uint8_t DO_ADD_VIRTUAL_SCREEN_BLACK_LIST = 1;
 constexpr uint8_t DO_REMOVE_VIRTUAL_SCREEN_BLACK_LIST = 2;
-constexpr uint8_t DO_SET_VIRTUAL_SCREEN_TYPE_BLACK_LIST = 3;
+constexpr uint8_t DO_SET_VIRTUAL_SCREEN_CURSOR_MODE = 3;
 constexpr uint8_t DO_REMOVE_VIRTUAL_SCREEN_WHITE_LIST = 4;
 constexpr uint8_t DO_SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST = 5;
 constexpr uint8_t DO_SET_VIRTUAL_SCREEN_REFRESH_RATE = 6;
@@ -40,7 +40,6 @@ constexpr uint8_t DO_JUDGE_VSYNC_ENABLED_SCREEN_WHILE_POWER_STATUS_CHANGED = 9;
 constexpr uint8_t TARGET_SIZE = 10;
 
 constexpr uint8_t MAX_FUZZ_LIST_SIZE = 8;
-constexpr uint8_t MAX_FUZZ_TYPE_LIST_SIZE = 31;
 constexpr uint8_t SCREEN_POWER_STATUS_SIZE = 11;
 constexpr uint32_t FUZZ_SCREEN_ID_RANGE_MAX = 255;
 constexpr uint32_t FUZZ_STRING_OFFSET_LEN = 8;
@@ -84,15 +83,11 @@ void DoRemoveVirtualScreenBlackList(FuzzedDataProvider& fdp)
     g_screenManager->RemoveVirtualScreenBlackList(id, bList);
 }
 
-void DoSetVirtualScreenTypeBlackList(FuzzedDataProvider& fdp)
+void DoSetVirtualScreenCursorMode(FuzzedDataProvider& fdp)
 {
     ScreenId id = fdp.ConsumeIntegralInRange<ScreenId>(0, FUZZ_SCREEN_ID_RANGE_MAX);
-    uint8_t count = fdp.ConsumeIntegral<uint8_t>() % MAX_FUZZ_TYPE_LIST_SIZE;
-    std::vector<uint8_t> typeBList;
-    for (uint8_t i = 0; i < count; i++) {
-        typeBList.push_back(fdp.ConsumeIntegral<uint8_t>());
-    }
-    g_screenManager->SetVirtualScreenTypeBlackList(id, typeBList);
+    uint8_t rawMode = fdp.ConsumeIntegral<uint8_t>();
+    g_screenManager->SetVirtualScreenCursorMode(id, static_cast<RSVirtualScreenCursorMode>(rawMode));
 }
 
 void DoRemoveVirtualScreenWhiteList(FuzzedDataProvider& fdp)
@@ -187,8 +182,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         case OHOS::Rosen::DO_REMOVE_VIRTUAL_SCREEN_BLACK_LIST:
             OHOS::Rosen::DoRemoveVirtualScreenBlackList(fdp);
             break;
-        case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_TYPE_BLACK_LIST:
-            OHOS::Rosen::DoSetVirtualScreenTypeBlackList(fdp);
+        case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_CURSOR_MODE:
+            OHOS::Rosen::DoSetVirtualScreenCursorMode(fdp);
             break;
         case OHOS::Rosen::DO_REMOVE_VIRTUAL_SCREEN_WHITE_LIST:
             OHOS::Rosen::DoRemoveVirtualScreenWhiteList(fdp);

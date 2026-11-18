@@ -59,8 +59,6 @@ public:
     static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode> node);
     void OnDraw(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
-    bool CheckIfSurfaceSkipInMirrorOrScreenshot(
-        const RSSurfaceRenderParams& surfaceParams, const RSPaintFilterCanvas& canvas);
 
     const std::string& GetName() const
     {

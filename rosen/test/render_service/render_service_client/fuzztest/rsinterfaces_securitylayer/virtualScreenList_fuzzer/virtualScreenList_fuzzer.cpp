@@ -32,7 +32,8 @@ const uint8_t DO_SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST = 2;
 const uint8_t DO_SET_VIRTUAL_SCREEN_TYPE_BLACKLIST = 3;
 const uint8_t DO_ADD_VIRTUAL_SCREEN_WHITELIST = 4;
 const uint8_t DO_REMOVE_VIRTUAL_SCREEN_WHITELIST = 5;
-const uint8_t TARGET_SIZE = 6;
+const uint8_t DO_SET_VIRTUAL_SCREEN_CURSOR_MODE = 6;
+const uint8_t TARGET_SIZE = 7;
 
 void DoAddVirtualScreenBlackList(FuzzedDataProvider& fdp)
 {
@@ -76,6 +77,16 @@ void DoSetVirtualScreenTypeBlackList(FuzzedDataProvider& fdp)
         typeBlackList.push_back(static_cast<NodeType>(fdp.ConsumeIntegral<uint8_t>()));
     }
     g_rsInterfaces->SetVirtualScreenTypeBlackList(id, typeBlackList);
+}
+
+void DoSetVirtualScreenCursorMode(FuzzedDataProvider& fdp)
+{
+    ScreenId id = fdp.ConsumeIntegral<uint64_t>();
+    uint8_t rawMode = fdp.ConsumeIntegral<uint8_t>();
+    if (rawMode >= static_cast<uint8_t>(RSVirtualScreenCursorMode::MODE_MAX)) {
+        rawMode = static_cast<uint8_t>(RSVirtualScreenCursorMode::DEFAULT);
+    }
+    g_rsInterfaces->SetVirtualScreenCursorMode(id, static_cast<RSVirtualScreenCursorMode>(rawMode));
 }
 
 void DoAddVirtualScreenWhiteList(FuzzedDataProvider& fdp)
@@ -142,6 +153,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             break;
         case OHOS::Rosen::DO_REMOVE_VIRTUAL_SCREEN_WHITELIST:
             OHOS::Rosen::DoRemoveVirtualScreenWhiteList(fdp);
+            break;
+        case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_CURSOR_MODE:
+            OHOS::Rosen::DoSetVirtualScreenCursorMode(fdp);
             break;
         default:
             return -1;

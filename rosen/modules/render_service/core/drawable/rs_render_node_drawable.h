@@ -74,8 +74,6 @@ public:
 
     bool ShouldPaint() const;
 
-    bool IsWhiteListNode();
-
     static int GetTotalProcessedNodeCount();
     static void TotalProcessedNodeCountInc();
     static void ClearTotalProcessedNodeCount();

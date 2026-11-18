@@ -14,6 +14,7 @@
  */
 #ifndef RENDER_SERVICE_CORE_FEATURE_RS_SPECIAL_LAYER_UTILS_H
 #define RENDER_SERVICE_CORE_FEATURE_RS_SPECIAL_LAYER_UTILS_H
+#include <optional>
 #include <unordered_set>
 
 #include "pipeline/main_thread/rs_main_thread.h"
@@ -51,6 +52,8 @@ public:
     static bool HasMirrorDisplay(const RSRenderNodeMap& nodeMap);
     static std::unordered_set<NodeId> GetMergeBlackListInMainThread(const RSScreenProperty& screenProperty);
     static std::unordered_set<NodeId> GetMergeBlackListInRenderThread(const RSScreenProperty& screenProperty);
+    static SpecialLayerRenderParam BuildSpecialLayerRenderParam(const RSScreenRenderParams& screenParams,
+        const RSLogicalDisplayRenderParams& params, bool isWiredScreen);
     static void UpdateInfoWithGlobalBlackList(const RSRenderNodeMap& nodeMap);
     static void UpdateScreenSpecialLayer(const RSScreenProperty& screenProperty);
     static void UpdateScreenSpecialLayer(const RSScreenProperty& screenProperty, ScreenPropertyType type);
@@ -59,6 +62,9 @@ public:
     static DrawType GetDrawTypeInSecurityDisplay(
         const RSSurfaceRenderParams& surfaceParams, const RSRenderThreadParams& uniParams);
     static DrawType GetDrawTypeInSnapshot(const RSSurfaceRenderParams& surfaceParams);
+    static bool CheckIfSurfaceSkipInMirrorOrScreenshot(
+        const RSSurfaceRenderParams& surfaceParams, const RSPaintFilterCanvas& canvas);
+    static bool IsWhiteListNode();
     static void SetWhiteListRectToMetaData(RSPaintFilterCanvas& canvas, const RSRenderThreadParams& uniParam,
         const RSScreenProperty& mirrorScreenProperty, const RSLogicalDisplayRenderParams& sourceLogicalParam,
         const std::shared_ptr<RSSLRScaleFunction>& scaleManager);
@@ -67,6 +73,10 @@ public:
 private:
     static bool CheckCurrentTypeIntersectVisibleRect(const std::unordered_set<NodeId>& nodeIds,
         uint32_t currentType, const RectI& visibleRect);
+    static bool IsSpecialLayerEnable(const RSScreenProperty* screenProperty);
+    static const RSScreenProperty* GetAncestorScreenProperty(const RSSurfaceRenderParams& surfaceParams);
+    static bool IsSurfaceInBlackList(const RSSurfaceRenderParams& surfaceParams);
+    static std::optional<bool> GetCursorModeSkipDecision(const RSSurfaceRenderParams& surfaceParams);
     static void UpdateScreenSpecialLayersRecord(RSSurfaceRenderNode& sourceNode,
         RSSurfaceRenderNode& surfaceNode, RSLogicalDisplayRenderNode& displayNode, bool needCalcScreenSpecialLayer);
     static void UpdateSpecialLayersRecord(RSSurfaceRenderNode& node, RSLogicalDisplayRenderNode& displayNode);

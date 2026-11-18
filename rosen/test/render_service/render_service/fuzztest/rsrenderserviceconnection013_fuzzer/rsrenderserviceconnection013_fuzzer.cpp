@@ -53,7 +53,7 @@ constexpr const int WAIT_HANDLER_TIME_COUNT = 5;
 namespace {
 const std::string CONFIG_FILE = "/etc/unirender.config";
 const uint8_t DO_CREATE_VIRTUAL_SCREEN = 0;
-const uint8_t DO_SET_VIRTUAL_SCREEN_TYPE_BLACK_LIST = 1;
+const uint8_t DO_SET_VIRTUAL_SCREEN_CURSOR_MODE = 1;
 const uint8_t DO_SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST = 2;
 
 const uint8_t DO_SET_SCREEN_ACTIVE_MODE = 4;
@@ -168,23 +168,18 @@ void DoCreateVirtualScreen(FuzzedDataProvider& fdp)
     g_serviceConnection->OnRemoteRequest(code, dataP, reply, option);
 }
 
-void DoSetVirtualScreenTypeBlackList(FuzzedDataProvider& fdp)
+void DoSetVirtualScreenCursorMode(FuzzedDataProvider& fdp)
 {
     uint64_t id = fdp.ConsumeIntegral<uint64_t>();
-    uint8_t nodeType = fdp.ConsumeIntegral<uint8_t>();
-    std::vector<NodeType> typeBlackListVector;
-    uint8_t listSize = fdp.ConsumeIntegral<uint8_t>();
-    for (int i = 0; i < listSize; i++) {
-        typeBlackListVector.push_back(nodeType);
-    }
+    uint8_t mode = fdp.ConsumeIntegral<uint8_t>();
     MessageParcel dataP;
     MessageParcel reply;
     MessageOption option;
     dataP.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     option.SetFlags(MessageOption::TF_ASYNC);
     dataP.WriteUint64(id);
-    dataP.WriteUInt8Vector(typeBlackListVector);
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST);
+    dataP.WriteUint8(mode);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_CURSOR_MODE);
     g_serviceConnection->OnRemoteRequest(code, dataP, reply, option);
 }
 
@@ -660,8 +655,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         case OHOS::Rosen::DO_CREATE_VIRTUAL_SCREEN:
             OHOS::Rosen::DoCreateVirtualScreen(fdp);
             break;
-        case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_TYPE_BLACK_LIST:
-            OHOS::Rosen::DoSetVirtualScreenTypeBlackList(fdp);
+        case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_CURSOR_MODE:
+            OHOS::Rosen::DoSetVirtualScreenCursorMode(fdp);
             break;
         case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST:
             OHOS::Rosen::DoSetVirtualScreenSecurityExemptionList(fdp);

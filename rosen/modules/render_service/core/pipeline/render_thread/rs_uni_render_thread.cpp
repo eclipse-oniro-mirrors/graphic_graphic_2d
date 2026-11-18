@@ -118,6 +118,24 @@ const std::map<int, int32_t> BLUR_CNT_TO_BLUR_CODE {
     { 3, 10023 },
 };
 
+const std::unordered_set<NodeId> EMPTY_NODE_ID_SET;
+
+const SpecialLayerRenderParam* GetSpecialLayerRenderParam()
+{
+    const auto& renderThreadParams = RSRenderThreadParamsManager::Instance().GetRSRenderThreadParams();
+    return renderThreadParams == nullptr ? nullptr : &renderThreadParams->GetSpecialLayerRenderParam();
+}
+
+SpecialLayerRenderParam* GetMutableSpecialLayerRenderParam(const char* caller)
+{
+    const auto& renderThreadParams = RSRenderThreadParamsManager::Instance().GetRSRenderThreadParams();
+    if (UNLIKELY(renderThreadParams == nullptr)) {
+        RS_LOGE("RSUniRenderThread::%{public}s renderThreadParams is null", caller);
+        return nullptr;
+    }
+    return &renderThreadParams->GetMutableSpecialLayerRenderParam();
+}
+
 void PerfRequest(int32_t perfRequestCode, bool onOffTag)
 {
 #ifdef SOC_PERF_ENABLE
@@ -405,6 +423,48 @@ bool RSUniRenderThread::IsIdle() const
 void RSUniRenderThread::Sync(std::unique_ptr<RSRenderThreadParams>&& stagingRenderThreadParams)
 {
     RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(stagingRenderThreadParams));
+}
+
+void RSUniRenderThread::SetBlackList(const std::unordered_set<NodeId>& blackList)
+{
+    auto* param = GetMutableSpecialLayerRenderParam(__func__);
+    if (param != nullptr) {
+        param->blackList = blackList;
+    }
+}
+
+void RSUniRenderThread::SetCursorMode(RSVirtualScreenCursorMode mode)
+{
+    auto* param = GetMutableSpecialLayerRenderParam(__func__);
+    if (param != nullptr) {
+        param->cursorMode = mode;
+    }
+}
+
+void RSUniRenderThread::SetWhiteList(const std::unordered_set<NodeId>& whiteList)
+{
+    auto* param = GetMutableSpecialLayerRenderParam(__func__);
+    if (param != nullptr) {
+        param->whiteList = whiteList;
+    }
+}
+
+const std::unordered_set<NodeId>& RSUniRenderThread::GetBlackList() const
+{
+    const auto* param = GetSpecialLayerRenderParam();
+    return param != nullptr ? param->blackList : EMPTY_NODE_ID_SET;
+}
+
+const std::unordered_set<NodeId>& RSUniRenderThread::GetWhiteList() const
+{
+    const auto* param = GetSpecialLayerRenderParam();
+    return param != nullptr ? param->whiteList : EMPTY_NODE_ID_SET;
+}
+
+RSVirtualScreenCursorMode RSUniRenderThread::GetCursorMode() const
+{
+    const auto* param = GetSpecialLayerRenderParam();
+    return param != nullptr ? param->cursorMode : RSVirtualScreenCursorMode::DEFAULT;
 }
 
 void RSUniRenderThread::Render()

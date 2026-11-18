@@ -575,6 +575,14 @@ enum class RSSurfaceNodeType : uint8_t {
     NODE_MAX,
 };
 
+// Cursor render decision on one virtual screen. Priority: id blackList > cursorMode > id whiteList.
+enum class RSVirtualScreenCursorMode : uint8_t {
+    DEFAULT = 0,           // default behavior
+    HIDE,                  // cursor is never rendered on this screen
+    FORCE_RENDER,          // cursor bypasses the id white list, still dropped by any black list
+    MODE_MAX,
+};
+
 enum class MultiThreadCacheType : uint8_t {
     NONE = 0,
     LEASH_WINDOW,
