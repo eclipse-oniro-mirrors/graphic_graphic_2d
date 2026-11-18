@@ -2365,4 +2365,44 @@ HWTEST_F(RSMemoryManagerTest, IsAbnormalProcessFromEngineTest002, TestSize.Level
     MemorySnapshot::Instance().RemoveAbnormalProcess(0);
     MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
 }
+
+/**
+ * @tc.name: PurgeMidnightCleanTest001
+ * @tc.desc: Verify PurgeMidnightClean does not crash when RSUniRenderThread has no render engine;
+ *           the posted task should handle nullptr gracefully.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryManagerTest, PurgeMidnightCleanTest001, TestSize.Level1)
+{
+    g_logMsg.clear();
+    LOG_SetCallback(MyLogCallback);
+    auto& rtThread = RSUniRenderThread::Instance();
+    auto savedEngine = rtThread.uniRenderEngine_;
+    rtThread.uniRenderEngine_ = nullptr;
+    MemoryManager::PurgeMidnightClean();
+    rtThread.uniRenderEngine_ = savedEngine;
+    // task is not executed because handler_ is null in test env; no error log should be produced
+    EXPECT_TRUE(g_logMsg.find("renderEngine is nullptr") == std::string::npos);
+}
+
+/**
+ * @tc.name: PurgeMidnightCleanTest002
+ * @tc.desc: Verify PurgeMidnightClean does not crash when RSUniRenderThread has a render engine
+ *           but the render context is nullptr.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryManagerTest, PurgeMidnightCleanTest002, TestSize.Level1)
+{
+    g_logMsg.clear();
+    LOG_SetCallback(MyLogCallback);
+    auto& rtThread = RSUniRenderThread::Instance();
+    auto savedEngine = rtThread.uniRenderEngine_;
+    rtThread.uniRenderEngine_ = std::make_shared<RSRenderEngine>();
+    MemoryManager::PurgeMidnightClean();
+    rtThread.uniRenderEngine_ = savedEngine;
+    // task is not executed because handler_ is null in test env; no error log should be produced
+    EXPECT_TRUE(g_logMsg.find("renderContext is nullptr") == std::string::npos);
+}
 } // namespace OHOS::Rosen

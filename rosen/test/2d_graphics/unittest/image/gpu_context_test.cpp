@@ -816,6 +816,18 @@ HWTEST_F(GpuContextTest, RegisterCreatePipelineTimeCallback001, TestSize.Level1)
     gpuContext->RegisterCreatePipelineTimeCallback(callback);
 }
 
+/**
+ * @tc.name: PurgeTrimMemory2InitStateTest001
+ * @tc.desc: Test PurgeTrimMemory2InitState with default-constructed GPUContext (no impl).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GpuContextTest, PurgeTrimMemory2InitStateTest001, TestSize.Level1)
+{
+    std::unique_ptr<GPUContext> gpuContext = std::make_unique<GPUContext>();
+    ASSERT_TRUE(gpuContext != nullptr);
+    gpuContext->PurgeTrimMemory2InitState();
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

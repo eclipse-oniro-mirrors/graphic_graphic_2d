@@ -60,6 +60,7 @@ public:
     static void ReleaseUnlockAndSafeCacheGpuResource(Drawing::GPUContext* grContext);
     static float GetAppGpuMemoryInMB(Drawing::GPUContext* gpuContext);
     static void InitMemoryLimit();
+    static void PurgeMidnightClean();
     static void SetGpuMemoryLimit(Drawing::GPUContext* gpuContext);
     static void MemoryOverCheck(Drawing::GPUContext* gpuContext);
     static bool MemoryOverflow(pid_t pid, size_t overflowMemory, bool isGpu);

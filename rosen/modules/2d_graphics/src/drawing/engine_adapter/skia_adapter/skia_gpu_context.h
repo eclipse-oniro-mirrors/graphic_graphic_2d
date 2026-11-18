@@ -114,6 +114,8 @@ public:
 
     void PurgeUnlockAndSafeCacheGpuResources() override;
 
+    void PurgeTrimMemory2InitState() override;
+
     void ReleaseByTag(const GPUResourceTag &tag) override;
 
     void PurgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<pid_t>& exitedPidSet,
