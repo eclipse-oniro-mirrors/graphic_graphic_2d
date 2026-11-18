@@ -29,11 +29,13 @@
 namespace OHOS::Rosen {
 
 class RSUniRenderVirtualProcessor;
+class RSPaintFilterCanvas;
 
 namespace DrawableV2 {
 
 class RSScreenRenderNodeDrawable;
 class RSLogicalDisplayRenderNodeDrawable;
+class RSRenderNodeDrawable;
 
 enum class RenderStrategy : int {
     INVALID = -1,  // Initial state
@@ -149,6 +151,18 @@ private:
         RSLogicalDisplayRenderNodeDrawable& drawable,
         RSLogicalDisplayRenderParams& params,
         const std::shared_ptr<RSUniRenderVirtualProcessor>& processor);
+
+    static void RenderWindowRecordFrame(
+        RSScreenRenderNodeDrawable& drawable,
+        RSUniRenderVirtualProcessor& recordProcessor);
+
+    static void CaptureWindowRecordSurfaces(
+        RSPaintFilterCanvas& canvas,
+        RSLogicalDisplayRenderNodeDrawable& drawable,
+        RSScreenRenderParams* screenParams,
+        RSLogicalDisplayRenderParams& params,
+        RSRenderNodeDrawable& sourceDrawable,
+        const RSWindowRecordConfig& config);
 
     static std::pair<MultiScreenParams, bool> GetMultiScreenParams(RSLogicalDisplayRenderParams& params);
 };

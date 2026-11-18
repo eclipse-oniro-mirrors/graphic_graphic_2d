@@ -1322,9 +1322,12 @@ WindowRecordDisplayOutcome PrepareRecordDisplayBBox(RSScreenRenderNodeDrawable& 
     return WindowRecordDisplayOutcome::RECORD_ACTIVE;
 }
 
+} // namespace
+
 // Draws one window-record frame; the cancel guard spans the acquired-frame lifetime and is disarmed
 // only after PostProcess publishes it.
-void RenderWindowRecordFrame(RSScreenRenderNodeDrawable& drawable, RSUniRenderVirtualProcessor& recordProcessor)
+void RSMultiScreenUtil::RenderWindowRecordFrame(
+    RSScreenRenderNodeDrawable& drawable, RSUniRenderVirtualProcessor& recordProcessor)
 {
     // RSRenderFrame auto-flushes in its destructor; any exit below that skips PostProcess must cancel
     // the acquired frames.
@@ -1363,6 +1366,7 @@ void RenderWindowRecordFrame(RSScreenRenderNodeDrawable& drawable, RSUniRenderVi
     drawable.SetDrawSkipType(DrawSkipType::MIRROR_DRAWABLE_SKIP);
 }
 
+namespace {
 // Source display snapshot plus the geometry handed to the display pass.
 struct WindowRecordSourceSnapshot {
     std::shared_ptr<RSRenderNodeDrawable> renderDrawable;
@@ -1488,11 +1492,14 @@ void UpdateWindowRecordFrameRect(RSUniRenderVirtualProcessor& processor, const D
         curFrameRect.GetLeft(), curFrameRect.GetTop(), curFrameRect.GetRight(), curFrameRect.GetBottom());
 }
 
+} // namespace
+
 // Captures recorded surfaces with the record-only filter state; NodeListGuard restores the shared
 // filter lists/record flag and the render flags are restored below, on every exit path.
-void CaptureWindowRecordSurfaces(RSPaintFilterCanvas& canvas, RSLogicalDisplayRenderNodeDrawable& drawable,
-    RSScreenRenderParams* screenParams, RSLogicalDisplayRenderParams& params,
-    RSRenderNodeDrawable& sourceDrawable, const RSWindowRecordConfig& config)
+void RSMultiScreenUtil::CaptureWindowRecordSurfaces(RSPaintFilterCanvas& canvas,
+    RSLogicalDisplayRenderNodeDrawable& drawable, RSScreenRenderParams* screenParams,
+    RSLogicalDisplayRenderParams& params, RSRenderNodeDrawable& sourceDrawable,
+    const RSWindowRecordConfig& config)
 {
     RSUniRenderThread::NodeListGuard nodeListGuard;
     // Mixed leash persistent ids and surface node ids are resolved on the main thread; the
@@ -1536,7 +1543,6 @@ void CaptureWindowRecordSurfaces(RSPaintFilterCanvas& canvas, RSLogicalDisplayRe
     RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s surfaces[%zu] fit[%d]", WINDOW_RECORD_DISPLAY_FUNC,
         config.surfaceNodeIds.size(), static_cast<int>(config.renderFit));
 }
-} // namespace
 
 void RSMultiScreenUtil::HandleWindowRecordScreen(
     RSScreenRenderNodeDrawable& drawable,
