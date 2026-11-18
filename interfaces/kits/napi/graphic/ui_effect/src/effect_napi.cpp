@@ -149,6 +149,24 @@ napi_value ParseJsValue(napi_env env, napi_value jsObject, const std::string& na
     return value;
 }
 
+bool CopyJsObjectProperties(napi_env env, napi_value target, napi_value source)
+{
+    napi_value global = nullptr;
+    if (napi_get_global(env, &global) != napi_ok) {
+        return false;
+    }
+    napi_value objectCtor = nullptr;
+    if (napi_get_named_property(env, global, "Object", &objectCtor) != napi_ok) {
+        return false;
+    }
+    napi_value assignFn = nullptr;
+    if (napi_get_named_property(env, objectCtor, "assign", &assignFn) != napi_ok) {
+        return false;
+    }
+    napi_value args[NUM_2] = { target, source };
+    return napi_call_function(env, global, assignFn, sizeof(args) / sizeof(args[0]), args, nullptr) == napi_ok;
+}
+
 bool CheckCreateBrightnessBlender(napi_env env, napi_value jsObject)
 {
     bool result = true;
@@ -210,8 +228,14 @@ napi_value EffectNapi::CreateBrightnessBlender(napi_env env, napi_callback_info 
         ParseBrightnessBlender(env, nativeObj, blender), nullptr, blender,
         UIEFFECT_LOG_E("EffectNapi CreateBrightnessBlender fail"));
 
+    napi_value resultObj = nullptr;
+    status = napi_create_object(env, &resultObj);
+    UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, blender,
+        UIEFFECT_LOG_E("EffectNapi CreateBrightnessBlender create object fail"));
+    UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(CopyJsObjectProperties(env, resultObj, nativeObj), nullptr, blender,
+        UIEFFECT_LOG_E("EffectNapi CreateBrightnessBlender copy properties fail"));
     status = napi_wrap_s(
-        env, nativeObj, blender,
+        env, resultObj, blender,
         [](napi_env env, void* data, void* hint) {
             BrightnessBlender* blenderObj = (BrightnessBlender*)data;
             delete blenderObj;
@@ -221,7 +245,7 @@ napi_value EffectNapi::CreateBrightnessBlender(napi_env env, napi_callback_info 
         UIEFFECT_LOG_E("EffectNapi CreateBrightnessBlender wrap fail"));
 
     API_STATS_HISTOGRAM("Arkgraphics2d.UIEffect.createBrightnessBlender", 1);
-    return nativeObj;
+    return resultObj;
 }
 
 napi_value EffectNapi::CreateHdrBrightnessBlender(napi_env env, napi_callback_info info)
@@ -249,8 +273,14 @@ napi_value EffectNapi::CreateHdrBrightnessBlender(napi_env env, napi_callback_in
 
     blender->SetHdr(true);
 
+    napi_value resultObj = nullptr;
+    status = napi_create_object(env, &resultObj);
+    UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, blender,
+        UIEFFECT_LOG_E("EffectNapi CreateHdrBrightnessBlender create object fail"));
+    UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(CopyJsObjectProperties(env, resultObj, nativeObj), nullptr, blender,
+        UIEFFECT_LOG_E("EffectNapi CreateHdrBrightnessBlender copy properties fail"));
     status = napi_wrap_s(
-        env, nativeObj, blender,
+        env, resultObj, blender,
         [](napi_env env, void* data, void* hint) {
             BrightnessBlender* blenderObj = (BrightnessBlender*)data;
             delete blenderObj;
@@ -260,7 +290,7 @@ napi_value EffectNapi::CreateHdrBrightnessBlender(napi_env env, napi_callback_in
         UIEFFECT_LOG_E("EffectNapi CreateHdrBrightnessBlender wrap fail"));
 
     API_STATS_HISTOGRAM("Arkgraphics2d.UIEffect.createHdrBrightnessBlender", 1);
-    return nativeObj;
+    return resultObj;
 }
 
 napi_value EffectNapi::CreateBorderLight(napi_env env, napi_callback_info info)
@@ -647,8 +677,14 @@ napi_value EffectNapi::CreateShadowBlender(napi_env env, napi_callback_info info
         ParseShadowBlender(env, nativeObj, blender), nullptr, blender,
         UIEFFECT_LOG_E("EffectNapi CreateShadowBlender parse failed"));
 
+    napi_value resultObj = nullptr;
+    status = napi_create_object(env, &resultObj);
+    UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, blender,
+        UIEFFECT_LOG_E("EffectNapi CreateShadowBlender create object fail"));
+    UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(CopyJsObjectProperties(env, resultObj, nativeObj), nullptr, blender,
+        UIEFFECT_LOG_E("EffectNapi CreateShadowBlender copy properties fail"));
     status = napi_wrap_s(
-        env, nativeObj, blender,
+        env, resultObj, blender,
         [](napi_env env, void* data, void* hint) {
             ShadowBlender* blenderObj = (ShadowBlender*)data;
             delete blenderObj;
@@ -657,7 +693,7 @@ napi_value EffectNapi::CreateShadowBlender(napi_env env, napi_callback_info info
     UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, blender,
         UIEFFECT_LOG_E("EffectNapi CreateShadowBlender wrap fail"));
 
-    return nativeObj;
+    return resultObj;
 }
 
 napi_value EffectNapi::CreateHdrDarkenBlender(napi_env env, napi_callback_info info)
@@ -782,13 +818,19 @@ napi_value EffectNapi::CreateColorfulBrightnessBlender(napi_env env, napi_callba
         ParseColorfulBrightnessBlender(env, nativeObj, optionsObj, blender), nullptr, blender,
         UIEFFECT_LOG_E("EffectNapi CreateColorfulBrightnessBlender fail"));
 
-    status = napi_wrap_s(env, nativeObj, blender,
+    napi_value resultObj = nullptr;
+    status = napi_create_object(env, &resultObj);
+    UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, blender,
+        UIEFFECT_LOG_E("EffectNapi CreateColorfulBrightnessBlender create object fail"));
+    UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(CopyJsObjectProperties(env, resultObj, nativeObj), nullptr, blender,
+        UIEFFECT_LOG_E("EffectNapi CreateColorfulBrightnessBlender copy properties fail"));
+    status = napi_wrap_s(env, resultObj, blender,
         [](napi_env env, void* data, void* hint) {
             delete static_cast<ColorfulBrightnessBlender*>(data);
         }, nullptr, &BLENDER_TYPE_TAG, nullptr);
     UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, blender,
         UIEFFECT_LOG_E("EffectNapi CreateColorfulBrightnessBlender wrap fail"));
-    return nativeObj;
+    return resultObj;
 }
 
 bool EffectNapi::CheckCreateShadowBlender(napi_env env, napi_value jsObject)
