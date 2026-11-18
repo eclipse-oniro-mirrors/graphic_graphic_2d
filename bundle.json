@@ -137,6 +137,7 @@
           "runtime_core",
           "hiview",
           "i18n",
+          "drivers_interface_memorytracker",
           "api_metrics",
           "selinux_adapter",
           "taihe_ffi_gen"
