@@ -21,6 +21,7 @@
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/opinc/rs_opinc_draw_cache_helper.h"
 #include "feature/layer/rs_layer_cache_manager.h"
+#include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "feature_cfg/feature_param/performance_feature/opinc_param.h"
 #include "feature/opinc/rs_layer_part_draw_cache_helper.h"
@@ -408,7 +409,7 @@ bool RSRenderNodeDrawable::SkipDrawByWhiteList(Drawing::Canvas& canvas)
     }
 
     // 2. white list is empty, or white list root ids is not empty, draw normally
-    if (IsWhiteListNode()) {
+    if (RSSpecialLayerUtils::IsWhiteListNode()) {
         return false;
     }
 
@@ -417,18 +418,6 @@ bool RSRenderNodeDrawable::SkipDrawByWhiteList(Drawing::Canvas& canvas)
         DrawChildren(canvas, params->GetFrameRect());
     }
     return true;
-}
-
-bool RSRenderNodeDrawable::IsWhiteListNode()
-{
-    // if virtual screen white list is empty, don't skip draw
-    const auto& whiteList = RSUniRenderThread::Instance().GetWhiteList();
-    if (whiteList.empty()) {
-        return true;
-    }
-
-    // check if the parent node or itself has been recorded as whitelist RootId
-    return !RSSpecialLayerManager::IsWhiteListRootIdsEmpty();
 }
 
 CM_INLINE void RSRenderNodeDrawable::CheckCacheTypeAndDraw(

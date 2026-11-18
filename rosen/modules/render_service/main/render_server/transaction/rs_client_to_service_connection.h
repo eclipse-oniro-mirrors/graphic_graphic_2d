@@ -107,8 +107,8 @@ private:
 
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) override;
 
-    ErrCode SetVirtualScreenTypeBlackList(
-        ScreenId id, std::vector<NodeType>& typeBlackListVector, int32_t& repCode) override;
+    ErrCode SetVirtualScreenCursorMode(
+        ScreenId id, RSVirtualScreenCursorMode mode, int32_t& repCode) override;
 
     ErrCode AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode) override;
 

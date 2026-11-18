@@ -318,9 +318,10 @@ else
 2. 单屏黑名单（per-screen blackList）
    └─ 仅影响特定虚拟屏，存储在 RSScreenThreadSafeProperty
 
-3. 类型黑名单（typeBlackList）
-   └─ 按节点类型（uint8_t）过滤，仅影响特定虚拟屏
-   └─ RSScreenManager::SetVirtualScreenTypeBlackList 仅保留 CURSOR_NODE，其它类型静默丢弃（RS_LOGW），返回码契约不变
+3. 光标渲染模式（`RSVirtualScreenCursorMode`：`DEFAULT` / `HIDE` / `FORCE_RENDER`）
+   └─ 仅影响特定虚拟屏，存于 `RSScreenThreadSafeProperty` 槽位 `CURSOR_RENDER_MODE`(=20)，uint8_t，
+      单字段 last-writer-wins
+   └─ IPC 码值、wire、越界校验与渲染侧判定点见 `special-layer.md`
 
 4. 白名单（whiteList）
    └─ 明确允许在特定虚拟屏上渲染的节点，按 NodeId
@@ -357,7 +358,7 @@ else
 1. 节点在 SecurityExemptionList 中 → 允许渲染，跳过后续检查。
 2. 节点在全局黑名单中 → 禁止渲染。
 3. 节点在单屏黑名单中 → 禁止渲染。
-4. 节点类型在类型黑名单中 → 禁止渲染。
+4. `CURSOR_NODE` 且 cursorMode 为 `HIDE` → 禁止渲染；为 `FORCE_RENDER` → 允许渲染（仅绕过第 5 条）。
 5. 节点在白名单中 → 允许渲染。
 6. 未命中以上规则 → 按 `CastScreenEnableSkipWindow` 和安全标志决定。
 

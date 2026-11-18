@@ -117,8 +117,7 @@ public:
     virtual ErrCode RemoveVirtualScreenWhiteList(
         ScreenId id, const std::vector<NodeId>& whiteList, int32_t& repCode) = 0;
 
-    virtual ErrCode SetVirtualScreenTypeBlackList(
-        ScreenId id, std::vector<NodeType>& typeBlackListVector, int32_t& repCode) = 0;
+    virtual ErrCode SetVirtualScreenCursorMode(ScreenId id, RSVirtualScreenCursorMode mode, int32_t& repCode) = 0;
 
     virtual ErrCode SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
         bool& success, uint32_t rowCount = 0, uint32_t colCount = 0) = 0;

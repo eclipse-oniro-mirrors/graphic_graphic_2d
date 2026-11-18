@@ -560,15 +560,15 @@ int32_t RSClientToServiceConnection::SetVirtualScreenBlackList(ScreenId id, cons
     return screenManagerAgent_->SetVirtualScreenBlackList(id, blacklist);
 }
 
-ErrCode RSClientToServiceConnection::SetVirtualScreenTypeBlackList(
-    ScreenId id, std::vector<uint8_t>& typeBlackListVector, int32_t& repCode)
+ErrCode RSClientToServiceConnection::SetVirtualScreenCursorMode(
+    ScreenId id, RSVirtualScreenCursorMode mode, int32_t& repCode)
 {
     if (!screenManagerAgent_) {
         RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
         repCode = StatusCode::SCREEN_NOT_FOUND;
         return ERR_INVALID_VALUE;
     }
-    repCode = screenManagerAgent_->SetVirtualScreenTypeBlackList(id, typeBlackListVector);
+    repCode = screenManagerAgent_->SetVirtualScreenCursorMode(id, mode);
     return ERR_OK;
 }
 

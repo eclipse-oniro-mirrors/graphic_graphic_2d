@@ -221,7 +221,8 @@ bool RSPointerWindowManager::IsPointerInvisibleInMultiScreen() const
                 return;
             }
             const auto& screenProperty = node->GetScreenProperty();
-            if (screenProperty.GetTypeBlackList().empty() && (node->IsMirrorScreen() || screenProperty.IsVirtual())) {
+            if (screenProperty.GetCursorMode() != RSVirtualScreenCursorMode::HIDE &&
+                (node->IsMirrorScreen() || screenProperty.IsVirtual())) {
                 isPointerInvisible = false;
                 return;
             }

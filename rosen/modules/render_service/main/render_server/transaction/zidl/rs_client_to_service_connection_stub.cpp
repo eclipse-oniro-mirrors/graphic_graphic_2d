@@ -73,7 +73,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_RESOLUTION),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SURFACE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_BLACKLIST),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST),
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_CURSOR_MODE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST),
@@ -603,19 +603,24 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             SetVirtualScreenBlackList(id, blackList);
             break;
         }
-        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST): {
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_CURSOR_MODE): {
             // read the parcel data.
             ScreenId id{INVALID_SCREEN_ID};
-            std::vector<NodeType> typeBlackListVector;
-            if (!data.ReadUint64(id) || !data.ReadUInt8Vector(&typeBlackListVector)) {
-                RS_LOGE("RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST read parcel failed!");
+            uint8_t rawMode = 0;
+            if (!data.ReadUint64(id) || !data.ReadUint8(rawMode)) {
+                RS_LOGE("RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_CURSOR_MODE read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (rawMode >= static_cast<uint8_t>(RSVirtualScreenCursorMode::MODE_MAX)) {
+                RS_LOGE("RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_CURSOR_MODE invalid mode!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
             int32_t repCode = StatusCode::SUCCESS;
-            SetVirtualScreenTypeBlackList(id, typeBlackListVector, repCode);
+            SetVirtualScreenCursorMode(id, static_cast<RSVirtualScreenCursorMode>(rawMode), repCode);
             if (repCode != StatusCode::SUCCESS) {
-                RS_LOGE("RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST fail, "\
+                RS_LOGE("RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_CURSOR_MODE fail, "\
                     "repCode:%{public}d", repCode);
             }
             break;

@@ -487,33 +487,33 @@ int32_t RSClientToServiceConnectionProxy::SetVirtualScreenBlackList(ScreenId id,
     return ERR_OK;
 }
 
-ErrCode RSClientToServiceConnectionProxy::SetVirtualScreenTypeBlackList(
-    ScreenId id, std::vector<NodeType>& typeBlackListVector, int32_t& repCode)
+ErrCode RSClientToServiceConnectionProxy::SetVirtualScreenCursorMode(
+    ScreenId id, RSVirtualScreenCursorMode mode, int32_t& repCode)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
 
     if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
-        ROSEN_LOGE("SetVirtualScreenTypeBlackList: WriteInterfaceToken GetDescriptor err.");
+        ROSEN_LOGE("%{public}s: WriteInterfaceToken GetDescriptor err.", __func__);
         repCode = WRITE_PARCEL_ERR;
         return ERR_INVALID_VALUE;
     }
 
     if (!data.WriteUint64(id)) {
-        ROSEN_LOGE("SetVirtualScreenTypeBlackList: WriteUint64 id err.");
+        ROSEN_LOGE("%{public}s: WriteUint64 id err.", __func__);
         repCode = WRITE_PARCEL_ERR;
         return ERR_INVALID_VALUE;
     }
-    if (!data.WriteUInt8Vector(typeBlackListVector)) {
-        ROSEN_LOGE("SetVirtualScreenTypeBlackList: WriteUInt8Vector typeBlackListVector err.");
+    if (!data.WriteUint8(static_cast<uint8_t>(mode))) {
+        ROSEN_LOGE("%{public}s: WriteUint8 mode err.", __func__);
         repCode = WRITE_PARCEL_ERR;
         return ERR_INVALID_VALUE;
     }
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_CURSOR_MODE);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
-        ROSEN_LOGE("RSClientToServiceConnectionProxy::SetVirtualScreenTypeBlackList: Send Request err.");
+        ROSEN_LOGE("%{public}s: Send Request err.", __func__);
         repCode = RS_CONNECTION_ERROR;
         return ERR_INVALID_VALUE;
     }

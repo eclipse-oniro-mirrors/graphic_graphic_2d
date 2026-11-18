@@ -1472,13 +1472,12 @@ HWTEST_F(RSRenderNodeDrawableTest, SkipDrawByWhiteList001, TestSize.Level1)
     params.isMirror_ = true;
     std::unordered_set<NodeId> whiteList = {nodeId};
     RSUniRenderThread::Instance().composerClientManager_ = std::make_shared<RSComposerClientManager>();
+
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
     RSUniRenderThread::Instance().SetWhiteList(whiteList);
     AutoSpecialLayerStateRecover whiteListRecover(INVALID_NODEID);
     RSUniRenderThread::SetCaptureParam(params);
-
-    // set render thread param
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
 
     drawable->renderParams_ = nullptr;
     ASSERT_TRUE(drawable->SkipDrawByWhiteList(canvas));
@@ -1503,6 +1502,10 @@ HWTEST_F(RSRenderNodeDrawableTest, SkipDrawByWhiteList001, TestSize.Level1)
     RSUniRenderThread::SetCaptureParam(params);
     ASSERT_TRUE(drawable->SkipDrawByWhiteList(canvas));
     ASSERT_TRUE(drawable->SkipDrawByWhiteList(canvas));
+
+    // restore, renderThreadParams and captureParam_ are thread_local and shared by the following cases
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::ResetCaptureParam();
 }
 
 /**
@@ -1524,14 +1527,14 @@ HWTEST_F(RSRenderNodeDrawableTest, SkipDrawByWhiteList002, TestSize.Level1)
     CaptureParam params;
     params.isMirror_ = true;
     std::unordered_set<NodeId> whiteList = {nodeId};
+
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+
     RSUniRenderThread::Instance().SetWhiteList(whiteList);
     AutoSpecialLayerStateRecover whiteListRecover(nodeId);
     RSUniRenderThread::SetCaptureParam(params);
     ASSERT_FALSE(drawable->SkipDrawByWhiteList(canvas));
-
-    // set render thread param
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
 
     params.isMirror_ = true;
     RSUniRenderThread::Instance().SetWhiteList({});
@@ -1541,6 +1544,9 @@ HWTEST_F(RSRenderNodeDrawableTest, SkipDrawByWhiteList002, TestSize.Level1)
     params.isMirror_ = false;
     RSUniRenderThread::SetCaptureParam(params);
     ASSERT_FALSE(drawable->SkipDrawByWhiteList(canvas));
+
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::ResetCaptureParam();
 }
 
 /**

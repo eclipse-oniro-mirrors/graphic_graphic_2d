@@ -132,13 +132,41 @@ public:
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
 
     /**
+     * @brief Decide whether the cursor node is rendered on this virtual screen.
+     * Priority is blackList > cursorMode > whiteList: HIDE drops the cursor unconditionally,
+     * FORCE_RENDER only exempts it from the node id whiteList and never bypasses any blackList,
+     * DEFAULT keeps the default id whiteList filtering.
+     * The mode is a single field, so the last call wins and overwrites any previous mode.
+     * @param id Screen id.
+     * @param mode Cursor render mode, see RSVirtualScreenCursorMode.
+     * @return 0 means success, others failed.
+     */
+    int32_t SetVirtualScreenCursorMode(ScreenId id, RSVirtualScreenCursorMode mode);
+
+    /**
      * @brief Use nodeType to Set blackList for mirror screen.
+     * @deprecated Kept for source compatibility, forwards to SetVirtualScreenCursorMode.
+     * A list containing CURSOR_NODE maps to HIDE, any other list maps to DEFAULT,
+     * which also clears a mode set earlier by SetVirtualScreenTypeWhiteList.
      * @param id Screen id.
      * @param typeBlackListVector Vector of NodeType. Only RSSurfaceNodeType::CURSOR_NODE takes effect,
      * other node types are filtered out silently.
      * @return 0 means success, others failed.
      */
-    int32_t SetVirtualScreenTypeBlackList(ScreenId id, std::vector<NodeType>& typeBlackListVector);
+    int32_t SetVirtualScreenTypeBlackList(ScreenId id, const std::vector<NodeType>& typeBlackListVector);
+
+    /**
+     * @brief Use nodeType to set whiteList for mirror screen. A node type listed here is rendered on this
+     * screen even when it is absent from the node id whiteList, e.g. cursor_node.
+     * @deprecated Kept for source compatibility, forwards to SetVirtualScreenCursorMode.
+     * A list containing CURSOR_NODE maps to FORCE_RENDER, any other list maps to DEFAULT,
+     * which also clears a mode set earlier by SetVirtualScreenTypeBlackList.
+     * @param id Screen id.
+     * @param typeWhiteListVector Vector of NodeType. Only RSSurfaceNodeType::CURSOR_NODE takes effect,
+     * other node types are filtered out silently.
+     * @return 0 means success, others failed.
+     */
+    int32_t SetVirtualScreenTypeWhiteList(ScreenId id, const std::vector<NodeType>& typeWhiteListVector);
 
     /**
      * @brief Add list of surfaceNodeId excluded on virtual screen.
