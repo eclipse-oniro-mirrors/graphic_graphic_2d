@@ -340,7 +340,8 @@ void RSUniFilterDirtyComputeUtil::ResetFilterInfoStatus(DrawableV2::RSScreenRend
 }
 
 FilterDirtyRegionInfo RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(
-    RSRenderNode& filterNode, const std::optional<Occlusion::Region>& preDirty, bool isSurface)
+    RSRenderNode& filterNode, const std::optional<Occlusion::Region>& preDirty, bool isSurface,
+    bool forceDisablePartialRender)
 {
     RectI filterRect = (filterNode.NeedDrawBehindWindow() || filterNode.IsInstanceOf<RSEffectRenderNode>()) ?
         filterNode.GetFilterRect() : filterNode.GetOldDirtyInSurface().JoinRect(filterNode.GetFilterRegion());
@@ -358,8 +359,8 @@ FilterDirtyRegionInfo RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo
         .belowDirty_ = preDirty.value_or(Occlusion::Region()),
         .isBackgroundFilterClean_ = RSEffectUtils::HasBackgroundDependentFilter(filterProperties) &&
             !filterNode.IsBackgroundInAppOrNodeSelfDirty(),
-        .forceDisablePartialRender_ = filterNode.IsPixelStretchValid() ||
-            filterNode.GetRenderProperties().NeedDisabledPartialRender()
+        .forceDisablePartialRender_ = forceDisablePartialRender || filterNode.IsPixelStretchValid() ||
+            filterProperties.NeedDisabledPartialRender()
     };
     return filterInfo;
 }
@@ -505,8 +506,8 @@ bool RSUniDirtyComputeUtil::CheckCurrentFrameHasDirtyInVirtual(
     }
     const auto& displayDrawables = mirrorScreenParams->GetDisplayDrawables();
     auto& curAllSurfaceDrawables = mainScreenParams->GetAllMainAndLeashSurfaceDrawables();
-    auto curBlackList = RSSpecialLayerUtils::GetMergeBlackListInRenderThread(mirrorScreenParams->GetScreenProperty());
-    auto curTypeBlackList = mirrorScreenParams->GetScreenProperty().GetTypeBlackList();
+    bool hideCursor =
+        mirrorScreenParams->GetScreenProperty().GetCursorMode() == RSVirtualScreenCursorMode::HIDE;
     for (const auto& drawable : displayDrawables) {
         if (drawable == nullptr) {
             continue;
@@ -519,8 +520,7 @@ bool RSUniDirtyComputeUtil::CheckCurrentFrameHasDirtyInVirtual(
         const std::map<RSSurfaceNodeType, RectI>& typeHwcRectList =
             screenDirtyManager->GetTypeHwcDirtyRegion();
         for (auto& typeHwcRect : typeHwcRectList) {
-            NodeType nodeType = static_cast<NodeType>(typeHwcRect.first);
-            if (curTypeBlackList.find(nodeType) == curTypeBlackList.end() &&
+            if (!(hideCursor && typeHwcRect.first == RSSurfaceNodeType::CURSOR_NODE) &&
                 !typeHwcRect.second.IsEmpty()) {
                 RS_TRACE_NAME("CheckCurrentFrameHasDirtyInVirtual has typeHwcRect");
                 return true;

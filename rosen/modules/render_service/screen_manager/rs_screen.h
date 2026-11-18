@@ -168,8 +168,8 @@ public:
     void AddBlackList(const std::vector<NodeId>& blackList);
     void RemoveBlackList(const std::vector<NodeId>& blackList);
 
-    // type blacklist
-    void SetTypeBlackList(const std::unordered_set<uint8_t>& typeBlackList);
+    // cursor rendering switches on a virtual screen
+    void SetCursorMode(RSVirtualScreenCursorMode mode);
 
     // post processing shader
     void SetPostProcessingShader(const std::vector<uint8_t>& param);

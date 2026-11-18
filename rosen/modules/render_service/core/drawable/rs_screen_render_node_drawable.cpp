@@ -227,6 +227,7 @@ RSScreenRenderNodeDrawable::~RSScreenRenderNodeDrawable()
     auto curScreenId = params ? params->GetScreenId() : INVALID_SCREEN_ID;
     auto manager = params ? params->GetVirtualScreenParallelManager() : nullptr;
     if (manager) {
+        ClearVirtualSurfaces();
         manager->CleanupThreadResources(curScreenId);
     }
     RSUniRenderThread::Instance().UnRegisterCond(curScreenId);
@@ -605,7 +606,7 @@ bool RSScreenRenderNodeDrawable::PrepareForDraw(std::shared_ptr<RSProcessor>& pr
     RSScreenRenderParams*& params, bool isVirtualExpandSkip, ScreenId& paramScreenId,
     std::shared_ptr<RSBaseRenderEngine> renderEngine)
 {
-    RSSpecialLayerManager::ClearWhiteListRootIds();
+    WhiteListRootIdStack::ClearWhiteListRootIds();
     Drawing::GPUResourceTag::SetCurrentNodeId(GetId());
     SetDrawSkipType(DrawSkipType::NONE);
 

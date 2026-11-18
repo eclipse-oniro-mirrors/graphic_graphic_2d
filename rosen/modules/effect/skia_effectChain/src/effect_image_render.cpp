@@ -318,13 +318,15 @@ DrawingError EffectImageReededGlassFilter::Apply(const std::shared_ptr<EffectIma
 DrawingError EffectImageRender::RenderNativeBuffer(const std::shared_ptr<Media::PixelMap>& srcPixelMap,
     std::shared_ptr<OH_NativeBuffer>& dstNativeBuffer,
     const std::vector<std::shared_ptr<EffectImageFilter>>& effectFilters,
-    int32_t* syncFenceFd)
+    int32_t* syncFenceFd,
+    bool releaseGpuContext)
 {
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageRender::RenderNativeBuffer");
  
     auto ret = DrawingError::ERR_OK;
     do {
         auto effectImage = std::make_shared<EffectImageChain>();
+        effectImage->SetForceReleaseGpuContext(releaseGpuContext);
         ret = effectImage->PrepareNativeBuffer(srcPixelMap, dstNativeBuffer);
         if (ret != DrawingError::ERR_OK) {
             EFFECT_LOG_E("EffectImageRender::RenderNativeBuffer: Failed to prepare image, ret=%{public}d.", ret);
@@ -354,6 +356,7 @@ DrawingError EffectImageRender::RenderNativeBuffer(const std::shared_ptr<Media::
             break;
         }
         *syncFenceFd = effectImage->GetfenceId();
+        effectImage->SetForceReleaseGpuContext(releaseGpuContext);
         if (ret != DrawingError::ERR_OK) {
             EFFECT_LOG_E("EffectImageRender::RenderNativeBuffer: Failed to draw image, ret=%{public}d.", ret);
             break;
@@ -371,5 +374,32 @@ DrawingError EffectImageScaleFilter::Apply(const std::shared_ptr<EffectImageChai
         return DrawingError::ERR_IMAGE_NULL;
     }
     return image->ApplyScale(scaleX_, scaleY_, filterMode_, mipmapMode_);
+}
+
+std::shared_ptr<EffectImageFilter> EffectImageFilter::Outline(float outlineWidth, const ShadowOptions& shadowOptions)
+{
+    return std::make_shared<EffectImageOutlineFilter>(outlineWidth, shadowOptions);
+}
+
+std::shared_ptr<EffectImageFilter> EffectImageFilter::Halftone(const HalftoneParam& halftoneParam,
+    float outlineWidth, const ShadowOptions& shadowOptions)
+{
+    return std::make_shared<EffectImageHalftoneFilter>(halftoneParam, outlineWidth, shadowOptions);
+}
+
+DrawingError EffectImageOutlineFilter::Apply(const std::shared_ptr<EffectImageChain>& image)
+{
+    if (image == nullptr) {
+        return DrawingError::ERR_IMAGE_NULL;
+    }
+    return image->ApplyOutline(outlineWidth_, shadowOptions_);
+}
+
+DrawingError EffectImageHalftoneFilter::Apply(const std::shared_ptr<EffectImageChain>& image)
+{
+    if (image == nullptr) {
+        return DrawingError::ERR_IMAGE_NULL;
+    }
+    return image->ApplyHalftone(halftoneParam_, outlineWidth_, shadowOptions_);
 }
 } // namespace OHOS::Rosen

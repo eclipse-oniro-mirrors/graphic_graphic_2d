@@ -528,6 +528,8 @@ public:
         return canvasDrawingNodeOpCountMap_;
     }
 
+    void SetAdapterLtpoConfig(const std::unordered_map<std::string, std::string>& config);
+
 private:
     // TransactionDataIndexMap is Pid to {index of RSTransactionData, vector of std::unique_ptr<RSTransactionData>}
     using TransactionDataIndexMap = std::unordered_map<pid_t,
@@ -563,6 +565,8 @@ private:
     void OnUniRenderDraw();
     void SetDeviceType();
     void UniRender(std::shared_ptr<RSBaseRenderNode> rootNode);
+    // Whether this frame must prepare every DisplayNode regardless of its dirty state.
+    bool CheckForceAllDisplayDirty() const;
     bool CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces, std::shared_ptr<RSSurfaceRenderNode> curSurface);
     RSVisibleLevel CalcSurfaceNodeVisibleRegion(const std::shared_ptr<RSScreenRenderNode>& screenNode,
         const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedRegion,
@@ -728,6 +732,12 @@ private:
     bool isCachedSurfaceUpdated_ = false;
     // used for informing hgm the bundle name of SurfaceRenderNodes
     bool forceUpdateUniRenderFlag_ = false;
+    // When true, every DisplayNode is prepared regardless of its dirty state. Set on boundary frames
+    // (force refresh, screen power/screen topology change, capture, accessibility change) so that the
+    // hetero display skip never drops a frame that must run.
+    bool forceAllDisplayDirty_ = false;
+    // DisplayNodes skipped by the hetero display skip in the previous frame, used to log transitions.
+    std::unordered_set<NodeId> skippedDisplayNodesLastFrame_;
     // for drawing cache dfx
     bool isDrawingCacheDfxEnabledOfCurFrame_ = false;
     bool isDrawingCacheDfxEnabledOfLastFrame_ = false;

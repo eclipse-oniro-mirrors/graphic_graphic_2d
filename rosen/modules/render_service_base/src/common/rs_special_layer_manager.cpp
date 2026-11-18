@@ -57,51 +57,59 @@ void EraseEmptyValues(std::unordered_map<K, V>& map)
 
 namespace OHOS {
 namespace Rosen {
-std::stack<LeashPersistentId> RSSpecialLayerManager::whiteListRootIds_ = {};
 std::unordered_map<SpecialLayerType, std::unordered_map<NodeId, std::unordered_set<ScreenId>>>
     ScreenSpecialLayerInfo::screenSpecialLayerInfoByNode_ = {};
 std::unordered_set<NodeId> ScreenSpecialLayerInfo::globalBlackList_ = {};
 std::unordered_map<ScreenId, ScreenId> ScreenSpecialLayerInfo::screenMirrorSourceMap_ = {};
 
-void RSSpecialLayerManager::SetWhiteListRootId(LeashPersistentId id)
+std::stack<LeashPersistentId>& WhiteListRootIdStack::GetWhiteListRootIds()
+{
+    static thread_local std::stack<LeashPersistentId> whiteListRootIds;
+    return whiteListRootIds;
+}
+
+void WhiteListRootIdStack::SetWhiteListRootId(LeashPersistentId id)
 {
     if (id == INVALID_LEASH_PERSISTENTID) {
         return;
     }
-    if (whiteListRootIds_.size() >= MAX_SPECIAL_LAYER_NUM) {
-        RS_LOGE("RSSpecialLayerManager::SetWhiteListRootId whiteListRootIds_ exceeds size limit.");
+    auto& whiteListRootIds = GetWhiteListRootIds();
+    if (whiteListRootIds.size() >= MAX_SPECIAL_LAYER_NUM) {
+        RS_LOGE("WhiteListRootIdStack::SetWhiteListRootId whiteListRootIds exceeds size limit.");
         return;
     }
-    whiteListRootIds_.push(id);
+    whiteListRootIds.push(id);
 }
 
-void RSSpecialLayerManager::ResetWhiteListRootId(LeashPersistentId id)
+void WhiteListRootIdStack::ResetWhiteListRootId(LeashPersistentId id)
 {
     if (id == INVALID_LEASH_PERSISTENTID) {
         return;
     }
-    if (whiteListRootIds_.empty() || whiteListRootIds_.top() != id) {
+    auto& whiteListRootIds = GetWhiteListRootIds();
+    if (whiteListRootIds.empty() || whiteListRootIds.top() != id) {
         return;
     }
-    whiteListRootIds_.pop();
+    whiteListRootIds.pop();
 }
 
-LeashPersistentId RSSpecialLayerManager::GetCurWhiteListRootId()
+LeashPersistentId WhiteListRootIdStack::GetCurWhiteListRootId()
 {
-    if (whiteListRootIds_.empty()) {
+    auto& whiteListRootIds = GetWhiteListRootIds();
+    if (whiteListRootIds.empty()) {
         return INVALID_LEASH_PERSISTENTID;
     }
-    return whiteListRootIds_.top();
+    return whiteListRootIds.top();
 }
 
-bool RSSpecialLayerManager::IsWhiteListRootIdsEmpty()
+bool WhiteListRootIdStack::IsWhiteListRootIdsEmpty()
 {
-    return whiteListRootIds_.empty();
+    return GetWhiteListRootIds().empty();
 }
 
-void RSSpecialLayerManager::ClearWhiteListRootIds()
+void WhiteListRootIdStack::ClearWhiteListRootIds()
 {
-    whiteListRootIds_ = std::stack<LeashPersistentId>();
+    GetWhiteListRootIds() = std::stack<LeashPersistentId>();
 }
 
 bool RSSpecialLayerManager::Set(uint32_t type, bool enable)

@@ -170,6 +170,7 @@ enum class RSNGEffectType : int16_t {
     DYNAMIC_DIM,
     SDF_UBER_SHAPE,
     POINT_LIGHT,
+    PARTICLE_AGGREGATION,
 };
 
 using RSNGEffectTypeUnderlying = std::underlying_type<RSNGEffectType>::type;

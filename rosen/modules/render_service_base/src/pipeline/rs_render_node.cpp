@@ -74,6 +74,7 @@
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_painter.h"
 #include "property/rs_property_trace.h"
+#include "render/rs_drawing_filter.h"
 #include "render/rs_foreground_effect_filter.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "visitor/rs_node_visitor.h"
@@ -1641,11 +1642,21 @@ void RSRenderNode::SetContentDirty()
 
 void RSRenderNode::SetDirty(bool forceAddToActiveList)
 {
+    auto context = GetContext().lock();
     // TO avoid redundant add, only add if both: 1. on-tree node 2. newly dirty node (or forceAddToActiveList = true)
     if (dirtyStatus_ == NodeDirty::CLEAN || dirtyTypesNG_.none() || forceAddToActiveList) {
-        if (auto context = GetContext().lock()) {
+        if (context) {
             context->AddActiveNode(shared_from_this());
         }
+    }
+    if (context) {
+        auto displayNodeId = GetLogicalDisplayNodeId();
+        if (displayNodeId == INVALID_NODEID && IsOnTheTree() &&
+            GetType() == RSRenderNodeType::SURFACE_NODE) {
+            RS_LOGE("RSRenderNode::SetDirty on-tree surface[%{public}" PRIu64 "] has no display node",
+                GetId());
+        }
+        context->AddDirtyDisplayNode(displayNodeId);
     }
     isParentTreeDirty_ = true;
     SetParentSubTreeDirty();
@@ -2535,7 +2546,8 @@ void RSRenderNode::SetChildrenTreeStateChangeDirty()
 bool RSRenderNode::IsContentDirty() const
 {
     // Considering renderNode, it should consider both basenode's case and its properties
-    return isContentDirty_ || GetRenderProperties().IsContentDirty();
+    return isContentDirty_ || (GetRenderProperties().IsContentDirty() &&
+        !GetRenderProperties().IgnorePropertiesContentDirty());
 }
 
 bool RSRenderNode::UpdateRenderStatus(RectI& dirtyRegion, bool isPartialRenderEnabled)

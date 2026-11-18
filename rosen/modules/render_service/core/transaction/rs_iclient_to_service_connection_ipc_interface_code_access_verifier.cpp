@@ -258,8 +258,8 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_VIRTUAL_SCREEN_BLACKLIST");
             break;
         }
-        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST): {
-            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST");
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_VIRTUAL_SCREEN_CURSOR_MODE): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_VIRTUAL_SCREEN_CURSOR_MODE");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::ADD_VIRTUAL_SCREEN_BLACKLIST): {

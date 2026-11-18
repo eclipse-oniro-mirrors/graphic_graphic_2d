@@ -49,6 +49,7 @@ struct CaptureParam {
     bool needCaptureSpecialLayer_ = false;
     bool hasDirtyContent_ = false;
     bool hasPrivacyAndSpecialLayer_ = false;
+    std::unordered_set<NodeId> blackList_;
     std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> effectData_ = nullptr;
     CaptureParam() {}
     CaptureParam(bool isSnapshot, bool isSingleSurface, bool isMirror, bool isFirstNode = false,
@@ -85,7 +86,7 @@ public:
 
     bool IsSecurityDisplay() const
     {
-        return isSecurityDisplay_;
+        return specialLayerRenderParam_.securityDisplay;
     }
 
     bool IsPartialRenderEnabled() const
@@ -515,12 +516,22 @@ public:
 
     void SetSecExemption(bool isSecurityExemption)
     {
-        isSecurityExemption_ = isSecurityExemption;
+        specialLayerRenderParam_.secExemption = isSecurityExemption;
     }
 
     bool GetSecExemption() const
     {
-        return isSecurityExemption_;
+        return specialLayerRenderParam_.secExemption;
+    }
+
+    const SpecialLayerRenderParam& GetSpecialLayerRenderParam() const
+    {
+        return specialLayerRenderParam_;
+    }
+
+    SpecialLayerRenderParam& GetMutableSpecialLayerRenderParam()
+    {
+        return specialLayerRenderParam_;
     }
 
     ScreenSpecialLayerParam& GetMutableScreenSpecialLayerParam()
@@ -772,10 +783,10 @@ private:
     bool isImplicitAnimationEnd_ = false;
     bool discardJankFrames_ = false;
 
+    // per-frame snapshot synced from main thread: global blacklist and whitelist rects
     ScreenSpecialLayerParam screenSpecialLayerParam_;
-    bool isSecurityExemption_ = false;
-    // use to mark security display
-    bool isSecurityDisplay_ = false;
+    // save current screen's special layer param which use for render
+    SpecialLayerRenderParam specialLayerRenderParam_;
     ScreenInfo screenInfo_ = {};
     std::shared_ptr<RSProcessor> processor_ = nullptr;
 

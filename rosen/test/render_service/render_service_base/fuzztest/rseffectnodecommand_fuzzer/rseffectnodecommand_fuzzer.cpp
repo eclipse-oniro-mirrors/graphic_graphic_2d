@@ -21,6 +21,7 @@
 #include <securec.h>
 
 #include "command/rs_effect_node_command.h"
+#include "common/rs_background_thread.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -32,6 +33,7 @@ bool DoEffectNodeCommand(FuzzedDataProvider& fdp)
     uint64_t token = fdp.ConsumeIntegral<uint64_t>();
 
     EffectNodeCommandHelper::Create(context, id, isTextureExportNode, token);
+    RSBackgroundThread::Instance().PostSyncTask([]() {});
     return true;
 }
 } // namespace Rosen

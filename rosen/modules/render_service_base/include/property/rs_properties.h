@@ -983,6 +983,11 @@ private:
         }
         return *effectProperties_;
     }
+
+    bool IgnorePropertiesContentDirty() const
+    {
+        return effectProperties_ != nullptr && effectProperties_->IgnorePropertiesContentDirty();
+    }
     mutable std::unique_ptr<RSEffectProperties> effectProperties_;
 
     std::shared_ptr<RSMask> mask_ = nullptr;

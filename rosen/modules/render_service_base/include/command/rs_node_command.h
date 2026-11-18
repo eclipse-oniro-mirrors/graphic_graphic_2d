@@ -191,7 +191,7 @@ public:
         const bool isInSameWindow);
     static void UnregisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId);
 
-    using DumpNodeTreeProcessor = std::function<void(NodeId, pid_t, uint64_t, uint32_t)>;
+    using DumpNodeTreeProcessor = void (*)(NodeId, pid_t, uint64_t, uint32_t);
     static void DumpClientNodeTree(RSContext& context, NodeId nodeId, pid_t pid, uint64_t token, uint32_t taskId);
     static RSB_EXPORT void SetDumpNodeTreeProcessor(DumpNodeTreeProcessor processor);
 
@@ -336,10 +336,10 @@ ADD_COMMAND(RSUpdatePropertyVector4f,
 ADD_COMMAND(RSUpdatePropertyRRect,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_RRECT,
         RSNodeCommandHelper::UpdateProperty<RRect>, NodeId, RRect, PropertyId, PropertyUpdateType))
-ADD_COMMAND(RSUpdatePropertyClipShape,
+ADD_PREFIX_COMMAND(RSUpdatePropertyClipShape,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_CLIP_SHAPE,
         RSNodeCommandHelper::UpdateProperty<RRect>, NodeId, RRect, PropertyId, PropertyUpdateType))
-ADD_COMMAND(RSUpdatePropertyDrawCmdList,
+ADD_PREFIX_COMMAND(RSUpdatePropertyDrawCmdList,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_DRAW_CMD_LIST,
         RSNodeCommandHelper::UpdatePropertyDrawCmdList, NodeId,
         Drawing::DrawCmdListPtr, PropertyId, PropertyUpdateType))
@@ -477,7 +477,7 @@ ADD_COMMAND(RSModifierNGAttachProperty,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, MODIFIER_NG_ATTACH_PROPERTY,
         RSNodeCommandHelper::ModifierNGAttachProperty, NodeId,
         ModifierId, ModifierNG::RSModifierType, ModifierNG::RSPropertyType, std::shared_ptr<RSRenderPropertyBase>))
-ADD_COMMAND(RSUpdatePropertyDrawCmdListNG,
+ADD_PREFIX_COMMAND(RSUpdatePropertyDrawCmdListNG,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_DRAW_CMD_LIST_NG,
         RSNodeCommandHelper::UpdateModifierNGDrawCmdList,
         NodeId, Drawing::DrawCmdListPtr, PropertyId))

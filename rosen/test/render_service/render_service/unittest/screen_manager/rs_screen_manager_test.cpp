@@ -3950,32 +3950,45 @@ HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenWhiteList001, TestSize.Level2)
 }
 
 /*
- * @tc.name: SetVirtualScreenTypeBlackList001
- * @tc.desc: type blacklist only keeps CURSOR_NODE, other node types are dropped
+ * @tc.name: SetVirtualScreenCursorMode001
+ * @tc.desc: cursorMode is stored as one tri-state screen property, invalid screen returns SCREEN_NOT_FOUND
  * @tc.type: FUNC
  * @tc.require: issue26241
  */
-HWTEST_F(RSScreenManagerTest, SetVirtualScreenTypeBlackList001, TestSize.Level1)
+HWTEST_F(RSScreenManagerTest, SetVirtualScreenCursorMode001, TestSize.Level1)
 {
     ASSERT_NE(nullptr, screenManager_);
     auto screenId = MakeVirtualScreen(
-        "virtual_type_bl", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+        "virtual_cursor_mode", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
     ASSERT_NE(screenId, INVALID_SCREEN_ID);
     auto screen = screenManager_->GetScreen(screenId);
     ASSERT_NE(screen, nullptr);
 
-    constexpr NodeType CURSOR_NODE_TYPE = static_cast<NodeType>(RSSurfaceNodeType::CURSOR_NODE);
-    std::vector<NodeType> mixedList = {static_cast<NodeType>(RSSurfaceNodeType::APP_WINDOW_NODE), CURSOR_NODE_TYPE};
-    ASSERT_EQ(screenManager_->SetVirtualScreenTypeBlackList(screenId, mixedList), SUCCESS);
-    auto typeBlackList = screen->GetProperty()->GetTypeBlackList();
-    ASSERT_EQ(typeBlackList.size(), 1);
-    ASSERT_EQ(typeBlackList.count(CURSOR_NODE_TYPE), 1);
+    ASSERT_EQ(screenManager_->SetVirtualScreenCursorMode(screenId, RSVirtualScreenCursorMode::HIDE), SUCCESS);
+    auto property = screen->GetProperty();
+    ASSERT_NE(property, nullptr);
+    ASSERT_EQ(property->GetCursorMode(), RSVirtualScreenCursorMode::HIDE);
 
-    std::vector<NodeType> nonCursorList = {static_cast<NodeType>(RSSurfaceNodeType::APP_WINDOW_NODE),
-        static_cast<NodeType>(RSSurfaceNodeType::STARTING_WINDOW_NODE)};
-    ASSERT_EQ(screenManager_->SetVirtualScreenTypeBlackList(screenId, nonCursorList), SUCCESS);
-    ASSERT_TRUE(screen->GetProperty()->GetTypeBlackList().empty());
-    ASSERT_EQ(screenManager_->SetVirtualScreenTypeBlackList(INVALID_SCREEN_ID, mixedList), SCREEN_NOT_FOUND);
+    ASSERT_EQ(screenManager_->SetVirtualScreenCursorMode(screenId, RSVirtualScreenCursorMode::FORCE_RENDER), SUCCESS);
+    property = screen->GetProperty();
+    ASSERT_NE(property, nullptr);
+    ASSERT_EQ(property->GetCursorMode(), RSVirtualScreenCursorMode::FORCE_RENDER);
+
+    ASSERT_EQ(screenManager_->SetVirtualScreenCursorMode(
+        screenId, RSVirtualScreenCursorMode::DEFAULT), SUCCESS);
+    property = screen->GetProperty();
+    ASSERT_NE(property, nullptr);
+    ASSERT_EQ(property->GetCursorMode(), RSVirtualScreenCursorMode::DEFAULT);
+
+    ASSERT_EQ(screenManager_->SetVirtualScreenCursorMode(INVALID_SCREEN_ID, RSVirtualScreenCursorMode::HIDE),
+        SCREEN_NOT_FOUND);
+
+    // an out of range mode is rejected and the stored property keeps its previous value
+    ASSERT_EQ(screenManager_->SetVirtualScreenCursorMode(screenId, RSVirtualScreenCursorMode::MODE_MAX),
+        INVALID_ARGUMENTS);
+    property = screen->GetProperty();
+    ASSERT_NE(property, nullptr);
+    ASSERT_EQ(property->GetCursorMode(), RSVirtualScreenCursorMode::DEFAULT);
 
     // restore
     screenManager_->RemoveVirtualScreen(screenId);

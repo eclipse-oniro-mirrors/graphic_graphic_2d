@@ -2302,6 +2302,7 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode004, TestSize.Level1)
     RSSpecialLayerManager slManager;
     renderParams->specialLayerManager_ = slManager;
     std::unordered_set<NodeId> whiteList = { surfaceId };
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
     RSUniRenderThread::Instance().SetWhiteList(whiteList);
     surfaceDrawable->renderParams_ = std::move(renderParams);
     {

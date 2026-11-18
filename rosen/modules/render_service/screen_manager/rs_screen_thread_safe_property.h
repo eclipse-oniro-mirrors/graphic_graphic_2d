@@ -55,7 +55,7 @@ public:
     ResType SetBlackList(const std::unordered_set<uint64_t>& blackList);
     ResType AddBlackList(const std::vector<uint64_t>& blackList);
     ResType RemoveBlackList(const std::vector<uint64_t>& blackList);
-    ResType SetTypeBlackList(const std::unordered_set<uint8_t>& typeBlackList);
+    ResType SetCursorMode(RSVirtualScreenCursorMode mode);
     ResType SetSecurityExemptionList(const std::vector<uint64_t>& securityExemptionList);
     ResType SetSecurityMask(std::shared_ptr<Media::PixelMap> securityMask);
     ResType SetCastScreenEnableSkipWindow(bool enable);
@@ -115,7 +115,7 @@ public:
     bool GetVisibleRectSupportRotation() const;
     std::unordered_set<NodeId> GetWhiteList() const;
     std::unordered_set<NodeId> GetBlackList() const;
-    std::unordered_set<uint8_t> GetTypeBlackList() const;
+    RSVirtualScreenCursorMode GetCursorMode() const;
     std::vector<uint64_t> GetSecurityExemptionList() const;
     std::shared_ptr<Media::PixelMap> GetSecurityMask() const;
     bool GetCastScreenEnableSkipWindow() const;
