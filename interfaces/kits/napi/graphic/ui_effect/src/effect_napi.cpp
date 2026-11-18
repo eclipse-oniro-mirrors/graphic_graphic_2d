@@ -177,7 +177,7 @@ bool MirrorProperties(napi_env env, napi_value src, napi_value dst,
         desc.utf8name = keys[i];
         desc.value = value;
         desc.attributes = napi_default_jsproperty;
-        status = napi_define_property(env, dst, &desc);
+        status = napi_define_properties(env, dst, 1, &desc);
         if (status != napi_ok) {
             return false;
         }
