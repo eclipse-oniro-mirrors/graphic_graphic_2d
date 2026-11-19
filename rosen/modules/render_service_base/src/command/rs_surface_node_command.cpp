@@ -48,6 +48,7 @@ void SurfaceNodeCommandHelper::Create(RSContext& context, NodeId id, RSSurfaceNo
         const bool isSceneBoard = token != 0 && context.IsSceneBoardToken(ExtractPid(id), token);
         auto node = std::shared_ptr<RSSurfaceRenderNode>(new RSSurfaceRenderNode(id,
             context.weak_from_this(), isTextureExportNode), RSRenderNodeGC::NodeDestructor);
+        node->SetSurfaceNodeType(type);
         node->ApplyInstanceIdentity(token, isSceneBoard);
         auto& nodeMap = context.GetMutableNodeMap();
         nodeMap.RegisterRenderNode(node);
