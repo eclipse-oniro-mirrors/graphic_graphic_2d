@@ -579,44 +579,77 @@ static bool ParsePointFromJsObject(napi_env env, napi_value jsObject, const char
         EffectKitNapiUtils::GetInstance().GetType(env, value) != napi_object) {
         return false;
     }
+    // ETS Point.x/y are optional: an absent coordinate defaults to 0
+    auto getCoordinate = [env](napi_value coordValue, double& coord) {
+        if (EffectKitNapiUtils::GetInstance().GetType(env, coordValue) == napi_undefined) {
+            coord = 0.0;
+            return true;
+        }
+        return napi_get_value_double(env, coordValue, &coord) == napi_ok && std::isfinite(coord);
+    };
     napi_value xValue = nullptr;
     napi_value yValue = nullptr;
     double x = 0.0;
     double y = 0.0;
     if (napi_get_named_property(env, value, "x", &xValue) != napi_ok ||
         napi_get_named_property(env, value, "y", &yValue) != napi_ok ||
-        napi_get_value_double(env, xValue, &x) != napi_ok ||
-        napi_get_value_double(env, yValue, &y) != napi_ok ||
-        !std::isfinite(x) || !std::isfinite(y)) {
+        !getCoordinate(xValue, x) || !getCoordinate(yValue, y)) {
         return false;
     }
     out = Vector2f(static_cast<float>(x), static_cast<float>(y));
     return true;
 }
 
-static bool ParseColorFromJsObject(napi_env env, napi_value jsObject, const char* name, Vector4f& out)
+// ShadowOptions declares lightDirection/color as number arrays in ETS, matching
+// the ANI parsing: lightDirection [x, y]; color [red, green, blue, alpha] in 0-255
+static bool ParsePointArrayFromJsObject(napi_env env, napi_value jsObject, const char* name, Vector2f& out)
 {
-    constexpr float rgbaColorMax = 255.0f;
-    static const char* colorFields[NUM_4] = { "red", "green", "blue", "alpha" };
     napi_value value = nullptr;
+    bool isArray = false;
+    uint32_t length = 0;
     if (napi_get_named_property(env, jsObject, name, &value) != napi_ok ||
-        EffectKitNapiUtils::GetInstance().GetType(env, value) != napi_object) {
+        napi_is_array(env, value, &isArray) != napi_ok || !isArray ||
+        napi_get_array_length(env, value, &length) != napi_ok || length != NUM_2) {
         return false;
     }
-    double components[NUM_4] = { 0.0, 0.0, 0.0, 0.0 };
-    for (uint32_t idx = 0; idx < NUM_4; idx++) {
-        napi_value field = nullptr;
-        if (napi_get_named_property(env, value, colorFields[idx], &field) != napi_ok ||
-            napi_get_value_double(env, field, &components[idx]) != napi_ok ||
-            !std::isfinite(components[idx])) {
+    double coords[NUM_2] = { 0.0, 0.0 };
+    for (uint32_t idx = 0; idx < NUM_2; idx++) {
+        napi_value element = nullptr;
+        if (napi_get_element(env, value, idx, &element) != napi_ok ||
+            EffectKitNapiUtils::GetInstance().GetType(env, element) != napi_number ||
+            napi_get_value_double(env, element, &coords[idx]) != napi_ok || !std::isfinite(coords[idx])) {
             return false;
         }
-        components[idx] = std::clamp(components[idx], 0.0, 255.0);
     }
-    out = Vector4f(static_cast<float>(components[NUM_0]) / rgbaColorMax,
-        static_cast<float>(components[NUM_1]) / rgbaColorMax,
-        static_cast<float>(components[NUM_2]) / rgbaColorMax,
-        static_cast<float>(components[NUM_3]) / rgbaColorMax);
+    out = Vector2f(static_cast<float>(coords[NUM_0]), static_cast<float>(coords[NUM_1]));
+    return true;
+}
+
+static bool ParseColorArrayFromJsObject(napi_env env, napi_value jsObject, const char* name, Vector4f& out)
+{
+    constexpr double rgbaColorMax = 255.0;
+    napi_value value = nullptr;
+    bool isArray = false;
+    uint32_t length = 0;
+    if (napi_get_named_property(env, jsObject, name, &value) != napi_ok ||
+        napi_is_array(env, value, &isArray) != napi_ok || !isArray ||
+        napi_get_array_length(env, value, &length) != napi_ok || length != NUM_4) {
+        return false;
+    }
+    double channels[NUM_4] = { 0.0, 0.0, 0.0, 0.0 };
+    for (uint32_t idx = 0; idx < NUM_4; idx++) {
+        napi_value element = nullptr;
+        if (napi_get_element(env, value, idx, &element) != napi_ok ||
+            EffectKitNapiUtils::GetInstance().GetType(env, element) != napi_number ||
+            napi_get_value_double(env, element, &channels[idx]) != napi_ok || !std::isfinite(channels[idx])) {
+            return false;
+        }
+        channels[idx] = std::clamp(std::round(channels[idx]), 0.0, rgbaColorMax);
+    }
+    out = Vector4f(static_cast<float>(channels[NUM_0]) / rgbaColorMax,
+        static_cast<float>(channels[NUM_1]) / rgbaColorMax,
+        static_cast<float>(channels[NUM_2]) / rgbaColorMax,
+        static_cast<float>(channels[NUM_3]) / rgbaColorMax);
     return true;
 }
 
@@ -734,13 +767,13 @@ napi_value FilterNapi::Iridescence(napi_env env, napi_callback_info info)
         if (ParseFloatFromJsObject(env, argv[NUM_2], "radius", shadowRadius)) {
             params->elevationShadowRadius = shadowRadius;
         }
-        if (!ParsePointFromJsObject(env, argv[NUM_2], "lightDirection", params->lightDir)) {
+        if (!ParsePointArrayFromJsObject(env, argv[NUM_2], "lightDirection", params->lightDir)) {
             params->lightDir = Vector2f(0.0f, 0.0f);
         }
         if (ParseFloatFromJsObject(env, argv[NUM_2], "shadowDistance", shadowDistance)) {
             params->shadowDistance = shadowDistance;
         }
-        if (!ParseColorFromJsObject(env, argv[NUM_2], "color", params->elevationShadowColor)) {
+        if (!ParseColorArrayFromJsObject(env, argv[NUM_2], "color", params->elevationShadowColor)) {
             params->elevationShadowColor = Vector4f(0.0f, 0.0f, 0.0f, 26.0f / 255.0f);
         }
     }

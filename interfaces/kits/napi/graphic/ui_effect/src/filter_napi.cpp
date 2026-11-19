@@ -1616,7 +1616,7 @@ napi_value FilterNapi::SetEmboss(napi_env env, napi_callback_info info)
         FILTER_LOG_E("FilterNapi SetEmboss parse embossParam failed"));
 
     Filter* filterObj = nullptr;
-    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&filterObj));
+    status = napi_unwrap_s(env, thisVar, &FILTER_TYPE_TAG, reinterpret_cast<void**>(&filterObj));
     UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && filterObj != nullptr, nullptr,
         FILTER_LOG_E("FilterNapi SetEmboss napi_unwrap fail"));
     filterObj->AddPara(para);

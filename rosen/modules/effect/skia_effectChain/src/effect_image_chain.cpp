@@ -27,6 +27,8 @@
 #include "ge_shader.h"
 #include "ge_sticker_outline_shader.h"
 #include "ge_sticker_halftone_shader.h"
+#include "ge_sticker_emboss_filter.h"
+#include "ge_sticker_laser_shader.h"
 #include "rs_trace.h"
 
 #include "pipeline/rs_paint_filter_canvas.h"
@@ -1046,42 +1048,6 @@ static std::shared_ptr<GEShaderFilter> GenerateExtShaderReededGlass(
     return dmShader;
 }
 
-static std::shared_ptr<GEShaderFilter> GenerateExtShaderStickerEmboss(
-    const std::shared_ptr<Drawing::GEStickerEmbossFilterParams>& params)
-{
-    if (params == nullptr) {
-        EFFECT_COMM_LOG_E("GenerateExtShaderStickerEmboss: params is nullptr");
-        return nullptr;
-    }
-    auto object = GEExternalDynamicLoader::GetInstance().CreateGEXObjectByType(
-        static_cast<uint32_t>(Drawing::GEFilterType::STICKER_EMBOSS_FILTER),
-        sizeof(Drawing::GEStickerEmbossFilterParams), static_cast<void*>(params.get()));
-    if (!object) {
-        return nullptr;
-    }
-
-    std::shared_ptr<GEShaderFilter> dmShader(static_cast<GEShaderFilter*>(object));
-    return dmShader;
-}
-
-static std::shared_ptr<GEShaderFilter> GenerateExtShaderStickerLaserShader(
-    const std::shared_ptr<Drawing::GEStickerLaserShaderParams>& params)
-{
-    if (params == nullptr) {
-        EFFECT_COMM_LOG_E("GenerateExtShaderStickerLaserShader: params is nullptr");
-        return nullptr;
-    }
-    auto object = GEExternalDynamicLoader::GetInstance().CreateGEXObjectByType(
-        static_cast<uint32_t>(Drawing::GEFilterType::STICKER_LASER),
-        sizeof(Drawing::GEStickerLaserShaderParams), static_cast<void*>(params.get()));
-    if (!object) {
-        return nullptr;
-    }
-
-    std::shared_ptr<GEShaderFilter> dmShader(static_cast<GEShaderFilter*>(object));
-    return dmShader;
-}
-
 DrawingError EffectImageChain::ApplyWaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& waterGlassDate)
 {
     std::lock_guard<std::mutex> lock(apiMutex_);
@@ -1192,19 +1158,24 @@ DrawingError EffectImageChain::ApplyStickerEmboss(
         return DrawingError::ERR_IMAGE_NULL;
     }
 
+    // per-render copy: concurrent renders on one filter share the params object,
+    // each render must bind its own image and not retain the other's intermediate
+    auto embossData = std::make_shared<Drawing::GEStickerEmbossFilterParams>(*stickerEmbossData);
+
     // the chain input image is the sticker whose contour the emboss effect extracts
-    stickerEmbossData->sticker = image_;
+    embossData->sticker = image_;
 
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageChain::ApplyStickerEmboss");
 
-    std::shared_ptr<GEShaderFilter> dmShader = GenerateExtShaderStickerEmboss(stickerEmbossData);
-    if (!dmShader) {
-        EFFECT_LOG_E("EffectImageChain::ApplyStickerEmboss: GenerateExtShaderStickerEmboss fail.");
+    // built-in class, no external graphics-effect library needed
+    std::shared_ptr<GEShaderFilter> embossFilter = std::make_shared<GEStickerEmbossFilter>(*embossData);
+    if (!embossFilter) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerEmboss: create emboss filter fail.");
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
 
-    image_ = dmShader->ProcessImage(*canvas_, image_,
+    image_ = embossFilter->ProcessImage(*canvas_, image_,
         Drawing::Rect(0, 0, image_->GetWidth(), image_->GetHeight()),
         Drawing::Rect(0, 0, image_->GetWidth(), image_->GetHeight()));
     if (image_ == nullptr) {
@@ -1246,29 +1217,26 @@ DrawingError EffectImageChain::ApplyStickerLaserShader(
         return DrawingError::ERR_IMAGE_NULL;
     }
 
+    // per-render copy: concurrent renders on one filter share the params object,
+    // each render must bind its own image and not retain the other's intermediate
+    auto laserData = std::make_shared<Drawing::GEStickerLaserShaderParams>(*stickerLaserData);
+
     // the chain input image is the sticker the iridescence effect renders on
-    stickerLaserData->sticker = image_;
+    laserData->sticker = image_;
 
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageChain::ApplyStickerLaserShader");
 
-    std::shared_ptr<GEShaderFilter> dmShader = GenerateExtShaderStickerLaserShader(stickerLaserData);
-    if (!dmShader) {
-        EFFECT_LOG_E("EffectImageChain::ApplyStickerLaserShader: GenerateExtShaderStickerLaserShader fail.");
+    // built-in class, no external graphics-effect library needed
+    std::shared_ptr<GEShader> stickerShader = std::make_shared<GEStickerLaserShader>(*laserData);
+    if (!stickerShader) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerLaserShader: create shader fail.");
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
 
-    image_ = dmShader->ProcessImage(*canvas_, image_,
-        Drawing::Rect(0, 0, image_->GetWidth(), image_->GetHeight()),
-        Drawing::Rect(0, 0, image_->GetWidth(), image_->GetHeight()));
-    if (image_ == nullptr) {
-        EFFECT_LOG_E("EffectImageChain::ApplyStickerLaserShader: ProcessImage fail.");
-        ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
-        return DrawingError::ERR_ILLEGAL_INPUT;
-    }
-
+    auto result = DrawShaderAndComposite(canvas_.get(), image_, stickerShader, "ApplyStickerLaserShader");
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
-    return DrawingError::ERR_OK;
+    return result;
 }
 
 DrawingError EffectImageChain::ApplyScale(

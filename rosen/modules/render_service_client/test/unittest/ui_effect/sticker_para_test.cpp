@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <vector>
+
 #include <gtest/gtest.h>
 
 #include "effect/include/sticker_laser_shader_effect_para.h"
@@ -533,8 +535,13 @@ HWTEST_F(RSStickerParaTest, StickerEmbossParaMarshallingTypeWriteFail001, TestSi
     ASSERT_NE(sticker, nullptr);
     SetAllEmbossFields(para, sticker);
 
+    // SetMaxCapacity cannot lower the parcel default, so exhaust the capacity by
+    // pre-filling: with no headroom left the type header write fails
     Parcel parcel;
-    EXPECT_TRUE(parcel.SetMaxCapacity(sizeof(uint16_t)));
+    const size_t capacity = 200 * 1024; // 200K, equal to the parcel default capacity
+    ASSERT_TRUE(parcel.SetMaxCapacity(capacity));
+    const std::vector<uint8_t> filler(capacity, 0xFF);
+    ASSERT_TRUE(parcel.WriteBuffer(filler.data(), filler.size()));
     EXPECT_FALSE(para->Marshalling(parcel));
 }
 
@@ -555,8 +562,17 @@ HWTEST_F(RSStickerParaTest, StickerEmbossParaMarshallingParaWriteFail001, TestSi
     ASSERT_TRUE(para->Marshalling(scratch));
     const size_t fullSize = scratch.GetDataSize();
 
+    // SetMaxCapacity cannot lower the parcel default, so pre-fill instead: leave
+    // headroom for everything except the final float write. The filler stays
+    // 4-byte aligned, so at most 3 spare bytes remain - never a full float.
     Parcel parcel;
-    EXPECT_TRUE(parcel.SetMaxCapacity(fullSize - sizeof(float)));
+    const size_t capacity = 200 * 1024; // 200K, equal to the parcel default capacity
+    ASSERT_TRUE(parcel.SetMaxCapacity(capacity));
+    const size_t desiredHeadroom = fullSize - sizeof(float);
+    ASSERT_TRUE(desiredHeadroom > 0 && desiredHeadroom < capacity);
+    const size_t fillerSize = (capacity - desiredHeadroom) & ~static_cast<size_t>(0x3);
+    const std::vector<uint8_t> filler(fillerSize, 0xFF);
+    ASSERT_TRUE(parcel.WriteBuffer(filler.data(), filler.size()));
     EXPECT_FALSE(para->Marshalling(parcel));
 }
 

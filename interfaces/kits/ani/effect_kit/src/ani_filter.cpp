@@ -425,11 +425,28 @@ bool GetPointProperty(ani_env* env, ani_object obj, const char* name, Vector2f& 
         return false;
     }
     ani_object pointObj = static_cast<ani_object>(ref);
-    ani_double x = 0.0;
-    ani_double y = 0.0;
-    if (env->Object_GetPropertyByName_Double(pointObj, "x", &x) != ANI_OK ||
-        env->Object_GetPropertyByName_Double(pointObj, "y", &y) != ANI_OK ||
-        !std::isfinite(x) || !std::isfinite(y)) {
+    // ETS Point.x/y are optional: an absent coordinate defaults to 0
+    auto getCoordinate = [env, pointObj](const char* coordName, double& coord) {
+        ani_ref coordRef = nullptr;
+        if (env->Object_GetPropertyByName_Ref(pointObj, coordName, &coordRef) != ANI_OK) {
+            return false;
+        }
+        ani_boolean isUndefined = ANI_TRUE;
+        env->Reference_IsUndefined(coordRef, &isUndefined);
+        if (isUndefined == ANI_TRUE) {
+            coord = 0.0;
+            return true;
+        }
+        ani_double value = 0.0;
+        if (env->Object_GetPropertyByName_Double(pointObj, coordName, &value) != ANI_OK || !std::isfinite(value)) {
+            return false;
+        }
+        coord = value;
+        return true;
+    };
+    double x = 0.0;
+    double y = 0.0;
+    if (!getCoordinate("x", x) || !getCoordinate("y", y)) {
         return false;
     }
     out = Vector2f(static_cast<float>(x), static_cast<float>(y));

@@ -215,8 +215,8 @@ HWTEST_F(EffectImageStickerUnittest, StickerEmbossWithPreparedChain, TestSize.Le
     auto ret = chain.ApplyStickerEmboss(params);
     // Reached the generation stage: either composed (ERR_OK) or generation failed (ERR_ILLEGAL_INPUT)
     EXPECT_TRUE(ret == DrawingError::ERR_OK || ret == DrawingError::ERR_ILLEGAL_INPUT);
-    // The chain input image is injected as the sticker whose contour is extracted
-    EXPECT_NE(params->sticker, nullptr);
+    // The per-render copy binds the chain image; the caller's params stay untouched
+    EXPECT_EQ(params->sticker, nullptr);
 }
 
 /**
@@ -273,7 +273,8 @@ HWTEST_F(EffectImageStickerUnittest, StickerLaserShaderWithPreparedChain, TestSi
     auto params = MakeLaserParams();
     auto ret = chain.ApplyStickerLaserShader(params);
     EXPECT_TRUE(ret == DrawingError::ERR_OK || ret == DrawingError::ERR_ILLEGAL_INPUT);
-    EXPECT_NE(params->sticker, nullptr);
+    // The per-render copy binds the chain image; the caller's params stay untouched
+    EXPECT_EQ(params->sticker, nullptr);
 }
 
 /**
@@ -302,7 +303,8 @@ HWTEST_F(EffectImageStickerUnittest, StickerLaserShaderReturnsErrorWhenDataNull,
 
 /**
  * @tc.name: StickerEmbossWithPendingFilters
- * @tc.desc: Verify ApplyStickerEmboss consumes pending filters first and snapshots the image into the sticker
+ * @tc.desc: Verify ApplyStickerEmboss consumes pending filters exactly once and keeps the
+ *           caller's params untouched (the per-render copy binds its own sticker)
  */
 HWTEST_F(EffectImageStickerUnittest, StickerEmbossWithPendingFilters, TestSize.Level1)
 {
@@ -315,20 +317,27 @@ HWTEST_F(EffectImageStickerUnittest, StickerEmbossWithPendingFilters, TestSize.L
     ASSERT_NE(blurFilter, nullptr);
     ASSERT_EQ(chain.ApplyDrawingFilter(blurFilter), DrawingError::ERR_OK);
     ASSERT_NE(chain.filters_, nullptr);
+    auto imageBeforeConsume = chain.image_;
 
     auto params = MakeEmbossParams();
-    auto snapshot = chain.image_;
     auto ret = chain.ApplyStickerEmboss(params);
     EXPECT_TRUE(ret == DrawingError::ERR_OK || ret == DrawingError::ERR_ILLEGAL_INPUT);
-    // UpdateImage consumed the pending drawing filter
+    // UpdateImage consumed the pending drawing filter and refreshed the chain image
+    // through the blur, so the effect received the blurred image, not the original
     EXPECT_EQ(chain.filters_, nullptr);
-    // The blurred snapshot became the sticker the emboss effect extracts
-    EXPECT_EQ(params->sticker, snapshot);
+    EXPECT_NE(chain.image_, imageBeforeConsume);
+    // the per-render copy binds the blurred image; the caller's params stay untouched
+    EXPECT_EQ(params->sticker, nullptr);
+    // a second apply finds no pending filter left and cannot re-blur
+    ret = chain.ApplyStickerEmboss(params);
+    EXPECT_TRUE(ret == DrawingError::ERR_OK || ret == DrawingError::ERR_ILLEGAL_INPUT);
+    EXPECT_EQ(chain.filters_, nullptr);
 }
 
 /**
  * @tc.name: StickerLaserShaderWithPendingFilters
- * @tc.desc: Verify ApplyStickerLaserShader consumes pending filters first and snapshots the image into the sticker
+ * @tc.desc: Verify ApplyStickerLaserShader consumes pending filters exactly once and keeps the
+ *           caller's params untouched (the per-render copy binds its own sticker)
  */
 HWTEST_F(EffectImageStickerUnittest, StickerLaserShaderWithPendingFilters, TestSize.Level1)
 {
@@ -341,13 +350,21 @@ HWTEST_F(EffectImageStickerUnittest, StickerLaserShaderWithPendingFilters, TestS
     ASSERT_NE(blurFilter, nullptr);
     ASSERT_EQ(chain.ApplyDrawingFilter(blurFilter), DrawingError::ERR_OK);
     ASSERT_NE(chain.filters_, nullptr);
+    auto imageBeforeConsume = chain.image_;
 
     auto params = MakeLaserParams();
-    auto snapshot = chain.image_;
     auto ret = chain.ApplyStickerLaserShader(params);
     EXPECT_TRUE(ret == DrawingError::ERR_OK || ret == DrawingError::ERR_ILLEGAL_INPUT);
+    // UpdateImage consumed the pending drawing filter and refreshed the chain image
+    // through the blur, so the shader received the blurred image, not the original
     EXPECT_EQ(chain.filters_, nullptr);
-    EXPECT_EQ(params->sticker, snapshot);
+    EXPECT_NE(chain.image_, imageBeforeConsume);
+    // the per-render copy binds the blurred image; the caller's params stay untouched
+    EXPECT_EQ(params->sticker, nullptr);
+    // a second apply finds no pending filter left and cannot re-blur
+    ret = chain.ApplyStickerLaserShader(params);
+    EXPECT_TRUE(ret == DrawingError::ERR_OK || ret == DrawingError::ERR_ILLEGAL_INPUT);
+    EXPECT_EQ(chain.filters_, nullptr);
 }
 
 /**
