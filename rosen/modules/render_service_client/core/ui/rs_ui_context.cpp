@@ -18,6 +18,7 @@
 #ifdef RS_MODIFIERS_DRAW_ENABLE
 #include "modifier_render_thread/rs_canvas_modifiers_draw_agent.h"
 #include "modifier_render_thread/rs_modifiers_draw_agent.h"
+#include "ui/rs_canvas_drawing_node.h"
 #endif
 
 #include "animation/rs_interactive_implict_animator.h"
@@ -33,6 +34,9 @@ namespace Rosen {
 void RSUIContext::MarkAsSceneBoard()
 {
     isSceneBoard_.store(true, std::memory_order_relaxed);
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+    RSCanvasDrawingNode::MarkAsSceneBoard();
+#endif
 }
 
 RSUIContext::RSUIContext(uint64_t token, sptr<IRemoteObject>& connectToRenderRemote) : token_(token)
@@ -398,10 +402,10 @@ CommitTransactionCallback RSUIContext::CreateCommitTransactionCallback()
     }
 
     std::weak_ptr<RSUIContext> weakContext = shared_from_this();
-    return [weakContext](std::shared_ptr<RSRenderPipelineClient>& renderPiplineClient,
+    return [weakContext](std::shared_ptr<RSRenderPipelineClient>& renderPipelineClient,
         std::unique_ptr<RSTransactionData>&& rsTransactionData, std::atomic<uint32_t>& transactionDataIndex) {
-        if (renderPiplineClient == nullptr) {
-            RS_LOGE("RSUIContext::CreateCommitTransactionCallback, null renderPiplineClient.");
+        if (renderPipelineClient == nullptr) {
+            RS_LOGE("RSUIContext::CreateCommitTransactionCallback, null renderPipelineClient.");
             return;
         }
         if (rsTransactionData == nullptr) {
@@ -423,7 +427,7 @@ CommitTransactionCallback RSUIContext::CreateCommitTransactionCallback()
         commitIndex++;
         RS_TRACE_NAME_FMT("Post CommitTransaction, index=%u", commitIndex);
         uiContext->modifiersDrawAgent_->CommitTransaction(
-            uiContext, renderPiplineClient, rsTransactionData, transactionDataIndex, commitIndex);
+            uiContext, renderPipelineClient, rsTransactionData, transactionDataIndex, commitIndex);
     };
 }
 

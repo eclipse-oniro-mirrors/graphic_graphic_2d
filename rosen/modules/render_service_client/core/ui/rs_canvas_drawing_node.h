@@ -29,6 +29,8 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_UI_RS_CANVAS_DRAWING_NODE_H
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_CANVAS_DRAWING_NODE_H
 
+#include <atomic>
+
 #include "pixel_map.h"
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
@@ -184,6 +186,8 @@ private:
     void RegisterNodeMap() override;
 
 #ifdef RS_MODIFIERS_DRAW_ENABLE
+    static void MarkAsSceneBoard();
+
     void OnCreate();
 
     void ResetSurfaceForClientRender(int width, int height);
@@ -237,6 +241,7 @@ private:
     static inline uint32_t maxGpuSupportedWidth_ = 0;
     static inline uint32_t maxGpuSupportedHeight_ = 0;
     static inline bool globalHybridEnabled_ = false;
+    static inline std::atomic<bool> isSceneBoard_ = false;
 
     bool skipContentModifierDraw_ = false;
  
@@ -244,6 +249,8 @@ private:
 #endif
 
     bool hybridEnabled_ = false;
+
+    friend class RSUIContext;
 };
 } // namespace Rosen
 } // namespace OHOS
