@@ -78,6 +78,8 @@ struct FilterEffectParams {
     std::shared_ptr<RSFilter> foregroundFilter_ = nullptr;
     std::shared_ptr<RSFilter> foregroundFilterCache_ = nullptr;
     std::shared_ptr<RSNGRenderFilterBase> fgNGRenderFilter_ = nullptr; // for foreground render
+    // Suppresses per-frame contentDirty_ (e.g. particle progress) from invalidating the subtree cache.
+    bool ignorePropertiesContentDirty_ = false;
 
     float foregroundEffectRadius_ = 0.f;
     bool foregroundEffectDirty_ = false;
@@ -806,8 +808,6 @@ private:
     std::unique_ptr<BlenderEffectParams> blenderEffect_ = nullptr;
     std::unique_ptr<NodesEffectParams> nodesEffect_ = nullptr;
     std::unique_ptr<DepthEffectParams> depthEffect_ = nullptr;
-
-    bool ignorePropertiesContentDirty_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
