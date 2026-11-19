@@ -1307,7 +1307,7 @@ HWTEST_F(ParagraphTest, ParagraphBorderIntrinsic001, TestSize.Level0)
     bordered->Layout(NARROW_LAYOUT);
     ASSERT_GT(plain->GetMinIntrinsicWidth(), 0.0); // sanity: measurement path ran
     EXPECT_FLOAT_EQ(static_cast<float>(bordered->GetMinIntrinsicWidth() - plain->GetMinIntrinsicWidth()),
-        static_cast<float>(BORDER_WIDTH));
+        static_cast<float>(BORDER_WIDTH) * 2);
 }
 
 /*
@@ -2038,7 +2038,7 @@ HWTEST_F(ParagraphTest, ParagraphBorderWrapTrailingGap001, TestSize.Level0)
     bordered->Layout(tightWidth + BORDER_WIDTH);
     auto implBordered = GetParagraphSkiaImpl(bordered);
     ASSERT_NE(implBordered, nullptr);
-    EXPECT_EQ(implBordered->lines().size(), 1u);
+    EXPECT_EQ(implBordered->lines().size(), 2u);
     // text + 2w fits exactly: the whole box stays on one line
     bordered->Layout(tightWidth + 2 * BORDER_WIDTH);
     implBordered = GetParagraphSkiaImpl(bordered);
