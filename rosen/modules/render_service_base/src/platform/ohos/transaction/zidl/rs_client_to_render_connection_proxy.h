@@ -42,11 +42,6 @@ public:
     // connection can continue the index stream of the connection used before it.
     bool SeedTransactionDataIndex(uint32_t value);
 
-    // Set once by RSRenderServiceConnectHub on the construction-time connection to the main
-    // render service; local flag, never crosses IPC.
-    bool IsDefaultConnection() const override { return isDefaultConnection_; }
-    void MarkAsDefaultConnection() override { isDefaultConnection_ = true; }
-
     ErrCode CreateDisplayNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId,
         bool& success) override;
 
@@ -207,7 +202,6 @@ public:
 
     pid_t pid_ = GetRealPid();
     std::atomic<uint32_t> transactionDataIndex_ = 0;
-    bool isDefaultConnection_ = false;
     OnRemoteDiedCallback OnRemoteDiedCallback_;
 
     bool SetDelegateMode(NodeId id, bool isSetDelegateMode, pid_t pid) override;

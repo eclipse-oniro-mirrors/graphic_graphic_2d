@@ -178,11 +178,12 @@ public:
 
     // Whether this is the construction-time connection to the main render service
     // (RSRenderServiceConnectHub::renderConn_) rather than a dedicated render-process connection.
-    // Local query/mark only: it never crosses IPC; the client proxy and the server stub override it.
+    // Local query only: it never crosses IPC; the server stub overrides it, other connections
+    // report false.
     virtual bool IsDefaultConnection() const { return false; }
 
-    // Default no-op so any connection type can accept the call; only connections that can carry
-    // the default-connection identity override it.
+    // Default no-op so any connection type can accept the call; only the server stub overrides it
+    // (set once by RSRenderService::CreateConnection before the stub is handed to the client).
     virtual void MarkAsDefaultConnection() {}
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)

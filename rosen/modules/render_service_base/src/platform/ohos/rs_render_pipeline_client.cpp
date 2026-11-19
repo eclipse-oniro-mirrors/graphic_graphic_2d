@@ -96,16 +96,6 @@ void RSRenderPipelineClient::CommitTransaction(std::unique_ptr<RSTransactionData
         RSRenderServiceConnectHub::SeedTransactionDataIndex(tokenMaskId_);
     }
     auto clientToRenderConnection = RSRenderServiceConnectHub::GetClientToRenderConnection(tokenMaskId_);
-#if defined(RS_MULTI_DISPLAY_FEATURES)
-    // Multi-display products pin the render-process topology at construction: an INVALID_TOKEN_MASK_ID
-    // here means the client never obtained a valid render connection, and any fallback path would
-    // restart the transaction index sequencing. Reject the submission instead of re-resolving.
-    if (clientToRenderConnection->IsDefaultConnection()) {
-        RS_LOGE_LIMIT(__func__, __line__,
-            "RSRenderPipelineClient::CommitTransaction rejected, no dedicated render connection");
-        return;
-    }
-#endif
     if (clientToRenderConnection != nullptr) {
         clientToRenderConnection->CommitTransaction(transactionData);
     } else {
