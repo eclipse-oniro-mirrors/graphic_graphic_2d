@@ -1000,12 +1000,15 @@ std::shared_ptr<RSNGRenderFilterBase> RSEffectProperties::GetForegroundNGFilter(
 
 bool RSEffectProperties::IgnorePropertiesContentDirty() const
 {
-    return ignorePropertiesContentDirty_;
+    if (filterEffect_ != nullptr) {
+        return filterEffect_->ignorePropertiesContentDirty_;
+    }
+    return false;
 }
 
 void RSEffectProperties::SetIgnorePropertiesContentDirty(bool ignore)
 {
-    ignorePropertiesContentDirty_ = ignore;
+    GetFilterEffect().ignorePropertiesContentDirty_ = ignore;
 }
 
 void RSEffectProperties::SetMaterialNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& filter)
