@@ -14,13 +14,18 @@
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
+import("$graphic_2d_root/rosen/modules/render_service_base/config.gni")
 module_output_path = "graphic_2d/graphic_2d"
 
 ohos_fuzztest("RSCanvasDrawingNodeCommandFuzzTest") {
   fuzz_config_file = "$graphic_2d_root/rosen/test/render_service/render_service_base/fuzztest/rscanvasdrawingnodecommand_fuzzer"
   module_out_path = module_output_path
+  defines = []
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines = [ "USE_ROSEN_DRAWING" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (rosen_is_ohos && graphic_2d_feature_enable_vulkan && graphic_2d_feature_rs_modifiers_draw_enable) {
+    defines += [ "RS_MODIFIERS_DRAW_ENABLE" ]
   }
 
   include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
@@ -42,8 +47,10 @@ ohos_fuzztest("RSCanvasDrawingNodeCommandFuzzTest") {
 
   external_deps = [
     "c_utils:utils",
+    "egl:libEGL",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
+    "opengles:libGLES",
     "zlib:libz",
   ]
 }

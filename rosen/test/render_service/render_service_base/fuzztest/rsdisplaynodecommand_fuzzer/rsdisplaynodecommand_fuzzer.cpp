@@ -20,7 +20,9 @@
 #include <securec.h>
 
 #include "command/rs_display_node_command.h"
+#include "common/rs_background_thread.h"
 #include "pipeline/rs_render_node_gc.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -150,6 +152,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     context = nullptr;
     OHOS::Rosen::RSRenderNodeGC::Instance().ReleaseNodeMemory();
+    // Node destruction is posted to RSBackgroundThread asynchronously. Wait for the queue to be
+    // drained here, otherwise the background delete may overlap with the next iteration's node-map
+    // traversal on the fuzzer thread, which ASan reports as heap-use-after-free.
+    if (OHOS::Rosen::RSSystemProperties::GetBgNodeReleaseEnabled()) {
+        OHOS::Rosen::RSBackgroundThread::Instance().PostSyncTask([]() {});
+    }
 
     return 0;
 }

@@ -21,6 +21,9 @@
 #include <securec.h>
 
 #include "command/rs_canvas_node_command.h"
+#include "common/rs_background_thread.h"
+#include "pipeline/rs_render_node_gc.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -39,6 +42,14 @@ bool DoCanvasNodeCommand(FuzzedDataProvider& fdp)
     RSCanvasNodeCommandHelper::ClearRecording(context, id);
     Drawing::DrawCmdListPtr drawCmdList = nullptr;
     RSCanvasNodeCommandHelper::UpdateRecording(context, id, drawCmdList, modifierType);
+    context.GetMutableNodeMap().FilterNodeByPid(getpid(), true);
+    RSRenderNodeGC::Instance().ReleaseNodeMemory(true);
+    // Node destruction is posted to RSBackgroundThread asynchronously. Wait for the queue to be
+    // drained here, otherwise the background delete may overlap with the next iteration's node-map
+    // traversal on the fuzzer thread, which ASan reports as heap-use-after-free.
+    if (RSSystemProperties::GetBgNodeReleaseEnabled()) {
+        RSBackgroundThread::Instance().PostSyncTask([]() {});
+    }
     return true;
 }
 } // namespace Rosen

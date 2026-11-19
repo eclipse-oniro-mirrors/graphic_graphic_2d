@@ -17,10 +17,12 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
+#include "common/rs_background_thread.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "transaction/rs_client_to_render_connection.h"
 #include "render_server/transaction/rs_client_to_service_connection.h"
 #include "pipeline/rs_render_node_gc.h"
+#include "platform/common/rs_system_properties.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
 #include "platform/ohos/transaction/zidl/rs_irender_service.h"
 #include "transaction/zidl/rs_client_to_render_connection_stub.h"
@@ -45,6 +47,7 @@ auto mainThread_ = RSMainThread::Instance();
 
 sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ = nullptr;
 sptr<OHOS::Rosen::RSRenderService> renderService_ = nullptr;
+const uint32_t WAIT_TASK_RUN_TIME_NS = 10000;
 
 namespace {
 constexpr size_t STR_LEN = 10;
@@ -52,14 +55,14 @@ constexpr size_t STR_LEN = 10;
 void DoCreateNode(FuzzedDataProvider& fdp)
 {
     uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_NODE);
-    
+
     MessageParcel dataP;
     MessageParcel reply;
     MessageOption option;
-    
+
     NodeId id = fdp.ConsumeIntegral<NodeId>();
     std::string name = fdp.ConsumeRandomLengthString(STR_LEN);
-    
+
     if (!dataP.WriteUint64(id)) {
         return;
     }
@@ -70,6 +73,14 @@ void DoCreateNode(FuzzedDataProvider& fdp)
     toServiceConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
     auto& nodeMap = mainThread_->GetContext().GetMutableNodeMap();
     nodeMap.FilterNodeByPid(g_pid, true);
+    usleep(OHOS::Rosen::WAIT_TASK_RUN_TIME_NS);
+    // Destroyed GC-managed nodes are queued in RSRenderNodeGC buckets. Flush them here, otherwise
+    // they accumulate across iterations (memory leak) or get deleted on RSBackgroundThread while
+    // the next iteration runs, which ASan reports as heap-use-after-free.
+    RSRenderNodeGC::Instance().ReleaseNodeMemory(true);
+    if (RSSystemProperties::GetBgNodeReleaseEnabled()) {
+        RSBackgroundThread::Instance().PostSyncTask([]() {});
+    }
 }
 
 } // namespace

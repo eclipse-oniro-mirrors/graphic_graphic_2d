@@ -27,9 +27,11 @@
 #include <unistd.h>
 
 #include "render_thread/rs_render_thread_visitor.h"
+#include "common/rs_background_thread.h"
 #include "feature/window_keyframe/rs_window_keyframe_render_node.h"
 #include "feature/window_keyframe/rs_window_keyframe_node_command.h"
 #include "pipeline/rs_render_node_gc.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -72,6 +74,12 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size, RSContext
     RSWindowKeyFrameNodeCommandHelper::LinkNode(rsContext, nodeId, linkNodeId);
     rsContext.GetMutableNodeMap().FilterNodeByPid(g_pid, true);
     RSRenderNodeGC::Instance().ReleaseNodeMemory(true);
+    // Node destruction is posted to RSBackgroundThread asynchronously. Wait for the queue to be
+    // drained here, otherwise the background delete may overlap with the next iteration's node-map
+    // traversal on the fuzzer thread, which ASan reports as heap-use-after-free.
+    if (RSSystemProperties::GetBgNodeReleaseEnabled()) {
+        RSBackgroundThread::Instance().PostSyncTask([]() {});
+    }
     return true;
 }
 } // namespace Rosen
