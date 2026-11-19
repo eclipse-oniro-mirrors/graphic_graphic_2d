@@ -145,8 +145,18 @@ sptr<RSIClientToRenderConnection> RSRenderServiceConnectHub::GetClientToRenderCo
     if (isUniRender && conn) {
         return conn;
     }
+#if defined(RS_MULTI_DISPLAY_FEATURES)
+    // Multi-display products pin the render-process topology at construction: reaching the guarantee
+    // fallback means the client never obtained a dedicated render connection, and committing through
+    // the default connection would restart the transaction index sequencing. Return null so every
+    // caller fails fast instead of silently using the fallback.
+    RS_LOGE_LIMIT(__func__, __line__,
+        "RSRenderServiceConnectHub::GetClientToRenderConnection rejected, no dedicated render connection");
+    return nullptr;
+#else
     ROSEN_LOGI("RSRenderServiceConnectHub::GetClientToRenderConnection Trigger Guarantee mechanism");
     return GetRenderService().second;
+#endif
 }
 
 std::map<uint64_t, RenderProcessInfo> RSRenderServiceConnectHub::GetAllClientToRenderConnections()
