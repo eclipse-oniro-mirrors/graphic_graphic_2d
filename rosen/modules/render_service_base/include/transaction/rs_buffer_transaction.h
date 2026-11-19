@@ -24,10 +24,44 @@
 #include "sync_fence.h"
 
 #include "common/rs_macros.h"
+#include <deque>
+#include <mutex>
+#include <sstream>
+#include <unordered_map>
+#include "iconsumer_surface.h"
+#include "ibuffer_consumer_listener.h"
+#include "ipc_callbacks/rs_transaction_callback.h"
+#include "ipc_callbacks/rs_delegate_composite_callback.h"
+#include "surface_tunnel_handle.h"
+#include "external_window.h"
+#include "command/rs_command.h"
+#include "command/rs_command_factory.h"
 
 namespace OHOS {
 namespace Rosen {
 struct RSTransactionConfig;
+struct TransactionInfo {
+    RSBufferInfo bufferInfo = {};
+    sptr<SyncFence> fence = nullptr;
+    int64_t uiTimestamp = 0;
+    int64_t desiredPresentTimestamp = 0;
+    std::vector<OHOS::Rect> damages = {};
+    std::vector<GraphicHDRMetaData> metaData = {};
+    std::vector<uint8_t> metaDataSet = {};
+    HDRMetaDataType hdrMetaDataType = HDRMetaDataType::HDR_NOT_USED;
+    GraphicHDRMetadataKey metaDataKey = GraphicHDRMetadataKey::GRAPHIC_MATAKEY_RED_PRIMARY_X;
+    bool isAutoTimestamp = false;
+};
+
+struct RSTransactionManagerConfig {
+    int64_t lastFlushedDesiredPresentTimeStamp = 0;
+    uint32_t bufferQueueSize = SURFACE_DEFAULT_QUEUE_SIZE;
+    uint32_t rotatingBufferNumber = 0;
+    GraphicTransformType transform = GraphicTransformType::GRAPHIC_ROTATE_NONE;
+    OHSurfaceSource sourceType = OHSurfaceSource::OH_SURFACE_SOURCE_DEFAULT;
+    bool isBufferHold = false;
+    bool bufferSupportFastCompose = false;
+};
 
 class RSB_EXPORT RSBufferTransaction : public RefBase {
 public:
@@ -59,22 +93,60 @@ public:
 
     static sptr<RSBufferTransaction> ReadFromMessageParcel(MessageParcel& parcel);
 
+    GSError WriteToMessageParcel(MessageParcel& parcel, bool hasBuffer);
+    GSError ReadFromTransactionInfo(const TransactionInfo& info);
+    static GSError ReadTransactionInfoFromMessageParcel(MessageParcel& parcel, TransactionInfo& info);
+    static GSError ReadBufferInfoFromMessageParcel(MessageParcel& parcel, RSBufferInfo& info);
     static GSError ReadTransactionConfigFromMessageParcel(MessageParcel& parcel, RSTransactionConfig& config);
 
     static GSError WriteTransactionConfigToMessageParcel(MessageParcel& parcel, const RSTransactionConfig& config);
+    bool GetAutoTimestamp() const;
+    void SetAutoTimestamp(bool isAutoTimestamp);
+    HDRMetaDataType GetHdrMetaDataType() const;
+    const std::vector<GraphicHDRMetaData>& GetMetaData() const;
+    const std::vector<uint8_t>& GetMetaDataSet() const;
+    GraphicHDRMetadataKey GetMetaDataKey() const;
+    void SetHdrMetaDataType(HDRMetaDataType type);
+    void SetMetaData(const std::vector<GraphicHDRMetaData>& metaData);
+    void SetMetaDataSet(const std::vector<uint8_t>& metaDataSet);
+    void SetMetaDataKey(GraphicHDRMetadataKey key);
+    void SetLastAcquireTime(int64_t lastAcquireTime);
+    int64_t GetLastAcquireTime() const;
 
 private:
+    static GSError ReadMetaDataFromMessageParcel(MessageParcel& parcel, HDRMetaDataType& hdrMetaDataType,
+        std::vector<GraphicHDRMetaData>& metaData, GraphicHDRMetadataKey& key, std::vector<uint8_t>& metaDataSet);
+    GSError WriteMetaDataToMessageParcel(MessageParcel& parcel, HDRMetaDataType hdrMetaDataType,
+        const std::vector<GraphicHDRMetaData>& metaData, const GraphicHDRMetadataKey key,
+        const std::vector<uint8_t>& metaDataSet);
     mutable std::shared_mutex mutex_;
     sptr<SurfaceBuffer> buffer_ = nullptr;
     sptr<SyncFence> fence_ = nullptr;
     std::vector<OHOS::Rect> damages_ = {};
     int64_t uiTimestamp_ = 0;
     int64_t desiredPresentTimestamp_ = 0;
+    bool isAutoTimestamp_ = false;
+    HDRMetaDataType hdrMetaDataType_ = HDRMetaDataType::HDR_NOT_USED;
+    std::vector<GraphicHDRMetaData> metaData_ = {};
+    GraphicHDRMetadataKey metaDataKey_ = GraphicHDRMetadataKey::GRAPHIC_MATAKEY_RED_PRIMARY_X;
+    std::vector<uint8_t> metaDataSet_ = {};
+    /**
+     * lastAcquireTime is the time when this buffer was acquired last time through AcquireBuffer interface.
+     */
+    int64_t lastAcquireTime_ = 0;
+    uint32_t bufferSeqNum_ = 0;
 };
 
 struct RSTransactionConfig {
     uint64_t nodeId = 0;
     sptr<RSBufferTransaction> transaction = nullptr;
+    std::vector<uint32_t> delList = {};
+    TransactionInfo transactionInfo = {};
+    int64_t requestTimeNs = 0;
+    int64_t flushTimeNs = 0;
+    int32_t pid = 0;
+    uint32_t bufferSeqNum = 0;
+    bool hasBuffer = false;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -116,7 +116,6 @@ struct BufferDrawParam {
     uint32_t hdrHeteroType = 0;
 #endif
     bool colorFollow = false;
-    bool preRotation = false;
     Drawing::AlphaType alphaType = Drawing::AlphaType::ALPHATYPE_PREMUL;
 
     bool ignoreAlpha = false;
