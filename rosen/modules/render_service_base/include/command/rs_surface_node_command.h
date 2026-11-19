@@ -240,12 +240,9 @@ ADD_COMMAND(RSSurfaceNodeAttachToDisplay,
 ADD_COMMAND(RSSurfaceNodeDetachToDisplay,
     ARG(PERMISSION_SYSTEM, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_DETACH_TO_DISPLAY,
         SurfaceNodeCommandHelper::DetachToDisplay, NodeId, uint64_t))
-
-#ifndef ROSEN_CROSS_PLATFORM
 ADD_COMMAND(RSSurfaceNodeSetColorSpace,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_SET_COLOR_SPACE,
         SurfaceNodeCommandHelper::SetColorSpace, NodeId, GraphicColorGamut))
-#endif
 ADD_COMMAND(RSurfaceNodeSetSurfaceId,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_SET_SURFACE_ID,
         SurfaceNodeCommandHelper::SetSurfaceId, NodeId, SurfaceId))

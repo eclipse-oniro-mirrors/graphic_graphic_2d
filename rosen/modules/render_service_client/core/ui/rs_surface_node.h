@@ -272,13 +272,12 @@ public:
 
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<OHOS::Surface> GetSurface() const;
-
+#endif
     void SetColorSpace(GraphicColorGamut colorSpace);
     GraphicColorGamut GetColorSpace()
     {
         return colorSpace_;
     }
-#endif
 
     /**
      * @brief Get the name of the node.

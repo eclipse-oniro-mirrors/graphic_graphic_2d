@@ -429,9 +429,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
         ROSEN_LOGE("RSRenderThreadVisitor::ProcessRootRenderNode ptr err");
         return;
     }
-#ifndef ROSEN_CROSS_PLATFORM
     auto surfaceNodeColorSpace = ptr->GetColorSpace();
-#endif
     std::shared_ptr<RSSurface> rsSurface = RSSurfaceExtractor::ExtractRSSurface(ptr);
     if (rsSurface == nullptr) {
         ROSEN_LOGE("ProcessRoot %{public}s: No RSSurface found", ptr->GetName().c_str());
@@ -445,13 +443,11 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     rsSurface->SetRenderContext(rc);
 #endif
 
-#ifndef ROSEN_CROSS_PLATFORM
     auto rsSurfaceColorSpace = rsSurface->GetColorSpace();
     if (surfaceNodeColorSpace != rsSurfaceColorSpace) {
         ROSEN_LOGD("Set new colorspace %{public}d to rsSurface", surfaceNodeColorSpace);
         rsSurface->SetColorSpace(surfaceNodeColorSpace);
     }
-#endif
 
     uiTimestamp_ = RSRenderThread::Instance().GetUITimestamp();
     RS_TRACE_BEGIN(ptr->GetName() + " rsSurface->RequestFrame");

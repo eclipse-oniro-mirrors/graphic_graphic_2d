@@ -166,9 +166,7 @@ const std::unordered_map<std::string, std::function<bool(std::unique_ptr<RSTrans
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSSurfaceNodeDetachToDisplay),
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSurfaceNodeSetSurfaceId),
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSurfaceNodeSetLeashPersistentId),
-#ifndef ROSEN_CROSS_PLATFORM
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSSurfaceNodeSetColorSpace),
-#endif
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSSurfaceNodeSetForeground),
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSSurfaceNodeSetForceUIFirst),
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSSurfaceNodeSetAncoFlags),
