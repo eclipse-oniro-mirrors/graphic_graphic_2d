@@ -29,7 +29,10 @@ public:
     void TearDown() override;
 };
 
-void BootAnimationControllerTest::SetUpTestCase() {}
+void BootAnimationControllerTest::SetUpTestCase()
+{
+    SyncFence::INVALID_FENCE->IncStrongRef(nullptr);
+}
 void BootAnimationControllerTest::TearDownTestCase() {}
 void BootAnimationControllerTest::SetUp() {}
 void BootAnimationControllerTest::TearDown() {}
