@@ -189,7 +189,6 @@ void RSRenderServiceListener::OnCleanCache(uint32_t *bufSeqNum)
 
     auto node = surfaceBufferInterface_.lock();
 
-
     uint64_t curBufferId = 0;
     uint32_t bufSeqNumValue = 0;
     auto curBuffer = surfaceHandler->GetBuffer();
