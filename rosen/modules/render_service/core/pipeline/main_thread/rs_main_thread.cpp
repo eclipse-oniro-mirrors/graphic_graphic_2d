@@ -340,6 +340,9 @@ bool Compare(const std::unique_ptr<RSTransactionData>& data1, const std::unique_
 {
     if (!data1 || !data2) {
         RS_LOGW("Compare RSTransactionData: nullptr!");
+        if (!data1) {
+            return false;
+        }
         return true;
     }
     return data1->GetIndex() < data2->GetIndex();
