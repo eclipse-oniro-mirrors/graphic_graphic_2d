@@ -15,6 +15,8 @@
 
 #include "gtest/gtest.h"
 
+#include <algorithm>
+
 #include "animation/rs_render_curve_animation.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_base_render_node.h"
@@ -251,13 +253,13 @@ HWTEST_F(RSBaseRenderNodeTest, SetIsOnTheTree002, TestSize.Level1)
 HWTEST_F(RSBaseRenderNodeTest, AddCrossParentChildTest001, TestSize.Level1)
 {
     int32_t index = 1;
-    int32_t index_ = 0;
+    int32_t defaultIndex = 0;
     std::shared_ptr<RSSurfaceRenderNode> child = nullptr;
     std::shared_ptr<RSSurfaceRenderNode> child_;
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
     EXPECT_NE(node, nullptr);
     node->AddCrossParentChild(child, index);
-    node->AddCrossParentChild(child_, index_);
+    node->AddCrossParentChild(child_, defaultIndex);
 }
 
 /**
@@ -1217,5 +1219,73 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateAlwaysInvisibleNoDirty001, TestSize.Level1)
     EXPECT_FALSE(node->isLastVisible_);
     // dirtyStatus_ should be CLEAN (SetClean called in early-return path)
     EXPECT_EQ(node->dirtyStatus_, RSRenderNode::NodeDirty::CLEAN);
+}
+
+/**
+ * @tc.name: CollectAllChildrenCycleSafe001
+ * @tc.desc: A cyclic node tree can be built via AddChild (a child is also an ancestor, e.g. by
+ *           external commands). CollectAllChildren must detect the re-entry and stop that branch
+ *           instead of recursing until stack overflow; each reachable node is collected once.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderNodeTest, CollectAllChildrenCycleSafe001, TestSize.Level1)
+{
+    // build nodeA -> nodeB, then nodeB -> nodeA closes the cycle nodeA -> nodeB -> nodeA
+    auto nodeA = std::make_shared<RSBaseRenderNode>(id, context);
+    auto nodeB = std::make_shared<RSBaseRenderNode>(id + 1, context);
+    nodeA->AddChild(nodeB, -1);
+    nodeB->AddChild(nodeA, -1);
+    nodeA->GenerateFullChildrenList();
+    nodeB->GenerateFullChildrenList();
+
+    // without cycle guard this recursed nodeA -> nodeB -> nodeA ... until stack overflow
+    std::vector<NodeId> nodeIds;
+    nodeA->CollectAllChildren(nodeA, nodeIds);
+
+    EXPECT_EQ(nodeIds.size(), 2); // each reachable node collected exactly once
+    EXPECT_EQ(nodeIds.front(), nodeA->GetId());
+    for (auto nodeId : { nodeA->GetId(), nodeB->GetId() }) {
+        EXPECT_EQ(std::count(nodeIds.begin(), nodeIds.end(), nodeId), 1);
+    }
+
+    // traversal guard flags must be reset after the traversal, a second call gets the same result
+    std::vector<NodeId> nodeIdsAgain;
+    nodeA->CollectAllChildren(nodeA, nodeIdsAgain);
+    EXPECT_EQ(nodeIdsAgain, nodeIds);
+}
+
+/**
+ * @tc.name: CollectAllChildrenCycleSafe002
+ * @tc.desc: Same as CollectAllChildrenCycleSafe001 but with a deeper cycle nodeA -> nodeB ->
+ *           nodeC -> nodeA; the traversal must terminate and collect each node exactly once.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderNodeTest, CollectAllChildrenCycleSafe002, TestSize.Level1)
+{
+    // build nodeA -> nodeB -> nodeC, then nodeC -> nodeA closes the cycle
+    auto nodeA = std::make_shared<RSBaseRenderNode>(id, context);
+    auto nodeB = std::make_shared<RSBaseRenderNode>(id + 1, context);
+    auto nodeC = std::make_shared<RSBaseRenderNode>(id + 2, context);
+    nodeA->AddChild(nodeB, -1);
+    nodeB->AddChild(nodeC, -1);
+    nodeC->AddChild(nodeA, -1);
+    nodeA->GenerateFullChildrenList();
+    nodeB->GenerateFullChildrenList();
+    nodeC->GenerateFullChildrenList();
+
+    // without cycle guard this recursed nodeA -> nodeB -> nodeC -> nodeA ... until stack overflow
+    std::vector<NodeId> nodeIds;
+    nodeA->CollectAllChildren(nodeA, nodeIds);
+
+    EXPECT_EQ(nodeIds.size(), 3); // each reachable node collected exactly once
+    EXPECT_EQ(nodeIds.front(), nodeA->GetId());
+    for (auto nodeId : { nodeA->GetId(), nodeB->GetId(), nodeC->GetId() }) {
+        EXPECT_EQ(std::count(nodeIds.begin(), nodeIds.end(), nodeId), 1);
+    }
+
+    // traversal guard flags must be reset after the traversal, a second call gets the same result
+    std::vector<NodeId> nodeIdsAgain;
+    nodeA->CollectAllChildren(nodeA, nodeIdsAgain);
+    EXPECT_EQ(nodeIdsAgain, nodeIds);
 }
 } // namespace OHOS::Rosen
