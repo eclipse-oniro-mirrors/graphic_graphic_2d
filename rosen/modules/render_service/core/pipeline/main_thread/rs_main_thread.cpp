@@ -1040,7 +1040,7 @@ void RSMainThread::CleanResources(pid_t pid, bool forRefresh)
     Media::VideoProcessingEngine::VpeCommonState::RemoveCachedPid(pid);
 #endif
 
-    RS_LOGI("RSMainThread::CleanResources START pid=%{public}d forRefresh=%{public}d", pid, forRefresh);
+    RS_LOGI("RSMainThread::CleanResources END pid=%{public}d forRefresh=%{public}d", pid, forRefresh);
 }
 
 bool RSMainThread::GetMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& maxHeight)
