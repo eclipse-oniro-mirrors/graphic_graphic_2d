@@ -41,6 +41,7 @@
 #include "filter/include/filter_spin_blur_para.h"
 #include "filter/include/filter_water_ripple_para.h"
 #include "filter/include/filter_variable_radius_blur_para.h"
+#include "filter/include/filter_sticker_emboss_para.h"
 
 #include "mask/include/mask.h"
 #include "napi/native_api.h"
@@ -63,6 +64,8 @@ public:
     FilterNapi();
     ~FilterNapi();
     static napi_value Init(napi_env env, napi_value exports);
+    // file-scope parse helpers (GetNumberProperty/ParseEmbossParams) reuse this value extractor
+    static float GetSpecialValue(napi_env env, napi_value argValue);
 
 private:
     static thread_local napi_ref sConstructor_;
@@ -94,10 +97,10 @@ private:
     static napi_value SetVariableRadiusBlur(napi_env env, napi_callback_info info);
     static napi_value SetMotionBlur(napi_env env, napi_callback_info info);
     static napi_value SetMapColorByBrightness(napi_env env, napi_callback_info info);
+    static napi_value SetEmboss(napi_env env, napi_callback_info info);
 
     static void RegisterFilterParaUnmarshallingCallback();
 
-    static float GetSpecialValue(napi_env env, napi_value argValue);
     static uint32_t GetSpecialIntValue(napi_env env, napi_value argValue);
     static bool GetSpecialBoolValue(napi_env env, napi_value argValue, bool defaultValue);
     static bool GetColorGradientArray(napi_env env, napi_value* argValue, std::shared_ptr<ColorGradientPara>& para,

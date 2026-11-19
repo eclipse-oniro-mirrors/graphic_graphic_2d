@@ -24,6 +24,7 @@
 #include "ui_effect/filter/include/filter_frosted_glass_para.h"
 #include "ui_effect/filter/include/filter_mask_transition_para.h"
 #include "ui_effect/filter/include/filter_water_ripple_para.h"
+#include "ui_effect/filter/include/filter_sticker_emboss_para.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -108,6 +109,7 @@ void Filter::RegisterUnmarshallingCallback()
     DirectionLightPara::RegisterUnmarshallingCallback();
     FrostedGlassPara::RegisterUnmarshallingCallback();
     FrostedGlassBlurPara::RegisterUnmarshallingCallback();
+    StickerEmbossPara::RegisterUnmarshallingCallback();
 }
 
 } // namespace Rosen

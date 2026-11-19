@@ -251,6 +251,8 @@ rs_effect_feature_sources = [
   "rs_effect_feature/ng_effect_test/ng_mask_frame_gradient_test.cpp",
   "rs_effect_feature/ng_effect_test/ng_effect_light_cave_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_distort_light_test.cpp",
+  "rs_effect_feature/ng_shader_test/ng_shader_sticker_laser_test.cpp",
+  "rs_effect_feature/ng_filter_test/ng_filter_sticker_emboss_test.cpp",
 ]
 rs_framework_sources = [
   "rs_framework/uni_render_ui/surface_test.cpp",
@@ -304,6 +306,7 @@ effect_kit_sources = [
   "effect_kit/oh_filter_test/oh_filter_waterdroplettransition_test.cpp",
   "effect_kit/oh_filter_test/oh_filter_waterglass_test.cpp",
   "effect_kit/oh_filter_test/oh_filter_test_utils.cpp",
+  "effect_kit/effect_image_test/effect_image_sticker_test.cpp",
 ]
 
 group("test") {
@@ -337,6 +340,7 @@ ohos_unittest("RSGraphicTest") {
   deps = [
     "$graphic_2d_root/graphic_test/graphic_test_framework:rs_graphic_test_main",
     "$graphic_2d_root/rosen/modules/effect/effect_ndk:native_effect_ndk",
+    "$graphic_2d_root/rosen/modules/effect/skia_effectChain:skeffectchain",
     "$rosen_text_root:rosen_text",
   ]
 

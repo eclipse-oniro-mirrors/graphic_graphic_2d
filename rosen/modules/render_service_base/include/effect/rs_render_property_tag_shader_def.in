@@ -440,3 +440,13 @@ DECLARE_ANIMATABLE_PROPERTY_TAG(CosmosRingShadow, ShadowRadialOffset, float);
 DECLARE_ANIMATABLE_PROPERTY_TAG(CosmosRingShadow, Softness, float);
 DECLARE_ANIMATABLE_PROPERTY_TAG(CosmosRingShadow, ShadowOffset, Vector2f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(CosmosRingShadow, ShadowColor, Vector4f);
+
+DECLARE_NONANIMATABLE_PROPERTY_TAG(StickerLaserShader, Sticker, std::shared_ptr<Media::PixelMap>);
+DECLARE_ANIMATABLE_PROPERTY_TAG(StickerLaserShader, OutlineWidth, float);
+DECLARE_ANIMATABLE_PROPERTY_TAG(StickerLaserShader, Frequency, float);
+DECLARE_ANIMATABLE_PROPERTY_TAG(StickerLaserShader, Direction, Vector2f);
+DECLARE_ANIMATABLE_PROPERTY_TAG(StickerLaserShader, Progress, float);
+DECLARE_ANIMATABLE_PROPERTY_TAG(StickerLaserShader, LightDir, Vector2f);
+DECLARE_ANIMATABLE_PROPERTY_TAG(StickerLaserShader, ElevationShadowColor, Vector4f);
+DECLARE_ANIMATABLE_PROPERTY_TAG(StickerLaserShader, ElevationShadowRadius, float);
+DECLARE_ANIMATABLE_PROPERTY_TAG(StickerLaserShader, ElevationShadowDistance, float);

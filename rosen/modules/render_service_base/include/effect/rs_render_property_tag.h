@@ -172,6 +172,8 @@ enum class RSNGEffectType : int16_t {
     DYNAMIC_DIM,
     SDF_UBER_SHAPE,
     POINT_LIGHT,
+    STICKER_LASER_SHADER,
+    STICKER_EMBOSS_FILTER,
     PARTICLE_AGGREGATION,
 
     // blender type

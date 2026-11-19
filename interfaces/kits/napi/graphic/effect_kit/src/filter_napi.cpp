@@ -193,6 +193,8 @@ napi_value FilterNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getGpuMemoryStatistics", GetGpuMemoryStatistics),
         DECLARE_NAPI_FUNCTION("outline", Outline),
         DECLARE_NAPI_FUNCTION("halftone", Halftone),
+        DECLARE_NAPI_FUNCTION("emboss", Emboss),
+        DECLARE_NAPI_FUNCTION("iridescence", Iridescence),
         DECLARE_NAPI_FUNCTION("getPixelMap", GetPixelMap),
         DECLARE_NAPI_FUNCTION("getPixelMapAsync", GetPixelMapAsync),
         DECLARE_NAPI_FUNCTION("getEffectPixelMap", GetPixelMapAsync),
@@ -552,6 +554,202 @@ napi_value FilterNapi::Blur(napi_env env, napi_callback_info info)
     EFFECT_NAPI_CHECK_RET_D(blur != nullptr, nullptr,
         EFFECT_LOG_E("FilterNapi Blur create filter fail"));
     thisFilter->AddEffectFilter(blur, "blur");
+    return _this;
+}
+
+static bool ParseFloatFromJsObject(napi_env env, napi_value jsObject, const char* name, float& out)
+{
+    napi_value value = nullptr;
+    if (napi_get_named_property(env, jsObject, name, &value) != napi_ok ||
+        EffectKitNapiUtils::GetInstance().GetType(env, value) != napi_number) {
+        return false;
+    }
+    double number = 0.0;
+    if (napi_get_value_double(env, value, &number) != napi_ok || !std::isfinite(number)) {
+        return false;
+    }
+    out = static_cast<float>(number);
+    return true;
+}
+
+static bool ParsePointFromJsObject(napi_env env, napi_value jsObject, const char* name, Vector2f& out)
+{
+    napi_value value = nullptr;
+    if (napi_get_named_property(env, jsObject, name, &value) != napi_ok ||
+        EffectKitNapiUtils::GetInstance().GetType(env, value) != napi_object) {
+        return false;
+    }
+    napi_value xValue = nullptr;
+    napi_value yValue = nullptr;
+    double x = 0.0;
+    double y = 0.0;
+    if (napi_get_named_property(env, value, "x", &xValue) != napi_ok ||
+        napi_get_named_property(env, value, "y", &yValue) != napi_ok ||
+        napi_get_value_double(env, xValue, &x) != napi_ok ||
+        napi_get_value_double(env, yValue, &y) != napi_ok ||
+        !std::isfinite(x) || !std::isfinite(y)) {
+        return false;
+    }
+    out = Vector2f(static_cast<float>(x), static_cast<float>(y));
+    return true;
+}
+
+static bool ParseColorFromJsObject(napi_env env, napi_value jsObject, const char* name, Vector4f& out)
+{
+    constexpr float rgbaColorMax = 255.0f;
+    static const char* colorFields[NUM_4] = { "red", "green", "blue", "alpha" };
+    napi_value value = nullptr;
+    if (napi_get_named_property(env, jsObject, name, &value) != napi_ok ||
+        EffectKitNapiUtils::GetInstance().GetType(env, value) != napi_object) {
+        return false;
+    }
+    double components[NUM_4] = { 0.0, 0.0, 0.0, 0.0 };
+    for (uint32_t idx = 0; idx < NUM_4; idx++) {
+        napi_value field = nullptr;
+        if (napi_get_named_property(env, value, colorFields[idx], &field) != napi_ok ||
+            napi_get_value_double(env, field, &components[idx]) != napi_ok ||
+            components[idx] < 0.0 || !std::isfinite(components[idx])) {
+            return false;
+        }
+    }
+    out = Vector4f(static_cast<float>(components[NUM_0]) / rgbaColorMax,
+        static_cast<float>(components[NUM_1]) / rgbaColorMax,
+        static_cast<float>(components[NUM_2]) / rgbaColorMax,
+        static_cast<float>(components[NUM_3]) / rgbaColorMax);
+    return true;
+}
+
+napi_value FilterNapi::Emboss(napi_env env, napi_callback_info info)
+{
+    // Signature: emboss(outlineWidth, embossParam)
+    // argv[0] = outlineWidth (required, number)
+    // argv[1] = embossParam (required, EmbossParam)
+    //           Fields: refractionRate       : float - required
+    //                   dirIntensity         : float - required
+    //                   edgeLightWidth       : float - required
+    //                   edgeLightFeatherRate : float - required
+    //                   edgeLightIntensity   : float - required (light part)
+    //                   edgeDarkIntensity    : float - required (dark part)
+    //                   spotLightCenter      : common2D.Point - required
+    //                   spotLightIntensity   : float - required
+    //                   specPow              : float - required
+    //                   specIntensity        : float - required
+    size_t argc = NUM_2;
+    napi_value argv[NUM_2];
+    napi_value _this;
+    napi_status status;
+    EFFECT_JS_ARGS(env, info, status, argc, argv, _this);
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && argc == NUM_2 &&
+        EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_0]) == napi_number &&
+        EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_1]) == napi_object, nullptr,
+        EFFECT_LOG_E("FilterNapi Emboss parsing input fail"));
+
+    double outlineWidth = 0.0;
+    EFFECT_NAPI_CHECK_RET_D(napi_get_value_double(env, argv[NUM_0], &outlineWidth) == napi_ok, nullptr,
+        EFFECT_LOG_E("FilterNapi Emboss parse outlineWidth fail"));
+
+    auto params = std::make_shared<Drawing::GEStickerEmbossFilterParams>();
+    EFFECT_NAPI_CHECK_RET_D(params != nullptr, nullptr,
+        EFFECT_LOG_E("FilterNapi Emboss params is nullptr"));
+    params->outlineWidth = static_cast<float>(outlineWidth);
+
+    // API-level edgeLightIntensity + edgeDarkIntensity are packed into the Vector2f pair
+    float edgeLightIntensity = 0.0f;
+    float edgeDarkIntensity = 0.0f;
+    EFFECT_NAPI_CHECK_RET_D(
+        ParseFloatFromJsObject(env, argv[NUM_1], "refractionRate", params->refractionRate) &&
+        ParseFloatFromJsObject(env, argv[NUM_1], "dirIntensity", params->dirIntensity) &&
+        ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightWidth", params->edgeLightWidth) &&
+        ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightFeatherRate", params->edgeLightFeatherRate) &&
+        ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightIntensity", edgeLightIntensity) &&
+        ParseFloatFromJsObject(env, argv[NUM_1], "edgeDarkIntensity", edgeDarkIntensity) &&
+        ParsePointFromJsObject(env, argv[NUM_1], "spotLightCenter", params->spotLightCenter) &&
+        ParseFloatFromJsObject(env, argv[NUM_1], "spotLightIntensity", params->spotLightIntensity) &&
+        ParseFloatFromJsObject(env, argv[NUM_1], "specPow", params->specPow) &&
+        ParseFloatFromJsObject(env, argv[NUM_1], "specIntensity", params->specIntensity), nullptr,
+        EFFECT_LOG_E("FilterNapi Emboss parse embossParam fail"));
+    params->edgeLightIntensity = Vector2f(edgeLightIntensity, edgeDarkIntensity);
+
+    FilterNapi* thisFilter = nullptr;
+    status = napi_unwrap_s(env, _this, &FilterNapi::NAPI_TYPE_TAG, reinterpret_cast<void**>(&thisFilter));
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && thisFilter != nullptr, nullptr,
+        EFFECT_LOG_E("FilterNapi Emboss napi_unwrap fail"));
+
+    // the sticker is the effect chain input image, supplied by EffectImageChain on apply
+    auto emboss = EffectImageFilter::StickerEmboss(params);
+    EFFECT_NAPI_CHECK_RET_D(emboss != nullptr, nullptr,
+        EFFECT_LOG_E("FilterNapi Emboss create filter fail"));
+    thisFilter->AddEffectFilter(emboss);
+    return _this;
+}
+
+napi_value FilterNapi::Iridescence(napi_env env, napi_callback_info info)
+{
+    // Signature: iridescence(iridescenceParam, outlineWidth?, shadowOptions?)
+    // argv[0] = iridescenceParam (required, IridescenceParam)
+    //           Fields: frequency : float - required
+    //                   direction : common2D.Point - required
+    //                   progress  : float - required
+    // argv[1] = outlineWidth (optional, number) - default 0.0
+    // argv[2] = shadowOptions (optional, ShadowOptions)
+    //           Fields: radius         : float - optional, default 0 (no shadow)
+    //                   lightDirection : common2D.Point - optional, default (0, 0)
+    //                   shadowDistance : float - optional, default 0
+    //                   color          : common2D.Color - optional, default black {0, 0, 0, 26}
+    size_t argc = NUM_3;
+    napi_value argv[NUM_3];
+    napi_value _this;
+    napi_status status;
+    EFFECT_JS_ARGS(env, info, status, argc, argv, _this);
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && argc >= NUM_1 && argc <= NUM_3 &&
+        EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_0]) == napi_object, nullptr,
+        EFFECT_LOG_E("FilterNapi Iridescence parsing input fail"));
+
+    auto params = std::make_shared<Drawing::GEStickerLaserShaderParams>();
+    EFFECT_NAPI_CHECK_RET_D(params != nullptr, nullptr,
+        EFFECT_LOG_E("FilterNapi Iridescence params is nullptr"));
+
+    EFFECT_NAPI_CHECK_RET_D(
+        ParseFloatFromJsObject(env, argv[NUM_0], "frequency", params->frequency) &&
+        ParsePointFromJsObject(env, argv[NUM_0], "direction", params->direction) &&
+        ParseFloatFromJsObject(env, argv[NUM_0], "progress", params->progress), nullptr,
+        EFFECT_LOG_E("FilterNapi Iridescence parse iridescenceParam fail"));
+
+    if (argc > NUM_1 && EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_1]) == napi_number) {
+        double outlineWidth = 0.0;
+        if (napi_get_value_double(env, argv[NUM_1], &outlineWidth) == napi_ok) {
+            params->outlineWidth = static_cast<float>(outlineWidth);
+        }
+    }
+
+    // defaults follow ShadowOptions: a shadow with zero radius covers nothing
+    if (argc > NUM_2 && EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_2]) == napi_object) {
+        float shadowRadius = 0.0f;
+        float shadowDistance = 0.0f;
+        if (ParseFloatFromJsObject(env, argv[NUM_2], "radius", shadowRadius)) {
+            params->elevationShadowRadius = shadowRadius;
+        }
+        if (!ParsePointFromJsObject(env, argv[NUM_2], "lightDirection", params->lightDir)) {
+            params->lightDir = Vector2f(0.0f, 0.0f);
+        }
+        if (ParseFloatFromJsObject(env, argv[NUM_2], "shadowDistance", shadowDistance)) {
+            params->shadowDistance = shadowDistance;
+        }
+        if (!ParseColorFromJsObject(env, argv[NUM_2], "color", params->elevationShadowColor)) {
+            params->elevationShadowColor = Vector4f(0.0f, 0.0f, 0.0f, 26.0f / 255.0f);
+        }
+    }
+
+    FilterNapi* thisFilter = nullptr;
+    status = napi_unwrap_s(env, _this, &FilterNapi::NAPI_TYPE_TAG, reinterpret_cast<void**>(&thisFilter));
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && thisFilter != nullptr, nullptr,
+        EFFECT_LOG_E("FilterNapi Iridescence napi_unwrap fail"));
+
+    // the sticker is the effect chain input image, supplied by EffectImageChain on apply
+    auto iridescence = EffectImageFilter::StickerLaserShader(params);
+    EFFECT_NAPI_CHECK_RET_D(iridescence != nullptr, nullptr,
+        EFFECT_LOG_E("FilterNapi Iridescence create filter fail"));
+    thisFilter->AddEffectFilter(iridescence);
     return _this;
 }
 

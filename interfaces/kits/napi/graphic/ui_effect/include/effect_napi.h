@@ -32,6 +32,7 @@
 #include "effect/include/visual_effect_para.h"
 
 #include "effect/include/harmonium_effect_para.h"
+#include "effect/include/sticker_laser_shader_effect_para.h"
 
 #include "mask/include/mask.h"
 #include "napi/native_api.h"
@@ -82,6 +83,13 @@ private:
     static napi_value CreateDistortionCollapseEffect(napi_env env, napi_callback_info info);
     static bool ParseDistortionCollapseEffectPara(napi_env env, napi_value jsObject,
         DistortionCollapseEffectPara* para);
+    static napi_value CreateIridescence(napi_env env, napi_callback_info info);
+    static bool GetNumberProperty(napi_env env, napi_value obj, const char* name, float& out);
+    static bool GetPointProperty(napi_env env, napi_value obj, const char* name, Vector2f& out);
+    static bool FillIridescenceParams(napi_env env, napi_value iridescenceParam,
+        const std::shared_ptr<StickerLaserShaderEffectPara>& para);
+    static bool FillShadowOptions(napi_env env, napi_value shadowOptions,
+        const std::shared_ptr<StickerLaserShaderEffectPara>& para);
     static napi_value CreateGlassMarbleEffect(napi_env env, napi_callback_info info);
     static bool FillGlassMarbleMaterial(napi_env env, napi_value materialObj,
         std::shared_ptr<GlassMarbleEffectPara>& para);

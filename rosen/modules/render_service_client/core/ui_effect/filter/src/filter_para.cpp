@@ -83,6 +83,7 @@ bool FilterPara::IsWhitelistPara(uint16_t type)
         static_cast<uint16_t>(ParaType::MAGNIFIER),
         static_cast<uint16_t>(ParaType::FROSTED_GLASS),
         static_cast<uint16_t>(ParaType::FROSTED_GLASS_BLUR),
+        static_cast<uint16_t>(ParaType::STICKER_EMBOSS_FILTER),
     };
 
     auto find = whitelist.find(type);

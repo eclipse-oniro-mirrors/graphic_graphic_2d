@@ -38,6 +38,7 @@ public:
         SPATIAL_GLASS_EFFECT,
         DISTORTION_COLLAPSE_EFFECT,
         GLASS_MARBLE_EFFECT,
+        STICKER_LASER_SHADER,
         // The value in the OpenHarmony project should be less than this value.
         HDS_EFFECT_BEGIN = 2048,
     };

@@ -79,6 +79,7 @@ public:
         SPIN_BLUR,
         HALO_BLOOM,
         MAP_COLOR_BY_BRIGHTNESS,
+        STICKER_EMBOSS_FILTER,
     };
 
     static constexpr size_t UNMARSHALLING_MAX_VECTOR_SIZE = 65535;

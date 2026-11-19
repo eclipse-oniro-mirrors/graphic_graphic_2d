@@ -150,6 +150,9 @@ public:
             case RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER: return "ColorfulBrightnessBlender";
             case RSNGEffectType::BRIGHTNESS_BLENDER: return "BrightnessBlender";
             case RSNGEffectType::HDR_DARKEN_BLENDER: return "HdrDarkenBlender";
+            // names must match the GE params name= registry (GetFilterTypeFromString)
+            case RSNGEffectType::STICKER_LASER_SHADER: return "StickerLaser";
+            case RSNGEffectType::STICKER_EMBOSS_FILTER: return "StickerEmbossFilter";
             default: return "UNKNOWN";
         }
     }

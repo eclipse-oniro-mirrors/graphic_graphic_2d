@@ -40,6 +40,7 @@
 #include "ui_effect/filter/include/filter_motion_blur_para.h"
 #include "ui_effect/filter/include/filter_spin_blur_para.h"
 #include "ui_effect/filter/include/filter_variable_radius_blur_para.h"
+#include "ui_effect/filter/include/filter_sticker_emboss_para.h"
 
 #include "ui_effect/property/include/rs_ui_color_gradient_filter.h"
 #include "ui_effect/property/include/rs_ui_mask_base.h"
@@ -178,6 +179,10 @@ static std::unordered_map<RSNGEffectType, FilterCreator> creatorLUT = {
     },
     {RSNGEffectType::DYNAMIC_DIM, [] {
             return std::make_shared<RSNGDynamicDimFilter>();
+        }
+    },
+    {RSNGEffectType::STICKER_EMBOSS_FILTER, [] {
+            return std::make_shared<RSNGStickerEmbossFilter>();
         }
     },
 };
@@ -548,6 +553,29 @@ std::shared_ptr<RSNGFilterBase> ConvertMotionBlurPara(std::shared_ptr<FilterPara
 }
 } // namespace
 
+std::shared_ptr<RSNGFilterBase> ConvertStickerEmbossPara(std::shared_ptr<FilterPara> filterPara)
+{
+    auto filter = RSNGFilterBase::Create(RSNGEffectType::STICKER_EMBOSS_FILTER);
+    if (filter == nullptr || filterPara == nullptr) {
+        ROSEN_LOGE("ConvertStickerEmbossPara filter or filterPara is nullptr");
+        return nullptr;
+    }
+    auto stickerEmbossFilter = std::static_pointer_cast<RSNGStickerEmbossFilter>(filter);
+    auto stickerEmbossPara = std::static_pointer_cast<StickerEmbossPara>(filterPara);
+    stickerEmbossFilter->Setter<StickerEmbossStickerTag>(stickerEmbossPara->GetSticker());
+    stickerEmbossFilter->Setter<StickerEmbossOutlineWidthTag>(stickerEmbossPara->GetOutlineWidth());
+    stickerEmbossFilter->Setter<StickerEmbossRefractionRateTag>(stickerEmbossPara->GetRefractionRate());
+    stickerEmbossFilter->Setter<StickerEmbossDirIntensityTag>(stickerEmbossPara->GetDirIntensity());
+    stickerEmbossFilter->Setter<StickerEmbossEdgeLightWidthTag>(stickerEmbossPara->GetEdgeLightWidth());
+    stickerEmbossFilter->Setter<StickerEmbossEdgeLightFeatherRateTag>(stickerEmbossPara->GetEdgeLightFeatherRate());
+    stickerEmbossFilter->Setter<StickerEmbossEdgeLightIntensityTag>(stickerEmbossPara->GetEdgeLightIntensity());
+    stickerEmbossFilter->Setter<StickerEmbossSpotLightCenterTag>(stickerEmbossPara->GetSpotLightCenter());
+    stickerEmbossFilter->Setter<StickerEmbossSpotLightIntensityTag>(stickerEmbossPara->GetSpotLightIntensity());
+    stickerEmbossFilter->Setter<StickerEmbossSpecPowTag>(stickerEmbossPara->GetSpecPow());
+    stickerEmbossFilter->Setter<StickerEmbossSpecIntensityTag>(stickerEmbossPara->GetSpecIntensity());
+    return stickerEmbossFilter;
+}
+
 static std::unordered_map<FilterPara::ParaType, FilterConvertor> convertorLUT = {
     { FilterPara::ParaType::DISPLACEMENT_DISTORT, ConvertDisplacementDistortFilterPara },
     { FilterPara::ParaType::EDGE_LIGHT, ConvertEdgeLightFilterPara },
@@ -570,6 +598,7 @@ static std::unordered_map<FilterPara::ParaType, FilterConvertor> convertorLUT = 
     { FilterPara::ParaType::HEAT_DISTORTION, ConvertHeatDistortionFilterPara },
     { FilterPara::ParaType::BLUR_BUBBLES_RISE, ConvertBlurBubblesRiseFilterPara },
     { FilterPara::ParaType::MOTION_BLUR, ConvertMotionBlurPara },
+    { FilterPara::ParaType::STICKER_EMBOSS_FILTER, ConvertStickerEmbossPara },
 };
 
 std::shared_ptr<RSNGFilterBase> RSNGFilterBase::Create(RSNGEffectType type)

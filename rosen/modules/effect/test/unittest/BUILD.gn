@@ -36,6 +36,7 @@ ohos_unittest("EffectTest") {
       "effect_image_render_unittest.cpp",
       "effect_tag_tracker_unittest.cpp",
       "//foundation/graphic/graphic_2d/rosen/modules/effect/effect_ndk/src/filter/filter.cpp",
+      "effect_image_sticker_unittest.cpp",
       "$graphic_2d_root/rosen/modules/effect/effect_common/src/filter_common.cpp",
     ]
   }
