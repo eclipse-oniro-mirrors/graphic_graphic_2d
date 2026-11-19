@@ -80,7 +80,7 @@ void InitRSScreenPropertyAndParcel(RSScreenProperty& screenProperty, Parcel& par
                         GetData<int32_t>(), GetData<int32_t>()}, GetData<bool>()));
     screenProperty.Set<ScreenPropertyType::WHITE_LIST>(std::unordered_set<NodeId>{GetData<uint64_t>()});
     screenProperty.Set<ScreenPropertyType::BLACK_LIST>(std::unordered_set<NodeId>{GetData<uint64_t>()});
-    screenProperty.Set<ScreenPropertyType::TYPE_BLACK_LIST>(std::unordered_set<NodeType>{GetData<uint8_t>()});
+    screenProperty.Set<ScreenPropertyType::CURSOR_RENDER_MODE>(GetData<uint8_t>());
     screenProperty.Set<ScreenPropertyType::SECURITY_EXEMPTION_LIST>(std::vector<NodeId>{GetData<uint64_t>()});
     screenProperty.Set<ScreenPropertyType::ENABLE_SKIP_WINDOW>(GetData<bool>());
     screenProperty.Set<ScreenPropertyType::POWER_STATUS>(GetData<uint32_t>());

@@ -78,6 +78,7 @@ private:
     RSLayerPtr uniLayer_ = nullptr;
     std::shared_ptr<RSComposerClient> composerClient_ = nullptr;
     bool hasTunnelLayer_ = false;
+    bool hasRcdLayer_ = false;
     // Node id of the screen this processor composes on, picks the cross node conversion recorded for this screen.
     NodeId screenNodeId_ = INVALID_NODEID;
 };

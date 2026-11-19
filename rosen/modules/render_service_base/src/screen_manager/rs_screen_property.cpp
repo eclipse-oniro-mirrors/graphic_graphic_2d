@@ -209,9 +209,9 @@ std::unordered_set<NodeId> RSScreenProperty::GetBlackList() const
     return Get<ScreenPropertyType::BLACK_LIST>();
 }
 
-std::unordered_set<NodeType> RSScreenProperty::GetTypeBlackList() const
+RSVirtualScreenCursorMode RSScreenProperty::GetCursorMode() const
 {
-    return Get<ScreenPropertyType::TYPE_BLACK_LIST>();
+    return static_cast<RSVirtualScreenCursorMode>(Get<ScreenPropertyType::CURSOR_RENDER_MODE>());
 }
 
 std::vector<NodeId> RSScreenProperty::GetSecurityExemptionList() const
@@ -388,7 +388,7 @@ bool ScreenPropertyBase::Unmarshalling(Parcel& data, ScreenPropertyType type, sp
         UNMARSHALL_CASE(ScreenPropertyType::VISIBLE_RECT_OPTION)
         UNMARSHALL_CASE(ScreenPropertyType::WHITE_LIST)
         UNMARSHALL_CASE(ScreenPropertyType::BLACK_LIST)
-        UNMARSHALL_CASE(ScreenPropertyType::TYPE_BLACK_LIST)
+        UNMARSHALL_CASE(ScreenPropertyType::CURSOR_RENDER_MODE)
         UNMARSHALL_CASE(ScreenPropertyType::SECURITY_EXEMPTION_LIST)
         UNMARSHALL_CASE(ScreenPropertyType::SECURITY_MASK)
         UNMARSHALL_CASE(ScreenPropertyType::ENABLE_SKIP_WINDOW)

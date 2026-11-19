@@ -440,13 +440,13 @@ bool RSRenderInterface::RegisterTransactionDataCallback(
 }
 
 std::shared_ptr<RSSurface> RSRenderInterface::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config,
-    bool unobscured)
+    bool unobscured, bool isSceneBoard)
 {
     if (renderPipelineClient_ == nullptr) {
         ROSEN_LOGE("RSRenderInterface::CreateNodeAndSurface renderPipelineClient_ nullptr");
         return nullptr;
     }
-    return renderPipelineClient_->CreateNodeAndSurface(config, unobscured);
+    return renderPipelineClient_->CreateNodeAndSurface(config, unobscured, isSceneBoard);
 }
  
 RSInterfaceErrorCode RSRenderInterface::SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent)
@@ -575,13 +575,14 @@ void RSRenderInterface::SetWindowContainer(NodeId nodeId, bool value)
     renderPipelineClient_->SetWindowContainer(nodeId, value);
 }
 
-bool RSRenderInterface::CreateDisplayNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId)
+bool RSRenderInterface::CreateDisplayNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId,
+    bool isSceneBoard)
 {
     if (renderPipelineClient_ == nullptr) {
         ROSEN_LOGE("RSRenderInterface::CreateNode renderPipelineClient_ nullptr");
         return false;
     }
-    return renderPipelineClient_->CreateDisplayNode(displayNodeConfig, nodeId);
+    return renderPipelineClient_->CreateDisplayNode(displayNodeConfig, nodeId, isSceneBoard);
 }
  
 bool RSRenderInterface::CreateNode(const RSSurfaceRenderNodeConfig& config)
@@ -614,7 +615,7 @@ int32_t RSRenderInterface::GetMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& max
         RSRenderThread::Instance().PostSyncTask(queryGpuLimits);
         return querySuccess ? 0 : -1;
     } else {
-        RS_LOGI("UniRender, using render pipeline");
+        RS_LOGD("UniRender, using render pipeline");
         return renderPipelineClient_->GetMaxGpuBufferSize(maxWidth, maxHeight);
     }
 }

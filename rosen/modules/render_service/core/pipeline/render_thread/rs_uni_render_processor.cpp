@@ -147,7 +147,8 @@ void RSUniRenderProcessor::PostProcess()
         RSUniRenderThread::Instance().NotifyCommitDone(screenInfo_.id);
     }
 
-    LayerComposeCollection::GetInstance().UpdateUniformOrOfflineComposeFrameNumberForDFX(layers_.size());
+    LayerComposeCollection::GetInstance().UpdateUniformOrOfflineComposeFrameNumberForDFX(
+        layers_.size(), hasRcdLayer_);
     RS_LOGD_IF(DEBUG_PIPELINE, "RSUniRenderProcessor::PostProcess layers_:%{public}zu", layers_.size());
 }
 
@@ -659,6 +660,7 @@ void RSUniRenderProcessor::ProcessRcdSurface(RSRcdSurfaceRenderNode& node)
         return;
     }
     layers_.emplace_back(layer);
+    hasRcdLayer_ = true;
 }
 
 void RSUniRenderProcessor::CreateProtectiveSolidLayer(RSProtectiveSolidRenderNode& node, RSSurfaceRenderParams& params)
@@ -758,6 +760,7 @@ void RSUniRenderProcessor::ConfigureSolidColorLayer(RSLayerPtr& layer, NodeId no
     layerAlpha.enGlobalAlpha = true;
     layerAlpha.gAlpha = static_cast<uint8_t>(std::clamp(layerInfo.alpha, 0.0f, 1.0f) * RGBA_MAX);
     layer->SetAlpha(layerAlpha);
+    layer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
     layer->SetLayerSize(boundsDst);
     layer->SetCropRect(boundsSrc);
     std::vector<GraphicIRect> visibleRegions;

@@ -87,7 +87,7 @@ UpdatePointerDirtyToGlobalDirty(pointerWindow, screenNode)
 IsPointerInvisibleInMultiScreen()
   → isPointerInvisible = true
   → TraverseScreenNodes:
-      → screenProperty.GetTypeBlackList().empty()
+      → screenProperty.GetCursorMode() != RSVirtualScreenCursorMode::HIDE
       → (node->IsMirrorScreen() || screenProperty.IsVirtual())
       → 若同时满足：isPointerInvisible = false，提前退出
   → 返回 isPointerInvisible
@@ -181,7 +181,7 @@ UpdatePointerInfo()  ← 主线程调用
 遍历所有屏幕时发现任一可见屏幕即提前退出：
 
 1. 初始化 `isPointerInvisible = true`
-2. 遍历屏幕节点，满足 `typeBlackList.empty() && (IsMirrorScreen() || IsVirtual())` 时标记可见并退出
+2. 遍历屏幕节点，满足 `GetCursorMode() != HIDE && (IsMirrorScreen() || IsVirtual())` 时标记可见并退出
 3. 避免遍历全部屏幕节点
 
 ### Bound 更新优化

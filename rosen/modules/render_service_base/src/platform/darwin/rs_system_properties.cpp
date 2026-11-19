@@ -185,6 +185,11 @@ bool RSSystemProperties::GetVirtualExpandScreenSkipEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetHeteroProjectionScreenSkipEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetOcclusionEnabled()
 {
     return {};
@@ -555,11 +560,6 @@ bool RSSystemProperties::GetWideColorSpaceEnabled()
     return true;
 }
 
-bool RSSystemProperties::GetSecurityPermissionCheckEnabled()
-{
-    return false;
-}
-
 bool RSSystemProperties::GetEffectMergeEnabled()
 {
     return true;
@@ -853,6 +853,11 @@ bool RSSystemProperties::GetUnmarshalParallelEnabled()
 uint32_t RSSystemProperties::GetUnmarshalParallelMinDataSize()
 {
     return 0;
+}
+
+bool RSSystemProperties::GetCommandLengthPrefixEnabled()
+{
+    return false;
 }
 
 bool RSSystemProperties::GetSceneBoardIsPcMode()

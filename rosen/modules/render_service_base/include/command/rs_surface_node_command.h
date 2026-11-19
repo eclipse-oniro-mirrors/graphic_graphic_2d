@@ -95,9 +95,11 @@ enum RSSurfaceNodeCommandType : uint16_t {
 class RSB_EXPORT SurfaceNodeCommandHelper {
 public:
     static void Create(RSContext& context, NodeId nodeId,
-        RSSurfaceNodeType surfaceNodeType = RSSurfaceNodeType::DEFAULT, bool isTextureExportNode = false);
+        RSSurfaceNodeType surfaceNodeType = RSSurfaceNodeType::DEFAULT, bool isTextureExportNode = false,
+        uint64_t token = 0);
     static void CreateWithConfig(
-        RSContext& context, NodeId nodeId, std::string name, uint8_t type, enum SurfaceWindowType surfaceWindowType);
+        RSContext& context, NodeId nodeId, std::string name, uint8_t type, enum SurfaceWindowType surfaceWindowType,
+        uint64_t token = 0);
     static std::shared_ptr<RSSurfaceRenderNode> CreateWithConfigInRS(
         const RSSurfaceRenderNodeConfig& config, RSContext& context, bool unobscured = false,
         std::shared_ptr<RSSurfaceHandler> surfaceHandler = nullptr);
@@ -167,10 +169,11 @@ public:
 
 ADD_COMMAND(RSSurfaceNodeCreate,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_CREATE,
-        SurfaceNodeCommandHelper::Create, NodeId, RSSurfaceNodeType, bool))
+        SurfaceNodeCommandHelper::Create, NodeId, RSSurfaceNodeType, bool, uint64_t))
 ADD_COMMAND(RSSurfaceNodeCreateWithConfig,
     ARG(PERMISSION_SYSTEM, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_CREATE_WITH_CONFIG,
-        SurfaceNodeCommandHelper::CreateWithConfig, NodeId, std::string, uint8_t, enum SurfaceWindowType))
+        SurfaceNodeCommandHelper::CreateWithConfig, NodeId, std::string, uint8_t, enum SurfaceWindowType,
+        uint64_t))
 ADD_COMMAND(RSSurfaceNodeSetContextMatrix,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_MATRIX,
         SurfaceNodeCommandHelper::SetContextMatrix, NodeId, std::optional<Drawing::Matrix>))
@@ -237,9 +240,12 @@ ADD_COMMAND(RSSurfaceNodeAttachToDisplay,
 ADD_COMMAND(RSSurfaceNodeDetachToDisplay,
     ARG(PERMISSION_SYSTEM, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_DETACH_TO_DISPLAY,
         SurfaceNodeCommandHelper::DetachToDisplay, NodeId, uint64_t))
+
+#ifndef ROSEN_CROSS_PLATFORM
 ADD_COMMAND(RSSurfaceNodeSetColorSpace,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_SET_COLOR_SPACE,
         SurfaceNodeCommandHelper::SetColorSpace, NodeId, GraphicColorGamut))
+#endif
 ADD_COMMAND(RSurfaceNodeSetSurfaceId,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_SET_SURFACE_ID,
         SurfaceNodeCommandHelper::SetSurfaceId, NodeId, SurfaceId))
@@ -336,9 +342,6 @@ ADD_COMMAND(RSSurfaceNodeRecreateNodeAndSurface,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_RECREATE_NODE_AND_SURFACE,
         SurfaceNodeCommandHelper::RecreateNodeAndSurface, RSSurfaceRenderNodeConfig, SurfaceId, bool))
 #endif
-ADD_COMMAND(RSSurfaceNodeSetDelegateMode,
-    ARG(PERMISSION_APP, NodeIdPosTag<0>, SURFACE_NODE, SURFACE_NODE_SET_DELEGATE_MODE,
-        SurfaceNodeCommandHelper::SetDelegateMode, NodeId, bool))
 } // namespace Rosen
 } // namespace OHOS
 #endif // ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_SURFACE_NODE_COMMAND_H

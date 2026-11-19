@@ -57,7 +57,7 @@ void RSRenderThreadParams::SetWatermarks(
 
 void RSRenderThreadParams::SetSecurityDisplay(bool isSecurityDisplay)
 {
-    isSecurityDisplay_ = isSecurityDisplay;
+    specialLayerRenderParam_.securityDisplay = isSecurityDisplay;
 }
 
 RSRenderThreadParamsManager& RSRenderThreadParamsManager::Instance()

@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <math.h>
 #include <memory>
 #include <mutex>
@@ -137,11 +138,11 @@ void NoticePointLight(RSProperties& prop, const std::shared_ptr<RSNGRenderShader
     SetLightPoint<&RSProperties::NoticeLightColor, PointLightLightColorRenderTag>(prop, *rsNGShader);
 }
 
-void NoticeCoverage(RSProperties& prop, const std::shared_ptr<RSNGRenderShaderBase>& shader)
+bool NoticeCoverage(RSProperties& prop, const std::shared_ptr<RSNGRenderShaderBase>& shader)
 {
     auto pointLightShader = DrawableV2::RSEffectDrawableUtils::FindShader(shader, RSNGEffectType::POINT_LIGHT);
     if (pointLightShader == nullptr) {
-        return;
+        return false;
     }
     RS_LOGD_IF(DEBUG_PIPELINE, "NoticeCoverage drawLight");
     auto rsNGShader = std::static_pointer_cast<RSNGRenderPointLight>(pointLightShader);
@@ -152,6 +153,7 @@ void NoticeCoverage(RSProperties& prop, const std::shared_ptr<RSNGRenderShaderBa
     SetLightPoint<&RSProperties::SetIlluminatedType, PointLightIlluminatedTypeRenderTag>(prop, *rsNGShader);
     SetLightPoint<&RSProperties::SetBloom, PointLightBloomRenderTag>(prop, *rsNGShader);
     SetLightPoint<&RSProperties::SetLightColor, PointLightLightColorRenderTag>(prop, *rsNGShader);
+    return true;
 }
 } // namespace
 
@@ -2820,6 +2822,9 @@ void RSProperties::ResetDirty()
     geoDirty_ = false;
     contentDirty_ = false;
     subTreeAllDirty_ = false;
+    if (effectProperties_ != nullptr) {
+        effectProperties_->SetIgnorePropertiesContentDirty(false);
+    }
 }
 
 void RSProperties::RecordCurDirtyStatus()
@@ -3745,11 +3750,6 @@ bool RSProperties::HasSpatialGlassEffect() const
     return hasSpatialGlassEffect_;
 }
 
-bool RSProperties::HasGlassEffect() const
-{
-    return hasGlassEffect_;
-}
-
 void RSProperties::SetNeedDrawBehindWindow(bool needDrawBehindWindow)
 {
     GetEffectProperties().SetNeedDrawBehindWindow(needDrawBehindWindow);
@@ -4035,7 +4035,9 @@ void RSProperties::SetBloom(float bloomIntensity)
 
 void RSProperties::SetCoverageNGShader(const std::shared_ptr<RSNGRenderShaderBase>& coverageShader)
 {
-    NoticeCoverage(*this, coverageShader);
+    if (!NoticeCoverage(*this, coverageShader)) {
+        GetEffectProperties().SetCoverageNGShader(coverageShader);
+    }
     isDrawn_ = true;
     SetDirty();
     contentDirty_ = true;
@@ -4614,11 +4616,6 @@ std::string RSProperties::Dump() const
         dumpInfo.append(", HasHarmonium[true]");
     }
 
-    // HasGlassEffect
-    if (HasGlassEffect()) {
-        dumpInfo.append(", HasGlassEffect[true]");
-    }
-
     // Gray Scale
     ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
     if (ret != EOK) {
@@ -4940,10 +4937,10 @@ void RSProperties::CalculateFrameOffset()
 {
     frameOffsetX_ = frameGeo_.GetX() - boundsGeo_->GetX();
     frameOffsetY_ = frameGeo_.GetY() - boundsGeo_->GetY();
-    if (isinf(frameOffsetX_)) {
+    if (std::isinf(frameOffsetX_)) {
         frameOffsetX_ = 0.f;
     }
-    if (isinf(frameOffsetY_)) {
+    if (std::isinf(frameOffsetY_)) {
         frameOffsetY_ = 0.f;
     }
     if (frameOffsetX_ != 0.f || frameOffsetY_ != 0.f) {
@@ -5008,13 +5005,9 @@ void RSProperties::SetBackgroundNGShader(const std::shared_ptr<RSNGRenderShaderB
     SetDirty();
     contentDirty_ = true;
     hasHarmonium_ = false;
-    hasGlassEffect_ = false;
     const auto& bgNGRenderShader_ = GetBackgroundNGShader();
     if (bgNGRenderShader_ && bgNGRenderShader_->ContainsType(RSNGEffectType::HARMONIUM_EFFECT)) {
         hasHarmonium_ = true;
-    }
-    if (bgNGRenderShader_ && bgNGRenderShader_->ContainsType(RSNGEffectType::GLASS_EFFECT)) {
-        hasGlassEffect_ = true;
     }
     if (renderShader != nullptr && renderShader->ContainsType(RSNGEffectType::FROSTED_GLASS_EFFECT)) {
         filterNeedUpdate_ = true;

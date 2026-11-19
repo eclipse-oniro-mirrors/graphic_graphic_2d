@@ -94,6 +94,7 @@ public:
             case RSNGEffectType::GASIFY_BLUR: return "GasifyBlur";
             case RSNGEffectType::GASIFY: return "Gasify";
             case RSNGEffectType::PARTICLE_ABLATION: return "ParticleAblation";
+            case RSNGEffectType::PARTICLE_AGGREGATION: return "ParticleAggregation";
             case RSNGEffectType::COLOR_GRADIENT_EFFECT: return "ColorGradientEffect";
             case RSNGEffectType::HARMONIUM_EFFECT: return "HarmoniumEffect";
             case RSNGEffectType::SDF_UNION_OP_SHAPE: return "SDFUnionOpShape";
@@ -136,7 +137,7 @@ public:
             case RSNGEffectType::FRACTAL_GLASS_MASK: return "FractalGlassMask";
             case RSNGEffectType::BINOCULAR_MASK: return "BinocularMask";
             case RSNGEffectType::SWEEP_REFRACTION_MASK: return "SweepRefractionMask";
-            case RSNGEffectType::GLASS_EFFECT: return "GlassEffect";
+            case RSNGEffectType::GLASS_MARBLE_EFFECT: return "GlassMarbleEffect";
             case RSNGEffectType::ATLAS_FRAME_MASK: return "AtlasFrameMask";
             case RSNGEffectType::DISTORT_LIGHT: return "DistortLight";
             case RSNGEffectType::POINT_LIGHT: return "PointLight";

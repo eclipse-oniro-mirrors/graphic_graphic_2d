@@ -307,14 +307,15 @@ int32_t RSRenderServiceClient::SetVirtualScreenBlackList(ScreenId id, const std:
     return clientToService->SetVirtualScreenBlackList(id, blackList);
 }
 
-int32_t RSRenderServiceClient::SetVirtualScreenTypeBlackList(ScreenId id, std::vector<NodeType>& typeBlackListVector)
+int32_t RSRenderServiceClient::SetVirtualScreenCursorMode(ScreenId id, RSVirtualScreenCursorMode mode)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
     if (clientToService == nullptr) {
+        RS_LOGE("RSRenderServiceClient::%{public}s clientToService is null!", __func__);
         return RENDER_SERVICE_NULL;
     }
     int32_t repCode = SUCCESS;
-    clientToService->SetVirtualScreenTypeBlackList(id, typeBlackListVector, repCode);
+    clientToService->SetVirtualScreenCursorMode(id, mode, repCode);
     return repCode;
 }
 
@@ -660,17 +661,6 @@ void RSRenderServiceClient::SyncFrameRateRange(FrameRateLinkerId id,
     }
 
     return clientToService->SyncFrameRateRange(id, range, animatorExpectedFrameRate);
-}
-
-void RSRenderServiceClient::SetThermalFrameRateLimit(uint32_t frameRate)
-{
-    auto clientToService = RSConnectHub::GetClientToServiceConnection();
-    if (clientToService == nullptr) {
-        ROSEN_LOGW("RSRenderServiceClient clientToService == nullptr!");
-        return;
-    }
- 
-    clientToService->SetThermalFrameRateLimit(frameRate);
 }
 
 void RSRenderServiceClient::UnregisterFrameRateLinker(FrameRateLinkerId id)
@@ -1800,6 +1790,17 @@ void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchC
     if (clientToService != nullptr) {
         clientToService->NotifyTouchEvent(touchStatus, touchCnt, sourceType);
     }
+}
+
+void RSRenderServiceClient::SetThermalFrameRateLimit(uint32_t frameRate)
+{
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        ROSEN_LOGW("RSRenderServiceClient clientToService == nullptr!");
+        return;
+    }
+ 
+    clientToService->SetThermalFrameRateLimit(frameRate);
 }
 #ifndef ENABLE_RS_PROXY
 void RSRenderServiceClient::NotifyDynamicModeEvent(bool enableDynamicMode)

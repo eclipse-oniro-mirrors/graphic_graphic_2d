@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "feature/watermark/rs_surface_watermark.h"
 #include "feature_param/performance_feature/rotateoffscreen_param.h"
@@ -173,12 +174,13 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId001, TestSize.
     ASSERT_NE(surfaceParams, nullptr);
     surfaceParams->leashPersistentId_ = surfaceDrawable_->nodeId_;
 
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
     std::unordered_set<NodeId> whiteList = {surfaceParams->leashPersistentId_};
     RSUniRenderThread::Instance().SetWhiteList(whiteList);
     ASSERT_NE(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), INVALID_LEASH_PERSISTENTID);
 
     // restore
-    RSUniRenderThread::Instance().SetWhiteList({});
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
 
 /**
@@ -217,7 +219,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw002, TestSize.Level1)
     auto params = std::make_unique<RSRenderThreadParams>();
     params->SetIsMirrorScreen(false);
     RSUniRenderThread::Instance().Sync(std::move(params));
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     surfaceDrawable_->OnDraw(*drawingCanvas_);
 }
 
@@ -237,11 +239,12 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw003, TestSize.Level1)
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
     ASSERT_NE(surfaceParams, nullptr);
     std::unordered_set<NodeId> blackList = {surfaceParams->GetId()};
-    RSUniRenderThread::Instance().SetBlackList(blackList);
+    RSUniRenderThread::ResetCaptureParam();
     auto params = std::make_unique<RSRenderThreadParams>();
     params->SetIsMirrorScreen(true);
     RSUniRenderThread::Instance().Sync(std::move(params));
-    ASSERT_TRUE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
+    RSUniRenderThread::Instance().SetBlackList(blackList);
+    ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     surfaceDrawable_->OnDraw(*drawingCanvas_);
     RSUniRenderThread::Instance().SetBlackList({});
 }
@@ -308,7 +311,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture001, TestSize.Level1)
     auto params = std::make_unique<RSRenderThreadParams>();
     params->SetIsMirrorScreen(false);
     RSUniRenderThread::Instance().Sync(std::move(params));
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     surfaceDrawable_->OnCapture(*canvas_);
 }
 
@@ -328,11 +331,12 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture003, TestSize.Level1)
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
     ASSERT_NE(surfaceParams, nullptr);
     std::unordered_set<NodeId> blackList = {surfaceParams->GetId()};
-    RSUniRenderThread::Instance().SetBlackList(blackList);
+    RSUniRenderThread::ResetCaptureParam();
     auto params = std::make_unique<RSRenderThreadParams>();
     params->SetIsMirrorScreen(true);
     RSUniRenderThread::Instance().Sync(std::move(params));
-    ASSERT_TRUE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
+    RSUniRenderThread::Instance().SetBlackList(blackList);
+    ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     surfaceDrawable_->OnCapture(*canvas_);
     RSUniRenderThread::Instance().SetBlackList({});
 }
@@ -663,7 +667,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface006, TestSize.Level1)
     RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
     auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     ASSERT_NE(uniParams, nullptr);
-    uniParams->isSecurityExemption_ = false;
+    uniParams->SetSecExemption(false);
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
     captureParam.isMirror_ = false;
@@ -1369,120 +1373,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnGeneralProcess_StoppedByRangeCapTest
 }
 
 /**
- * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot001
- * @tc.desc: Test CheckIfSurfaceSkipInMirrorOrScreenshot for main screen
- * @tc.type: FUNC
- * @tc.require: issueIANDBE
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot001, TestSize.Level2)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    auto params = std::make_unique<RSRenderThreadParams>();
-    params->SetIsMirrorScreen(false);
-    RSUniRenderThread::Instance().Sync(std::move(params));
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-}
-
-/**
- * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot002
- * @tc.desc: Test CheckIfSurfaceSkipInMirrorOrScreenshot while don't has white list and black list
- * @tc.type: FUNC
- * @tc.require: issueIANDBE
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot002, TestSize.Level2)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    auto params = std::make_unique<RSRenderThreadParams>();
-    params->SetIsMirrorScreen(true);
-    RSUniRenderThread::Instance().Sync(std::move(params));
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-}
-
-/**
- * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot003
- * @tc.desc: Test CheckIfSurfaceSkipInMirrorOrScreenshot for node in black list
- * @tc.type: FUNC
- * @tc.require: issueIANDBE
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot003, TestSize.Level2)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    std::unordered_set<NodeId> blackList = {surfaceParams->GetId()};
-    RSUniRenderThread::Instance().SetBlackList(blackList);
-
-    auto params = std::make_unique<RSRenderThreadParams>();
-    params->SetIsMirrorScreen(true);
-    RSUniRenderThread::Instance().Sync(std::move(params));
-    ASSERT_TRUE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-
-    params = std::make_unique<RSRenderThreadParams>();
-    params->SetIsMirrorScreen(false);
-    RSUniRenderThread::Instance().Sync(std::move(params));
-    RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
-    RSUniRenderThread::GetCaptureParam().isSingleSurface_ = true;
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-
-    RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
-    RSUniRenderThread::GetCaptureParam().isSingleSurface_ = false;
-    ASSERT_TRUE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-    RSUniRenderThread::Instance().SetBlackList({});
-}
-
-/**
- * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot004
- * @tc.desc: Test CheckIfSurfaceSkipInMirrorOrScreenshot while white list isn't empty and node not in white list
- * @tc.type: FUNC
- * @tc.require: issueIANDBE
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot004, TestSize.Level2)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    std::unordered_set<NodeId> whiteList = {surfaceParams->GetId() + 1};
-    RSUniRenderThread::Instance().SetWhiteList(whiteList);
-
-    auto params = std::make_unique<RSRenderThreadParams>();
-    params->SetIsMirrorScreen(true);
-    RSUniRenderThread::Instance().Sync(std::move(params));
-    ASSERT_TRUE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
-    RSUniRenderThread::Instance().SetWhiteList({});
-}
-
-/**
- * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot006
- * @tc.desc: Test CheckIfSurfaceSkipInMirrorOrScreenshot for security display
- * @tc.type: FUNC
- * @tc.require: issueICWNX9
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot006, TestSize.Level2)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-
-    auto params = std::make_unique<RSRenderThreadParams>();
-    params->SetIsMirrorScreen(true);
-    params->SetSecurityDisplay(true);
-    RSUniRenderThread::Instance().Sync(std::move(params));
-    RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
-    RSUniRenderThread::GetCaptureParam().isSingleSurface_ = true;
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-
-    RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
-    RSUniRenderThread::GetCaptureParam().isSingleSurface_ = false;
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
-}
-
-/**
  * @tc.name: SetAndGet
  * @tc.desc: Test SetAndGet
  * @tc.type: FUNC
@@ -1988,6 +1878,28 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetGravityMatrixTest, TestSize.Level1)
     Drawing::Matrix matrix = surfaceDrawable_->GetGravityMatrix(100, 100);
     ASSERT_EQ(matrix.Get(Drawing::Matrix::TRANS_X), 0);
     ASSERT_EQ(matrix.Get(Drawing::Matrix::TRANS_Y), 0);
+}
+
+/**
+ * @tc.name: PreprocessUnobscuredUECMatrixMissingTest
+ * @tc.desc: Test PreprocessUnobscuredUEC returns directly when the matrix is missing
+ * @tc.type: FUNC
+ * @tc.require: issue26790
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, PreprocessUnobscuredUECMatrixMissingTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetRenderParams().get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->IsUnobscuredUIExtension_ = true;
+
+    Drawing::Matrix matrix;
+    ASSERT_FALSE(surfaceDrawable_->TryGetUnobscuredUECMatrix(surfaceDrawable_->GetId(), matrix));
+    constexpr float testTranslateX = 5.0f;
+    matrix.Set(Drawing::Matrix::TRANS_X, testTranslateX);
+    canvas_->SetMatrix(matrix);
+    surfaceDrawable_->PreprocessUnobscuredUEC(*canvas_);
+    EXPECT_TRUE(canvas_->GetTotalMatrix().IsIdentity());
 }
 
 /**
@@ -2581,71 +2493,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface011, TestSize.Level2)
 }
 
 /**
- * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot007
- * @tc.desc: test CheckIfSurfaceSkipInMirrorOrScreenshot while renderThreadParams_ = nullptr
- * @tc.type: FUNC
- * @tc.require: issueICWNX9
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot007, TestSize.Level2)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    RSRenderThreadParamsManager::Instance().renderThreadParams_ = nullptr;
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-}
-
-/**
- * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot008
- * @tc.desc: Test CheckIfSurfaceSkipInMirrorOrScreenshot while node in white list
- * @tc.type: FUNC
- * @tc.require: issue19858
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot008, TestSize.Level2)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    surfaceParams->leashPersistentId_ = surfaceDrawable_->nodeId_;
-
-    std::unordered_set<NodeId> whiteList = {surfaceParams->leashPersistentId_};
-    RSUniRenderThread::Instance().SetWhiteList(whiteList);
-
-    auto params = std::make_unique<RSRenderThreadParams>();
-    params->SetIsMirrorScreen(true);
-    RSUniRenderThread::Instance().Sync(std::move(params));
-
-    AutoSpecialLayerStateRecover whiteListRecover(surfaceParams->leashPersistentId_);
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
-    RSUniRenderThread::Instance().SetWhiteList({});
-}
-
-/**
- * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot009
- * @tc.desc: Test CheckIfSurfaceSkipInMirrorOrScreenshot while it's a subThread drawing
- * @tc.type: FUNC
- * @tc.require: issue19858
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot009, TestSize.Level2)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-
-    auto params = std::make_unique<RSRenderThreadParams>();
-    params->SetIsMirrorScreen(true);
-    RSUniRenderThread::Instance().Sync(std::move(params));
-
-    canvas_->SetIsParallelCanvas(true);
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-
-    // restore
-    canvas_->SetIsParallelCanvas(false);
-    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
-}
-
-/**
  * @tc.name: OnDraw007
  * @tc.desc: Test OnDraw when DrawRelatdeSourceNode return true
  * @tc.type: FUNC
@@ -2667,7 +2514,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw007, TestSize.Level1)
 
     auto params = std::make_unique<RSRenderThreadParams>();
     params->SetIsMirrorScreen(true);
-    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     ASSERT_FALSE(canvas_->GetDisableFilterCache());
 
     surfaceParams->SetIsCloned(true);

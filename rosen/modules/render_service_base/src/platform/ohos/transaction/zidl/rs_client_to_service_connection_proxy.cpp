@@ -487,33 +487,33 @@ int32_t RSClientToServiceConnectionProxy::SetVirtualScreenBlackList(ScreenId id,
     return ERR_OK;
 }
 
-ErrCode RSClientToServiceConnectionProxy::SetVirtualScreenTypeBlackList(
-    ScreenId id, std::vector<NodeType>& typeBlackListVector, int32_t& repCode)
+ErrCode RSClientToServiceConnectionProxy::SetVirtualScreenCursorMode(
+    ScreenId id, RSVirtualScreenCursorMode mode, int32_t& repCode)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
 
     if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
-        ROSEN_LOGE("SetVirtualScreenTypeBlackList: WriteInterfaceToken GetDescriptor err.");
+        ROSEN_LOGE("%{public}s: WriteInterfaceToken GetDescriptor err.", __func__);
         repCode = WRITE_PARCEL_ERR;
         return ERR_INVALID_VALUE;
     }
 
     if (!data.WriteUint64(id)) {
-        ROSEN_LOGE("SetVirtualScreenTypeBlackList: WriteUint64 id err.");
+        ROSEN_LOGE("%{public}s: WriteUint64 id err.", __func__);
         repCode = WRITE_PARCEL_ERR;
         return ERR_INVALID_VALUE;
     }
-    if (!data.WriteUInt8Vector(typeBlackListVector)) {
-        ROSEN_LOGE("SetVirtualScreenTypeBlackList: WriteUInt8Vector typeBlackListVector err.");
+    if (!data.WriteUint8(static_cast<uint8_t>(mode))) {
+        ROSEN_LOGE("%{public}s: WriteUint8 mode err.", __func__);
         repCode = WRITE_PARCEL_ERR;
         return ERR_INVALID_VALUE;
     }
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_CURSOR_MODE);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
-        ROSEN_LOGE("RSClientToServiceConnectionProxy::SetVirtualScreenTypeBlackList: Send Request err.");
+        ROSEN_LOGE("%{public}s: Send Request err.", __func__);
         repCode = RS_CONNECTION_ERROR;
         return ERR_INVALID_VALUE;
     }
@@ -1262,29 +1262,6 @@ void RSClientToServiceConnectionProxy::SetRefreshRateMode(int32_t refreshRateMod
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceProxy sendrequest error : %{public}d", err);
-        return;
-    }
-}
-
-void RSClientToServiceConnectionProxy::SetThermalFrameRateLimit(uint32_t frameRate)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
- 
-    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
-        ROSEN_LOGE("SetThermalFrameRateLimit: WriteInterfaceToken GetDescriptor err.");
-        return;
-    }
-    option.SetFlags(MessageOption::TF_SYNC);
-    if (!data.WriteUint32(frameRate)) {
-        ROSEN_LOGE("SetThermalFrameRateLimit: WriteUint32 frameRate err.");
-        return;
-    }
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_THERMAL_FRAME_RATE_LIMIT);
-    int32_t err = SendRequest(code, data, reply, option);
-    if (err != NO_ERROR) {
-        ROSEN_LOGE("RSRenderServiceProxy SetThermalFrameRateLimit sendrequest error : %{public}d", err);
         return;
     }
 }
@@ -4791,6 +4768,29 @@ ErrCode RSClientToServiceConnectionProxy::NotifyTouchEvent(int32_t touchStatus, 
     }
     return ERR_OK;
 }
+
+void RSClientToServiceConnectionProxy::SetThermalFrameRateLimit(uint32_t frameRate)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+ 
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("SetThermalFrameRateLimit: WriteInterfaceToken GetDescriptor err.");
+        return;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint32(frameRate)) {
+        ROSEN_LOGE("SetThermalFrameRateLimit: WriteUint32 frameRate err.");
+        return;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_THERMAL_FRAME_RATE_LIMIT);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceProxy SetThermalFrameRateLimit sendrequest error : %{public}d", err);
+        return;
+    }
+}
 #ifndef ENABLE_RS_PROXY
 void RSClientToServiceConnectionProxy::NotifyDynamicModeEvent(bool enableDynamicMode)
 {
@@ -4971,16 +4971,20 @@ GlobalDirtyRegionInfo RSClientToServiceConnectionProxy::GetGlobalDirtyRegionInfo
     int32_t consumeBufferSize{0};
     int32_t frameAnimationCount{0};
     int32_t mostSendingPidWhenDisplayNodeSkip{0};
+    int32_t updateCacheSurfaceCount{0};
+    int32_t skipCommitFramesNumber{0};
     if (!reply.ReadInt64(globalDirtyRegionAreas) || !reply.ReadInt32(globalFramesNumber) ||
         !reply.ReadInt32(skipProcessFramesNumber) || !reply.ReadInt32(commandCount) ||
         !reply.ReadInt32(consumeBufferSize) || !reply.ReadInt32(frameAnimationCount) ||
-        !reply.ReadInt32(mostSendingPidWhenDisplayNodeSkip)) {
+        !reply.ReadInt32(mostSendingPidWhenDisplayNodeSkip) ||
+        !reply.ReadInt32(updateCacheSurfaceCount) || !reply.ReadInt32(skipCommitFramesNumber)) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::GetGlobalDirtyRegionInfo Read parcel failed");
         return globalDirtyRegionInfo;
     }
     return GlobalDirtyRegionInfo(
         globalDirtyRegionAreas, globalFramesNumber, skipProcessFramesNumber, commandCount,
-        consumeBufferSize, frameAnimationCount, mostSendingPidWhenDisplayNodeSkip);
+        consumeBufferSize, frameAnimationCount, mostSendingPidWhenDisplayNodeSkip,
+        updateCacheSurfaceCount, skipCommitFramesNumber);
 }
 
 
@@ -5005,12 +5009,15 @@ LayerComposeInfo RSClientToServiceConnectionProxy::GetLayerComposeInfo()
     int32_t offlineComposeFrameNumber{0};
     int32_t redrawFrameNumber{0};
     int32_t drawImageNumber{0};
+    int32_t directCompositionFrameNumber{0};
     if (!reply.ReadInt32(uniformRenderFrameNumber) || !reply.ReadInt32(offlineComposeFrameNumber) ||
-        !reply.ReadInt32(redrawFrameNumber) || !reply.ReadInt32(drawImageNumber)) {
+        !reply.ReadInt32(redrawFrameNumber) || !reply.ReadInt32(drawImageNumber) ||
+        !reply.ReadInt32(directCompositionFrameNumber)) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::GetLayerComposeInfo Read parcel failed");
         return layerComposeInfo;
     }
-    return LayerComposeInfo(uniformRenderFrameNumber, offlineComposeFrameNumber, redrawFrameNumber, drawImageNumber);
+    return LayerComposeInfo(uniformRenderFrameNumber, offlineComposeFrameNumber, redrawFrameNumber,
+        drawImageNumber, directCompositionFrameNumber);
 }
 
 HwcDisabledReasonInfos RSClientToServiceConnectionProxy::GetHwcDisabledReasonInfo()

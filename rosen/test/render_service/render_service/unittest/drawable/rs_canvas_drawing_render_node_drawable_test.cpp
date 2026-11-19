@@ -589,6 +589,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnCapture001, TestSize.Level1)
     params.isMirror_ = true;
     AutoSpecialLayerStateRecover whiteListRecover(INVALID_NODEID);
     std::unordered_set<NodeId> whiteList = {nodeId};
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
     RSUniRenderThread::Instance().SetWhiteList(whiteList);
     RSUniRenderThread::SetCaptureParam(params);
     drawable->OnCapture(canvas);

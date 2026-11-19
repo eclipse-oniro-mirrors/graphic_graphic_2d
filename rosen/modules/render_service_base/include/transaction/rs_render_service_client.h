@@ -157,7 +157,8 @@ public:
     int32_t AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
     int32_t RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
 
-    int32_t SetVirtualScreenTypeBlackList(ScreenId id, std::vector<NodeType>& typeBlackListVector);
+    // cursorMode replaces the old hideCursor/forceRenderCursor pair: one field, last writer wins
+    int32_t SetVirtualScreenCursorMode(ScreenId id, RSVirtualScreenCursorMode mode);
 #endif
 
     int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList);
@@ -187,8 +188,6 @@ public:
     void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate);
 
     void SetRefreshRateMode(int32_t refreshRateMode);
-
-    void SetThermalFrameRateLimit(uint32_t frameRate);
 
     void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
         int32_t animatorExpectedFrameRate);
@@ -373,6 +372,8 @@ public:
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount);
 #endif
     void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType);
+
+    void SetThermalFrameRateLimit(uint32_t frameRate);
 #ifndef ENABLE_RS_PROXY
     void NotifyDynamicModeEvent(bool enableDynamicMode);
 

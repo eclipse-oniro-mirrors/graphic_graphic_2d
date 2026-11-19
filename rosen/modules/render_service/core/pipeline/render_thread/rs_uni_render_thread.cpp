@@ -24,6 +24,7 @@
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
 #include "drawable/rs_screen_render_node_drawable.h"
+#include "drawable/rs_effect_drawable_utils.h"
 #include "drawable/rs_property_drawable_utils.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "engine/rs_uni_render_engine.h"
@@ -116,6 +117,24 @@ const std::map<int, int32_t> BLUR_CNT_TO_BLUR_CODE {
     { 2, 10022 },
     { 3, 10023 },
 };
+
+const std::unordered_set<NodeId> EMPTY_NODE_ID_SET;
+
+const SpecialLayerRenderParam* GetSpecialLayerRenderParam()
+{
+    const auto& renderThreadParams = RSRenderThreadParamsManager::Instance().GetRSRenderThreadParams();
+    return renderThreadParams == nullptr ? nullptr : &renderThreadParams->GetSpecialLayerRenderParam();
+}
+
+SpecialLayerRenderParam* GetMutableSpecialLayerRenderParam(const char* caller)
+{
+    const auto& renderThreadParams = RSRenderThreadParamsManager::Instance().GetRSRenderThreadParams();
+    if (UNLIKELY(renderThreadParams == nullptr)) {
+        RS_LOGE("RSUniRenderThread::%{public}s renderThreadParams is null", caller);
+        return nullptr;
+    }
+    return &renderThreadParams->GetMutableSpecialLayerRenderParam();
+}
 
 void PerfRequest(int32_t perfRequestCode, bool onOffTag)
 {
@@ -406,6 +425,48 @@ void RSUniRenderThread::Sync(std::unique_ptr<RSRenderThreadParams>&& stagingRend
     RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(stagingRenderThreadParams));
 }
 
+void RSUniRenderThread::SetBlackList(const std::unordered_set<NodeId>& blackList)
+{
+    auto* param = GetMutableSpecialLayerRenderParam(__func__);
+    if (param != nullptr) {
+        param->blackList = blackList;
+    }
+}
+
+void RSUniRenderThread::SetCursorMode(RSVirtualScreenCursorMode mode)
+{
+    auto* param = GetMutableSpecialLayerRenderParam(__func__);
+    if (param != nullptr) {
+        param->cursorMode = mode;
+    }
+}
+
+void RSUniRenderThread::SetWhiteList(const std::unordered_set<NodeId>& whiteList)
+{
+    auto* param = GetMutableSpecialLayerRenderParam(__func__);
+    if (param != nullptr) {
+        param->whiteList = whiteList;
+    }
+}
+
+const std::unordered_set<NodeId>& RSUniRenderThread::GetBlackList() const
+{
+    const auto* param = GetSpecialLayerRenderParam();
+    return param != nullptr ? param->blackList : EMPTY_NODE_ID_SET;
+}
+
+const std::unordered_set<NodeId>& RSUniRenderThread::GetWhiteList() const
+{
+    const auto* param = GetSpecialLayerRenderParam();
+    return param != nullptr ? param->whiteList : EMPTY_NODE_ID_SET;
+}
+
+RSVirtualScreenCursorMode RSUniRenderThread::GetCursorMode() const
+{
+    const auto* param = GetSpecialLayerRenderParam();
+    return param != nullptr ? param->cursorMode : RSVirtualScreenCursorMode::DEFAULT;
+}
+
 void RSUniRenderThread::Render()
 {
     if (!rootNodeDrawable_) {
@@ -442,15 +503,8 @@ void RSUniRenderThread::Render()
 
 void RSUniRenderThread::ReleaseSurfaceOpItemBuffer()
 {
-    int32_t fenceFd = INVALID_FD;
-    if (acquireFence_ && acquireFence_->GetStatus() != SIGNALED) {
-        fenceFd = acquireFence_->Dup();
-    }
-    RSSurfaceBufferCallbackManager::Instance().SetReleaseFence(fenceFd);
+    RSSurfaceBufferCallbackManager::Instance().SetReleaseFence(acquireFence_);
     RSSurfaceBufferCallbackManager::Instance().RunSurfaceBufferCallback();
-    if (fenceFd != INVALID_FD) {
-        ::close(fenceFd);
-    }
 }
 
 void RSUniRenderThread::ReleaseSurface()
@@ -673,7 +727,7 @@ void RSUniRenderThread::PerfForBlurIfNeeded()
 
     // delay 100ms
     handler_->PostTask(task, PERF_FOR_BLUR_IF_NEEDED_TASK_NAME, 100);
-    int blurCnt = RSPropertyDrawableUtils::GetAndResetBlurCnt();
+    int blurCnt = DrawableV2::RSEffectDrawableUtils::GetAndResetBlurCnt();
     // clamp blurCnt to 0~3.
     blurCnt = std::clamp<int>(blurCnt, 0, 3);
     cnt = (blurCnt < preBlurCnt) ? (cnt + 1) : 0;

@@ -17,6 +17,7 @@
 
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "render/rs_filter.h"
+#include "effect/particle_effect.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -2859,6 +2860,21 @@ HWTEST_F(RSPaintFilterCanvasTest, SetSkipColorSpaceConversionTest, TestSize.Leve
     RSPaintFilterCanvas canvas(&drawingCanvas);
     canvas.SetSkipColorSpaceConversion(true);
     EXPECT_EQ(canvas.GetSkipColorSpaceConversion(), true);
+}
+
+/**
+ * @tc.name: DrawParticleTest
+ * @tc.desc: Test RSPaintFilterCanvasBase::DrawParticle forwarding to canvas_
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPaintFilterCanvasTest, DrawParticleTest, TestSize.Level1)
+{
+    auto particle = std::make_shared<Drawing::ParticleEffect>();
+    paintFilterCanvas_->DrawParticle(particle);
+    EXPECT_TRUE(paintFilterCanvas_);
+    // nullptr particle should not crash; forwarding still completes
+    paintFilterCanvas_->DrawParticle(nullptr);
+    EXPECT_TRUE(paintFilterCanvas_);
 }
 
 } // namespace Rosen

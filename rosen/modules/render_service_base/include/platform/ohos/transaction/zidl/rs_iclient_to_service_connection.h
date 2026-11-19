@@ -117,8 +117,7 @@ public:
     virtual ErrCode RemoveVirtualScreenWhiteList(
         ScreenId id, const std::vector<NodeId>& whiteList, int32_t& repCode) = 0;
 
-    virtual ErrCode SetVirtualScreenTypeBlackList(
-        ScreenId id, std::vector<NodeType>& typeBlackListVector, int32_t& repCode) = 0;
+    virtual ErrCode SetVirtualScreenCursorMode(ScreenId id, RSVirtualScreenCursorMode mode, int32_t& repCode) = 0;
 
     virtual ErrCode SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
         bool& success, uint32_t rowCount = 0, uint32_t colCount = 0) = 0;
@@ -155,8 +154,6 @@ public:
     virtual void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate) = 0;
 
     virtual void SetRefreshRateMode(int32_t refreshRateMode) = 0;
-
-    virtual void SetThermalFrameRateLimit(uint32_t frameRate) = 0;
 
     virtual void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
         int32_t animatorExpectedFrameRate) = 0;
@@ -342,6 +339,8 @@ public:
     virtual bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) = 0;
 #endif
     virtual ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType) = 0;
+
+    virtual void SetThermalFrameRateLimit(uint32_t frameRate) = 0;
 #ifndef ENABLE_RS_PROXY
     virtual void NotifyDynamicModeEvent(bool enableDynamicMode) = 0;
 

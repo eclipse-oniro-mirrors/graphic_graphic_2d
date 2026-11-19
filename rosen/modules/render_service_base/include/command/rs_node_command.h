@@ -129,6 +129,8 @@ enum RSNodeCommandType : uint16_t {
     COLOR_PICKER_CALLBACK = 0x0e00,
 
     SORT_CHILDREN_BY_INDEX = 0x0f00,
+
+    NODE_TARGET_RATE = 0x1000,
 };
 
 class RSB_EXPORT RSNodeCommandHelper {
@@ -169,6 +171,7 @@ public:
         bool includeProperty);
     static void ExcludedFromNodeGroup(RSContext& context, NodeId nodeId, bool isExcluded);
     static void MarkRepaintBoundary(RSContext& context, NodeId nodeId, bool isRepaintBoundary);
+    static void SetNodeTargetRate(RSContext& context, NodeId nodeId, uint32_t nodeTargetRate);
     static void MarkNodeSingleFrameComposer(RSContext& context, NodeId nodeId, bool isNodeFasterDraw);
     static void MarkSuggestOpincNode(RSContext& context, NodeId nodeId, bool isOpincNode, bool isNeedCalculate);
     static void MarkLayerPartRender(RSContext& context, NodeId nodeId, bool isLayerPartRender);
@@ -188,7 +191,7 @@ public:
         const bool isInSameWindow);
     static void UnregisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId);
 
-    using DumpNodeTreeProcessor = std::function<void(NodeId, pid_t, uint64_t, uint32_t)>;
+    using DumpNodeTreeProcessor = void (*)(NodeId, pid_t, uint64_t, uint32_t);
     static void DumpClientNodeTree(RSContext& context, NodeId nodeId, pid_t pid, uint64_t token, uint32_t taskId);
     static RSB_EXPORT void SetDumpNodeTreeProcessor(DumpNodeTreeProcessor processor);
 
@@ -333,10 +336,10 @@ ADD_COMMAND(RSUpdatePropertyVector4f,
 ADD_COMMAND(RSUpdatePropertyRRect,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_RRECT,
         RSNodeCommandHelper::UpdateProperty<RRect>, NodeId, RRect, PropertyId, PropertyUpdateType))
-ADD_COMMAND(RSUpdatePropertyClipShape,
+ADD_PREFIX_COMMAND(RSUpdatePropertyClipShape,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_CLIP_SHAPE,
         RSNodeCommandHelper::UpdateProperty<RRect>, NodeId, RRect, PropertyId, PropertyUpdateType))
-ADD_COMMAND(RSUpdatePropertyDrawCmdList,
+ADD_PREFIX_COMMAND(RSUpdatePropertyDrawCmdList,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_DRAW_CMD_LIST,
         RSNodeCommandHelper::UpdatePropertyDrawCmdList, NodeId,
         Drawing::DrawCmdListPtr, PropertyId, PropertyUpdateType))
@@ -391,6 +394,9 @@ ADD_COMMAND(RSExcludedFromNodeGroup,
 ADD_COMMAND(RSMarkRepaintBoundary,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, MARK_REPAINT_BOUNDARY,
         RSNodeCommandHelper::MarkRepaintBoundary, NodeId, bool))
+ADD_COMMAND(RSSetNodeTargetRate,
+    ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, NODE_TARGET_RATE,
+        RSNodeCommandHelper::SetNodeTargetRate, NodeId, uint32_t))
 ADD_COMMAND(RSMarkNodeSingleFrameComposer,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, MARK_NODE_SINGLE_FRAME_COMPOSER,
         RSNodeCommandHelper::MarkNodeSingleFrameComposer, NodeId, bool))
@@ -471,7 +477,7 @@ ADD_COMMAND(RSModifierNGAttachProperty,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, MODIFIER_NG_ATTACH_PROPERTY,
         RSNodeCommandHelper::ModifierNGAttachProperty, NodeId,
         ModifierId, ModifierNG::RSModifierType, ModifierNG::RSPropertyType, std::shared_ptr<RSRenderPropertyBase>))
-ADD_COMMAND(RSUpdatePropertyDrawCmdListNG,
+ADD_PREFIX_COMMAND(RSUpdatePropertyDrawCmdListNG,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_DRAW_CMD_LIST_NG,
         RSNodeCommandHelper::UpdateModifierNGDrawCmdList,
         NodeId, Drawing::DrawCmdListPtr, PropertyId))

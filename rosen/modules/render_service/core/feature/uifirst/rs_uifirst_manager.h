@@ -190,7 +190,7 @@ public:
         systemDoWindowAnimate_ = flag;
     }
 
-    bool IsInSystemWindowAnimate()
+    bool IsInSystemWindowAnimate() const
     {
         return systemDoWindowAnimate_;
     }
@@ -200,12 +200,12 @@ public:
         topLeashWindowId_ = id;
     }
 
-    bool IsTopLeashWindow(NodeId id)
+    bool IsTopLeashWindow(NodeId id) const
     {
         return id == topLeashWindowId_;
     }
 
-    bool IsNotFindTopLeashWindow()
+    bool IsNotFindTopLeashWindow() const
     {
         return topLeashWindowId_ == INVALID_NODEID;
     }
@@ -245,6 +245,9 @@ public:
     }
 
     bool IsOcclusionEnabled() const;
+    bool UifirstCacheUpdate(NodeId id);
+    bool UifirstCacheUpdated(std::shared_ptr<RSSurfaceRenderNode>& node);
+    void SwapProcessDoneNodes(bool& isDoneNodesSwaped);
     bool IsLayerPartRenderDisableAnimation() const;
 
     // only use in RT sync phase
@@ -252,10 +255,6 @@ public:
     {
         return subthreadProcessingNode_.count(id) > 0;
     }
-    bool UifirstCacheUpdate(NodeId id);
-    bool UifirstCacheUpdated(std::shared_ptr<RSSurfaceRenderNode>& node);
-    void SwapProcessDoneNodes(bool& isDoneNodesSwaped);
-
 private:
     bool IsRebuildForceDisable(const RSSurfaceRenderNode& node) const;
     struct NodeDataBehindWindow {
@@ -358,6 +357,9 @@ private:
     void CheckAndBlockFirstFrameCallback(RSSurfaceRenderNode& surfaceNode) const;
     void HandleAppWindowChildrenDirty(const std::shared_ptr<RSSurfaceRenderNode>& node);
     bool HandleUIFirstDirtyFrameControl(const std::shared_ptr<RSSurfaceRenderNode>& node);
+    void PushPendingMissionCenterScene(SystemAnimatedScenes scene);
+    // return the ended scene only when all pending animations have ended
+    SystemAnimatedScenes PopPendingMissionCenterScene();
 
     bool rotationChanged_ = false;
     bool isUiFirstOn_ = false;
@@ -371,7 +373,10 @@ private:
     std::atomic<bool> isRecentTaskScene_ = false;
     // tracks the whole mission center state (enter animation + steady + exit animation)
     std::atomic<bool> isInMissionCenterState_ = false;
-    std::atomic<bool> isExitingMissionCenter_ = false;
+    // pending mission center animations, ended one by one by OTHERS votes in FIFO order
+    std::list<SystemAnimatedScenes> pendingMissionCenterScenes_;
+    // guards pendingMissionCenterScenes_ on IPC threads
+    std::mutex pendingMissionCenterScenesMutex_;
     std::atomic<bool> isSnapshotRotationScene_ = false;
     static constexpr int CLEAR_RES_THRESHOLD = 3; // 3 frames to clear resource
     static constexpr int BEHIND_WINDOW_TIME_THRESHOLD = 3;

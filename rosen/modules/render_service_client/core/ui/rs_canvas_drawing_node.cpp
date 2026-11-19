@@ -146,8 +146,10 @@ RSCanvasDrawingNode::SharedPtr RSCanvasDrawingNode::Create(
     bool isRenderServiceNode, bool isTextureExportNode, std::shared_ptr<RSUIContext> rsUIContext)
 {
     SharedPtr node(new RSCanvasDrawingNode(isRenderServiceNode, isTextureExportNode, rsUIContext));
+    bool isSceneBoard = false;
     if (rsUIContext != nullptr) {
         rsUIContext->GetMutableNodeMap().RegisterNode(node);
+        isSceneBoard = rsUIContext->IsSceneBoard();
     } else {
         RSNodeMap::MutableInstance().RegisterNode(node);
     }
@@ -156,7 +158,7 @@ RSCanvasDrawingNode::SharedPtr RSCanvasDrawingNode::Create(
     static std::once_flag hybridEnabledFlag;
     std::call_once(
         hybridEnabledFlag, []() { globalHybridEnabled_ = RSSystemProperties::GetHybridRenderCanvasEnabled(); });
-    node->hybridEnabled_ = globalHybridEnabled_ && !isTextureExportNode;
+    node->hybridEnabled_ = globalHybridEnabled_ && !isTextureExportNode && !isSceneBoard;
 #endif
     if (node->hybridEnabled_) {
 #ifdef RS_MODIFIERS_DRAW_ENABLE
@@ -177,10 +179,10 @@ RSCanvasDrawingNode::SharedPtr RSCanvasDrawingNode::Create(
 #endif
     }
 
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSCanvasDrawingNodeCreate>(node->GetId(), isTextureExportNode);
+    std::unique_ptr<RSCommand> command = std::make_unique<RSCanvasDrawingNodeCreate>(node->GetId(), isTextureExportNode,
+        node->GetUIContextToken());
     node->AddCommand(command, node->IsRenderServiceNode());
-    node->SetUIContextToken();
+    // Create carries the token; no follow-up SetUIContextToken.
     return node;
 }
 
@@ -214,7 +216,7 @@ void RSCanvasDrawingNode::OnCreate()
 void RSCanvasDrawingNode::CreateRenderNode()
 {
     std::unique_ptr<RSCommand> command =
-        std::make_unique<RSCanvasDrawingNodeCreate>(GetId(), isTextureExportNode_);
+        std::make_unique<RSCanvasDrawingNodeCreate>(GetId(), isTextureExportNode_, GetUIContextToken());
     AddCommand(command, IsRenderServiceNode());
 }
 
@@ -384,7 +386,8 @@ void RSCanvasDrawingNode::OnSurfaceBufferChanged(sptr<SurfaceBuffer> buffer, uin
 
 void RSCanvasDrawingNode::CreateRenderNodeForTextureExportSwitch()
 {
-    std::unique_ptr<RSCommand> command = std::make_unique<RSCanvasDrawingNodeCreate>(GetId(), isTextureExportNode_);
+    std::unique_ptr<RSCommand> command = std::make_unique<RSCanvasDrawingNodeCreate>(GetId(), isTextureExportNode_,
+        GetUIContextToken());
     if (IsRenderServiceNode()) {
         hasCreateRenderNodeInRS_ = true;
     } else {

@@ -29,6 +29,7 @@
 #include "drawable/rs_property_drawable_foreground.h"
 #include "effect/rs_render_effect_common_def.h"
 #include "effect/rs_render_shader_base.h"
+#include "feature/filter_cache_manager/rs_cache_update_manager.h"
 #include "modifier_ng/custom/rs_custom_modifier.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
 #include "params/rs_render_params.h"
@@ -3713,10 +3714,11 @@ HWTEST_F(RSRenderNodeTest, MarkFilterCacheFlags001, TestSize.Level1)
     RSRenderNode node(id, context);
     bool needRequestNextVsync = true;
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
-    std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
+    std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable =
+        std::make_shared<DrawableV2::RSBackgroundFilterDrawable>();
     filterDrawable->MarkFilterForceUseCache(true);
     filterDrawable->MarkFilterForceClearCache();
-    filterDrawable->stagingCacheManager_->pendingPurge_ = true;
+    filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->pendingPurge_ = true;
     auto& properties = node.GetMutableRenderProperties();
     properties.GetEffectProperties().SetBackgroundFilter(std::make_shared<RSFilter>());
     properties.GetEffectProperties().SetCompositingFilter(std::make_shared<RSFilter>());
@@ -3735,11 +3737,12 @@ HWTEST_F(RSRenderNodeTest, MarkFilterCacheFlags002, TestSize.Level1)
     RSRenderNode node(id, context);
     bool needRequestNextVsync = false;
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
-    std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
+    std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable =
+        std::make_shared<DrawableV2::RSBackgroundFilterDrawable>();
     filterDrawable->MarkFilterForceUseCache(true);
     filterDrawable->MarkFilterForceClearCache();
     filterDrawable->MarkFilterRegionInteractWithDirty();
-    filterDrawable->stagingCacheManager_->cacheUpdateInterval_ = 1;
+    filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->cacheUpdateInterval_ = 1;
     auto& properties = node.GetMutableRenderProperties();
     properties.GetEffectProperties().SetBackgroundFilter(std::make_shared<RSFilter>());
     properties.GetEffectProperties().SetCompositingFilter(std::make_shared<RSFilter>());
@@ -3756,7 +3759,8 @@ HWTEST_F(RSRenderNodeTest, MarkFilterCacheFlags002, TestSize.Level1)
 HWTEST_F(RSRenderNodeTest, CheckFilterCacheAndUpdateDirtySlots, TestSize.Level1)
 {
     RSRenderNode node(id, context);
-    std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
+    std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable =
+        std::make_shared<DrawableV2::RSBackgroundFilterDrawable>();
     RSDrawableSlot slot = RSDrawableSlot::SHADOW;
     node.CheckFilterCacheAndUpdateDirtySlots(filterDrawable, slot);
     ASSERT_TRUE(true);
@@ -3894,7 +3898,7 @@ HWTEST_F(RSRenderNodeTest, MarkForceClearFilterCacheWithInvisible, TestSize.Leve
     auto filterDrawable = std::make_shared<DrawableV2::RSMaterialFilterDrawable>();
     node.GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::MATERIAL_FILTER)] = filterDrawable;
     node.MarkForceClearFilterCacheWithInvisible();
-    ASSERT_TRUE(filterDrawable->stagingCacheManager_->stagingForceClearCache_);
+    ASSERT_TRUE(filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_);
 }
 
 /**
@@ -4234,7 +4238,7 @@ HWTEST_F(RSRenderNodeTest, UpdateFilterCacheForceClearWithBackgroundAndAlphaDirt
     renderNode->UpdateFilterCacheWithBackgroundDirty();
 
     EXPECT_NE(backgroundFilterDrawable->stagingCacheManager_, nullptr);
-    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
+    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_, true);
 }
 
 /**
@@ -4265,9 +4269,9 @@ HWTEST_F(RSRenderNodeTest, NotForceClearFilterCacheWithoutBackgroundDirtyTest, T
     renderNode->MarkForceClearFilterCacheWithInvisible();
     renderNode->UpdateFilterCacheWithBackgroundDirty();
     EXPECT_NE(backgroundFilterDrawable->stagingCacheManager_, nullptr);
-    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
+    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_, true);
     EXPECT_NE(filterDrawable->stagingCacheManager_, nullptr);
-    EXPECT_EQ(filterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
+    EXPECT_EQ(filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_, true);
 }
 
 /**
@@ -4294,7 +4298,8 @@ HWTEST_F(RSRenderNodeTest, NotForceClearFilterCacheWithoutAlphaDirtyTest, TestSi
     renderNode->UpdateFilterCacheWithBackgroundDirty();
 
     EXPECT_NE(backgroundFilterDrawable->stagingCacheManager_, nullptr);
-    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, false);
+    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_,
+        false);
 }
 
 /**
@@ -4321,7 +4326,8 @@ HWTEST_F(RSRenderNodeTest, NotForceClearFilterCacheWithoutBackBackgoundImageDirt
     renderNode->UpdateFilterCacheWithBackgroundDirty();
 
     EXPECT_NE(backgroundFilterDrawable->stagingCacheManager_, nullptr);
-    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, false);
+    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_,
+        false);
 }
 
 /**
@@ -4345,7 +4351,7 @@ HWTEST_F(RSRenderNodeTest, ForceClearFilterCacheWhenBackgroundDirty, TestSize.Le
     renderNode->CheckBlurFilterCacheNeedForceClearOrSave();
 
     EXPECT_NE(backgroundFilterDrawable->stagingCacheManager_, nullptr);
-    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
+    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_, true);
 }
 
 /**
@@ -4456,7 +4462,8 @@ HWTEST_F(RSRenderNodeTest, ForceClearForegroundFilterCacheWhenDirty, TestSize.Le
     renderNode->CheckBlurFilterCacheNeedForceClearOrSave();
 
     EXPECT_NE(compositingFilterDrawable->stagingCacheManager_, nullptr);
-    EXPECT_EQ(compositingFilterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
+    EXPECT_EQ(compositingFilterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_,
+        true);
 }
 
 /**
@@ -5818,6 +5825,74 @@ HWTEST_F(RSRenderNodeTest, IsPureBackgroundColor_OpincSplitTrue_NonPureSlotWithM
 }
 
 /**
+ * @tc.name: SetDirtyRecordsDirtyDisplayNodeTest001
+ * @tc.desc: SetDirty records the logical display id of the node into the context dirty display set.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, SetDirtyRecordsDirtyDisplayNodeTest001, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    constexpr NodeId nodeId{4001};
+    constexpr NodeId displayId{5001};
+    auto node = std::make_shared<RSRenderNode>(nodeId, context);
+    ASSERT_NE(node, nullptr);
+    node->logicalDisplayNodeId_ = displayId;
+
+    node->SetDirty();
+
+    auto dirtyDisplayNodes = context->GetAndClearDirtyDisplayNodes();
+    EXPECT_EQ(dirtyDisplayNodes.size(), 1);
+    EXPECT_EQ(dirtyDisplayNodes.count(displayId), 1);
+    EXPECT_EQ(node->dirtyStatus_, RSRenderNode::NodeDirty::DIRTY);
+}
+
+/**
+ * @tc.name: SetDirtyRecordsDirtyDisplayNodeTest002
+ * @tc.desc: SetDirty on an on-tree node without logical display id records nothing and does not crash.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, SetDirtyRecordsDirtyDisplayNodeTest002, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    constexpr NodeId nodeId{4002};
+    auto node = std::make_shared<RSRenderNode>(nodeId, context);
+    ASSERT_NE(node, nullptr);
+    ASSERT_EQ(node->logicalDisplayNodeId_, INVALID_NODEID);
+
+    node->SetDirty();
+
+    auto dirtyDisplayNodes = context->GetAndClearDirtyDisplayNodes();
+    EXPECT_TRUE(dirtyDisplayNodes.empty());
+    EXPECT_EQ(node->dirtyStatus_, RSRenderNode::NodeDirty::DIRTY);
+}
+
+/**
+ * @tc.name: SetDirtyRecordsDirtyDisplayNodeTest003
+ * @tc.desc: SetDirty on an on-tree surface node without logical display id records nothing and does not crash.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, SetDirtyRecordsDirtyDisplayNodeTest003, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    constexpr NodeId nodeId{4003};
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(nodeId, context);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetIsOnTheTree(true);
+    ASSERT_TRUE(surfaceNode->IsOnTheTree());
+    ASSERT_EQ(surfaceNode->GetType(), RSRenderNodeType::SURFACE_NODE);
+    ASSERT_EQ(surfaceNode->logicalDisplayNodeId_, INVALID_NODEID);
+
+    surfaceNode->SetDirty();
+
+    auto dirtyDisplayNodes = context->GetAndClearDirtyDisplayNodes();
+    EXPECT_TRUE(dirtyDisplayNodes.empty());
+    EXPECT_EQ(surfaceNode->dirtyStatus_, RSRenderNode::NodeDirty::DIRTY);
+}
+
+/**
  * @tc.name: HasValidModifierInOpincSplit_ContentStyle_EmptyDrawOpItems
  * @tc.desc: Test HasValidModifierInOpincSplit with CONTENT_STYLE slot having modifier with empty drawOpItems
  * @tc.type: FUNC
@@ -6104,6 +6179,56 @@ HWTEST_F(RSRenderNodeTest, HasInfiniteGroupAnimationChild003, TestSize.Level1)
     animation->isGroupAnimationChild_ = true;
     animation->SetGroupRepeatCount(-1);
     EXPECT_TRUE(node->HasInfiniteGroupAnimationChild());
+}
+
+/**
+ * @tc.name: IsContentDirty_IgnorePropertiesContentDirty001
+ * @tc.desc: Test IsContentDirty short-circuits via IgnorePropertiesContentDirty
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderNodeTest, IsContentDirty_IgnorePropertiesContentDirty001, TestSize.Level1)
+{
+    RSRenderNode node(id, context);
+    // avoid the base isContentDirty_ early short-circuit so the properties logic is exercised
+    node.isContentDirty_ = false;
+    auto& props = node.GetMutableRenderProperties();
+    props.contentDirty_ = true;
+    // force effectProperties_ creation, then set cache content ignore true
+    props.GetEffectProperties().SetIgnorePropertiesContentDirty(true);
+    // isContentDirty_ == false, IsContentDirty() == true, IgnorePropertiesContentDirty() == true
+    EXPECT_FALSE(node.IsContentDirty());
+
+    // restore ignore false -> IsContentDirty true again
+    props.GetEffectProperties().SetIgnorePropertiesContentDirty(false);
+    EXPECT_TRUE(node.IsContentDirty());
+}
+
+/**
+ * @tc.name: ApplyInstanceIdentityTest
+ * @tc.desc: ApplyInstanceIdentity marks/registers per (token, isSceneBoard) verdicts.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderNodeTest, ApplyInstanceIdentityTest, TestSize.Level1)
+{
+    constexpr uint64_t token = 42;
+    {
+        RSRenderNode node(1, false);
+        node.ApplyInstanceIdentity(token, true);
+        EXPECT_TRUE(node.IsSceneBoard());
+        EXPECT_EQ(node.GetUIContextToken(), token);
+    }
+    {
+        RSRenderNode node(2, false);
+        node.ApplyInstanceIdentity(token, false);
+        EXPECT_FALSE(node.IsSceneBoard());
+        EXPECT_EQ(node.GetUIContextToken(), token);
+    }
+    {
+        RSRenderNode node(3, false);
+        node.ApplyInstanceIdentity(0, false);
+        EXPECT_FALSE(node.IsSceneBoard());
+        EXPECT_EQ(node.GetUIContextToken(), 0);
+    }
 }
 
 } // namespace Rosen

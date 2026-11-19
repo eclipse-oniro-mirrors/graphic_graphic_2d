@@ -554,7 +554,7 @@ HWTEST_F(RSUniDirtyComputeUtilTest, GenerateFilterDirtyRegionInfo_001, TestSize.
     effectNode->GetMutableRenderProperties().boundsGeo_->absRect_ = DEFAULT_RECT1;  // mock filter rect.
 
     FilterDirtyRegionInfo filterInfo =
-        RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*effectNode, std::nullopt, true);
+        RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*effectNode, std::nullopt, true, false);
     ASSERT_TRUE(filterInfo.filterDirty_.Area() == filterInfo.intersectRegion_.Area());
 }
 
@@ -577,7 +577,7 @@ HWTEST_F(RSUniDirtyComputeUtilTest, GenerateFilterDirtyRegionInfo_002, TestSize.
     effectNode->GetMutableRenderProperties().boundsGeo_->absRect_ = DEFAULT_RECT1;
 
     FilterDirtyRegionInfo filterInfo =
-        RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*effectNode, std::nullopt, true);
+        RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*effectNode, std::nullopt, true, false);
     EXPECT_TRUE(filterInfo.filterDirty_.Area() > 0);
 }
 
@@ -598,8 +598,30 @@ HWTEST_F(RSUniDirtyComputeUtilTest, GenerateFilterDirtyRegionInfo_003, TestSize.
     effectNode->GetMutableRenderProperties().boundsGeo_->absRect_ = DEFAULT_RECT1;
 
     FilterDirtyRegionInfo filterInfo =
-        RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*effectNode, std::nullopt, true);
+        RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*effectNode, std::nullopt, true, false);
     EXPECT_TRUE(filterInfo.filterDirty_.Area() > 0);
+}
+
+/**
+ * @tc.name: GenerateFilterDirtyRegionInfo_004
+ * @tc.desc: test GenerateFilterDirtyRegionInfo with filter cache disabled by draw context
+ * @tc.type: FUNC
+ * @tc.require: issue26800
+ */
+HWTEST_F(RSUniDirtyComputeUtilTest, GenerateFilterDirtyRegionInfo_004, TestSize.Level1)
+{
+    std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
+    NodeId id = 1;
+    auto effectNode = std::make_shared<RSEffectRenderNode>(id, context->weak_from_this());
+    effectNode->GetMutableRenderProperties().boundsGeo_->absRect_ = DEFAULT_RECT1;
+
+    FilterDirtyRegionInfo disabledInfo =
+        RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*effectNode, std::nullopt, true, true);
+    EXPECT_TRUE(disabledInfo.forceDisablePartialRender_);
+
+    FilterDirtyRegionInfo notForcedInfo =
+        RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*effectNode, std::nullopt, true, false);
+    EXPECT_FALSE(notForcedInfo.forceDisablePartialRender_);
 }
 
 /**
@@ -996,9 +1018,7 @@ HWTEST_F(RSUniDirtyComputeUtilTest, CheckCurrentFrameHasDirtyInVirtual001, TestS
     mirroredScreenParams->logicalDisplayNodeDrawables_.emplace_back(displayDrawable);
     
     ASSERT_NE(screenManager_, nullptr);
-    NodeType cursorType = 12;
-    std::vector<NodeType> typeBlackList = {cursorType};
-    screenManager_->SetVirtualScreenTypeBlackList(logicalScreenNodeId, typeBlackList);
+    screenManager_->SetVirtualScreenCursorMode(logicalScreenNodeId, RSVirtualScreenCursorMode::HIDE);
 
     screenDrawable->syncDirtyManager_->typeHwcDirtyRegion_ =
         {{RSSurfaceNodeType::CURSOR_NODE, defaultDirtyRect}};

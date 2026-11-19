@@ -137,6 +137,7 @@
           "runtime_core",
           "hiview",
           "i18n",
+          "drivers_interface_memorytracker",
           "api_metrics",
           "selinux_adapter",
           "taihe_ffi_gen"
@@ -563,7 +564,6 @@
           "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/test:test",
           "//foundation/graphic/graphic_2d/rosen/modules/safuzz:safuzztest",
           "//foundation/graphic/graphic_2d/rosen/test/2d_graphics/drawing:drawing_demo",
-          "//foundation/graphic/graphic_2d/rosen/test/dtk:dtk",
           "//foundation/graphic/graphic_2d/frameworks/text/test:text_test",
           "//foundation/graphic/graphic_2d/rosen/test/frame_load:test",
           "//foundation/graphic/graphic_2d/rosen/test/render_service:test"

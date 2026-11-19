@@ -62,7 +62,7 @@ const uint8_t DO_RESIZE_VIRTUAL_SCREEN = 9;
 const uint8_t DO_SET_VIRTUAL_SCREEN_USING_STATUS = 10;
 const uint8_t DO_SET_VIRTUAL_SCREEN_REFRESH_RATE = 11;
 const uint8_t DO_SET_VIRTUAL_SCREEN_STATUS = 12;
-const uint8_t DO_SET_VIRTUAL_SCREEN_TYPE_BLACK_LIST = 13;
+const uint8_t DO_SET_VIRTUAL_SCREEN_CURSOR_MODE = 13;
 const uint8_t DO_ADD_VIRTUAL_SCREEN_SURFACE = 14;
 const uint8_t DO_REMOVE_VIRTUAL_SCREEN_SURFACE = 15;
 const uint8_t TARGET_SIZE = 16;
@@ -556,15 +556,10 @@ void DoSetVirtualScreenStatus()
     g_serviceConnection->OnRemoteRequest(code, dataP, reply, option);
 }
 
-void DoSetVirtualScreenTypeBlackList()
+void DoSetVirtualScreenCursorMode()
 {
     uint64_t id = GetData<uint64_t>();
-    uint8_t nodeType = GetData<uint8_t>();
-    std::vector<NodeType> typeBlackListVector;
-    uint8_t listSize = GetData<uint8_t>();
-    for (int i = 0; i < listSize; i++) {
-        typeBlackListVector.push_back(nodeType);
-    }
+    uint8_t mode = GetData<uint8_t>();
     MessageParcel dataP;
     MessageParcel reply;
     MessageOption option;
@@ -575,10 +570,10 @@ void DoSetVirtualScreenTypeBlackList()
     if (!dataP.WriteUint64(id)) {
         return;
     }
-    if (!dataP.WriteUInt8Vector(typeBlackListVector)) {
+    if (!dataP.WriteUint8(mode)) {
         return;
     }
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_CURSOR_MODE);
     g_serviceConnection->OnRemoteRequest(code, dataP, reply, option);
 }
 
@@ -967,8 +962,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_STATUS:
             OHOS::Rosen::DoSetVirtualScreenStatus();
             break;
-        case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_TYPE_BLACK_LIST:
-            OHOS::Rosen::DoSetVirtualScreenTypeBlackList();
+        case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_CURSOR_MODE:
+            OHOS::Rosen::DoSetVirtualScreenCursorMode();
             break;
         case OHOS::Rosen::DO_ADD_VIRTUAL_SCREEN_SURFACE:
             OHOS::Rosen::DoAddVirtualScreenSurface();

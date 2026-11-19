@@ -133,6 +133,10 @@ void RSUIDirector::Init(sptr<IRemoteObject>& connectToRenderRemote, std::shared_
     // calls RSApplicationAgentImpl::Release(), so individual RSUIDirector destruction does not.
     RSApplicationAgentLifecycleOwner::Instance().EnsureRegistered(rsUIContext_);
     GoCreate();
+    // Safety net for CreateRSUIDirector() (skips Init): re-send the mark after GoCreate.
+    if (rsUIContext_ != nullptr && rsUIContext_->IsSceneBoard()) {
+        AddUIDirectorCommand<RSUIDirectorMarkSceneBoard>();
+    }
     GoResume();
     GoForeground();
     if (isUniRenderEnabled_) {
@@ -208,11 +212,11 @@ void RSUIDirector::StartTextureExport(std::shared_ptr<RSUIContext> rsUIContext)
     RSRenderThread::Instance().UpdateWindowStatus(true);
 }
 
-template <typename CommandType>
-void RSUIDirector::AddUIDirectorCommand()
+template <typename CommandType, typename... ExtraArgs>
+void RSUIDirector::AddUIDirectorCommand(ExtraArgs&&... extraArgs)
 {
     if (rsUIContext_ == nullptr) {
-        RS_LOGE("RSUIDirector::AddUIDirectorCommand, RSUIContext is nullptr");
+        RS_LOGE("AddUIDirectorCommand RSUICxt nullptr");
         return;
     }
 
@@ -225,11 +229,24 @@ void RSUIDirector::AddUIDirectorCommand()
     auto rootNode = rootNode_.lock();
     static pid_t pid = getpid();
     NodeId nodeId = rootNode ? rootNode->GetId() : (((NodeId)pid << 32) | NODE_ID);
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<CommandType>(nodeId, rsUIContext_ ? rsUIContext_->GetToken() : 0);
+    std::unique_ptr<RSCommand> command = std::make_unique<CommandType>(nodeId, rsUIContext_->GetToken(),
+        std::forward<ExtraArgs>(extraArgs)...);
     RS_TRACE_NAME_FMT(
         "RSUIDirector::AddUIDirectorCommand type is %d, token is %lu", command->GetSubType(), rsUIContext_->GetToken());
     transaction->AddCommand(command, true);
+}
+
+void RSUIDirector::MarkAsSceneBoard()
+{
+    if (rsUIContext_ == nullptr) {
+        RS_LOGE("RSUIDirector::MarkAsSceneBoard, RSUIContext is nullptr");
+        return;
+    }
+    if (rsUIContext_->IsSceneBoard()) {
+        return;
+    }
+    rsUIContext_->MarkAsSceneBoard();
+    AddUIDirectorCommand<RSUIDirectorMarkSceneBoard>();
 }
 
 void RSUIDirector::GoCreate()
@@ -305,13 +322,13 @@ void RSUIDirector::GoForeground(bool isTextureExport)
 {
     RS_TRACE_NAME_FMT("RSUIDirector::GoForeground CurrentState:%d, UIContext:%" PRIu64 "",
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
-    RS_LOGI("RSUIDirector::GoForeground CurrentState:%{public}d, UIContext:%{public}" PRIu64,
+    RS_LOGI("GoForeground state:%{public}d, token:%{public}" PRIu64,
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
     // Invalid states
     if (currentUIDirectorState_ == RSUIDirectorLifecycleState::DESTROYED ||
         currentUIDirectorState_ == RSUIDirectorLifecycleState::CREATE ||
         currentUIDirectorState_ == RSUIDirectorLifecycleState::STOP) {
-        RS_LOGE("RSUIDirector::GoForeground, CurrentState %{public}d is invalid.",
+        RS_LOGE("GoForeground state:%{public}d is invalid.",
             static_cast<int>(currentUIDirectorState_));
         return;
     }
@@ -360,11 +377,11 @@ void RSUIDirector::GoBackground(bool isTextureExport)
 {
     RS_TRACE_NAME_FMT("RSUIDirector::GoBackground CurrentState:%d, UIContext:%" PRIu64 "",
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
-    RS_LOGI("RSUIDirector::GoBackground CurrentState:%{public}d, UIContext:%{public}" PRIu64,
+    RS_LOGI("GoBackground state:%{public}d, token:%{public}" PRIu64,
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
     // Invalid states
     if (currentUIDirectorState_ != RSUIDirectorLifecycleState::FOREGROUND) {
-        RS_LOGE("RSUIDirector::GoBackground, currentUIDirectorState_ is not FOREGROUND.");
+        RS_LOGE("GoBackground currentState_ is not FOREGROUND.");
         return;
     }
     ExecuteGoBackground(isTextureExport);
@@ -434,9 +451,9 @@ void RSUIDirector::GoStop()
         currentUIDirectorState_ == RSUIDirectorLifecycleState::RESUME) {
         if (RSSystemProperties::IsRenderNodeRebuildEnabled() && RSSystemProperties::GetBackgroundRebuildEnabled()) {
             ExecuteGoStop();
+            AddUIDirectorCommand<RSUIDirectorGoStop>();
         }
     }
-    AddUIDirectorCommand<RSUIDirectorGoStop>();
     currentUIDirectorState_ = RSUIDirectorLifecycleState::STOP;
 }
 
@@ -487,7 +504,7 @@ void RSUIDirector::Destroy(bool isTextureExport)
 {
     RS_TRACE_NAME_FMT("RSUIDirector::Destroy CurrentState:%d, UIContext:%" PRIu64 "",
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
-    RS_LOGI("RSUIDirector::Destroy CurrentState:%{public}d, UIContext:%{public}" PRIu64,
+    RS_LOGI("Destroy state:%{public}d, token:%{public}" PRIu64,
         static_cast<int>(currentUIDirectorState_), rsUIContext_ ? rsUIContext_->GetToken() : 0);
     ExecuteGoDestroy(isTextureExport);
     currentUIDirectorState_ = RSUIDirectorLifecycleState::DESTROYED;

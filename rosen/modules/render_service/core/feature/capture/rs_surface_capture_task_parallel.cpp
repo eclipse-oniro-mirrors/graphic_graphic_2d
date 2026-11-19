@@ -1047,11 +1047,9 @@ void RSSurfaceCaptureTaskParallel::CaptureDisplayNode(DrawableV2::RSRenderNodeDr
 {
     CaptureParam param(true, false, false);
     param.needCaptureSpecialLayer_ = captureParam.needCaptureSpecialLayer;
+    param.blackList_.insert(captureConfig_.blackList.begin(), captureConfig_.blackList.end());
     RSUniRenderThread::SetCaptureParam(param);
     canvas.SetScreenshotType(type);
-    // Screenshot blacklist, exclude surfaceNode in blacklist while capturing displaynode
-    std::unordered_set<NodeId> blackList(captureConfig_.blackList.begin(), captureConfig_.blackList.end());
-    RSUniRenderThread::Instance().SetBlackList(blackList);
     auto flaggedDrawables = MarkResolvedBlacklistAncestorCacheRoots(blacklistAncestorNodeIds_);
     RSEffectLuminanceManager::GetInstance().SetCurrentScreenshotType(type);
     displayNodeDrawable.OnCapture(canvas);
@@ -1063,7 +1061,6 @@ void RSSurfaceCaptureTaskParallel::CaptureDisplayNode(DrawableV2::RSRenderNodeDr
     }
     RSEffectLuminanceManager::GetInstance().SetCurrentScreenshotType(
             RSPaintFilterCanvas::ScreenshotType::NON_SHOT);
-    RSUniRenderThread::Instance().SetBlackList({});
 }
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)

@@ -103,6 +103,15 @@ public:
         return std::make_pair(GetType(), GetSubType());
     }
 
+    // Whether this command opts in to the commandLen prefix marshalling path when
+    // persist.sys.graphic.commandLenPrefix.enabled is on. Only large-payload commands
+    // (e.g. DrawCmdList updates, declared via ADD_PREFIX_COMMAND) need the prefix-based
+    // skip-tolerance. See RSTransactionData::Marshalling.
+    virtual bool UseLengthPrefix() const
+    {
+        return false;
+    }
+
     virtual NodeId GetNodeId() const
     {
         return 0;

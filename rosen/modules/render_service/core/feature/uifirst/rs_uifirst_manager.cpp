@@ -28,6 +28,7 @@
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 #include "feature/overlay_display/rs_overlay_display_manager.h"
 #endif
+#include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 #include "memory/rs_memory_manager.h"
 #include "params/rs_screen_render_params.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
@@ -342,9 +343,9 @@ bool RSUifirstManager::HandleUIFirstDirtyFrameControl(const std::shared_ptr<RSSu
         return false;
     }
 
-    bool uifirstCacheUpdated = (node->GetLastFrameUifirstCacheType() == MultiThreadCacheType::NONE) ||
+    bool isNotUifirstOrIsCacheNotUpdated = (node->GetLastFrameUifirstCacheType() == MultiThreadCacheType::NONE) ||
             !UifirstCacheUpdate(node->GetId());
-    if (uifirstCacheUpdated && !node->GetNodeAbsRectChanged()) {
+    if (isNotUifirstOrIsCacheNotUpdated && !node->GetNodeAbsRectChanged()) {
         auto curDirtyRegion = curDirtyManager->GetCurrentFrameDirtyRegion();
         curDirtyManager->MergeUifirstDirtyRect(curDirtyRegion);
         auto uifirstDirtyRegion = curDirtyManager->GetUifirstFrameDirtyRegion();
@@ -491,10 +492,10 @@ bool RSUifirstManager::UifirstCacheUpdated(std::shared_ptr<RSSurfaceRenderNode>&
         auto leashNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node->GetParent().lock());
         if ((leashNode != nullptr) && leashNode->IsLeashWindow() &&
             leashNode->GetLastFrameUifirstCacheType() != MultiThreadCacheType::NONE) {
-                return UifirstCacheUpdate(leashNode->GetId());
-            }
-        return true;
+            return UifirstCacheUpdate(leashNode->GetId());
         }
+        return true;
+    }
     return true;
 }
 
@@ -929,11 +930,6 @@ bool RSUifirstManager::NeedPurgePendingPostNodesInner(
         return false;
     }
     auto& [id, node] = *it;
-    // Check if the node and its parent should be painted
-    if (!node->GetSelfAndParentShouldPaint()) {
-        return true;
-    }
-
     auto& subThreadCache = drawable->GetRsSubThreadCache();
     bool needPurge = purgeEnable_ && subThreadCache.HasCachedTexture() &&
         (cachedStaticContent || CheckVisibleDirtyRegionIsEmpty(node)) &&
@@ -1587,8 +1583,9 @@ void RSUifirstManager::AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRe
     // process for uifirst node
     UpdateChildrenDirtyRect(*node);
     node->SetHwcChildrenDisabledState();
-    RS_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " children disabled by uifirst",
-        node->GetName().c_str(), node->GetId());
+    HwcDisabledReasonCollection::GetInstance().RecordHwcDisabledWithTrace(
+        node->GetId(), HwcDisabledReasons::DISABLED_BY_UIFIRST, node->GetName(),
+        "children disabled by uifirst");
     node->AddToPendingSyncList();
 
     if (currentFrameCacheType == MultiThreadCacheType::LEASH_WINDOW ||
@@ -1743,22 +1740,20 @@ void RSUifirstManager::OnProcessAnimateScene(SystemAnimatedScenes systemAnimated
             break;
         // enter and exit mission center are two independent animations
         case SystemAnimatedScenes::ENTER_MISSION_CENTER:
-            // entering multi-task state, keep state until exit animation ends
             isInMissionCenterState_.store(true);
-            isExitingMissionCenter_.store(false);
+            PushPendingMissionCenterScene(SystemAnimatedScenes::ENTER_MISSION_CENTER);
             break;
         case SystemAnimatedScenes::EXIT_MISSION_CENTER:
-            // mark exiting so OTHERS can leave the multi-task state
-            isExitingMissionCenter_.store(true);
+            PushPendingMissionCenterScene(SystemAnimatedScenes::EXIT_MISSION_CENTER);
             break;
         case SystemAnimatedScenes::SNAPSHOT_ROTATION:
             isSnapshotRotationScene_.store(true);
             break;
-        // enter and exit mission center animation ends
+        // each OTHERS ends the oldest pending animation (1:1 FIFO pairing)
         case SystemAnimatedScenes::OTHERS:
-            if (isInMissionCenterState_.load() && isExitingMissionCenter_.load()) {
+            // leave multi-task state only after the exit animation is the last one to end
+            if (PopPendingMissionCenterScene() == SystemAnimatedScenes::EXIT_MISSION_CENTER) {
                 isInMissionCenterState_.store(false);
-                isExitingMissionCenter_.store(false);
             }
             isSnapshotRotationScene_.store(false);
             break;
@@ -1766,6 +1761,26 @@ void RSUifirstManager::OnProcessAnimateScene(SystemAnimatedScenes systemAnimated
             isSnapshotRotationScene_.store(false);
             break;
     }
+}
+
+void RSUifirstManager::PushPendingMissionCenterScene(SystemAnimatedScenes scene)
+{
+    std::lock_guard<std::mutex> lock(pendingMissionCenterScenesMutex_);
+    pendingMissionCenterScenes_.push_back(scene);
+}
+
+SystemAnimatedScenes RSUifirstManager::PopPendingMissionCenterScene()
+{
+    std::lock_guard<std::mutex> lock(pendingMissionCenterScenesMutex_);
+    if (pendingMissionCenterScenes_.empty()) {
+        return SystemAnimatedScenes::OTHERS;
+    }
+    SystemAnimatedScenes endedScene = pendingMissionCenterScenes_.front();
+    pendingMissionCenterScenes_.pop_front();
+    if (!pendingMissionCenterScenes_.empty()) {
+        return SystemAnimatedScenes::OTHERS;
+    }
+    return endedScene;
 }
 
 bool RSUifirstManager::NodeIsInCardWhiteList(RSRenderNode& node)
@@ -1903,8 +1918,9 @@ void RSUifirstManager::ProcessFirstFrameCache(RSSurfaceRenderNode& node, MultiTh
             node.SetSubThreadAssignable(true); // mark as assignable to uifirst next frame
             node.SetNeedCacheSurface(true); // mark as that needs cache win in RT
             node.SetHwcChildrenDisabledState();
-            RS_OPTIONAL_TRACE_NAME_FMT("name:%s id:%" PRIu64 " children disabled by uifirst first frame",
-                node.GetName().c_str(), node.GetId());
+            HwcDisabledReasonCollection::GetInstance().RecordHwcDisabledWithTrace(
+                node.GetId(), HwcDisabledReasons::DISABLED_BY_UIFIRST, node.GetName(),
+                "children disabled by uifirst first frame");
             // delete caches when node is not on the tree.
             auto func = &RSUifirstManager::ProcessTreeStateChange;
             node.RegisterTreeStateChangeCallback(func);
@@ -2140,8 +2156,12 @@ bool RSUifirstManager::GetSubNodeIsTransparent(RSSurfaceRenderNode& node, std::s
             if (childSurfaceNode == nullptr) {
                 continue;
             }
-            hasTransparent |= childSurfaceNode->IsAlphaTransparent() || (childSurfaceNode->NeedDrawBehindWindow() &&
-                !RSSystemProperties::GetUIFirstBehindWindowFilterEnabled());
+            const uint8_t opacity = 255;
+            // if app window, no need to check globalAlpha
+            hasTransparent |= (childSurfaceNode->IsAppWindow() && childSurfaceNode->GetAbilityBgAlpha() != opacity)
+                || (!childSurfaceNode->IsAppWindow() && childSurfaceNode->IsAlphaTransparent())
+                || (childSurfaceNode->NeedDrawBehindWindow()
+                && !RSSystemProperties::GetUIFirstBehindWindowFilterEnabled());
             if (hasTransparent) {
                 dfxMsg = "childSurfaceNode_NeedDrawBehindWindow: " +
                     std::to_string(childSurfaceNode->NeedDrawBehindWindow());

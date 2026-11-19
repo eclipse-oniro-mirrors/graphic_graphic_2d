@@ -73,7 +73,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_RESOLUTION),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SURFACE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_BLACKLIST),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST),
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_CURSOR_MODE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST),
@@ -373,7 +373,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
         code != static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO) &&
         code != static_cast<uint32_t>(
             RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID)) {
-        RS_LOGE("RSClientToServiceConnectionStub::OnRemoteRequest no permission code:%{public}u", code);
+        RS_LOGE("ClientToService no permission code:%{public}u", code);
         return ERR_INVALID_STATE;
     }
     int ret = ERR_NONE;
@@ -603,19 +603,24 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             SetVirtualScreenBlackList(id, blackList);
             break;
         }
-        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST): {
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_CURSOR_MODE): {
             // read the parcel data.
             ScreenId id{INVALID_SCREEN_ID};
-            std::vector<NodeType> typeBlackListVector;
-            if (!data.ReadUint64(id) || !data.ReadUInt8Vector(&typeBlackListVector)) {
-                RS_LOGE("RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST read parcel failed!");
+            uint8_t rawMode = 0;
+            if (!data.ReadUint64(id) || !data.ReadUint8(rawMode)) {
+                RS_LOGE("RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_CURSOR_MODE read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (rawMode >= static_cast<uint8_t>(RSVirtualScreenCursorMode::MODE_MAX)) {
+                RS_LOGE("RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_CURSOR_MODE invalid mode!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
             int32_t repCode = StatusCode::SUCCESS;
-            SetVirtualScreenTypeBlackList(id, typeBlackListVector, repCode);
+            SetVirtualScreenCursorMode(id, static_cast<RSVirtualScreenCursorMode>(rawMode), repCode);
             if (repCode != StatusCode::SUCCESS) {
-                RS_LOGE("RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST fail, "\
+                RS_LOGE("RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_CURSOR_MODE fail, "\
                     "repCode:%{public}d", repCode);
             }
             break;
@@ -3063,7 +3068,9 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 !reply.WriteInt32(globalDirtyRegionInfo.commandCount) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.consumeBufferSize) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.frameAnimationCount) ||
-                !reply.WriteInt32(globalDirtyRegionInfo.mostSendingPidWhenDisplayNodeSkip)) {
+                !reply.WriteInt32(globalDirtyRegionInfo.mostSendingPidWhenDisplayNodeSkip) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.updateCacheSurfaceCount) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.skipCommitFrames)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_GLOBAL_DIRTY_REGION_INFO Write globalDirtyRegionInfo "
                         "failed!");
                 ret = ERR_INVALID_REPLY;
@@ -3075,7 +3082,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             if (!reply.WriteInt32(LayerComposeInfo.uniformRenderFrameNumber) ||
                 !reply.WriteInt32(LayerComposeInfo.offlineComposeFrameNumber) ||
                 !reply.WriteInt32(LayerComposeInfo.redrawFrameNumber) ||
-                !reply.WriteInt32(LayerComposeInfo.drawImageNumber)) {
+                !reply.WriteInt32(LayerComposeInfo.drawImageNumber) ||
+                !reply.WriteInt32(LayerComposeInfo.directCompositionFrameNumber)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_LAYER_COMPOSE_INFO Write LayerComposeInfo failed!");
                 ret = ERR_INVALID_REPLY;
             }

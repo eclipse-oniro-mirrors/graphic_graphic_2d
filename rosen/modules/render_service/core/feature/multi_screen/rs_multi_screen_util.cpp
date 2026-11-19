@@ -68,41 +68,21 @@ void RSMultiScreenUtil::HandleMirrorDisplay(
         return;
     }
 
-    const auto& screenProperty = screenParams->GetScreenProperty();
-    uniParam->SetSecurityDisplay(params.IsSecurityDisplay());
-    drawable.currentBlackList_ = RSSpecialLayerUtils::GetMergeBlackListInRenderThread(screenProperty);
-    RSUniRenderThread::Instance().SetBlackList(drawable.currentBlackList_);
     drawable.curVisibleRect_ = RSUniRenderThread::Instance().GetVisibleRect();
     drawable.enableVisibleRect_ = RSUniRenderThread::Instance().GetEnableVisibleRect();
 
-    if (params.GetCompositeType() == CompositeType::UNI_RENDER_COMPOSITE) {
+    bool isWiredScreen = params.GetCompositeType() == CompositeType::UNI_RENDER_COMPOSITE;
+    auto state = RSSpecialLayerUtils::BuildSpecialLayerRenderParam(*screenParams, params, isWiredScreen);
+    uniParam->GetMutableSpecialLayerRenderParam() = state;
+    if (isWiredScreen) {
         RSMultiScreenUtil::DrawPhysicalMirrorDisplay(drawable, params, processor);
-        drawable.lastBlackList_ = drawable.currentBlackList_;
-        drawable.lastEnableVisibleRect_ = drawable.enableVisibleRect_;
-        drawable.lastVisibleRect_ = drawable.curVisibleRect_;
-        uniParam->SetSecurityDisplay(false);
-        RSUniRenderThread::Instance().SetBlackList({});
-        return;
+    } else {
+        RSMultiScreenUtil::DrawVirtualMirrorDisplay(drawable, params, processor);
     }
-
-    drawable.currentTypeBlackList_ = screenProperty.GetTypeBlackList();
-    RSUniRenderThread::Instance().SetTypeBlackList(drawable.currentTypeBlackList_);
-    RSUniRenderThread::Instance().SetWhiteList(screenProperty.GetWhiteList());
-    drawable.curSecExemption_ = params.GetSecurityExemption();
-    uniParam->SetSecExemption(drawable.curSecExemption_);
-
-    RSMultiScreenUtil::DrawVirtualMirrorDisplay(drawable, params, processor);
-
+    drawable.lastSpecialLayerRenderParam_ = std::move(state);
     drawable.lastEnableVisibleRect_ = drawable.enableVisibleRect_;
     drawable.lastVisibleRect_ = drawable.curVisibleRect_;
-    drawable.lastTypeBlackList_ = drawable.currentTypeBlackList_;
-    drawable.lastSecExemption_ = drawable.curSecExemption_;
-    uniParam->SetSecurityDisplay(false);
-    drawable.lastBlackList_ = drawable.currentBlackList_;
-    RSUniRenderThread::Instance().SetBlackList({});
-    RSUniRenderThread::Instance().SetTypeBlackList({});
-    RSUniRenderThread::Instance().SetWhiteList({});
-    uniParam->SetSecExemption(false);
+    uniParam->GetMutableSpecialLayerRenderParam().Clear();
 }
 
 void RSMultiScreenUtil::HandleVirtualExtendDisplay(
@@ -135,24 +115,11 @@ void RSMultiScreenUtil::HandleVirtualExtendDisplay(
         return;
     }
 
-    const auto& screenProperty = screenParams->GetScreenProperty();
-    uniParam->SetSecurityDisplay(params.IsSecurityDisplay());
-    drawable.currentBlackList_ = RSSpecialLayerUtils::GetMergeBlackListInRenderThread(screenProperty);
-    RSUniRenderThread::Instance().SetBlackList(drawable.currentBlackList_);
-    RSUniRenderThread::Instance().SetTypeBlackList(screenProperty.GetTypeBlackList());
-    RSUniRenderThread::Instance().SetWhiteList(screenProperty.GetWhiteList());
-    drawable.curSecExemption_ = params.GetSecurityExemption();
-    uniParam->SetSecExemption(drawable.curSecExemption_);
-
+    auto state = RSSpecialLayerUtils::BuildSpecialLayerRenderParam(*screenParams, params, false);
+    uniParam->GetMutableSpecialLayerRenderParam() = state;
     RSMultiScreenUtil::DrawVirtualExtend(drawable, params, virtualProcessor);
-
-    drawable.lastSecExemption_ = drawable.curSecExemption_;
-    uniParam->SetSecurityDisplay(false);
-    drawable.lastBlackList_ = drawable.currentBlackList_;
-    RSUniRenderThread::Instance().SetBlackList({});
-    RSUniRenderThread::Instance().SetTypeBlackList({});
-    RSUniRenderThread::Instance().SetWhiteList({});
-    uniParam->SetSecExemption(false);
+    drawable.lastSpecialLayerRenderParam_ = std::move(state);
+    uniParam->GetMutableSpecialLayerRenderParam().Clear();
 }
 
 void RSMultiScreenUtil::HandleMirrorScreen(
@@ -370,7 +337,7 @@ void RSMultiScreenUtil::DrawPhysicalMirrorDisplay(
     const auto& specialLayerMgr = mirrorSourceDisplayParams->GetSpecialLayerMgr();
     bool needProcessSecLayer = !MultiScreenParam::IsExternalScreenSecure() &&
         specialLayerMgr.Find(SpecialLayerType::HAS_SECURITY);
-    const auto& currentBlackList = drawable.currentBlackList_;
+    const auto& currentBlackList = RSUniRenderThread::Instance().GetBlackList();
     bool hasProtected = specialLayerMgr.Find(SpecialLayerType::HAS_PROTECTED);
     bool hasSpecialLayer = mirrorSourceScreenParams->GetHDRPresent() || needProcessSecLayer ||
         !currentBlackList.empty() || hasProtected;
@@ -580,7 +547,6 @@ void RSMultiScreenUtil::DrawPhysicalMirrorRebuild(
     RSUniRenderUtil::SwitchColorFilter(*curCanvas, 1.f, displayP3Enable);
 
     uniParam->SetOpDropped(isOpDropped);
-    RSUniRenderThread::Instance().SetBlackList({});
     curCanvas->Restore();
     rsDirtyRectsDfx.OnDrawVirtual(*curCanvas);
     if (specialLayerMgr.Find(SpecialLayerType::HAS_PROTECTED)) {
@@ -978,7 +944,12 @@ void RSMultiScreenUtil::DrawVirtualExtend(
                 __func__);
         }
         // Note: FinishOffscreenRender is not needed here since we're not drawing back to a single canvas
+        if (drawable.canvasBackup_ != nullptr) {
+            drawable.curCanvas_ = drawable.canvasBackup_;
+        }
         drawable.canvasBackup_ = nullptr;
+        drawable.offscreenCanvas_ = nullptr;
+        drawable.offscreenSurface_ = nullptr;
     } else if (screenParam->GetHDRPresent()) {
         RS_LOGD("RSMultiScreenUtil::%{public}s HDRCast isHDREnabledVirtualScreen true", __func__);
         canvas->SetHDREnabledVirtualScreen(true);

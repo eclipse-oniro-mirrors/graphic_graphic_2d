@@ -45,7 +45,7 @@ enum class ScreenPropertyType : uint32_t {
     VISIBLE_RECT_OPTION,
     WHITE_LIST,
     BLACK_LIST,
-    TYPE_BLACK_LIST,
+    CURSOR_RENDER_MODE, // value is RSVirtualScreenCursorMode, slot kept for protocol stability
     SECURITY_EXEMPTION_LIST,
     SECURITY_MASK,
     ENABLE_SKIP_WINDOW,
@@ -120,8 +120,8 @@ DECLARE_PROPERTY_TYPE(ScreenPropertyType::VISIBLE_RECT_OPTION,
     visibleRectValType, visibleRectValType(false, Rect(), false));
 DECLARE_PROPERTY_TYPE(ScreenPropertyType::WHITE_LIST, std::unordered_set<NodeId>, std::unordered_set<NodeId>());
 DECLARE_PROPERTY_TYPE(ScreenPropertyType::BLACK_LIST, std::unordered_set<NodeId>, std::unordered_set<NodeId>());
-DECLARE_PROPERTY_TYPE(ScreenPropertyType::TYPE_BLACK_LIST,
-    std::unordered_set<NodeType>, std::unordered_set<NodeType>());
+DECLARE_PROPERTY_TYPE(ScreenPropertyType::CURSOR_RENDER_MODE, uint8_t,
+    static_cast<uint8_t>(RSVirtualScreenCursorMode::DEFAULT));
 DECLARE_PROPERTY_TYPE(ScreenPropertyType::SECURITY_EXEMPTION_LIST, std::vector<NodeId>, std::vector<NodeId>());
 DECLARE_PROPERTY_TYPE(ScreenPropertyType::SECURITY_MASK, std::shared_ptr<Media::PixelMap>, nullptr);
 DECLARE_PROPERTY_TYPE(ScreenPropertyType::ENABLE_SKIP_WINDOW, bool, false);
@@ -239,7 +239,7 @@ public:
     bool IsVisibleRectSupportRotation() const;
     std::unordered_set<NodeId> GetWhiteList() const;
     std::unordered_set<NodeId> GetBlackList() const;
-    std::unordered_set<NodeType> GetTypeBlackList() const;
+    RSVirtualScreenCursorMode GetCursorMode() const;
     std::vector<NodeId> GetSecurityExemptionList() const;
     std::shared_ptr<Media::PixelMap> GetSecurityMask() const;
     bool EnableSkipWindow() const;

@@ -26,7 +26,9 @@
 #include "common/rs_rect.h"
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
+#include "drawable/rs_filter_drawable.h"
 #include "feature/hdr/rs_colorspace_util.h"
+#include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 #ifdef RS_MEMORY_INFO_MANAGER
 #include "feature/memory_info_manager/rs_memory_info_manager.h"
 #endif
@@ -317,10 +319,9 @@ void RSSurfaceRenderNode::UpdateInfoForClonedNode(bool isClonedNode)
     if (needCacheSurface) {
         SetNeedCacheSurface(!IsRelatedSourceNode());
         SetHwcChildrenDisabledState();
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " children disabled by isCloneNode",
-            GetName().c_str(), GetId());
-        HwcDisabledReasonCollection::GetInstance().UpdateHwcDisabledReasonForDFX(GetId(),
-            HwcDisabledReasons::DISABLED_BY_IS_CLONE_NODE, GetName());
+        HwcDisabledReasonCollection::GetInstance().RecordHwcDisabledWithTrace(GetId(),
+            HwcDisabledReasons::DISABLED_BY_IS_CLONE_NODE, GetName(),
+            "children disabled by isCloneNode");
     }
     SetIsCloned(isClonedNode);
 }
@@ -2858,8 +2859,9 @@ void RSSurfaceRenderNode::SetHwcChildrenDisabledState()
                 continue;
             }
             hwcNodePtr->SetHardwareForcedDisabledState(true);
-            RS_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by parent",
-                hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
+            HwcDisabledReasonCollection::GetInstance().RecordHwcDisabledWithTrace(hwcNodePtr->GetId(),
+                HwcDisabledReasons::DISABLED_BY_UIFIRST, hwcNodePtr->GetName(),
+                "disabled by parent");
         }
     };
     TraverseHwcNodes(GetChildHardwareEnabledNodes());
@@ -3893,7 +3895,8 @@ void RSSurfaceRenderNode::CalDrawBehindWindowRegion()
         "RSSurfaceRenderNode::CalDrawBehindWindowRegion: Id: %{public}" PRIu64 ", BehindWindowRegion: %{public}s",
         GetId(), region.ToString().c_str());
     drawBehindWindowRegion_ = region;
-    auto filterDrawable = GetFilterDrawable(false);
+    auto filterDrawable = std::static_pointer_cast<DrawableV2::RSBackgroundFilterDrawable>(
+        GetFilterDrawable(RSDrawableSlot::BACKGROUND_FILTER));
     if (!filterDrawable) {
         return;
     }

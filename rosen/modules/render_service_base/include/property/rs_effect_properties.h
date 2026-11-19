@@ -412,6 +412,10 @@ public:
     void SetForegroundNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& filter);
     std::shared_ptr<RSNGRenderFilterBase> GetForegroundNGFilter() const;
 
+    // ignorePropertiesContentDirty_
+    bool IgnorePropertiesContentDirty() const;
+    void SetIgnorePropertiesContentDirty(bool ignore);
+
     // foregroundEffectRadius_
     void SetForegroundEffectRadius(float foregroundEffectRadius);
     float GetForegroundEffectRadius() const;
@@ -802,6 +806,8 @@ private:
     std::unique_ptr<BlenderEffectParams> blenderEffect_ = nullptr;
     std::unique_ptr<NodesEffectParams> nodesEffect_ = nullptr;
     std::unique_ptr<DepthEffectParams> depthEffect_ = nullptr;
+
+    bool ignorePropertiesContentDirty_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

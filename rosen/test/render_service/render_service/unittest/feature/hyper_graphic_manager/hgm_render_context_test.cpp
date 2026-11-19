@@ -17,6 +17,7 @@
 
 #include "feature/hyper_graphic_manager/hgm_render_context.h"
 #include "feature/hyper_graphic_manager/rp_hgm_xml_parser.h"
+#include "consumer_surface.h"
 #include "hgm_core.h"
 #include "hgm_frame_rate_manager.h"
 #include "params/rs_render_params.h"
@@ -28,6 +29,7 @@
 #include "screen_manager/public/rs_screen_manager_agent.h"
 #include "screen_manager/rs_screen.h"
 #include "screen_manager/rs_screen_manager.h"
+#include "surface.h"
 #include "transaction/rs_render_to_service_connection.h"
 
 using namespace testing;
@@ -321,6 +323,187 @@ HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForLTPS002, Function 
 }
 
 /**
+ * @tc.name: HandleAdaptiveVsyncConditionForShellAssistantAnco001
+ * @tc.desc: ShellAssistantAnco_ prefix + contains gameNodeName_ suffix → game node on tree
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForShellAssistantAnco001, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "gameNode";
+
+    config.id = 1;
+    config.name = "ShellAssistantAnco_gameNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->SetIsOnTheTree(true);
+    surfaceNode->SetVisibleRegion(Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000}));
+    rsContext->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_TRUE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
+ * @tc.name: HandleAdaptiveVsyncConditionForShellAssistantAnco002
+ * @tc.desc: ShellAssistantAnco_ prefix + gameNodeName_ appears in the middle → game node on tree
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForShellAssistantAnco002, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "gameNode";
+
+    config.id = 1;
+    config.name = "ShellAssistantAnco_prefix_gameNode_suffix";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->SetIsOnTheTree(true);
+    surfaceNode->SetVisibleRegion(Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000}));
+    rsContext->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_TRUE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
+ * @tc.name: HandleAdaptiveVsyncConditionForShellAssistantAnco003
+ * @tc.desc: ShellAssistantAnco_ prefix but doesn't contain gameNodeName_ → not game node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForShellAssistantAnco003, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "gameNode";
+
+    config.id = 1;
+    config.name = "ShellAssistantAnco_otherNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->SetIsOnTheTree(true);
+    surfaceNode->SetVisibleRegion(Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000}));
+    rsContext->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_FALSE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
+ * @tc.name: HandleAdaptiveVsyncConditionForShellAssistantAnco004
+ * @tc.desc: gameNodeName_ empty + ShellAssistantAnco_ prefix → guard prevents match, not game node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForShellAssistantAnco004, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "";
+
+    config.id = 1;
+    config.name = "ShellAssistantAnco_gameNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->SetIsOnTheTree(true);
+    surfaceNode->SetVisibleRegion(Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000}));
+    rsContext->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_FALSE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
+ * @tc.name: HandleAdaptiveVsyncConditionForShellAssistantAnco005
+ * @tc.desc: no ShellAssistantAnco_ prefix, contains gameNodeName_ substring but not exact match → not game node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForShellAssistantAnco005, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "gameNode";
+
+    config.id = 1;
+    config.name = "OtherPrefix_gameNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->SetIsOnTheTree(true);
+    surfaceNode->SetVisibleRegion(Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000}));
+    rsContext->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_FALSE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
+ * @tc.name: HandleAdaptiveVsyncConditionForEmptyVisibleRegion
+ * @tc.desc: test self-drawing node is skipped when its app node has empty visible region
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, HandleAdaptiveVsyncConditionForEmptyVisibleRegion, Function | SmallTest | Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    hgmRenderContext.isAdaptive_.store(SupportASStatus::SUPPORT_AS);
+    hgmRenderContext.gameNodeName_ = "gameNode";
+
+    config.id = 1;
+    config.name = "ShellAssistantAnco_gameNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto gameNode = std::make_shared<RSSurfaceRenderNode>(config);
+    gameNode->SetIsOnTheTree(true);
+    rsContext->GetMutableNodeMap().RegisterRenderNode(gameNode);
+
+    NodeId appNodeId = 2;
+    config.id = appNodeId;
+    config.name = "appNode";
+    config.nodeType = RSSurfaceNodeType::DEFAULT;
+    auto appNode = std::make_shared<RSSurfaceRenderNode>(config);
+    appNode->SetIsOnTheTree(true);
+    rsContext->GetMutableNodeMap().RegisterRenderNode(appNode);
+
+    config.id = 3;
+    config.name = "otherAppSelfNode";
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto selfNode = std::make_shared<RSSurfaceRenderNode>(config);
+    selfNode->SetIsOnTheTree(true, appNodeId);
+    rsContext->GetMutableNodeMap().RegisterRenderNode(selfNode);
+
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_TRUE(hgmRenderContext.isGameNodeOnTree_.load());
+
+    auto visibleRegion = Occlusion::Region(Occlusion::Rect{0, 0, 1000, 1000});
+    appNode->SetVisibleRegion(visibleRegion);
+    hgmRenderContext.HandleAdaptiveVsyncCondition(rsContext);
+    EXPECT_FALSE(hgmRenderContext.isGameNodeOnTree_.load());
+}
+
+/**
  * @tc.name: SetServiceToProcessInfoTest
  * @tc.desc: test HgmRenderContext.SetServiceToProcessInfo
  * @tc.type: FUNC
@@ -542,5 +725,86 @@ HWTEST_F(HgmRenderContextTest, ShowRefreshRateChangeProcessTest, TestSize.Level1
     EXPECT_FALSE(mgr.GetShowRefreshRateEnabled());
     HgmRenderContext::ShowRefreshRateChangeProcess(propKey.c_str(), initial ? "1" : "0", nullptr);
     EXPECT_EQ(mgr.GetShowRefreshRateEnabled(), initial);
+}
+
+/**
+ * @tc.name: UpdateSurfaceData_LtpoConfig
+ * @tc.desc: Test UpdateSurfaceData with different adapterLtpoConfig_ scenarios
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, UpdateSurfaceData_LtpoConfig, TestSize.Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto savedAdapterLtpoConfig = hgmRenderContext.adapterLtpoConfig_;
+    auto savedSurfaceData = hgmRenderContext.surfaceData_;
+
+    RSSurfaceRenderNodeConfig config;
+    config.id = 1;
+    config.name = "testSurface";
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+
+    sptr<IConsumerSurface> csurf = IConsumerSurface::Create("testSurface");
+    csurf->SetSurfaceSourceType(OHSurfaceSource::OH_SURFACE_SOURCE_DEFAULT);
+    csurf->SetSurfaceAppFrameworkType("webview");
+
+    auto surfaceHandler = std::make_shared<RSSurfaceHandler>(config.id);
+    surfaceHandler->SetConsumer(csurf);
+
+    // Branch 1: adapterLtpoConfig_ is empty, iter == end, data should be added
+    hgmRenderContext.adapterLtpoConfig_.clear();
+    hgmRenderContext.surfaceData_.clear();
+    hgmRenderContext.UpdateSurfaceData(surfaceHandler, surfaceNode);
+    ASSERT_EQ(hgmRenderContext.surfaceData_.size(), 1);
+
+    // Branch 2: config key does not match fwkType, iter == end, data should be added
+    hgmRenderContext.adapterLtpoConfig_ = { { "webview", "ENABLE" } };
+    hgmRenderContext.surfaceData_.clear();
+    csurf->SetSurfaceAppFrameworkType("not_match_key");
+    hgmRenderContext.UpdateSurfaceData(surfaceHandler, surfaceNode);
+    ASSERT_EQ(hgmRenderContext.surfaceData_.size(), 1);
+
+    // Branch 3: config key matches but value is "DISABLE", iter != end, data not added
+    hgmRenderContext.adapterLtpoConfig_ = { { "webview", "DISABLE" } };
+    hgmRenderContext.surfaceData_.clear();
+    csurf->SetSurfaceAppFrameworkType("webview_test");
+    hgmRenderContext.UpdateSurfaceData(surfaceHandler, surfaceNode);
+    ASSERT_TRUE(hgmRenderContext.surfaceData_.empty());
+
+    // Branch 4: config key matches and value is "ENABLE", iter != end, disableLtpo == false, data not added
+    hgmRenderContext.adapterLtpoConfig_ = { { "webview", "ENABLE" } };
+    hgmRenderContext.surfaceData_.clear();
+    hgmRenderContext.UpdateSurfaceData(surfaceHandler, surfaceNode);
+    ASSERT_TRUE(hgmRenderContext.surfaceData_.empty());
+
+    hgmRenderContext.adapterLtpoConfig_ = savedAdapterLtpoConfig;
+    hgmRenderContext.surfaceData_ = savedSurfaceData;
+}
+
+/**
+ * @tc.name: SetAdapterLtpoConfig_Basic
+ * @tc.desc: Test SetAdapterLtpoConfig can be triggered once with assertion
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmRenderContextTest, SetAdapterLtpoConfig_Basic, TestSize.Level1)
+{
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRenderContext hgmRenderContext(renderToServiceConnection);
+    auto savedAdapterLtpoConfig = hgmRenderContext.adapterLtpoConfig_;
+    auto savedSurfaceData = hgmRenderContext.surfaceData_;
+
+    std::unordered_map<std::string, std::string> config = {
+        { "key1", "value1" }, { "key2", "value2" }
+    };
+    hgmRenderContext.SetAdapterLtpoConfig(config);
+
+    EXPECT_EQ(hgmRenderContext.adapterLtpoConfig_.size(), config.size());
+    EXPECT_EQ(hgmRenderContext.adapterLtpoConfig_["key1"], "value1");
+    EXPECT_EQ(hgmRenderContext.adapterLtpoConfig_["key2"], "value2");
+
+    hgmRenderContext.adapterLtpoConfig_ = savedAdapterLtpoConfig;
+    hgmRenderContext.surfaceData_ = savedSurfaceData;
 }
 } // namespace OHOS::Rosen

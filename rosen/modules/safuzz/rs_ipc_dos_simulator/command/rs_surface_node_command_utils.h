@@ -24,8 +24,8 @@ namespace OHOS {
 namespace Rosen {
 class RSSurfaceNodeCommandUtils {
 public:
-    ADD_RANDOM_COMMAND_WITH_PARAM_3(RSSurfaceNodeCreate, Uint64, RSSurfaceNodeType, Bool);
-    ADD_RANDOM_COMMAND_WITH_PARAM_4(RSSurfaceNodeCreateWithConfig, Uint64, String, Uint8, SurfaceWindowType);
+    ADD_RANDOM_COMMAND_WITH_PARAM_4(RSSurfaceNodeCreate, Uint64, RSSurfaceNodeType, Bool, Uint64);
+    ADD_RANDOM_COMMAND_WITH_PARAM_5(RSSurfaceNodeCreateWithConfig, Uint64, String, Uint8, SurfaceWindowType, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetContextMatrix, Uint64, OptionalDrawingMatrix);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetContextAlpha, Uint64, Float);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetContextClipRegion, Uint64, OptionalDrawingRect);
@@ -51,7 +51,9 @@ public:
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeDetachToDisplay, Uint64, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSurfaceNodeSetSurfaceId, Uint64, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSurfaceNodeSetLeashPersistentId, Uint64, Uint64);
+#ifndef ROSEN_CROSS_PLATFORM
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetColorSpace, Uint64, GraphicColorGamut);
+#endif
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetForeground, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetForceUIFirst, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetAncoFlags, Uint64, Uint32);

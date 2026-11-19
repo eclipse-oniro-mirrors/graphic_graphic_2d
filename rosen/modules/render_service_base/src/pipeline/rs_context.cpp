@@ -60,6 +60,23 @@ bool RSContext::HasActiveNode(const std::shared_ptr<RSRenderNode>& node)
     return activeNodesInRoot_[rootNodeId].count(node->GetId()) > 0;
 }
 
+void RSContext::AddDirtyDisplayNode(NodeId displayNodeId)
+{
+    if (displayNodeId == INVALID_NODEID) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(activeNodesInRootMutex_);
+    dirtyDisplayNodes_.insert(displayNodeId);
+}
+
+std::unordered_set<NodeId> RSContext::GetAndClearDirtyDisplayNodes()
+{
+    std::lock_guard<std::mutex> lock(activeNodesInRootMutex_);
+    std::unordered_set<NodeId> dirtyDisplayNodes;
+    dirtyDisplayNodes.swap(dirtyDisplayNodes_);
+    return dirtyDisplayNodes;
+}
+
 int32_t RSContext::SetBrightnessInfoChangeCallback(pid_t remotePid,
     const sptr<RSIBrightnessInfoChangeCallback>& callback)
 {
@@ -142,6 +159,22 @@ void RSContext::DestroyUIRenderDirector(pid_t pid, uint64_t token)
     if (pidIt->second.empty()) {
         uiRenderDirectors_.erase(pid);
     }
+}
+
+bool RSContext::IsSceneBoardToken(pid_t pid, uint64_t token) const
+{
+    std::lock_guard<std::mutex> lock(uiRenderDirectorsMutex_);
+    auto pidIt = uiRenderDirectors_.find(pid);
+    if (pidIt == uiRenderDirectors_.end()) {
+        return false;
+    }
+    // Process identity: any marked instance of this pid counts; mirror flags stay untouched.
+    for (const auto& [_, director] : pidIt->second) {
+        if (director->IsSceneBoard()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void RSContext::SetClearMoment(ClearMemoryMoment moment)

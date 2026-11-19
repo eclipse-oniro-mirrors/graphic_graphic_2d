@@ -307,4 +307,104 @@ HWTEST_F(GpuDirtyRegionCollectionTest, GetMostSendingPidWhenDisplayNodeSkip001, 
     auto res2 = gpuDirtyRegionCollection->GetMostSendingPidWhenDisplayNodeSkip();
     EXPECT_TRUE(res2 == 1);
 }
+
+/**
+ * @tc.name: AddUpdateCacheSurfaceCountForDFX001
+ * @tc.desc: AddUpdateCacheSurfaceCountForDFX increments updateCacheSurfaceCount
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GpuDirtyRegionCollectionTest, AddUpdateCacheSurfaceCountForDFX001, TestSize.Level1)
+{
+    std::shared_ptr<GpuDirtyRegionCollection> gpuDirtyRegionCollection = std::make_shared<GpuDirtyRegionCollection>();
+    ASSERT_NE(gpuDirtyRegionCollection, nullptr);
+    EXPECT_EQ(gpuDirtyRegionCollection->globalDirtyRegionInfo_.updateCacheSurfaceCount, 0);
+
+    gpuDirtyRegionCollection->AddUpdateCacheSurfaceCountForDFX();
+    EXPECT_EQ(gpuDirtyRegionCollection->globalDirtyRegionInfo_.updateCacheSurfaceCount, 1);
+
+    gpuDirtyRegionCollection->AddUpdateCacheSurfaceCountForDFX();
+    EXPECT_EQ(gpuDirtyRegionCollection->globalDirtyRegionInfo_.updateCacheSurfaceCount, 2);
+}
+
+/**
+ * @tc.name: AddSkipCommitFramesForDFX001
+ * @tc.desc: AddSkipCommitFramesForDFX increments skipCommitFrames
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GpuDirtyRegionCollectionTest, AddSkipCommitFramesForDFX001, TestSize.Level1)
+{
+    std::shared_ptr<GpuDirtyRegionCollection> gpuDirtyRegionCollection = std::make_shared<GpuDirtyRegionCollection>();
+    ASSERT_NE(gpuDirtyRegionCollection, nullptr);
+    EXPECT_EQ(gpuDirtyRegionCollection->globalDirtyRegionInfo_.skipCommitFrames, 0);
+
+    gpuDirtyRegionCollection->AddSkipCommitFramesForDFX();
+    EXPECT_EQ(gpuDirtyRegionCollection->globalDirtyRegionInfo_.skipCommitFrames, 1);
+
+    gpuDirtyRegionCollection->AddSkipCommitFramesForDFX();
+    EXPECT_EQ(gpuDirtyRegionCollection->globalDirtyRegionInfo_.skipCommitFrames, 2);
+}
+
+/**
+ * @tc.name: GetGlobalDirtyRegionInfo002
+ * @tc.desc: GetGlobalDirtyRegionInfo returns updateCacheSurfaceCount and skipCommitFrames fields
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GpuDirtyRegionCollectionTest, GetGlobalDirtyRegionInfo002, TestSize.Level1)
+{
+    std::shared_ptr<GpuDirtyRegionCollection> gpuDirtyRegionCollection = std::make_shared<GpuDirtyRegionCollection>();
+    ASSERT_NE(gpuDirtyRegionCollection, nullptr);
+
+    constexpr int32_t EXPECTED_CACHE_COUNT = 3;
+    constexpr int32_t EXPECTED_SKIP_COUNT = 2;
+    for (int32_t i = 0; i < EXPECTED_CACHE_COUNT; i++) {
+        gpuDirtyRegionCollection->AddUpdateCacheSurfaceCountForDFX();
+    }
+    for (int32_t i=0; i<EXPECTED_SKIP_COUNT; i++) {
+        gpuDirtyRegionCollection->AddSkipCommitFramesForDFX();
+    }
+
+    auto info = gpuDirtyRegionCollection->GetGlobalDirtyRegionInfo();
+    EXPECT_EQ(info.updateCacheSurfaceCount, EXPECTED_CACHE_COUNT);
+    EXPECT_EQ(info.skipCommitFrames, EXPECTED_SKIP_COUNT);
+}
+
+/**
+ * @tc.name: GlobalDirtyRegionInfoOperatorAdd001
+ * @tc.desc: GlobalDirtyRegionInfo operator+= accumulates updateCacheSurfaceCount and skipCommitFrames
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GpuDirtyRegionCollectionTest, GlobalDirtyRegionInfoOperatorAdd001, TestSize.Level1)
+{
+    constexpr int64_t AREA_1 = 100;
+    constexpr int64_t AREA_2 = 200;
+    constexpr int32_t FRAMES_1 = 1;
+    constexpr int32_t FRAMES_2 = 2;
+    constexpr int32_t SKIP_1 = 1;
+    constexpr int32_t SKIP_2 = 3;
+    constexpr int32_t CMD_1 = 5;
+    constexpr int32_t CMD_2 = 7;
+    constexpr int32_t BUF_1 = 10;
+    constexpr int32_t BUF_2 = 20;
+    constexpr int32_t ANIM_1 = 1;
+    constexpr int32_t ANIM_2 = 4;
+    constexpr pid_t PID_1 = 100;
+    constexpr pid_t PID_2 = 200;
+    constexpr int32_t CACHE_1 = 3;
+    constexpr int32_t CACHE_2 = 5;
+    constexpr int32_t SKIP_COMMIT_1 = 2;
+    constexpr int32_t SKIP_COMMIT_2 = 6;
+
+    GlobalDirtyRegionInfo lhs(AREA_1, FRAMES_1, SKIP_1, CMD_1, BUF_1, ANIM_1, PID_1, CACHE_1, SKIP_COMMIT_1);
+    GlobalDirtyRegionInfo rhs(AREA_2, FRAMES_2, SKIP_2, CMD_2, BUF_2, ANIM_2, PID_2, CACHE_2, SKIP_COMMIT_2);
+    lhs += rhs;
+    
+    EXPECT_EQ(lhs.updateCacheSurfaceCount, CACHE_1 + CACHE_2);
+    EXPECT_EQ(lhs.skipCommitFrames, SKIP_COMMIT_1 + SKIP_COMMIT_2);
+    EXPECT_EQ(lhs.globalFramesNumber, FRAMES_1 + FRAMES_2);
+    EXPECT_EQ(lhs.globalDirtyRegionAreas, AREA_1 + AREA_2);
+}
 } // namespace OHOS::Rosen

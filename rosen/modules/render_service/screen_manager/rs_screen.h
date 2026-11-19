@@ -30,6 +30,10 @@
 #include "rs_screen_thread_safe_property.h"
 
 #include "ipc_callbacks/screen_supported_hdr_formats_callback.h"
+#ifdef RS_MULTI_DISPLAY_FEATURES
+#include "rs_multi_display_screen_interpolation_helper.h"
+#include "rs_multi_display_feature_param.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
@@ -164,8 +168,8 @@ public:
     void AddBlackList(const std::vector<NodeId>& blackList);
     void RemoveBlackList(const std::vector<NodeId>& blackList);
 
-    // type blacklist
-    void SetTypeBlackList(const std::unordered_set<uint8_t>& typeBlackList);
+    // cursor rendering switches on a virtual screen
+    void SetCursorMode(RSVirtualScreenCursorMode mode);
 
     // post processing shader
     void SetPostProcessingShader(const std::vector<uint8_t>& param);
@@ -201,6 +205,9 @@ private:
     void PhysicalScreenInit() noexcept;
     void ScreenCapabilityInit() noexcept;
     void VirtualScreenInit() noexcept;
+#ifdef RS_MULTI_DISPLAY_FEATURES
+    void InterpolationFeatureInit() noexcept;
+#endif
     void InitDisplayPropertyForHardCursor();
     void WriteHisyseventEpsLcdInfo(GraphicDisplayModeInfo& activeMode);
     bool CalculateMaskRectAndReviseRect(const Rect& activeRect, Rect& reviseRect, RectI& maskRect);
@@ -240,6 +247,9 @@ private:
     std::vector<ScreenHDRFormat> supportedPhysicalHDRFormats_;
     mutable std::mutex supportedPhysicalHDRFormatsMutex_;
     std::mutex surfaceConfigsMutex_;
+    // Serialize SetActiveMode to prevent concurrent mode switches from racing on
+    // HDI calls, supportedModes_ reads and property_ state transitions.
+    std::mutex activeModeMutex_;
     bool specialHDRFormatsInit_ = false;
 
     static std::map<GraphicColorGamut, GraphicCM_ColorSpaceType> RS_TO_COMMON_COLOR_SPACE_TYPE_MAP;
@@ -255,6 +265,9 @@ private:
 
     OnPropertyChangeCallback onPropertyChange_;
     RSScreenThreadSafeProperty property_;
+#ifdef RS_MULTI_DISPLAY_FEATURES
+    std::unique_ptr<RSMultiDisplayScreenInterpolationHelper> interpolationHelper_ = nullptr;
+#endif
 };
 } // namespace Rosen
 } // namespace OHOS

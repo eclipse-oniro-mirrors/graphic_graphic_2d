@@ -238,12 +238,11 @@ RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::RemoveBlackList(
     return { ScreenPropertyType::BLACK_LIST, prop };
 }
 
-RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetTypeBlackList(
-    const std::unordered_set<uint8_t>& typeBlackList)
+RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetCursorMode(RSVirtualScreenCursorMode mode)
 {
     UniqueLock lock(propertyMutex_);
-    auto prop = property_->Set<ScreenPropertyType::TYPE_BLACK_LIST>(typeBlackList);
-    return { ScreenPropertyType::TYPE_BLACK_LIST, prop };
+    auto prop = property_->Set<ScreenPropertyType::CURSOR_RENDER_MODE>(static_cast<uint8_t>(mode));
+    return { ScreenPropertyType::CURSOR_RENDER_MODE, prop };
 }
 
 RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetSecurityExemptionList(
@@ -634,10 +633,10 @@ std::unordered_set<uint64_t> RSScreenThreadSafeProperty::GetBlackList() const
     return property_->GetBlackList();
 }
 
-std::unordered_set<uint8_t> RSScreenThreadSafeProperty::GetTypeBlackList() const
+RSVirtualScreenCursorMode RSScreenThreadSafeProperty::GetCursorMode() const
 {
     SharedLock lock(propertyMutex_);
-    return property_->GetTypeBlackList();
+    return property_->GetCursorMode();
 }
 
 std::vector<uint64_t> RSScreenThreadSafeProperty::GetSecurityExemptionList() const

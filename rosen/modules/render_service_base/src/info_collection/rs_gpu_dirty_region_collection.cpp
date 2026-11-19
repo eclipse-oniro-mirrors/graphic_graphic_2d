@@ -104,6 +104,22 @@ void GpuDirtyRegionCollection::AddFrameAnimationNumberForDFX()
 // LCOV_EXCL_STOP
 
 // LCOV_EXCL_START
+void GpuDirtyRegionCollection::AddUpdateCacheSurfaceCountForDFX()
+{
+    std::lock_guard<std::mutex> lock(globalMtx_);
+    ++globalDirtyRegionInfo_.updateCacheSurfaceCount;
+}
+// LCOV_EXCL_STOP
+
+// LCOV_EXCL_START
+void GpuDirtyRegionCollection::AddSkipCommitFramesForDFX()
+{
+    std::lock_guard<std::mutex> lock(globalMtx_);
+    ++globalDirtyRegionInfo_.skipCommitFrames;
+}
+// LCOV_EXCL_STOP
+
+// LCOV_EXCL_START
 std::vector<ActiveDirtyRegionInfo> GpuDirtyRegionCollection::GetActiveDirtyRegionInfo() const
 {
     std::lock_guard<std::mutex> lock(activeMtx_);
@@ -133,6 +149,8 @@ GlobalDirtyRegionInfo GpuDirtyRegionCollection::GetGlobalDirtyRegionInfo() const
     globalDirtyRegionInfo.commandCount = globalDirtyRegionInfo_.commandCount;
     globalDirtyRegionInfo.consumeBufferSize = globalDirtyRegionInfo_.consumeBufferSize;
     globalDirtyRegionInfo.frameAnimationCount = globalDirtyRegionInfo_.frameAnimationCount;
+    globalDirtyRegionInfo.updateCacheSurfaceCount = globalDirtyRegionInfo_.updateCacheSurfaceCount;
+    globalDirtyRegionInfo.skipCommitFrames = globalDirtyRegionInfo_.skipCommitFrames;
     return globalDirtyRegionInfo;
 }
 // LCOV_EXCL_STOP

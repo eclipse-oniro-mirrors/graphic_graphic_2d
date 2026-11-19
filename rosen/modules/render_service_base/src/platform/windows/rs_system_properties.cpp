@@ -179,6 +179,11 @@ bool RSSystemProperties::GetVirtualExpandScreenSkipEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetHeteroProjectionScreenSkipEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetOcclusionEnabled()
 {
     return {};
@@ -503,7 +508,7 @@ float RSSystemProperties::GetSplitTransactionMaxProcessTimeMs()
 {
     return 2.0f;
 }
- 
+
 size_t RSSystemProperties::GetSplitTransactionCheckInterval()
 {
     return 200;
@@ -849,6 +854,11 @@ uint32_t RSSystemProperties::GetUnmarshalParallelMinDataSize()
     return 0;
 }
 
+bool RSSystemProperties::GetCommandLengthPrefixEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetSceneBoardIsPcMode()
 {
     return false;
@@ -878,7 +888,7 @@ bool RSSystemProperties::GetRebuildSceneEnabled()
 {
     return true;
 }
- 
+
 bool RSSystemProperties::IsRenderNodeRebuildEnabled()
 {
     return false;

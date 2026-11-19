@@ -24,6 +24,7 @@
 #include <sstream>
 #include <string>
 #include <sys/prctl.h>
+#include <v1_0/imemory_tracker_interface.h>
 #include "include/core/SkGraphics.h"
 #include "rs_trace.h"
 #include "cJSON.h"
@@ -122,6 +123,7 @@ uint64_t MemoryManager::memoryWarning_ = UINT64_MAX;
 uint64_t MemoryManager::gpuMemoryControl_ = UINT64_MAX;
 uint64_t MemoryManager::totalMemoryReportTime_ = 0;
 uint64_t MemoryManager::mKernelReportLastTimestamp_ = 0;
+
 
 class RequestUiTreeCallbackImpl : public HiviewDFX::UCollectClient::RequestUiTreeCallback {
 public:
@@ -408,9 +410,6 @@ void MemoryManager::ReleaseUnlockGpuResource(Drawing::GPUContext* gpuContext, st
     gpuContext->PurgeUnlockedResourcesByPid(false, exitedPidSet);
     MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPidSet);
     ErasePidInfo(exitedPidSet);
-    for (pid_t pid : exitedPidSet) {
-        gpuContext->RemoveAbnormalPid(pid);
-    }
 #endif
 }
 
@@ -748,7 +747,24 @@ void MemoryManager::DumpGpuNodeMemory(DfxString& log)
 
 static int64_t MemoryTrackerGetGLByPid(int32_t pid)
 {
-    return pid;
+    using namespace HDI::Memorytracker::V1_0;
+    const int bytePerKb = 1024;
+    sptr<IMemoryTrackerInterface> memtrack = IMemoryTrackerInterface::Get(true);
+    if (memtrack == nullptr) {
+        return 0;
+    }
+    std::vector<MemoryRecord> records;
+    if (memtrack->GetDevMem(pid, MEMORY_TRACKER_TYPE_GL, records) != HDF_SUCCESS) {
+        return 0;
+    }
+    auto it = std::find_if(records.begin(), records.end(), [](const auto &record) -> bool {
+        return (static_cast<uint32_t>(record.flags) & FLAG_UNMAPPED) == FLAG_UNMAPPED;
+    });
+    if (it == records.end()) {
+        return 0;
+    }
+    HILOG_DEBUG(LOG_CORE, "MemoryTrackerGetGLByPid(%{public}d) = %{public}" PRId64, pid, it->size);
+    return it->size / bytePerKb;
 }
 
 void MemoryManager::DumpAllGpuInfoNew(DfxString& log, const Drawing::GPUContext* gpuContext,
@@ -1002,6 +1018,15 @@ void MemoryManager::SetGpuMemoryLimit(Drawing::GPUContext* gpuContext)
     }
     gpuContext->InitGpuMemoryLimit(MemoryOverflow, gpuMemoryControl_);  // skia
     gpuContext->InitGpuMemoryInfoStatProc(UpdateGpuInfoFromEngine);     // ddgr
+    gpuContext->InitIsAbnormalProcessProc(IsAbnormalProcessFromEngine);     // ddgr
+}
+
+bool MemoryManager::IsAbnormalProcessFromEngine(pid_t pid)
+{
+    if (pid == 0) {
+        return false;
+    }
+    return MemorySnapshot::Instance().IsAbnormalProcess(pid);
 }
 
 bool MemoryManager::UpdateGpuInfoFromEngine(pid_t pid, size_t memorySize, bool isAdd)
@@ -1175,7 +1200,7 @@ bool MemoryManager::MemoryOverflow(pid_t pid, size_t overflowMemory, bool isGpu)
 bool MemoryManager::MemoryReportAndKill(pid_t pid, MemorySnapshotInfo info, bool isGpu)
 {
     if (pid == 0) {
-        RS_LOGE("MemoryReportAndKill pid=0 cpu[%{public}zu] nativeGpu[%{public}zu] engineGpu[%{public}zu]",
+        RS_LOGE("MemoryReportAndKill pid=0 cpu[%{public}zu] nativeGpu[%{public}zu], engineGpu[%{public}zu]",
             info.cpuMemory, info.nativeGpuMemory, info.engineGpuMemory);
         return false;
     }
@@ -1202,7 +1227,6 @@ bool MemoryManager::MemoryReportAndKill(pid_t pid, MemorySnapshotInfo info, bool
             DumpGpuCache(dfxLog, gpuContext.get(), &processTag, pidName);
             std::string unirenderName = "unirender";
             DumpGpuCache(dfxLog, gpuContext.get(), nullptr, unirenderName);
-            gpuContext->SetAbnormalPid(pid);
         }
     }
     bool quotaBetaStatus = ReadQuotaFile(TELEMETRY_QUOTA_PATH) || IS_BETA;
@@ -1401,7 +1425,7 @@ void MemoryManager::MemoryOverReport(const pid_t pid, const MemorySnapshotInfo& 
         info.bundleName, "CPU_MEMORY", info.cpuMemory, "GPU_MEMORY", info.TotalGpuMemory(),
         "TOTAL_MEMORY", info.TotalMemory(), "MEMINFO_FILEPATH", filePath);
     RS_LOGE("hisysevent writ result=%{public}d, send event [FRAMEWORK,%{public}s], "
-            "pid[%{public}d] bundleName[%{public}s] cpu[%{public}zu] gpu[%{public}zu] total[%{public}zu]",
+        "pid[%{public}d] bundleName[%{public}s] cpu[%{public}zu] gpu[%{public}zu] total[%{public}zu]",
         ret, reportName.c_str(), pid, info.bundleName.c_str(), info.cpuMemory,
         info.TotalGpuMemory(), info.TotalMemory());
 }

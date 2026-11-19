@@ -92,7 +92,8 @@ HWTEST_F(RSScreenPropertyTest, MarshallingTest002, TestSize.Level1)
     ADD_PROP(ScreenPropertyType::VISIBLE_RECT_OPTION, visibleRectValType(false, Rect(), false));
     ADD_PROP(ScreenPropertyType::WHITE_LIST, std::unordered_set<NodeId>());
     ADD_PROP(ScreenPropertyType::BLACK_LIST, std::unordered_set<NodeId>());
-    ADD_PROP(ScreenPropertyType::TYPE_BLACK_LIST, std::unordered_set<NodeType>());
+    ADD_PROP(ScreenPropertyType::CURSOR_RENDER_MODE,
+        static_cast<uint8_t>(RSVirtualScreenCursorMode::DEFAULT));
     ADD_PROP(ScreenPropertyType::SECURITY_EXEMPTION_LIST, std::vector<NodeId>());
     ADD_PROP(ScreenPropertyType::SECURITY_MASK, nullptr);
     ADD_PROP(ScreenPropertyType::ENABLE_SKIP_WINDOW, false);
