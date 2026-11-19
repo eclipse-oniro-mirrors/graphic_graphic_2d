@@ -4371,6 +4371,20 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateVirtualDisplayInfo003, TestSize.Level2)
 
     screenManager_->SetMirrorScreenVisibleRect(id, {0, 0, 720, 1280});  // rect for test
     rsUniRenderVisitor->UpdateVirtualDisplayInfo(*rsDisplayRenderNode);
+
+    // exemptAll true overrides a non-matching exemption list (security layers are {1, 2})
+    rsUniRenderVisitor->curScreenNode_->UpdateScreenProperty(ScreenPropertyType::SECURITY_EXEMPTION_LIST,
+        sptr<ScreenProperty<std::vector<NodeId>>>::MakeSptr(std::vector<NodeId>{9}));  // 9 unmatched id
+    rsUniRenderVisitor->curScreenNode_->UpdateScreenProperty(ScreenPropertyType::SECURITY_EXEMPT_ALL,
+        sptr<ScreenProperty<bool>>::MakeSptr(true));
+    rsUniRenderVisitor->UpdateVirtualDisplayInfo(*rsDisplayRenderNode);
+    EXPECT_TRUE(rsDisplayRenderNode->GetSecurityExemption());
+
+    // exemptAll false falls back to list matching, unmatched list keeps security layer filtered
+    rsUniRenderVisitor->curScreenNode_->UpdateScreenProperty(ScreenPropertyType::SECURITY_EXEMPT_ALL,
+        sptr<ScreenProperty<bool>>::MakeSptr(false));
+    rsUniRenderVisitor->UpdateVirtualDisplayInfo(*rsDisplayRenderNode);
+    EXPECT_FALSE(rsDisplayRenderNode->GetSecurityExemption());
 }
 
 /**

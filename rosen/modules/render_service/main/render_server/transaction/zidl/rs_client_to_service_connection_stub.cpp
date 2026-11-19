@@ -703,7 +703,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             // read the parcel data.
             ScreenId id{INVALID_SCREEN_ID};
             std::vector<NodeId> securityExemptionList;
-            if (!data.ReadUint64(id) || !data.ReadUInt64Vector(&securityExemptionList)) {
+            bool exemptAll{false};
+            if (!data.ReadUint64(id) || !data.ReadUInt64Vector(&securityExemptionList) || !data.ReadBool(exemptAll)) {
                 RS_LOGE(
                     "RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST read parcel failed!");
                 ret = ERR_INVALID_DATA;
@@ -715,7 +716,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            int32_t status = SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+            int32_t status = SetVirtualScreenSecurityExemptionList(id, securityExemptionList, exemptAll);
             if (!reply.WriteInt32(status)) {
                 RS_LOGE(
                     "RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST Write status failed!");

@@ -420,6 +420,7 @@ void DoSetVirtualScreenSecurityExemptionList()
         uint64_t nodeId = GetData<uint64_t>();
         secExemptionListVector.push_back(nodeId);
     }
+    bool exemptAll = GetData<bool>();
     MessageParcel dataP;
     MessageParcel reply;
     MessageOption option;
@@ -431,6 +432,9 @@ void DoSetVirtualScreenSecurityExemptionList()
         return;
     }
     if (!dataP.WriteUInt64Vector(secExemptionListVector)) {
+        return;
+    }
+    if (!dataP.WriteBool(exemptAll)) {
         return;
     }
 

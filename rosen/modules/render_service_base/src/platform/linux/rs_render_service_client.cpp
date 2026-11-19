@@ -499,8 +499,7 @@ int32_t RSRenderServiceClient::GetDisplayIdentificationData(ScreenId id, uint8_t
 }
 
 int32_t RSRenderServiceClient::SetVirtualScreenSecurityExemptionList(
-    ScreenId id,
-    const std::vector<NodeId>& securityExemptionList)
+    ScreenId id, const std::vector<NodeId>& securityExemptionList, bool exemptAll)
 {
     return {};
 }
