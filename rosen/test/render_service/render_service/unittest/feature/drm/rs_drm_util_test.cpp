@@ -123,6 +123,12 @@ public:
     std::shared_ptr<DrawableV2::RSScreenRenderNodeDrawable> CreateScreenDrawable();
     std::shared_ptr<RSSurfaceRenderNode> CreateRecordedDrmNode(const Drawing::Matrix& layerMatrix,
         const Drawing::Matrix& prepareMatrix, const std::shared_ptr<RSScreenRenderNode>& screen);
+    // drmNodes_ is defined in librender_service; populate it through CollectDrmNodes so the test and the
+    // implementation read the same copy, not the inline-static duplicate linked into this executable.
+    void RegisterNode(const std::shared_ptr<RSSurfaceRenderNode>& node);
+
+private:
+    std::vector<NodeId> registeredNodeIds_;
 };
 
 void RSDrmUtilTest::SetUpTestCase()
@@ -137,6 +143,16 @@ void RSDrmUtilTest::SetUp()
 void RSDrmUtilTest::TearDown()
 {
     RSDrmUtil::ClearDrmNodes();
+    for (const auto nodeId : registeredNodeIds_) {
+        RSMainThread::Instance()->GetContext().GetMutableNodeMap().UnregisterRenderNode(nodeId);
+    }
+    registeredNodeIds_.clear();
+}
+
+void RSDrmUtilTest::RegisterNode(const std::shared_ptr<RSSurfaceRenderNode>& node)
+{
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().RegisterRenderNode(node);
+    registeredNodeIds_.push_back(node->GetId());
 }
 
 std::shared_ptr<RSSurfaceRenderNode> RSDrmUtilTest::CreateRecordedDrmNode(const Drawing::Matrix& layerMatrix,
@@ -147,10 +163,12 @@ std::shared_ptr<RSSurfaceRenderNode> RSDrmUtilTest::CreateRecordedDrmNode(const 
         return nullptr;
     }
     node->firstLevelNodeId_ = node->GetId();
+    node->instanceRootNodeId_ = node->GetId();
     node->isOnTheTree_ = true;
     node->SetHwcGlobalPositionEnabled(true);
     node->GetMutableRenderProperties().GetBoundsGeometry()->ReplaceMatrix(layerMatrix, prepareMatrix);
-    RSDrmUtil::drmNodes_[node->GetId()].push_back(node);
+    RegisterNode(node);
+    RSDrmUtil::CollectDrmNodes(node);
     RSDrmUtil::RecordDstRectDisplay(*node, screen);
     return node;
 }
@@ -923,10 +941,16 @@ HWTEST_F(RSDrmUtilTest, UpdateDrmCrossNodeConversion001, TestSize.Level1)
     ASSERT_NE(crossNode, nullptr);
     ASSERT_NE(drmNode, nullptr);
     crossNode->firstLevelNodeId_ = crossNode->GetId();
+    crossNode->isOnTheTree_ = true;
+    crossNode->instanceRootNodeId_ = crossNode->GetId();
+    drmNode->firstLevelNodeId_ = crossNode->GetId();
     drmNode->isOnTheTree_ = true;
+    RegisterNode(crossNode);
+    // the collected node needs a context too, which is only assigned on register
+    RegisterNode(drmNode);
     drmNode->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(drmNode->GetId());
     RSDrmUtil::ClearDrmNodes();
-    RSDrmUtil::drmNodes_[crossNode->GetId()].push_back(drmNode);
+    RSDrmUtil::CollectDrmNodes(drmNode);
 
     const NodeId screenNodeId = GenerateNodeId();
     Drawing::Matrix conversion;
@@ -966,11 +990,22 @@ HWTEST_F(RSDrmUtilTest, UpdateDrmCrossNodeConversion002, TestSize.Level1)
     ASSERT_NE(drmNode, nullptr);
     ASSERT_NE(offTreeDrmNode, nullptr);
     crossNode->firstLevelNodeId_ = crossNode->GetId();
+    crossNode->isOnTheTree_ = true;
+    crossNode->instanceRootNodeId_ = crossNode->GetId();
+    otherNode->firstLevelNodeId_ = otherNode->GetId();
+    otherNode->isOnTheTree_ = true;
+    otherNode->instanceRootNodeId_ = otherNode->GetId();
+    drmNode->firstLevelNodeId_ = otherNode->GetId();
     drmNode->isOnTheTree_ = true;
+    offTreeDrmNode->firstLevelNodeId_ = crossNode->GetId();
     offTreeDrmNode->isOnTheTree_ = false;
+    RegisterNode(crossNode);
+    RegisterNode(otherNode);
+    RegisterNode(drmNode);
+    RegisterNode(offTreeDrmNode);
     RSDrmUtil::ClearDrmNodes();
-    RSDrmUtil::drmNodes_[otherNode->GetId()].push_back(drmNode);
-    RSDrmUtil::drmNodes_[crossNode->GetId()].push_back(offTreeDrmNode);
+    RSDrmUtil::CollectDrmNodes(drmNode);
+    RSDrmUtil::CollectDrmNodes(offTreeDrmNode);
 
     Drawing::Matrix conversion;
     conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
@@ -1011,9 +1046,12 @@ HWTEST_F(RSDrmUtilTest, CalcCrossNodeLayerConversion002, TestSize.Level1)
     ASSERT_NE(crossNode, nullptr);
     ASSERT_NE(drmNode, nullptr);
     crossNode->firstLevelNodeId_ = crossNode->GetId();
+    crossNode->isOnTheTree_ = true;
+    crossNode->instanceRootNodeId_ = crossNode->GetId();
     auto screenNode = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    RegisterNode(crossNode);
     RSDrmUtil::ClearDrmNodes();
-    RSDrmUtil::drmNodes_[crossNode->GetId()].push_back(drmNode);
+    RSDrmUtil::CollectDrmNodes(crossNode);
     // without parents both frames are the frame of the node itself, so the conversion is identity
     Drawing::Matrix conversion;
     conversion.Translate(-CROSS_SCREEN_OFFSET_X, 0);
@@ -1257,13 +1295,18 @@ HWTEST_F(RSDrmUtilTest, RecordDstRectDisplay001, TestSize.Level1)
     ASSERT_NE(drmNode, nullptr);
     ASSERT_NE(otherNode, nullptr);
     crossNode->firstLevelNodeId_ = crossNode->GetId();
+    crossNode->isOnTheTree_ = true;
+    crossNode->instanceRootNodeId_ = crossNode->GetId();
     drmNode->firstLevelNodeId_ = crossNode->GetId();
-    drmNode->SetHwcGlobalPositionEnabled(true);
     otherNode->firstLevelNodeId_ = crossNode->GetId();
-    otherNode->SetHwcGlobalPositionEnabled(true);
     auto screenNode = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    RegisterNode(crossNode);
+    // register before enabling, as OnRegister rebuilds the staging params; the collected node needs a context
+    RegisterNode(drmNode);
+    drmNode->SetHwcGlobalPositionEnabled(true);
+    otherNode->SetHwcGlobalPositionEnabled(true);
     RSDrmUtil::ClearDrmNodes();
-    RSDrmUtil::drmNodes_[crossNode->GetId()].push_back(drmNode);
+    RSDrmUtil::CollectDrmNodes(drmNode);
 
     RSDrmUtil::RecordDstRectDisplay(*drmNode, screenNode);
     EXPECT_EQ(drmNode->GetDstRectDisplayNodeId(), screenNode->GetId());
