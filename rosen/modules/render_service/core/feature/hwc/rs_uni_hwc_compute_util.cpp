@@ -834,7 +834,7 @@ bool RSUniHwcComputeUtil::IsBlendNeedChildNode(RSRenderNode& node)
         property.GetCompositingFilter() != nullptr ||
         property.GetColorNGFilter() != nullptr ||
         property.GetLinearGradientBlurPara() != nullptr ||
-        property.IsFgBlenderEffectValid() ||
+        property.IsNGBlenderValid() ||
         property.IsWaterRippleValid() ||
         property.GetColorFilter() != nullptr;
 }

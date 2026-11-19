@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 #include "feature/occlusion_culling/rs_occlusion_node.h"
 
+#include "effect/rs_render_blender_base.h"
 #include "effect/rs_render_shape_base.h"
 #include "modifier/rs_property.h"
 #include "pipeline/rs_render_node.h"
@@ -1899,9 +1900,8 @@ HWTEST_F(RSOcclusionNodeTest, IsBlendOpaque_WithFgBrightnessValid, TestSize.Leve
     std::shared_ptr<OcclusionNode> rootNode =
         std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::CANVAS_NODE);
     RSProperties renderProperties;
-    RSDynamicBrightnessPara fgParams;
-    fgParams.fraction_ = 0.5f;
-    renderProperties.SetFgBrightnessParams(fgParams);
+    auto ngBlender = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    renderProperties.SetNGBlender(ngBlender);
     EXPECT_FALSE(rootNode->IsBlendOpaque(renderProperties));
 }
 

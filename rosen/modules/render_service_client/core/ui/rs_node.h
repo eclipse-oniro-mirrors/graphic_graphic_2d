@@ -77,6 +77,7 @@ class RSUIContext;
 class RSNGFilterBase;
 class RSNGShaderBase;
 class RSNGMaskBase;
+class RSNGBlenderBase;
 class RSNGShapeBase;
 class Blender;
 class ColorfulBrightnessBlender;
@@ -1361,54 +1362,18 @@ public:
     void SetDynamicDimDegree(const float dimDegree);
 
     /**
-     * @brief Sets the Blender.
+     * @brief Sets the Blender. A null blender clears the current one.
      *
-     * @param blender Pointer to a Blender object.
+     * @param blender Pointer to a Blender object; nullptr clears the effect.
      */
     void SetBlender(const Blender* blender);
 
     /**
-     * @brief Sets the parameters for foreground brightness.
+     * @brief Sets the NG blender, sent through a single FOREGROUND_NG_BLENDER IPC property.
      *
-     * @param params Indicates the parameters for foreground brightness.
+     * @param blender NG blender object converted from an old-style Blender.
      */
-    void SetFgBrightnessParams(const RSDynamicBrightnessPara& params);
-
-    /**
-     * @brief Sets the rates for foreround brightness.
-     *
-     * @param rates Indicates the rates for foreground brightness.
-     */
-    void SetFgBrightnessRates(const Vector4f& rates);
-
-    /**
-     * @brief Sets the saturation for foreground brightness.
-     *
-     * @param saturation Indicates the saturation for foreground brightness.
-     */
-    void SetFgBrightnessSaturation(const float& saturation);
-
-    /**
-     * @brief Sets the positive coefficient for foreground brightness.
-     *
-     * @param coeff Indicates the positive coefficient for foreground brightness.
-     */
-    void SetFgBrightnessPosCoeff(const Vector4f& coeff);
-
-    /**
-     * @brief Sets the negative coefficient for foreground brightness.
-     *
-     * @param coeff Indicates the negative coefficient for foreground brightness.
-     */
-    void SetFgBrightnessNegCoeff(const Vector4f& coeff);
-    void SetFgBrightnessFract(const float& fract);
-
-    /**
-     * @brief Sets the hdr using for foreground brightness.
-     *
-     * @param hdr Indicates the hdr using for foreground brightness.
-     */
-    void SetFgBrightnessHdr(const bool hdr);
+    void SetNGBlender(const std::shared_ptr<RSNGBlenderBase>& blender);
 
     /**
      * @brief Sets the parameters for background brightness.
@@ -2427,13 +2392,6 @@ private:
     void SetForegroundBlurRadiusX(float blurRadiusX);
     void SetForegroundBlurRadiusY(float blurRadiusY);
     void SetFgBlurDisableSystemAdaptation(bool disableSystemAdaptation);
-
-    void SetShadowBlenderParams(const RSShadowBlenderPara& params);
-    void SetHdrDarkenBlenderParams(const RSHdrDarkenBlenderPara& params);
-    void ApplyColorfulBrightnessBlender(const ColorfulBrightnessBlender& blender);
-
-    void DetachFgBrightnessProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
-    void DetachColorfulBrightnessBlenderProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
 
     void NotifyPageNodeChanged() const;
 

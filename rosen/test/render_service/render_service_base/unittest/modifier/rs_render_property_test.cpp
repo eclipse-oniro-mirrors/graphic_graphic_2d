@@ -22,6 +22,7 @@
 #include "effect/rs_render_mask_base.h"
 #include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_shape_base.h"
+#include "effect/rs_render_blender_base.h"
 #include "pipeline/rs_render_node.h"
 #include "transaction/rs_marshalling_helper.h"
 
@@ -1472,6 +1473,160 @@ HWTEST_F(RSRenderPropertyTest, RSNGRenderShapeBaseSetOnlyValue, TestSize.Level1)
 
     prop->Set(testShader, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
     EXPECT_EQ(prop->stagingValue_, testShader);
+}
+
+/**
+ * @tc.name: RSNGRenderBlenderBaseSetOnlyValue
+ * @tc.desc: Test Set for RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>, covering the
+ *           equal-value early return, the UPDATE_TYPE_ONLY_VALUE branch and the overwrite branch.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPropertyTest, RSNGRenderBlenderBaseSetOnlyValue, TestSize.Level1)
+{
+    auto nullProp = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>();
+    nullProp->Set(nullptr, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    EXPECT_EQ(nullProp->stagingValue_, nullptr);
+
+    auto testBlender = std::make_shared<RSNGRenderHdrDarkenBlender>();
+    auto prop = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>();
+    prop->Set(testBlender, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    EXPECT_EQ(prop->stagingValue_, testBlender);
+
+    prop->Set(testBlender, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    EXPECT_EQ(prop->stagingValue_, testBlender);
+
+    // equal-value early return: same pointer, no detach/attach happens
+    prop->Set(testBlender);
+    EXPECT_EQ(prop->stagingValue_, testBlender);
+
+    // overwrite branch: different object replaces the staged one
+    auto otherBlender = std::make_shared<RSNGRenderBrightnessBlender>();
+    prop->Set(otherBlender);
+    EXPECT_EQ(prop->stagingValue_, otherBlender);
+
+    prop->Set(nullptr);
+    EXPECT_EQ(prop->stagingValue_, nullptr);
+}
+
+/**
+ * @tc.name: RSNGRenderBlenderBaseOnAttachAndOnDetach
+ * @tc.desc: Test OnAttach/OnDetach for RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>:
+ *           Attach registers the tag sub-properties on the node, Detach unregisters them, and both
+ *           are no-ops when stagingValue_ is null.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPropertyTest, RSNGRenderBlenderBaseOnAttachAndOnDetach, TestSize.Level1)
+{
+    // null stagingValue_: OnAttach/OnDetach must not touch any blender
+    auto nullProp = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>();
+    auto nullNode = std::make_shared<RSRenderNode>(1);
+    nullProp->Attach(*nullNode);
+    // no tag sub-property is registered under the fixture id
+    EXPECT_EQ(nullNode->GetProperty(id), nullptr);
+    nullProp->Detach();
+
+    auto blender = std::make_shared<RSNGRenderHdrDarkenBlender>();
+    auto prop = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(blender, id);
+    auto node = std::make_shared<RSRenderNode>(1);
+    prop->Attach(*node);
+    // tag sub-properties are registered with the default property id 0
+    EXPECT_NE(node->GetProperty(0), nullptr);
+    EXPECT_NE(node->GetProperty(id), nullptr);
+
+    prop->Detach();
+    EXPECT_EQ(node->GetProperty(0), nullptr);
+    EXPECT_EQ(node->GetProperty(id), nullptr);
+}
+
+/**
+ * @tc.name: RSNGRenderBlenderBaseSetDetachAttach
+ * @tc.desc: Test the node-attached Set branches of RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>:
+ *           overwrite detaches the old blender and attaches the new one, a null value only detaches,
+ *           and ONLY_VALUE neither detaches nor attaches.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPropertyTest, RSNGRenderBlenderBaseSetDetachAttach, TestSize.Level1)
+{
+    auto blenderA = std::make_shared<RSNGRenderHdrDarkenBlender>();
+    auto blenderB = std::make_shared<RSNGRenderBrightnessBlender>();
+    auto prop = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(blenderA, id);
+    auto node = std::make_shared<RSRenderNode>(1);
+    prop->Attach(*node);
+    ASSERT_NE(node->GetProperty(0), nullptr);
+
+    // overwrite: detach old sub-properties, attach new ones
+    prop->Set(blenderB);
+    EXPECT_EQ(prop->stagingValue_, blenderB);
+    EXPECT_NE(node->GetProperty(0), nullptr);
+
+    // null value: detach only, no attach
+    prop->Set(nullptr);
+    EXPECT_EQ(prop->stagingValue_, nullptr);
+    EXPECT_EQ(node->GetProperty(0), nullptr);
+
+    // overwrite from a null staging value while attached: the detach guard is skipped and the
+    // new blender is attached directly (node set, stagingValue_ null combination of Set)
+    prop->Set(blenderB);
+    EXPECT_EQ(prop->stagingValue_, blenderB);
+    EXPECT_NE(node->GetProperty(0), nullptr);
+
+    // clear again, then ONLY_VALUE: staging-only update without detach/attach
+    prop->Set(nullptr);
+    EXPECT_EQ(prop->stagingValue_, nullptr);
+    EXPECT_EQ(node->GetProperty(0), nullptr);
+    prop->Set(blenderA, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    EXPECT_EQ(prop->stagingValue_, blenderA);
+    EXPECT_EQ(node->GetProperty(0), nullptr);
+}
+
+/**
+ * @tc.name: RSNGRenderBlenderBaseDump
+ * @tc.desc: Test Dump for RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>: null value
+ *           dumps "[null]", a stored blender dumps its effect type and tag values.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPropertyTest, RSNGRenderBlenderBaseDump, TestSize.Level1)
+{
+    auto nullProp = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>();
+    std::string nullOut;
+    nullProp->Dump(nullOut);
+    EXPECT_EQ(nullOut, "[null]");
+
+    auto blender = std::make_shared<RSNGRenderHdrDarkenBlender>();
+    blender->Setter<HdrDarkenBlenderHdrBrightnessRatioRenderTag>(2.0f);
+    auto prop = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(blender, id);
+    std::string out;
+    prop->Dump(out);
+    EXPECT_NE(out.find("HdrDarkenBlender"), std::string::npos);
+    EXPECT_NE(out.find("HdrBrightnessRatio"), std::string::npos);
+}
+
+/**
+ * @tc.name: RSNGRenderBlenderBasePropertyIPC
+ * @tc.desc: Test RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>> marshalling and the
+ *           UnmarshallingFuncs_ LUT registration of the new property type. Marshalling goes through
+ *           the base-property overload (the production command path), which writes the type header
+ *           that RSRenderPropertyBase::Unmarshalling dispatches on.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPropertyTest, RSNGRenderBlenderBasePropertyIPC, TestSize.Level1)
+{
+    auto blender = std::make_shared<RSNGRenderHdrDarkenBlender>();
+    blender->Setter<HdrDarkenBlenderHdrBrightnessRatioRenderTag>(2.0f);
+    auto prop = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(blender, id);
+
+    std::shared_ptr<RSRenderPropertyBase> baseProp = prop;
+    MessageParcel parcel;
+    ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, baseProp));
+    std::shared_ptr<RSRenderPropertyBase> tmpProp;
+    ASSERT_TRUE(RSRenderPropertyBase::Unmarshalling(parcel, tmpProp));
+    ASSERT_NE(tmpProp, nullptr);
+    auto blenderProp =
+        std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(tmpProp);
+    ASSERT_NE(blenderProp->Get(), nullptr);
+    EXPECT_EQ(blenderProp->Get()->GetType(), RSNGEffectType::HDR_DARKEN_BLENDER);
+    auto outHdrDarken = std::static_pointer_cast<RSNGRenderHdrDarkenBlender>(blenderProp->Get());
+    EXPECT_FLOAT_EQ(outHdrDarken->Getter<HdrDarkenBlenderHdrBrightnessRatioRenderTag>()->Get(), 2.0f);
 }
 
 // ----------------- SDFShape ownerId lifecycle (owner on shape object) -----------------

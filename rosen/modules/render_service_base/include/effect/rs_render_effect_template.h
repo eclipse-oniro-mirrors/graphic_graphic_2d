@@ -146,6 +146,9 @@ public:
             case RSNGEffectType::BINARIZATION: return "Binarization";
             case RSNGEffectType::LIGHT_UP_EFFECT: return "LightUpEffect";
             case RSNGEffectType::DYNAMIC_DIM: return "DynamicDim";
+            case RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER: return "ColorfulBrightnessBlender";
+            case RSNGEffectType::BRIGHTNESS_BLENDER: return "BrightnessBlender";
+            case RSNGEffectType::HDR_DARKEN_BLENDER: return "HdrDarkenBlender";
             default: return "UNKNOWN";
         }
     }

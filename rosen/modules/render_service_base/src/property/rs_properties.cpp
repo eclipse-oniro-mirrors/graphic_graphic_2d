@@ -1830,117 +1830,6 @@ bool RSProperties::GetDistortionDirty() const
     return GetEffectProperties().GetDistortionDirty();
 }
 
-void RSProperties::SetFgBrightnessRates(const Vector4f& rates)
-{
-    GetEffectProperties().SetFgBrightnessRates(rates);
-    isDrawn_ = true;
-    filterNeedUpdate_ = true;
-    SetDirty();
-    contentDirty_ = true;
-}
-
-Vector4f RSProperties::GetFgBrightnessRates() const
-{
-    return GetEffectProperties().GetFgBrightnessRates();
-}
-
-void RSProperties::SetFgBrightnessSaturation(const float& saturation)
-{
-    GetEffectProperties().SetFgBrightnessSaturation(saturation);
-    isDrawn_ = true;
-    filterNeedUpdate_ = true;
-    SetDirty();
-    contentDirty_ = true;
-}
-
-float RSProperties::GetFgBrightnessSaturation() const
-{
-    return GetEffectProperties().GetFgBrightnessSaturation();
-}
-
-void RSProperties::SetFgBrightnessPosCoeff(const Vector4f& coeff)
-{
-    GetEffectProperties().SetFgBrightnessPosCoeff(coeff);
-    isDrawn_ = true;
-    filterNeedUpdate_ = true;
-    SetDirty();
-    contentDirty_ = true;
-}
-
-Vector4f RSProperties::GetFgBrightnessPosCoeff() const
-{
-    return GetEffectProperties().GetFgBrightnessPosCoeff();
-}
-
-void RSProperties::SetFgBrightnessNegCoeff(const Vector4f& coeff)
-{
-    GetEffectProperties().SetFgBrightnessNegCoeff(coeff);
-    isDrawn_ = true;
-    filterNeedUpdate_ = true;
-    SetDirty();
-    contentDirty_ = true;
-}
-
-Vector4f RSProperties::GetFgBrightnessNegCoeff() const
-{
-    return GetEffectProperties().GetFgBrightnessNegCoeff();
-}
-
-void RSProperties::SetFgBrightnessFract(const float& fraction)
-{
-    GetEffectProperties().SetFgBrightnessFract(fraction);
-    isDrawn_ = true;
-    filterNeedUpdate_ = true;
-    SetDirty();
-    contentDirty_ = true;
-}
-
-float RSProperties::GetFgBrightnessFract() const
-{
-    return GetEffectProperties().GetFgBrightnessFract();
-}
-
-void RSProperties::SetFgBrightnessHdr(const bool enableHdr)
-{
-    GetEffectProperties().SetFgBrightnessHdr(enableHdr);
-    isDrawn_ = true;
-    filterNeedUpdate_ = true;
-    SetDirty();
-    contentDirty_ = true;
-}
-
-bool RSProperties::GetFgBrightnessHdr() const
-{
-    return GetEffectProperties().GetFgBrightnessHdr();
-}
-
-void RSProperties::SetFgBrightnessParams(const std::optional<RSDynamicBrightnessPara>& params)
-{
-    GetEffectProperties().SetFgBrightnessParams(params);
-    if (params.has_value()) {
-        isDrawn_ = true;
-    }
-    filterNeedUpdate_ = true;
-    SetDirty();
-    contentDirty_ = true;
-}
-
-std::optional<RSDynamicBrightnessPara> RSProperties::GetFgBrightnessParams() const
-{
-    return GetEffectProperties().GetFgBrightnessParams();
-}
-
-bool RSProperties::GetFgBrightnessEnableEDR() const
-{
-    return GetEffectProperties().GetFgBrightnessEnableEDR();
-}
-
-bool RSProperties::GetColorfulBrightnessBlenderEnableEDR() const
-{
-    const auto* params = GetColorfulBrightnessBlenderParams();
-    return params != nullptr && params->hdrEnabled_;
-}
-
 void RSProperties::SetBgBrightnessRates(const Vector4f& rates)
 {
     GetEffectProperties().SetBgBrightnessRates(rates);
@@ -2027,96 +1916,36 @@ std::optional<RSDynamicBrightnessPara> RSProperties::GetBgBrightnessParams() con
     return GetEffectProperties().GetBgBrightnessParams();
 }
 
-std::string RSProperties::GetFgBrightnessDescription() const
-{
-    return GetEffectProperties().GetFgBrightnessDescription();
-}
-
 std::string RSProperties::GetBgBrightnessDescription() const
 {
     return GetEffectProperties().GetBgBrightnessDescription();
 }
 
-void RSProperties::SetShadowBlenderParams(const std::optional<RSShadowBlenderPara>& params)
+void RSProperties::SetNGBlender(const std::shared_ptr<RSNGRenderBlenderBase>& blender)
 {
-    GetEffectProperties().SetShadowBlenderParams(params);
-    if (params.has_value()) {
+    if (blender) {
         isDrawn_ = true;
+        GetEffectProperties().GetBlenderEffect().ngBlender_ = blender;
+    } else {
+        if (GetNGBlender() == nullptr) {
+            return; // nothing to clear, keep untouched nodes out of the dirty cycle
+        }
+        GetEffectProperties().GetBlenderEffect().ngBlender_ = nullptr;
     }
     filterNeedUpdate_ = true;
     SetDirty();
     contentDirty_ = true;
 }
 
-std::optional<RSShadowBlenderPara> RSProperties::GetShadowBlenderParams() const
+std::shared_ptr<RSNGRenderBlenderBase> RSProperties::GetNGBlender() const
 {
-    return GetEffectProperties().GetShadowBlenderParams();
+    const auto* blenderEffect = GetEffectProperties().GetBlenderEffect();
+    return blenderEffect != nullptr ? blenderEffect->ngBlender_ : nullptr;
 }
 
-void RSProperties::SetHdrDarkenBlenderParams(const std::optional<RSHdrDarkenBlenderPara>& params)
+bool RSProperties::IsNGBlenderValid() const
 {
-    GetEffectProperties().SetHdrDarkenBlenderParams(params);
-    if (params.has_value()) {
-        isDrawn_ = true;
-    }
-    filterNeedUpdate_ = true;
-    SetDirty();
-    contentDirty_ = true;
-}
-
-std::optional<RSHdrDarkenBlenderPara> RSProperties::GetHdrDarkenBlenderParams() const
-{
-    return GetEffectProperties().GetHdrDarkenBlenderParams();
-}
-
-bool RSProperties::IsHdrDarkenBlenderValid() const
-{
-    return GetEffectProperties().IsHdrDarkenBlenderValid();
-}
-
-std::string RSProperties::GetHdrDarkenBlenderDescription() const
-{
-    return GetEffectProperties().GetHdrDarkenBlenderDescription();
-}
-
-void RSProperties::SetColorfulBrightnessBlenderParams(std::unique_ptr<RSColorfulBrightnessBlenderPara> params)
-{
-    if (params) {
-        isDrawn_ = true;
-    }
-    GetEffectProperties().SetColorfulBrightnessBlenderParams(std::move(params));
-    SetDirty();
-    contentDirty_ = true;
-}
-
-const RSColorfulBrightnessBlenderPara* RSProperties::GetColorfulBrightnessBlenderParams() const
-{
-    return GetEffectProperties().GetColorfulBrightnessBlenderParams();
-}
-
-bool RSProperties::IsColorfulBrightnessBlenderValid() const
-{
-    return GetEffectProperties().IsColorfulBrightnessBlenderValid();
-}
-
-bool RSProperties::IsFgBlenderEffectValid() const
-{
-    return IsFgBrightnessValid() || IsColorfulBrightnessBlenderValid();
-}
-
-std::string RSProperties::GetColorfulBrightnessBlenderDescription() const
-{
-    return GetEffectProperties().GetColorfulBrightnessBlenderDescription();
-}
-
-bool RSProperties::IsShadowBlenderValid() const
-{
-    return GetEffectProperties().IsShadowBlenderValid();
-}
-
-std::string RSProperties::GetShadowBlenderDescription() const
-{
-    return GetEffectProperties().GetShadowBlenderDescription();
+    return GetNGBlender() != nullptr;
 }
 
 void RSProperties::SetGreyCoef(const std::optional<Vector2f>& greyCoef)
@@ -4852,14 +4681,14 @@ void RSProperties::UpdateFilter()
                   HasHarmonium() || GetColorNGFilter() != nullptr || IsDynamicLightUpValid() ||
                   GetGreyCoef().has_value() || GetLinearGradientBlurPara() != nullptr ||
                   GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
-                  GetForegroundFilter() != nullptr || IsFgBlenderEffectValid() || IsBgBrightnessValid() ||
+                  GetForegroundFilter() != nullptr || IsNGBlenderValid() || IsBgBrightnessValid() ||
                   GetForegroundFilterCache() != nullptr || IsWaterRippleValid() || GetNeedDrawBehindWindow() ||
                   GetMask() || GetColorFilter() != nullptr || localMagnificationCap_ || !GetPixelStretch().IsZero() ||
                   GetMaterialFilter() != nullptr || HasSpatialGlassEffect();
 
     needHwcFilter_ = GetBackgroundFilter() != nullptr || GetCompositingFilter() != nullptr ||
                      GetColorNGFilter() != nullptr || IsDynamicLightUpValid() ||
-                     GetLinearGradientBlurPara() != nullptr || IsFgBlenderEffectValid() || IsBgBrightnessValid() ||
+                     GetLinearGradientBlurPara() != nullptr || IsNGBlenderValid() || IsBgBrightnessValid() ||
                      IsWaterRippleValid() || GetNeedDrawBehindWindow() || GetColorFilter() != nullptr ||
                      localMagnificationCap_ || !GetPixelStretch().IsZero() || GetMaterialFilter() != nullptr ||
                      IsSDFDistortShape();
@@ -4886,7 +4715,7 @@ bool RSProperties::DisableHWCForFilter() const
         GetLinearGradientBlurPara() != nullptr ||
         GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
         (GetForegroundFilter() != nullptr && GetForegroundFilter()->GetFilterType() != RSFilter::HDR_UI_BRIGHTNESS) ||
-        IsFgBlenderEffectValid() || IsBgBrightnessValid() ||
+        IsNGBlenderValid() || IsBgBrightnessValid() ||
         (GetForegroundFilterCache() != nullptr &&
         GetForegroundFilterCache()->GetFilterType() != RSFilter::HDR_UI_BRIGHTNESS) ||
         IsWaterRippleValid() || GetNeedDrawBehindWindow() || GetMask() || GetColorFilter() != nullptr ||

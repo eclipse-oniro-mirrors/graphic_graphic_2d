@@ -16,11 +16,13 @@
 #include <memory>
 
 #include "gtest/gtest.h"
+#include "ui_effect/effect/include/blender_base.h"
 #include "ui_effect/effect/include/brightness_blender.h"
 #include "ui_effect/effect/include/colorful_brightness_blender.h"
 #include "ui_effect/effect/include/hdr_darken_blender.h"
 #include "ui_effect/effect/include/rs_ui_mask_base.h"
 #include "ui_effect/effect/include/rs_ui_mask_shape.h"
+#include "ui_effect/property/include/rs_ui_blender_base.h"
 
 #include "animation/rs_animation.h"
 #include "animation/rs_animation_callback.h"
@@ -1210,14 +1212,19 @@ HWTEST_F(RSNodeTest2, SetBlender, TestSize.Level1)
     HdrDarkenBlender hdrDarkenBlender;
     rsNode->SetBlender(&hdrDarkenBlender);
     EXPECT_NE(rsNode, nullptr);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    // null input means "clear the current blender"
+    rsNode->SetBlender(nullptr);
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
 }
 
 /**
  * @tc.name: SetColorfulBrightnessBlender001
- * @tc.desc: test SetBlender with ColorfulBrightnessBlender on a fresh node. Covers COLORFUL_BRIGHTNESS_BLENDER type
- *           match, colorfulBrightnessBlender!=nullptr true, modifier==nullptr branch (fresh node has no BLENDER
- *           modifier so DetachFgBrightnessProperties is skipped), and ApplyColorfulBrightnessBlender creating all
- *           12 COLORFUL_* properties.
+ * @tc.desc: test SetBlender with ColorfulBrightnessBlender on a fresh node. The old COLORFUL_BRIGHTNESS_BLENDER
+ *           interface is rerouted to the NG path: the old blender is converted (convertorLUT) and sent through
+ *           the single-IPC FOREGROUND_NG_BLENDER property, so no flat COLORFUL_* property is attached any more.
  * @tc.type: FUNC
  * @tc.require: issueICLU4I
  */
@@ -1233,26 +1240,16 @@ HWTEST_F(RSNodeTest2, SetColorfulBrightnessBlender001, TestSize.Level1)
 
     auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
     ASSERT_NE(modifier, nullptr);
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_DARKEN_WEIGHT));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_FRACTION));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_CUBIC_RATE));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_QUAD_RATE));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_LINEAR_RATE));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_DEGREE));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_SATURATION));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_POSITIVE_COEFF));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_NEGATIVE_COEFF));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_VIBRANCY_STRENGTH));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_LUMA_DIFF));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_HDR_ENABLED));
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_TINTED_COLOR_PERCENT));
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::HRP_PLACEHOLDER_11));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::HRP_PLACEHOLDER_23));
 }
 
 /**
  * @tc.name: SetColorfulBrightnessBlender002
  * @tc.desc: test applying ColorfulBrightnessBlender twice. Second call hits modifier!=nullptr true and
- *           DetachFgBrightnessProperties where all FG_BRIGHTNESS_* HasProperty checks are false, since no
- *           brightness blender was ever applied.
+ *           the same-key overwrite of FOREGROUND_NG_BLENDER; no legacy flat tag is attached. The NG
+ *           property is replaced, not duplicated.
  * @tc.type: FUNC
  * @tc.require: issueICLU4I
  */
@@ -1261,7 +1258,7 @@ HWTEST_F(RSNodeTest2, SetColorfulBrightnessBlender002, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     ColorfulBrightnessBlender colorfulBrightnessBlender;
     rsNode->SetBlender(&colorfulBrightnessBlender);
-    // second apply: modifier exists, DetachFgBrightnessProperties all false paths
+    // second apply: modifier exists, same-key overwrite path
     ColorfulBrightnessBlender colorfulBrightnessBlender2;
     colorfulBrightnessBlender2.SetDarkenWeight(1.0f);
     rsNode->SetBlender(&colorfulBrightnessBlender2);
@@ -1269,14 +1266,14 @@ HWTEST_F(RSNodeTest2, SetColorfulBrightnessBlender002, TestSize.Level1)
 
     auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
     ASSERT_NE(modifier, nullptr);
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_DARKEN_WEIGHT));
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
 }
 
 /**
  * @tc.name: SetBlenderColorfulToBrightness001
- * @tc.desc: test switching from ColorfulBrightnessBlender to BrightnessBlender. Covers brightness-path
- *           modifier!=nullptr true and DetachColorfulBrightnessBlenderProperties where all 13 COLORFUL_*
- *           HasProperty checks are true.
+ * @tc.desc: test switching from ColorfulBrightnessBlender to BrightnessBlender. Both types are
+ *           rerouted to the NG path, so the switch is a same-key overwrite of FOREGROUND_NG_BLENDER
+ *           and the legacy flat tag HRP_PLACEHOLDER_7 is not attached.
  * @tc.type: FUNC
  * @tc.require: issueICLU4I
  */
@@ -1291,40 +1288,319 @@ HWTEST_F(RSNodeTest2, SetBlenderColorfulToBrightness001, TestSize.Level1)
 
     auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
     ASSERT_NE(modifier, nullptr);
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_FRACTION));
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::HRP_PLACEHOLDER_7));
 }
 
 /**
- * @tc.name: SetBlenderBrightnessToColorful001
- * @tc.desc: test switching from BrightnessBlender (Hdr=true, fraction=0.5) to ColorfulBrightnessBlender.
- *           Covers colorful-path modifier!=nullptr true, GetHdr()=true and ROSEN_LNE(0.5,1.0)=true
- *           branches in SetFgBrightnessHdr condition (so SetFgBrightnessHdr is called), and
- *           DetachFgBrightnessProperties where all 6 FG_BRIGHTNESS_* HasProperty checks are true.
+ * @tc.name: SetBlenderBase001
+ * @tc.desc: test SetBlender with a BlenderBase container wrapping a ColorfulBrightnessBlender. Covers the
+ *           BLENDER_BASE type dispatch: the wrapped old blender is converted into an NG blender and sent
+ *           through FOREGROUND_NG_BLENDER.
  * @tc.type: FUNC
- * @tc.require: issueICLU4I
+ * @tc.require:
  */
-HWTEST_F(RSNodeTest2, SetBlenderBrightnessToColorful001, TestSize.Level1)
+HWTEST_F(RSNodeTest2, SetBlenderBase001, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    BrightnessBlender brightnessBlender;
-    brightnessBlender.SetHdr(true);
-    brightnessBlender.SetFraction(0.5f);
-    rsNode->SetBlender(&brightnessBlender);
-    ColorfulBrightnessBlender colorfulBrightnessBlender;
-    rsNode->SetBlender(&colorfulBrightnessBlender);
+    auto oldBlender = std::make_shared<ColorfulBrightnessBlender>();
+    oldBlender->SetDarkenWeight(1.0f);
+    BlenderBase blenderBase;
+    blenderBase.SetBlender(oldBlender);
+    EXPECT_EQ(blenderBase.GetBlenderType(), Blender::BLENDER_BASE);
+    EXPECT_EQ(blenderBase.GetBlender(), oldBlender.get());
+    rsNode->SetBlender(&blenderBase);
     EXPECT_NE(rsNode, nullptr);
 
     auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
     ASSERT_NE(modifier, nullptr);
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_DARKEN_WEIGHT));
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+}
+
+/**
+ * @tc.name: SetBlenderBase002
+ * @tc.desc: test SetBlender with a BlenderBase container wrapping a BrightnessBlender (hdr=false,
+ *           equivalent to the legacy createBrightnessBlender). The BLENDER_BASE dispatch converts
+ *           it into an NG BRIGHTNESS_BLENDER and attaches FOREGROUND_NG_BLENDER only; the
+ *           legacy flat tag HRP_PLACEHOLDER_7 is not attached.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, SetBlenderBase002, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    auto oldBlender = std::make_shared<BrightnessBlender>();
+    oldBlender->SetFraction(0.5f);
+    oldBlender->SetHdr(false);
+    BlenderBase blenderBase;
+    blenderBase.SetBlender(oldBlender);
+    rsNode->SetBlender(&blenderBase);
+    EXPECT_NE(rsNode, nullptr);
+
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::HRP_PLACEHOLDER_7));
+}
+
+/**
+ * @tc.name: SetBlenderBase003
+ * @tc.desc: test SetBlender with a BlenderBase container wrapping a BrightnessBlender with
+ *           hdr=true (equivalent to the legacy createHdrBrightnessBlender). Same NG dispatch as
+ *           SetBlenderBase002, the hdr flag only differs in the NG property payload.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, SetBlenderBase003, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    auto oldBlender = std::make_shared<BrightnessBlender>();
+    oldBlender->SetFraction(0.5f);
+    oldBlender->SetHdr(true);
+    BlenderBase blenderBase;
+    blenderBase.SetBlender(oldBlender);
+    rsNode->SetBlender(&blenderBase);
+    EXPECT_NE(rsNode, nullptr);
+
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::HRP_PLACEHOLDER_7));
+}
+
+/**
+ * @tc.name: SetBlenderBase004
+ * @tc.desc: test SetBlender with a BlenderBase container wrapping an HdrDarkenBlender. The
+ *           BLENDER_BASE dispatch converts it into an NG HDR_DARKEN_BLENDER through
+ *           FOREGROUND_NG_BLENDER; the legacy flat tag HRP_PLACEHOLDER_10 is not attached.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, SetBlenderBase004, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    auto oldBlender = std::make_shared<HdrDarkenBlender>();
+    oldBlender->SetHdrBrightnessRatio(2.0f);
+    oldBlender->SetGrayscaleFactor(Vector3f(0.299f, 0.587f, 0.114f));
+    BlenderBase blenderBase;
+    blenderBase.SetBlender(oldBlender);
+    rsNode->SetBlender(&blenderBase);
+    EXPECT_NE(rsNode, nullptr);
+
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::HRP_PLACEHOLDER_10));
+}
+
+/**
+ * @tc.name: SetBlenderBaseHdrDarkenMutualExclusion001
+ * @tc.desc: test switching from the BlenderBase NG path (HdrDarkenBlender) back to the legacy
+ *           HdrDarkenBlender flat entry. The HDR_DARKEN_BLENDER branch must clear the NG blender
+ *           (SetNGBlender(nullptr)) before attaching the flat tag HRP_PLACEHOLDER_10.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, SetBlenderBaseHdrDarkenMutualExclusion001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    auto oldBlender = std::make_shared<HdrDarkenBlender>();
+    oldBlender->SetHdrBrightnessRatio(2.0f);
+    BlenderBase blenderBase;
+    blenderBase.SetBlender(oldBlender);
+    rsNode->SetBlender(&blenderBase);
+
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+
+    // switch with a directly passed HdrDarkenBlender: it is rerouted to the NG path as well,
+    // the flat property is detached and the NG property takes over (same-key overwrite keeps
+    // different blenders mutually exclusive)
+    HdrDarkenBlender legacyBlender;
+    rsNode->SetBlender(&legacyBlender);
+    modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::HRP_PLACEHOLDER_10));
+}
+
+/**
+ * @tc.name: SetBlenderBaseEmptyClear001
+ * @tc.desc: test that an empty BlenderBase (no wrapped blender) clears the NG property:
+ *           SetBlender dispatches to SetNGBlender(nullptr), which detaches
+ *           FOREGROUND_NG_BLENDER from the BLENDER modifier.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, SetBlenderBaseEmptyClear001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    auto oldBlender = std::make_shared<HdrDarkenBlender>();
+    BlenderBase blenderBase;
+    blenderBase.SetBlender(oldBlender);
+    rsNode->SetBlender(&blenderBase);
+
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+
+    // empty container means "clear": the NG property is detached
+    BlenderBase emptyBlenderBase;
+    rsNode->SetBlender(&emptyBlenderBase);
+    modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+}
+
+/**
+ * @tc.name: SetBlenderBaseEmptyClearOnFreshNode001
+ * @tc.desc: test SetBlender with an empty BlenderBase on a fresh node: no BLENDER modifier
+ *           exists yet, SetNGBlender(nullptr) returns early and no property is attached.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, SetBlenderBaseEmptyClearOnFreshNode001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    BlenderBase emptyBlenderBase;
+    rsNode->SetBlender(&emptyBlenderBase);
+    EXPECT_NE(rsNode, nullptr);
+
+    // the early return may leave no BLENDER modifier at all; if it exists, it must be empty
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    if (modifier != nullptr) {
+        EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    }
+}
+
+/**
+ * @tc.name: SetBlenderBaseConvertorMiss001
+ * @tc.desc: test SetBlender with a BlenderBase wrapping a plain Blender (type NONE, no
+ *           convertor registered): the conversion fails and the current NG effect must be
+ *           kept untouched (return before SetNGBlender).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, SetBlenderBaseConvertorMiss001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    auto oldBlender = std::make_shared<HdrDarkenBlender>();
+    BlenderBase blenderBase;
+    blenderBase.SetBlender(oldBlender);
+    rsNode->SetBlender(&blenderBase);
+
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+
+    // plain Blender has type NONE: convertor lookup fails, the existing NG property is kept
+    auto unknownBlender = std::make_shared<Blender>();
+    BlenderBase unknownBlenderBase;
+    unknownBlenderBase.SetBlender(unknownBlender);
+    rsNode->SetBlender(&unknownBlenderBase);
+    modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+}
+
+/**
+ * @tc.name: SetBlenderUnknownType001
+ * @tc.desc: test SetBlender with a plain Blender (type NONE): no concrete-type branch
+ *           matches, no NG property is attached.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, SetBlenderUnknownType001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    Blender plainBlender;
+    rsNode->SetBlender(&plainBlender);
+    EXPECT_NE(rsNode, nullptr);
+
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    if (modifier != nullptr) {
+        EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    }
+}
+
+/**
+ * @tc.name: RSNGBlenderBaseCreate001
+ * @tc.desc: test RSNGBlenderBase::Create entry checks: nullptr input returns nullptr and a
+ *           plain Blender (type NONE, no convertor) returns nullptr as well.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, RSNGBlenderBaseCreate001, TestSize.Level1)
+{
+    EXPECT_EQ(RSNGBlenderBase::Create(nullptr), nullptr);
+
+    Blender plainBlender;
+    EXPECT_EQ(RSNGBlenderBase::Create(&plainBlender), nullptr);
+}
+
+/**
+ * @tc.name: RSNGBlenderBaseCreateByType001
+ * @tc.desc: test RSNGBlenderBase::Create by RSNGEffectType: all registered blender types return a
+ *           non-null NG blender, an unregistered type (NONE) returns nullptr.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, RSNGBlenderBaseCreateByType001, TestSize.Level1)
+{
+    EXPECT_NE(RSNGBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER), nullptr);
+    EXPECT_NE(RSNGBlenderBase::Create(RSNGEffectType::BRIGHTNESS_BLENDER), nullptr);
+    EXPECT_NE(RSNGBlenderBase::Create(RSNGEffectType::HDR_DARKEN_BLENDER), nullptr);
+
+    // NONE has no creator registered
+    EXPECT_EQ(RSNGBlenderBase::Create(RSNGEffectType::NONE), nullptr);
+}
+
+/**
+ * @tc.name: SetNGBlenderClearNoNGProperty001
+ * @tc.desc: test the early return of SetNGBlender(nullptr) when the BLENDER modifier exists but has
+ *           no FOREGROUND_NG_BLENDER property: after SetColorBlendMode only the flat COLOR_BLEND_MODE
+ *           property is attached, and clearing must keep it untouched.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest2, SetNGBlenderClearNoNGProperty001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    // creates the BLENDER modifier with COLOR_BLEND_MODE only (no NG blender property)
+    rsNode->SetColorBlendMode(RSColorBlendMode::MULTIPLY);
+
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLOR_BLEND_MODE));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+
+    // clear via an empty BlenderBase: the modifier exists but has no NG property, early return
+    BlenderBase emptyBlenderBase;
+    rsNode->SetBlender(&emptyBlenderBase);
+    modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
+    ASSERT_NE(modifier, nullptr);
+    // the flat property is untouched by the NG clear path
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLOR_BLEND_MODE));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+
+    // double clear after a real NG attach: the property is detached, the second clear early-returns
+    auto oldBlender = std::make_shared<HdrDarkenBlender>();
+    BlenderBase blenderBase;
+    blenderBase.SetBlender(oldBlender);
+    rsNode->SetBlender(&blenderBase);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    rsNode->SetBlender(&emptyBlenderBase);
+    rsNode->SetBlender(&emptyBlenderBase);
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::COLOR_BLEND_MODE));
 }
 
 /**
  * @tc.name: SetBlenderBrightnessHdrTrueFractionOne001
- * @tc.desc: test BrightnessBlender with Hdr=true and fraction=1.0 (default). Covers
- *           GetHdr()=true branch and ROSEN_LNE(1.0,1.0)=false branch in the
- *           SetFgBrightnessHdr condition, so SetFgBrightnessHdr is not called and
- *           FG_BRIGHTNESS_HDR property is not attached.
+ * @tc.desc: test BrightnessBlender with Hdr=true and fraction=1.0 (default). The EDR guard
+ *           (hdr && fraction != 1.0) in ConvertBrightnessBlender keeps HdrEnabled false,
+ *           so no flat tag HRP_PLACEHOLDER_8 property is attached and the NG property carries it.
  * @tc.type: FUNC
  * @tc.require: issueICLU4I
  */
@@ -1333,13 +1609,14 @@ HWTEST_F(RSNodeTest2, SetBlenderBrightnessHdrTrueFractionOne001, TestSize.Level1
     auto rsNode = RSCanvasNode::Create();
     BrightnessBlender brightnessBlender;
     brightnessBlender.SetHdr(true);
-    // fraction defaults to 1.0f; ROSEN_LNE(1.0f, 1.0f) is false
+    // fraction defaults to 1.0f, so the EDR guard in the convertor evaluates to false
     rsNode->SetBlender(&brightnessBlender);
     EXPECT_NE(rsNode, nullptr);
 
     auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
     ASSERT_NE(modifier, nullptr);
-    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_HDR));
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::HRP_PLACEHOLDER_8));
 }
 
 /**
@@ -1364,8 +1641,8 @@ HWTEST_F(RSNodeTest2, SetBlenderBrightnessToBrightness001, TestSize.Level1)
 
 /**
  * @tc.name: SetBlenderBrightnessFreshNode001
- * @tc.desc: test BrightnessBlender on a fresh node. Covers brightness-path modifier==nullptr false
- *           branch, where DetachColorfulBrightnessBlenderProperties is skipped.
+ * @tc.desc: test BrightnessBlender on a fresh node. The blender is rerouted to the NG path:
+ *           FOREGROUND_NG_BLENDER is attached and the legacy flat tag HRP_PLACEHOLDER_7 is not attached.
  * @tc.type: FUNC
  * @tc.require: issueICLU4I
  */
@@ -1377,38 +1654,8 @@ HWTEST_F(RSNodeTest2, SetBlenderBrightnessFreshNode001, TestSize.Level1)
     EXPECT_NE(rsNode, nullptr);
     auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BLENDER);
     ASSERT_NE(modifier, nullptr);
-    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_FRACTION));
-}
-
-/**
-  * @tc.name: SetBlender
-  * @tc.desc: test results of SetBlender
-  * @tc.type: FUNC
-  * @tc.require: issueICLU4I
-  */
- HWTEST_F(RSNodeTest2, SetHdrDarkenBlenderParams001, TestSize.Level1)
-{
-    auto rsNode = RSCanvasNode::Create();
-    RSHdrDarkenBlenderPara params;
-    rsNode->SetHdrDarkenBlenderParams(params);
-    EXPECT_EQ(params.hdrBrightnessRatio_, 1.f);
-}
-
-/**
- * @tc.name: SetBlender
- * @tc.desc: test results of SetHdrDarkenBlenderParams
- * @tc.type: FUNC
- * @tc.require: issueICLU4I
- */
-HWTEST_F(RSNodeTest2, SetHdrDarkenBlenderParams002, TestSize.Level1)
-{
-    auto rsNode = RSCanvasNode::Create();
-    RSHdrDarkenBlenderPara params = {2.0, {0.5, 0.5, 0.1}};
-    rsNode->SetHdrDarkenBlenderParams(params);
-    EXPECT_EQ(params.hdrBrightnessRatio_, 2.0f);
-    EXPECT_EQ(params.grayscaleFactor_.x_, 0.5f);
-    EXPECT_EQ(params.grayscaleFactor_.y_, 0.5f);
-    EXPECT_EQ(params.grayscaleFactor_.z_, 0.1f);
+    EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER));
+    EXPECT_FALSE(modifier->HasProperty(ModifierNG::RSPropertyType::HRP_PLACEHOLDER_7));
 }
 
 /**

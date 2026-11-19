@@ -16,7 +16,9 @@
 #include "blender_taihe.h"
 
 #include "effect/include/blender.h"
+#include "effect/include/blender_base.h"
 #include "effect/include/brightness_blender.h"
+#include "effect/include/colorful_brightness_blender.h"
 #include "effect/include/hdr_darken_blender.h"
 #include "ui_effect_taihe_utils.h"
 
@@ -304,6 +306,37 @@ void ApplyBrightnessBlenderParam(OHOS::Rosen::BrightnessBlender* blender, Bright
     
     blender->SetFraction(static_cast<float>(param.fraction));
 }
+
+// Mirrors ApplyBrightnessBlenderParam for ColorfulBrightnessBlender, which re-declares the same
+// eight fields instead of inheriting from BrightnessBlender.
+void ApplyColorfulBrightnessBlenderParam(OHOS::Rosen::ColorfulBrightnessBlender* blender,
+    BrightnessBlenderParam const& param)
+{
+    if (!blender) {
+        return;
+    }
+    blender->SetCubicRate(static_cast<float>(param.cubicRate));
+    blender->SetQuadRate(static_cast<float>(param.quadraticRate));
+    blender->SetLinearRate(static_cast<float>(param.linearRate));
+    blender->SetDegree(static_cast<float>(param.degree));
+    blender->SetSaturation(static_cast<float>(param.saturation));
+
+    OHOS::Rosen::Vector3f positiveCoeff;
+    if (ANI::UIEffect::ConvertVector3fFromAniTuple(positiveCoeff, param.positiveCoefficient)) {
+        blender->SetPositiveCoeff(positiveCoeff);
+    } else {
+        blender->SetPositiveCoeff({0.f, 0.f, 0.f});
+    }
+
+    OHOS::Rosen::Vector3f negativeCoeff;
+    if (ANI::UIEffect::ConvertVector3fFromAniTuple(negativeCoeff, param.negativeCoefficient)) {
+        blender->SetNegativeCoeff(negativeCoeff);
+    } else {
+        blender->SetNegativeCoeff({0.f, 0.f, 0.f});
+    }
+
+    blender->SetFraction(static_cast<float>(param.fraction));
+}
 } // namespace
 
 Blender CreateBlender()
@@ -418,6 +451,80 @@ HdrDarkenBlender CreateHdrDarkenBlender(double ratio, taihe::optional<Tuple3F> f
     return make_holder<HdrDarkenBlenderImpl, HdrDarkenBlender>(std::move(blender));
 }
 
+BlenderBaseImpl::BlenderBaseImpl()
+    : BlenderImpl(std::make_shared<OHOS::Rosen::BlenderBase>())
+{
+}
+
+BlenderBaseImpl::BlenderBaseImpl(std::shared_ptr<OHOS::Rosen::BlenderBase> blender)
+    : BlenderImpl(blender ? std::move(blender) : std::make_shared<OHOS::Rosen::BlenderBase>())
+{
+}
+
+BlenderBaseImpl::~BlenderBaseImpl()
+{
+}
+
+BlenderBase CreateBrightnessBlenderBase(BrightnessBlenderParam const& param, taihe::optional_view<bool> hdrEnabled)
+{
+    auto blender = std::make_shared<OHOS::Rosen::BrightnessBlender>();
+    ApplyBrightnessBlenderParam(blender.get(), param);
+    blender->SetHdr(hdrEnabled.has_value() && hdrEnabled.value());
+
+    auto blenderBase = std::make_shared<OHOS::Rosen::BlenderBase>();
+    blenderBase->SetBlender(blender);
+    return make_holder<BlenderBaseImpl, BlenderBase>(std::move(blenderBase));
+}
+
+BlenderBase CreateColorfulBrightnessBlenderBase(BrightnessBlenderParam const& param,
+    taihe::optional_view<ColorfulBrightnessBlenderOptions> options)
+{
+    auto blender = std::make_shared<OHOS::Rosen::ColorfulBrightnessBlender>();
+    ApplyColorfulBrightnessBlenderParam(blender.get(), param);
+    if (options.has_value()) {
+        const auto& opts = options.value();
+        if (opts.darkenWeight.has_value()) {
+            blender->SetDarkenWeight(static_cast<float>(opts.darkenWeight.value()));
+        }
+        if (opts.vibrancyStrength.has_value()) {
+            blender->SetVibrancyStrength(static_cast<float>(opts.vibrancyStrength.value()));
+        }
+        if (opts.lumaDiff.has_value()) {
+            blender->SetLumaDiff(static_cast<float>(opts.lumaDiff.value()));
+        }
+        if (opts.hdrEnabled.has_value()) {
+            blender->SetHdrEnabled(opts.hdrEnabled.value());
+        }
+        if (opts.tintedColorPercent.has_value()) {
+            blender->SetTintedColorPercent(static_cast<float>(opts.tintedColorPercent.value()));
+        }
+    }
+
+    auto blenderBase = std::make_shared<OHOS::Rosen::BlenderBase>();
+    blenderBase->SetBlender(blender);
+    return make_holder<BlenderBaseImpl, BlenderBase>(std::move(blenderBase));
+}
+
+BlenderBase CreateHdrDarkenBlenderBase(double ratio, taihe::optional_view<Tuple3F> factors)
+{
+    auto blender = std::make_shared<OHOS::Rosen::HdrDarkenBlender>();
+    blender->SetHdrBrightnessRatio(static_cast<float>(ratio));
+
+    if (factors.has_value()) {
+        OHOS::Rosen::Vector3f vector3f(
+            static_cast<float>(factors.value().x),
+            static_cast<float>(factors.value().y),
+            static_cast<float>(factors.value().z));
+        blender->SetGrayscaleFactor(vector3f);
+    } else {
+        blender->SetGrayscaleFactor({0.299f, 0.587f, 0.114f}); // default grayscale factor
+    }
+
+    auto blenderBase = std::make_shared<OHOS::Rosen::BlenderBase>();
+    blenderBase->SetBlender(blender);
+    return make_holder<BlenderBaseImpl, BlenderBase>(std::move(blenderBase));
+}
+
 } // namespace ANI::UIEffect
 
 // NOLINTBEGIN
@@ -425,4 +532,7 @@ TH_EXPORT_CPP_API_CreateBlender(CreateBlender);
 TH_EXPORT_CPP_API_CreateBrightnessBlender(CreateBrightnessBlender);
 TH_EXPORT_CPP_API_CreateHdrBrightnessBlender(CreateHdrBrightnessBlender);
 TH_EXPORT_CPP_API_CreateHdrDarkenBlender(CreateHdrDarkenBlender);
+TH_EXPORT_CPP_API_CreateBrightnessBlenderBase(CreateBrightnessBlenderBase);
+TH_EXPORT_CPP_API_CreateColorfulBrightnessBlenderBase(CreateColorfulBrightnessBlenderBase);
+TH_EXPORT_CPP_API_CreateHdrDarkenBlenderBase(CreateHdrDarkenBlenderBase);
 // NOLINTEND

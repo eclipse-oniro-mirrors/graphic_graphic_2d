@@ -24,7 +24,6 @@
 #include "effect/include/brightness_blender.h"
 #include "effect/include/color_gradient_effect_para.h"
 #include "effect/include/distortion_collapse_effect_para.h"
-#include "effect/include/shadow_blender.h"
 #include "effect/include/hdr_darken_blender.h"
 #include "effect/include/glass_marble_effect_para.h"
 #include "effect/include/colorful_brightness_blender.h"
@@ -57,6 +56,8 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
 
 private:
+    // BlenderNapi reuses the old blender as pure data source and shares these parsers
+    friend class BlenderNapi;
     static thread_local napi_ref sConstructor_;
     static napi_value Constructor(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void* nativeObject, void* finalize);
@@ -70,9 +71,6 @@ private:
         napi_value optionsObj, ColorfulBrightnessBlender* blender);
     static napi_value SetBackgroundColorBlender(napi_env env, napi_callback_info info);
     static bool ParseBrightnessBlender(napi_env env, napi_value jsObject, BrightnessBlender* blender);
-    static napi_value CreateShadowBlender(napi_env env, napi_callback_info info);
-    static bool CheckCreateShadowBlender(napi_env env, napi_value jsObject);
-    static bool ParseShadowBlender(napi_env env, napi_value jsObject, ShadowBlender* blender);
     static napi_value CreateBorderLight(napi_env env, napi_callback_info info);
     static bool GetBorderLight(napi_env env, napi_value* param, size_t length,
         std::shared_ptr<BorderLightEffectPara>& para);

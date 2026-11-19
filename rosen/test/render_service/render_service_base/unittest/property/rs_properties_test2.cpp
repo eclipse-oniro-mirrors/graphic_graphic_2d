@@ -22,6 +22,7 @@
 #include "animation/rs_particle_ripple_field.h"
 #include "animation/rs_particle_velocity_field.h"
 #include "animation/rs_particle_field_collection.h"
+#include "effect/rs_render_blender_base.h"
 #include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_shape_base.h"
 #include "params/rs_render_params.h"
@@ -534,24 +535,6 @@ HWTEST_F(PropertiesTest, SetForegroundFilterCacheTest, TestSize.Level1)
     foregroundFilterCache = std::make_shared<RSFilter>();
     properties.SetForegroundFilterCache(foregroundFilterCache);
     EXPECT_TRUE(properties.isDrawn_);
-}
-
-/**
- * @tc.name: GetFgBrightnessDescriptionTest
- * @tc.desc: test results of GetFgBrightnessDescription
- * @tc.type: FUNC
- * @tc.require: issueI9W24N
- */
-HWTEST_F(PropertiesTest, GetFgBrightnessDescriptionTest, TestSize.Level1)
-{
-    RSProperties properties;
-    properties.GetEffectProperties().GetBlenderEffect().fgBrightnessParams_ = std::nullopt;
-    properties.GetFgBrightnessDescription();
-
-    RSDynamicBrightnessPara value;
-    properties.GetEffectProperties().GetBlenderEffect().fgBrightnessParams_ = value;
-    properties.GetFgBrightnessDescription();
-    EXPECT_TRUE(properties.GetEffectProperties().GetBlenderEffect().fgBrightnessParams_ != std::nullopt);
 }
 
 /**
@@ -1354,36 +1337,6 @@ HWTEST_F(PropertiesTest,  GenerateAlwaysSnapshotFilterTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: ShadowBlenderTest
- * @tc.desc: test ShadowBlender SetParams, GetParams, Invalid and Description.
- * @tc.type: FUNC
- */
-HWTEST_F(PropertiesTest, ShadowBlenderTest, TestSize.Level1)
-{
-    RSProperties properties;
-    std::optional<RSShadowBlenderPara> paramsNull = std::nullopt;
-    properties.SetShadowBlenderParams(paramsNull);
-    EXPECT_FALSE(properties.isDrawn_);
-    std::string description = "shadowBlenderParams_ is nullopt";
-    EXPECT_EQ(description, properties.GetShadowBlenderDescription());
-
-    float cubic = 0;
-    float quadratic = 0;
-    float linear = 0;
-    float constant = 0;
-    auto params = std::optional<RSShadowBlenderPara>({ cubic, quadratic, linear, constant });
-    properties.SetShadowBlenderParams(params);
-    EXPECT_TRUE(properties.isDrawn_);
-    EXPECT_TRUE(properties.GetShadowBlenderParams().has_value());
-    EXPECT_TRUE(properties.IsShadowBlenderValid());
-    description = "ShadowBlender, cubic: " + std::to_string(cubic) +
-        ", quadratic: " + std::to_string(quadratic) +
-        ", linear: " + std::to_string(linear) +
-        ", constant: " + std::to_string(constant);
-    EXPECT_EQ(description, properties.GetShadowBlenderDescription());
-}
-
-/**
  * @tc.name: GenerateForegroundFilterTest_RenderFilter001
  * @tc.desc: test GenerateForegroundFilter with render filter only
  * @tc.type: FUNC
@@ -1679,155 +1632,44 @@ HWTEST_F(PropertiesTest, ComposeNGRenderFilter002, TestSize.Level1)
 }
 
 /**
- * @tc.name: HdrDarkenBlenderTest
- * @tc.desc: test HdrDarkenBlender SetParams, GetParams, Invalid and Description.
+ * @tc.name: NGBlenderTest
+ * @tc.desc: test the NG blender main path: create the NG object by RSNGEffectType, store it via
+ *           SetNGBlender (store-only, no unpacking), read it back via GetNGBlender, and clear it.
  * @tc.type: FUNC
  */
-HWTEST_F(PropertiesTest, HdrDarkenBlenderTest, TestSize.Level1)
+HWTEST_F(PropertiesTest, NGBlenderTest, TestSize.Level1)
 {
     RSProperties properties;
-    std::optional<RSHdrDarkenBlenderPara> paramsNull = std::nullopt;
-    properties.SetHdrDarkenBlenderParams(paramsNull);
-    EXPECT_FALSE(properties.isDrawn_);
-    std::string description = "hdrDarkenBlenderParams is nullopt";
-    EXPECT_EQ(description, properties.GetHdrDarkenBlenderDescription());
+    // effect_ lazy-init branch: GetNGBlender before any effect member exists
+    EXPECT_EQ(properties.GetNGBlender(), nullptr);
+    // no NG blender stored: IsNGBlenderValid stays false and clearing is a no-op
+    EXPECT_FALSE(properties.IsNGBlenderValid());
+    properties.SetNGBlender(nullptr);
 
-    float hdrBrightnessRatio = 1.0;
-    float grayscaleFactorR = 0.299;
-    float grayscaleFactorG = 0.587;
-    float grayscaleFactorB = 0.114;
-    auto params = std::optional<RSHdrDarkenBlenderPara>({ hdrBrightnessRatio, { grayscaleFactorR,
-                                                            grayscaleFactorG, grayscaleFactorB } });
-    properties.SetHdrDarkenBlenderParams(params);
+    auto ngBlender = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(ngBlender, nullptr);
+    EXPECT_EQ(ngBlender->GetType(), RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+
+    properties.SetNGBlender(ngBlender);
     EXPECT_TRUE(properties.isDrawn_);
-    EXPECT_TRUE(properties.GetHdrDarkenBlenderParams().has_value());
-    EXPECT_TRUE(properties.IsHdrDarkenBlenderValid());
-    description = "HdrDarkenBlender, hdrBrightnessRatio: " + std::to_string(hdrBrightnessRatio) +
-        ", grayscaleFactor.r: " + std::to_string(grayscaleFactorR) +
-        ", grayscaleFactor.g: " + std::to_string(grayscaleFactorG) +
-        ", grayscaleFactor.b: " + std::to_string(grayscaleFactorB);
-    EXPECT_EQ(description, properties.GetHdrDarkenBlenderDescription());
-}
+    EXPECT_EQ(properties.GetNGBlender(), ngBlender);
+    EXPECT_TRUE(properties.IsNGBlenderValid());
 
-/**
- * @tc.name: ColorfulBrightnessBlenderParamsTest
- * @tc.desc: test ColorfulBrightnessBlender SetColorfulBrightnessBlenderParams/Get/
- *           IsValid/Description and member setters.
- *           Covers: SetColorfulBrightnessBlenderParams has-value/nullopt branches, GetColorfulBrightnessBlenderParams
- *           effect_/no-effect branches, GetColorfulBrightnessBlenderDescription nullopt/value branches,
- *           SetColorfulBrightnessBlenderMember template first-init/already-init branches, all 12 member setters.
- * @tc.type: FUNC
- */
-HWTEST_F(PropertiesTest, ColorfulBrightnessBlenderParamsTest, TestSize.Level1)
-{
-    RSProperties properties;
-    // GetColorfulBrightnessBlenderParams: effect_ is nullptr branch (C2)
-    EXPECT_EQ(properties.GetColorfulBrightnessBlenderParams(), nullptr);
-    EXPECT_FALSE(properties.IsColorfulBrightnessBlenderValid());
-    // GetColorfulBrightnessBlenderDescription: nullopt branch (D1)
-    EXPECT_EQ(std::string("colorfulBrightnessBlenderParams is nullopt"),
-        properties.GetColorfulBrightnessBlenderDescription());
+    // replace with nullptr: dirty flags are still set, stored object is cleared
+    properties.SetNGBlender(nullptr);
+    EXPECT_EQ(properties.GetNGBlender(), nullptr);
+    EXPECT_FALSE(properties.IsNGBlenderValid());
 
-    // SetColorfulBrightnessBlenderParams with nullopt: params.has_value() false branch (B2)
-    properties.SetColorfulBrightnessBlenderParams(nullptr);
-    EXPECT_FALSE(properties.isDrawn_);
-
-    // SetColorfulBrightnessBlenderParams with value: params.has_value() true branch (B1)
-    float darkenWeight = 1.0f;
-    float fraction = 0.5f;
-    float cubicRate = 0.1f;
-    float quadRate = 0.2f;
-    float linearRate = 0.3f;
-    float degree = 0.4f;
-    float saturation = 0.5f;
-    Vector3f pos(0.6f, 0.7f, 0.8f);
-    Vector3f neg(0.9f, 0.11f, 0.22f);
-    float vibrancyStrength = 0.33f;
-    float lumaDiff = 0.88f;
-    auto params = std::make_unique<RSColorfulBrightnessBlenderPara>(darkenWeight, fraction, cubicRate, quadRate,
-        linearRate, degree, saturation, pos, neg, vibrancyStrength, lumaDiff);
-    properties.SetColorfulBrightnessBlenderParams(std::move(params));
-    EXPECT_TRUE(properties.isDrawn_);
-    EXPECT_NE(properties.GetColorfulBrightnessBlenderParams(), nullptr);
-    EXPECT_TRUE(properties.IsColorfulBrightnessBlenderValid());
-    // GetColorfulBrightnessBlenderParams: effect_ valid branch (C1)
-    const auto* gotParams = properties.GetColorfulBrightnessBlenderParams();
-    EXPECT_NE(gotParams, nullptr);
-    EXPECT_EQ(gotParams->darkenWeight_, darkenWeight);
-    EXPECT_EQ(gotParams->fraction_, fraction);
-    EXPECT_EQ(gotParams->cubicRate_, cubicRate);
-    // GetColorfulBrightnessBlenderDescription: has-value branch (D2)
-    std::string description = "ColorfulBrightnessBlender, darkenWeight: " + std::to_string(darkenWeight) +
-        ", fraction: " + std::to_string(fraction) +
-        ", cubicRate: " + std::to_string(cubicRate) +
-        ", quadRate: " + std::to_string(quadRate) +
-        ", linearRate: " + std::to_string(linearRate) +
-        ", degree: " + std::to_string(degree) +
-        ", saturation: " + std::to_string(saturation) +
-        ", positiveCoeff.x: " + std::to_string(pos.x_) +
-        ", positiveCoeff.y: " + std::to_string(pos.y_) +
-        ", positiveCoeff.z: " + std::to_string(pos.z_) +
-        ", negativeCoeff.x: " + std::to_string(neg.x_) +
-        ", negativeCoeff.y: " + std::to_string(neg.y_) +
-        ", negativeCoeff.z: " + std::to_string(neg.z_) +
-        ", vibrancyStrength: " + std::to_string(vibrancyStrength) +
-        ", lumaDiff: " + std::to_string(lumaDiff) +
-        ", hdrEnabled: " + std::to_string(false) +
-        ", tintedColorPercent: " + std::to_string(1.0f);
-    EXPECT_EQ(description, properties.GetColorfulBrightnessBlenderDescription());
-}
-
-/**
- * @tc.name: ColorfulBrightnessBlenderMemberSettersTest
- * @tc.desc: test all 12 ColorfulBrightnessBlender member setters via SetColorfulBrightnessBlenderMember template.
- *           First setter triggers params init (nullopt->value branch A1), subsequent setters
- *           hit already-init branch (A2). Verifies values are stored correctly.
- * @tc.type: FUNC
- */
-HWTEST_F(PropertiesTest, ColorfulBrightnessBlenderMemberSettersTest, TestSize.Level1)
-{
-    RSProperties properties;
-    EXPECT_EQ(properties.GetColorfulBrightnessBlenderParams(), nullptr);
-
-    // First member setter: SetColorfulBrightnessBlenderMember template, params nullopt->init branch (A1)
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::darkenWeight_, 1.0f);
-    const auto* params = properties.GetColorfulBrightnessBlenderParams();
-    EXPECT_NE(params, nullptr);
-    EXPECT_EQ(params->darkenWeight_, 1.0f);
-    EXPECT_TRUE(properties.isDrawn_);
-
-    // Subsequent setters: params already has_value branch (A2)
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::fraction_, 0.5f);
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::cubicRate_, 0.1f);
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::quadRate_, 0.2f);
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::linearRate_, 0.3f);
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::degree_, 0.4f);
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::saturation_, 0.5f);
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::positiveCoeff_,
-        Vector3f(0.6f, 0.7f, 0.8f));
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::negativeCoeff_,
-        Vector3f(0.9f, 0.11f, 0.22f));
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::vibrancyStrength_, 0.33f);
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::lumaDiff_, 0.88f);
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::hdrEnabled_, false);
-    properties.SetColorfulBrightnessBlenderMember(&RSColorfulBrightnessBlenderPara::tintedColorPercent_, 0.66f);
-
-    const auto* got = properties.GetColorfulBrightnessBlenderParams();
-    EXPECT_NE(got, nullptr);
-    EXPECT_EQ(got->darkenWeight_, 1.0f);
-    EXPECT_EQ(got->fraction_, 0.5f);
-    EXPECT_EQ(got->cubicRate_, 0.1f);
-    EXPECT_EQ(got->quadRate_, 0.2f);
-    EXPECT_EQ(got->linearRate_, 0.3f);
-    EXPECT_EQ(got->degree_, 0.4f);
-    EXPECT_EQ(got->saturation_, 0.5f);
-    EXPECT_EQ(got->positiveCoeff_, Vector3f(0.6f, 0.7f, 0.8f));
-    EXPECT_EQ(got->negativeCoeff_, Vector3f(0.9f, 0.11f, 0.22f));
-    EXPECT_EQ(got->vibrancyStrength_, 0.33f);
-    EXPECT_EQ(got->lumaDiff_, 0.88f);
-    EXPECT_EQ(got->hdrEnabled_, false);
-    EXPECT_EQ(got->tintedColorPercent_, 0.66f);
-    EXPECT_TRUE(properties.IsColorfulBrightnessBlenderValid());
+    // UpdateFilter/DisableHWCForFilter operand: an NG blender alone drives needFilter_ true and
+    // disables HWC after UpdateFilter; clearing it restores the clean state
+    properties.SetNGBlender(ngBlender);
+    properties.UpdateFilter();
+    EXPECT_TRUE(properties.NeedFilter());
+    EXPECT_TRUE(properties.DisableHWCForFilter());
+    properties.SetNGBlender(nullptr);
+    properties.UpdateFilter();
+    EXPECT_FALSE(properties.NeedFilter());
+    EXPECT_FALSE(properties.DisableHWCForFilter());
 }
 
 /**

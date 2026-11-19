@@ -47,6 +47,7 @@ ohos_shared_library("uieffect_napi") {
   configs = [ ":graphic_napi_uieffect_config" ]
 
   sources = [
+    "src/blender_napi.cpp",
     "src/effect_napi.cpp",
     "src/filter_napi.cpp",
     "src/mask_napi.cpp",

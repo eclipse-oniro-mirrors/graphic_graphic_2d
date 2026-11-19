@@ -28,6 +28,7 @@
 #include "common/rs_atlas_info.h"
 #include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_mask_base.h"
+#include "effect/rs_render_blender_base.h"
 #include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_shape_base.h"
 #include "modifier_ng/rs_render_modifier_ng.h"
@@ -599,6 +600,16 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::Dump(std::string& o
 }
 
 template<>
+void RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>::Dump(std::string& out) const
+{
+    if (auto property = Get()) {
+        property->Dump(out);
+        return;
+    }
+    out += "[null]";
+}
+
+template<>
 void RSRenderProperty<std::shared_ptr<RSImage>>::Dump(std::string& out) const
 {
     if (!Get()) {
@@ -652,12 +663,6 @@ void RSRenderProperty<std::shared_ptr<OHOS::Media::PixelMap>>::Dump(std::string&
 {}
 template<>
 void RSRenderProperty<RSDynamicBrightnessPara>::Dump(std::string& out) const
-{}
-template<>
-void RSRenderProperty<RSShadowBlenderPara>::Dump(std::string& out) const
-{}
-template<>
-void RSRenderProperty<RSHdrDarkenBlenderPara>::Dump(std::string& out) const
 {}
 template<>
 void RSRenderProperty<std::vector<Vector2f>>::Dump(std::string& out) const
@@ -1406,6 +1411,48 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::Set(
     OnChange();
 }
 
+template<>
+void RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>::OnAttach(RSRenderNode& node,
+    std::weak_ptr<ModifierNG::RSRenderModifier> modifier)
+{
+    if (stagingValue_) {
+        stagingValue_->Attach(node, modifier);
+    }
+}
+
+template<>
+void RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>::OnDetach()
+{
+    if (stagingValue_) {
+        stagingValue_->Detach();
+    }
+}
+
+template<>
+void RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>::Set(
+    const std::shared_ptr<RSNGRenderBlenderBase>& value, PropertyUpdateType type)
+{
+    if (value == stagingValue_) {
+        return;
+    }
+
+    if (type == UPDATE_TYPE_ONLY_VALUE) {
+        stagingValue_ = value;
+        return;
+    }
+    // PLANNING: node_ is only used in this function, find alternative way detach/attach values, and remove the node_
+    // member variable.
+    auto node = node_.lock();
+    if (node && stagingValue_) {
+        stagingValue_->Detach();
+    }
+    stagingValue_ = value;
+    if (node && value) {
+        value->Attach(*node, modifier_.lock());
+    }
+    OnChange();
+}
+
 template<typename T>
 RSRenderPropertyBase::RSPropertyUnmarshallingFuncRegister RSRenderProperty<T>::unmarshallingFuncRegister_ { false,
     RSRenderProperty<T>::type_, RSRenderProperty<T>::OnUnmarshalling };
@@ -1422,6 +1469,7 @@ RSRenderPropertyBase::RSPropertyUnmarshallingFuncRegister RSRenderAnimatableProp
 #define SHADER_PTR std::shared_ptr<RSNGRenderShaderBase>
 #define MASK_PTR std::shared_ptr<RSNGRenderMaskBase>
 #define SHAPE_PTR std::shared_ptr<RSNGRenderShapeBase>
+#define BLENDER_PTR std::shared_ptr<RSNGRenderBlenderBase>
 
 #include "modifier/rs_property_def.in"
 
@@ -1429,6 +1477,7 @@ RSRenderPropertyBase::RSPropertyUnmarshallingFuncRegister RSRenderAnimatableProp
 #undef SHADER_PTR
 #undef MASK_PTR
 #undef SHAPE_PTR
+#undef BLENDER_PTR
 
 #undef DECLARE_PROPERTY
 #undef DECLARE_ANIMATABLE_PROPERTY

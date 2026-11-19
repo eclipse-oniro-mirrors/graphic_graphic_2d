@@ -21,8 +21,10 @@
 
 #include "common/rs_common_def.h"
 #include "common/rs_optional_trace.h"
+#include "drawable/rs_blender_drawable_utils.h"
 #include "drawable/rs_property_drawable_utils.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
+#include "effect/rs_render_blender_base.h"
 #include "memory/rs_tag_tracker.h"
 #include "modifier_ng/rs_render_modifier_ng.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
@@ -299,8 +301,7 @@ RSDrawable::Ptr RSBeginBlenderDrawable::OnGenerate(const RSRenderNode& node)
 void RSBeginBlenderDrawable::PostUpdate(const RSRenderNode& node)
 {
     const auto& properties = node.GetRenderProperties();
-    enableEDREffect_ = properties.GetFgBrightnessEnableEDR() ||
-        properties.GetColorfulBrightnessBlenderEnableEDR();
+    enableEDREffect_ = RSBlenderDrawableUtils::GetNGBlenderEnableEDR(properties);
     if (enableEDREffect_) {
         RS_OPTIONAL_TRACE_NAME_FMT(
             "RSBeginBlenderDrawable:PostUpdate node[%" PRIu64 "] has edr brightness", node.GetId());
@@ -318,49 +319,36 @@ bool RSBeginBlenderDrawable::OnUpdate(const RSRenderNode& node)
     const RSProperties& properties = node.GetRenderProperties();
     auto blendMode = properties.GetColorBlendMode();
     stagingBlendApplyType_ = properties.GetColorBlendApplyType();
-    // NOTE: stagingIsDangerous_ should be set true when adding a blender that may generate transparent pixels
-    if (properties.IsFgBrightnessValid()) {
-        if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
-            stagingPropertyDescription_ = properties.GetFgBrightnessDescription();
+    // NG blender takes priority over the blendMode path
+    const auto& ngBlender = properties.GetNGBlender();
+    if (ngBlender) {
+        auto blender = RSBlenderDrawableUtils::MakeBlenderFromNG(ngBlender);
+        if (blender != nullptr) {
+            if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
+                stagingPropertyDescription_ =
+                    "NG Blender, type: " + RSNGRenderEffectHelper::GetEffectTypeString(ngBlender->GetType());
+            }
+            stagingBlender_ = std::move(blender);
+            stagingIsDangerous_ = false;
+            needSync_ = true;
+            PostUpdate(node);
+            return true;
         }
-        stagingBlender_ = RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
-            properties.GetFgBrightnessParams().value());
-        stagingIsDangerous_ = false;
-    } else if (blendMode && blendMode != static_cast<int>(RSColorBlendMode::NONE)) {
+    }
+    if (blendMode && blendMode != static_cast<int>(RSColorBlendMode::NONE)) {
         if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
             stagingPropertyDescription_ = "BlendMode, blendMode: " + std::to_string(blendMode) +
                                           " blendApplyType: " + std::to_string(stagingBlendApplyType_);
         }
         // map blendMode to Drawing::BlendMode and convert to Blender
         stagingBlender_ = Drawing::Blender::CreateWithBlendMode(static_cast<Drawing::BlendMode>(blendMode - 1));
-        stagingIsDangerous_ = RSPropertyDrawableUtils::IsDangerousBlendMode(blendMode - 1, stagingBlendApplyType_);
-    } else if (properties.IsShadowBlenderValid()) {
-        if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
-            stagingPropertyDescription_ = properties.GetShadowBlenderDescription();
-        }
-        stagingBlender_ = RSPropertyDrawableUtils::MakeShadowBlender(properties.GetShadowBlenderParams().value());
-        stagingIsDangerous_ = false;
-    } else if (properties.IsHdrDarkenBlenderValid()) {
-        if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
-            stagingPropertyDescription_ = properties.GetHdrDarkenBlenderDescription();
-        }
-        stagingBlender_ = RSPropertyDrawableUtils::MakeHdrDarkenBlender(properties.GetHdrDarkenBlenderParams().value());
-        stagingIsDangerous_ = false;
-    } else if (properties.IsColorfulBrightnessBlenderValid()) {
-        if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
-            stagingPropertyDescription_ = properties.GetColorfulBrightnessBlenderDescription();
-        }
-        stagingBlender_ = RSPropertyDrawableUtils::MakeColorfulBrightnessBlender(
-            *properties.GetColorfulBrightnessBlenderParams());
-        stagingIsDangerous_ = false;
-    } else {
-        return false;
+        stagingIsDangerous_ = RSBlenderDrawableUtils::IsDangerousBlendMode(blendMode - 1, stagingBlendApplyType_);
+        needSync_ = true;
+        PostUpdate(node);
+        return true;
     }
 
-    needSync_ = true;
-    PostUpdate(node);
-
-    return true;
+    return false;
 }
 
 void RSBeginBlenderDrawable::OnSync()
@@ -387,7 +375,7 @@ void RSBeginBlenderDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect
 #endif
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO, "RSBeginBlenderDrawable:: %s, bounds: %s",
         propertyDescription_.c_str(), rect->ToString().c_str());
-    RSPropertyDrawableUtils::BeginBlender(*paintFilterCanvas, blender_, blendApplyType_, isDangerous_);
+    RSBlenderDrawableUtils::BeginBlender(*paintFilterCanvas, blender_, blendApplyType_, isDangerous_);
 }
 
 RSDrawable::Ptr RSEndBlenderDrawable::OnGenerate(const RSRenderNode& node)
@@ -425,7 +413,7 @@ void RSEndBlenderDrawable::OnSync()
 void RSEndBlenderDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const
 {
     auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-    RSPropertyDrawableUtils::EndBlender(*paintFilterCanvas, blendApplyType_);
+    RSBlenderDrawableUtils::EndBlender(*paintFilterCanvas, blendApplyType_);
 }
 
 // ============================================================================
