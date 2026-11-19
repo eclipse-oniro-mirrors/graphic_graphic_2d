@@ -63,7 +63,7 @@
 #undef LOG_TAG
 #define LOG_TAG "RSRenderPipeline"
 
-namespace OHOS{
+namespace OHOS {
 namespace Rosen {
 
 std::shared_ptr<RSRenderPipeline> RSRenderPipeline::Create(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
@@ -137,7 +137,7 @@ bool RSRenderPipeline::PostMainThreadSyncTask(RSTaskMessage::RSTask task)
     return mainThread_->PostSyncTask(task);
 }
 
-void RSRenderPipeline::PostUniRenderThreadSyncTask(RSTaskMessage::RSTask task)
+void RSRenderPipeline::PostUniRenderThreadSyncTask(const std::function<void()>& task)
 {
     if (uniRenderThread_ == nullptr) {
         return;
@@ -368,8 +368,7 @@ std::pair<sptr<RSIClientToRenderConnection>, uint64_t> RSRenderPipeline::AddConn
     return {connectToRenderConnection, tokenMaskId};
 }
 
-std::pair<sptr<RSIClientToRenderConnection>, uint64_t> RSRenderPipeline::FindClientToRenderConnection(
-    uint64_t remotePid)
+std::pair<sptr<RSIClientToRenderConnection>, uint64_t> RSRenderPipeline::FindClientToRenderConnection(pid_t remotePid)
 {
     std::unique_lock<std::mutex> lock(renderConnectionMutex_);
     auto iter = renderConnections_.find(static_cast<pid_t>(remotePid));
