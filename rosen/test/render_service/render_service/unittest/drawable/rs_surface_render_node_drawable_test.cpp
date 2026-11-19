@@ -242,11 +242,14 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw003, TestSize.Level1)
     RSUniRenderThread::ResetCaptureParam();
     auto params = std::make_unique<RSRenderThreadParams>();
     params->SetIsMirrorScreen(true);
+    params->SetSecurityDisplay(true);
     RSUniRenderThread::Instance().Sync(std::move(params));
     RSUniRenderThread::Instance().SetBlackList(blackList);
     ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-    surfaceDrawable_->OnDraw(*drawingCanvas_);
-    RSUniRenderThread::Instance().SetBlackList({});
+    surfaceDrawable_->OnDraw(*canvas_);
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::SURFACE_SKIP_IN_MIRROR);
+    // restore
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
 
 /**
@@ -273,6 +276,37 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDrawRebuildingSkip, TestSize.Level1)
     EXPECT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::REBUILDING_SKIP);
 
     surfaceParams->SetRebuildingState(false);
+}
+
+/**
+ * @tc.name: OnDrawCursorHideSkip001
+ * @tc.desc: Test OnDraw skips a cursor node when cursorMode is HIDE on a mirror security display
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDrawCursorHideSkip001, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    drawable_->renderParams_->shouldPaint_ = true;
+    drawable_->renderParams_->contentEmpty_ = false;
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->rsSurfaceNodeType_ = RSSurfaceNodeType::CURSOR_NODE;
+    RSUniRenderThread::ResetCaptureParam();
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(true);
+    params->SetSecurityDisplay(true);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::HIDE);
+    surfaceDrawable_->OnDraw(*canvas_);
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::SURFACE_SKIP_IN_MIRROR);
+
+    // restore, renderThreadParams is thread_local and shared by the following cases
+    surfaceParams->rsSurfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::DEFAULT);
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
 
 /**
@@ -334,11 +368,14 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture003, TestSize.Level1)
     RSUniRenderThread::ResetCaptureParam();
     auto params = std::make_unique<RSRenderThreadParams>();
     params->SetIsMirrorScreen(true);
+    params->SetSecurityDisplay(true);
     RSUniRenderThread::Instance().Sync(std::move(params));
     RSUniRenderThread::Instance().SetBlackList(blackList);
     ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     surfaceDrawable_->OnCapture(*canvas_);
-    RSUniRenderThread::Instance().SetBlackList({});
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::SURFACE_SKIP_IN_MIRROR);
+    // restore
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
 
 /**
@@ -437,6 +474,37 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture006, TestSize.Level1)
     surfaceParams->GetMultableSpecialLayerMgr().Set(HAS_GENERAL_SPECIAL, false);
     RSUniRenderThread::SetCaptureParam(CaptureParam());
     RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+}
+
+/**
+ * @tc.name: OnCaptureCursorHideSkip001
+ * @tc.desc: Test OnCapture skips a cursor node when cursorMode is HIDE on a mirror security display
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCaptureCursorHideSkip001, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    drawable_->renderParams_->shouldPaint_ = true;
+    drawable_->renderParams_->contentEmpty_ = false;
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->rsSurfaceNodeType_ = RSSurfaceNodeType::CURSOR_NODE;
+    RSUniRenderThread::ResetCaptureParam();
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(true);
+    params->SetSecurityDisplay(true);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::HIDE);
+    surfaceDrawable_->OnCapture(*canvas_);
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::SURFACE_SKIP_IN_MIRROR);
+
+    // restore, renderThreadParams is thread_local and shared by the following cases
+    surfaceParams->rsSurfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::DEFAULT);
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
 
 /**

@@ -50,6 +50,14 @@ ScreenId GenerateScreenId()
 constexpr int CANVAS_WIDTH = 800;
 constexpr int CANVAS_HEIGHT = 600;
 const Drawing::Rect DEFAULT_RECT {0, 0, 100, 100};
+
+std::shared_ptr<RSProcessor> MakeCurrentScreenProcessor(bool isVirtualScreen)
+{
+    if (isVirtualScreen) {
+        return std::make_shared<RSUniRenderVirtualProcessor>();
+    }
+    return std::make_shared<RSUniRenderProcessor>();
+}
 }
 class RSSpecialLayerUtilsTest : public testing::Test {
 public:
@@ -85,6 +93,9 @@ void RSSpecialLayerUtilsTest::TearDown()
     for (auto id : clearList) {
         nodeMap.UnregisterRenderNode(id);
     }
+    RSUniRenderThread::ResetCaptureParam();
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    WhiteListRootIdStack::ClearWhiteListRootIds();
 }
 
 /**
@@ -1729,4 +1740,537 @@ HWTEST_F(RSSpecialLayerUtilsTest, GetMergeBlackListInRenderThread_SkipWindowDisa
     RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
 }
 
+/**
+ * @tc.name: IsWhiteListNode001
+ * @tc.desc: test IsWhiteListNode for empty whiteList, non-empty whiteList without and with a recorded root id
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, IsWhiteListNode001, TestSize.Level2)
+{
+    auto params = std::make_unique<RSRenderThreadParams>();
+    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(params));
+    WhiteListRootIdStack::ClearWhiteListRootIds();
+
+    // empty whiteList -> never skip draw, treated as a whiteList node
+    RSUniRenderThread::Instance().SetWhiteList({});
+    ASSERT_TRUE(RSSpecialLayerUtils::IsWhiteListNode());
+
+    // non-empty whiteList and no recorded root id -> not a whiteList node
+    RSUniRenderThread::Instance().SetWhiteList({GenerateNodeId()});
+    ASSERT_FALSE(RSSpecialLayerUtils::IsWhiteListNode());
+
+    // non-empty whiteList with a recorded root id -> is a whiteList node
+    LeashPersistentId rootId = GenerateNodeId();
+    AutoSpecialLayerStateRecover recover(rootId);
+    ASSERT_TRUE(RSSpecialLayerUtils::IsWhiteListNode());
+}
+
+/**
+ * @tc.name: BuildSpecialLayerRenderParam001
+ * @tc.desc: test BuildSpecialLayerRenderParam for virtual screen and wired screen
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, BuildSpecialLayerRenderParam001, TestSize.Level2)
+{
+    NodeId blackId = GenerateNodeId();
+    NodeId whiteId = GenerateNodeId();
+    RSScreenRenderParams screenParams(GenerateNodeId());
+    screenParams.screenProperty_.Set<ScreenPropertyType::BLACK_LIST>(std::unordered_set<NodeId>{blackId});
+    screenParams.screenProperty_.Set<ScreenPropertyType::ENABLE_SKIP_WINDOW>(false);
+    screenParams.screenProperty_.Set<ScreenPropertyType::WHITE_LIST>(std::unordered_set<NodeId>{whiteId});
+    screenParams.screenProperty_.Set<ScreenPropertyType::CURSOR_RENDER_MODE>(
+        static_cast<uint8_t>(RSVirtualScreenCursorMode::HIDE));
+
+    RSLogicalDisplayRenderParams displayParams(GenerateNodeId());
+    displayParams.isSecurityDisplay_ = true;
+    displayParams.SetSecurityExemption(true);
+
+    // virtual (non-wired) screen carries cursorMode, whiteList and secExemption
+    auto state = RSSpecialLayerUtils::BuildSpecialLayerRenderParam(screenParams, displayParams, false);
+    ASSERT_EQ(state.blackList.count(blackId), 1u);
+    ASSERT_TRUE(state.securityDisplay);
+    ASSERT_EQ(state.cursorMode, RSVirtualScreenCursorMode::HIDE);
+    ASSERT_EQ(state.whiteList.count(whiteId), 1u);
+    ASSERT_TRUE(state.secExemption);
+
+    // wired screen keeps only blackList and securityDisplay, the rest stay default
+    auto wiredState = RSSpecialLayerUtils::BuildSpecialLayerRenderParam(screenParams, displayParams, true);
+    ASSERT_EQ(wiredState.blackList.count(blackId), 1u);
+    ASSERT_TRUE(wiredState.securityDisplay);
+    ASSERT_EQ(wiredState.cursorMode, RSVirtualScreenCursorMode::DEFAULT);
+    ASSERT_TRUE(wiredState.whiteList.empty());
+    ASSERT_FALSE(wiredState.secExemption);
+}
+
+/**
+ * @tc.name: SpecialLayerRenderParam001
+ * @tc.desc: test SpecialLayerRenderParam equality operators, every field must take part in the comparison
+ *           because the result drives the virtual screen dirty refresh, and test Clear
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, SpecialLayerRenderParam001, TestSize.Level2)
+{
+    SpecialLayerRenderParam lhs;
+    SpecialLayerRenderParam rhs;
+
+    rhs.blackList = {GenerateNodeId()};
+    ASSERT_TRUE(lhs != rhs);
+    rhs.Clear();
+
+    rhs.whiteList = {GenerateNodeId()};
+    ASSERT_TRUE(lhs != rhs);
+    rhs.Clear();
+
+    rhs.cursorMode = RSVirtualScreenCursorMode::HIDE;
+    ASSERT_TRUE(lhs != rhs);
+    rhs.Clear();
+
+    rhs.securityDisplay = true;
+    ASSERT_TRUE(lhs != rhs);
+    rhs.Clear();
+
+    rhs.secExemption = true;
+    ASSERT_TRUE(lhs != rhs);
+}
+
+/**
+ * @tc.name: GetSpecialLayerStateInVisibleRect001
+ * @tc.desc: test GetSpecialLayerStateInVisibleRect for whiteList, hideCursor, hasSlInVisibleRect and none
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, GetSpecialLayerStateInVisibleRect001, TestSize.Level2)
+{
+    ScreenId screenId = GenerateScreenId();
+    RSLogicalDisplayRenderParams displayParams(GenerateNodeId());
+    displayParams.SetScreenId(screenId);
+    RSScreenRenderParams screenParams(GenerateNodeId());
+
+    // nothing set -> NO_SPECIAL_LAYER
+    ASSERT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
+        DisplaySpecialLayerState::NO_SPECIAL_LAYER);
+
+    // non-empty whiteList -> HAS_SPECIAL_LAYER
+    screenParams.screenProperty_.Set<ScreenPropertyType::WHITE_LIST>(std::unordered_set<NodeId>{GenerateNodeId()});
+    ASSERT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+    screenParams.screenProperty_.Set<ScreenPropertyType::WHITE_LIST>(std::unordered_set<NodeId>{});
+
+    // cursorMode HIDE -> HAS_SPECIAL_LAYER
+    screenParams.screenProperty_.Set<ScreenPropertyType::CURSOR_RENDER_MODE>(
+        static_cast<uint8_t>(RSVirtualScreenCursorMode::HIDE));
+    ASSERT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+    screenParams.screenProperty_.Set<ScreenPropertyType::CURSOR_RENDER_MODE>(
+        static_cast<uint8_t>(RSVirtualScreenCursorMode::DEFAULT));
+
+    // special layer recorded in the visible rect -> HAS_SPECIAL_LAYER
+    displayParams.specialLayerManager_.SetHasSlInVisibleRect(screenId, true);
+    ASSERT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(&displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+}
+
+/**
+ * @tc.name: GetSpecialLayerStateInSubTree001
+ * @tc.desc: test GetSpecialLayerStateInSubTree for the non-snapshot cursorMode/whiteList/blackList branches,
+ *           the capture window branch and the snapshot branch
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, GetSpecialLayerStateInSubTree001, TestSize.Level2)
+{
+    ScreenId screenId = GenerateScreenId();
+    RSLogicalDisplayRenderParams displayParams(GenerateNodeId());
+    displayParams.SetScreenId(screenId);
+    RSScreenRenderParams screenParams(GenerateNodeId());
+    RSUniRenderThread::ResetCaptureParam();
+
+    // nothing set, not a snapshot, no capture window -> NO_SPECIAL_LAYER
+    ASSERT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::NO_SPECIAL_LAYER);
+
+    // non-snapshot: cursorMode HIDE -> HAS_SPECIAL_LAYER
+    screenParams.screenProperty_.Set<ScreenPropertyType::CURSOR_RENDER_MODE>(
+        static_cast<uint8_t>(RSVirtualScreenCursorMode::HIDE));
+    ASSERT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+    screenParams.screenProperty_.Set<ScreenPropertyType::CURSOR_RENDER_MODE>(
+        static_cast<uint8_t>(RSVirtualScreenCursorMode::DEFAULT));
+
+    // non-snapshot: non-empty whiteList -> HAS_SPECIAL_LAYER
+    screenParams.screenProperty_.Set<ScreenPropertyType::WHITE_LIST>(std::unordered_set<NodeId>{GenerateNodeId()});
+    ASSERT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+    screenParams.screenProperty_.Set<ScreenPropertyType::WHITE_LIST>(std::unordered_set<NodeId>{});
+
+    // non-snapshot: screen black list recorded -> HAS_SPECIAL_LAYER
+    displayParams.specialLayerManager_.SetWithScreen(screenId, SpecialLayerType::HAS_BLACK_LIST, true);
+    ASSERT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+    displayParams.specialLayerManager_.SetWithScreen(screenId, SpecialLayerType::HAS_BLACK_LIST, false);
+
+    // only a capture window -> CAPTURE_WINDOW
+    displayParams.hasCaptureWindow_ = true;
+    ASSERT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::CAPTURE_WINDOW);
+    displayParams.hasCaptureWindow_ = false;
+
+    // snapshot: HAS_SNAPSHOT_SKIP -> HAS_SPECIAL_LAYER
+    displayParams.specialLayerManager_.Set(SpecialLayerType::HAS_SNAPSHOT_SKIP, true);
+    RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
+    ASSERT_EQ(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(displayParams, &screenParams),
+        DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
+
+    // restore
+    RSUniRenderThread::ResetCaptureParam();
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot001
+ * @tc.desc: single surface capture (isSnapshot_ && isSingleSurface_) does not enter the skip judgement, so the
+ *           surface is kept even when its id is carried by the capture blackList
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot001, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetRSProcessor(MakeCurrentScreenProcessor(false));
+    params->SetIsMirrorScreen(false);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    // same capture blackList as CheckIfSurfaceSkipInMirrorOrScreenshot003, only isSingleSurface_ differs
+    CaptureParam captureParam(true, true, false);
+    captureParam.blackList_ = {surfaceParams.GetId()};
+    RSUniRenderThread::SetCaptureParam(captureParam);
+
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot002
+ * @tc.desc: renderThreadParams is null, IsSpecialLayerEnable returns false
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot002, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    RSUniRenderThread::ResetCaptureParam();
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = nullptr;
+
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot003
+ * @tc.desc: snapshot scene, surface id is carried by the capture blackList so it is skipped
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot003, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    CaptureParam captureParam(true, false, false);
+    captureParam.blackList_ = {surfaceParams.GetId()};
+    RSUniRenderThread::SetCaptureParam(captureParam);
+
+    ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot004
+ * @tc.desc: snapshot scene, leashPersistentId is carried by the capture blackList so it is skipped
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot004, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    LeashPersistentId leashId = GenerateNodeId();
+    surfaceParams.leashPersistentId_ = leashId;
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    CaptureParam captureParam(true, false, false);
+    captureParam.blackList_ = {leashId};
+    RSUniRenderThread::SetCaptureParam(captureParam);
+
+    ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot005
+ * @tc.desc: test CheckIfSurfaceSkipInMirrorOrScreenshot for a mirror virtual screen with security display
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot005, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    RSUniRenderThread::ResetCaptureParam();
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetRSProcessor(MakeCurrentScreenProcessor(true));
+    params->SetIsMirrorScreen(false);
+    params->SetSecurityDisplay(true);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    RSUniRenderThread::Instance().SetBlackList({surfaceParams.GetId()});
+
+    ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot006
+ * @tc.desc: wired mirror screen with security display, leashPersistentId is in the blackList so it is skipped
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot006, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    LeashPersistentId leashId = GenerateNodeId();
+    surfaceParams.leashPersistentId_ = leashId;
+    RSUniRenderThread::ResetCaptureParam();
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetRSProcessor(MakeCurrentScreenProcessor(false));
+    params->SetIsMirrorScreen(true);
+    params->SetSecurityDisplay(true);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    RSUniRenderThread::Instance().SetBlackList({leashId});
+
+    ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot007
+ * @tc.desc: virtual screen without security display, IsSpecialLayerEnable is false so never skip
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot007, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    RSUniRenderThread::ResetCaptureParam();
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetRSProcessor(MakeCurrentScreenProcessor(true));
+    params->SetIsMirrorScreen(false);
+    params->SetSecurityDisplay(false);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    RSUniRenderThread::Instance().SetBlackList({surfaceParams.GetId()});
+
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot008
+ * @tc.desc: cursor node with HIDE mode is skipped even when it is absent from any blackList
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot008, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    surfaceParams.rsSurfaceNodeType_ = RSSurfaceNodeType::CURSOR_NODE;
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::HIDE);
+    RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
+
+    ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot009
+ * @tc.desc: cursor node with FORCE_RENDER mode bypasses the id whiteList and is never skipped
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot009, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    surfaceParams.rsSurfaceNodeType_ = RSSurfaceNodeType::CURSOR_NODE;
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::FORCE_RENDER);
+    RSUniRenderThread::Instance().SetWhiteList({surfaceParams.GetId() + 1});
+    RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
+
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot010
+ * @tc.desc: cursor node with DEFAULT mode falls through to the empty whiteList check and is not skipped
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot010, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    surfaceParams.rsSurfaceNodeType_ = RSSurfaceNodeType::CURSOR_NODE;
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::DEFAULT);
+    RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
+
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot011
+ * @tc.desc: non-cursor node with a non-empty whiteList that excludes it and no recorded root id is skipped
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot011, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetWhiteList({surfaceParams.GetId() + 1});
+    RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
+    canvas.SetIsParallelCanvas(false);
+
+    ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot012
+ * @tc.desc: non-cursor node recorded as a whiteList root id is kept even when the whiteList excludes its id
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot012, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    LeashPersistentId leashId = GenerateNodeId();
+    surfaceParams.leashPersistentId_ = leashId;
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetWhiteList({leashId});
+    RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
+    canvas.SetIsParallelCanvas(false);
+    AutoSpecialLayerStateRecover whiteListRecover(leashId);
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot013
+ * @tc.desc: parallel canvas skips the whiteList check so the surface is not skipped
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot013, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetWhiteList({surfaceParams.GetId() + 1});
+    RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
+    canvas.SetIsParallelCanvas(true);
+
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot014
+ * @tc.desc: wired non-mirror screen is neither virtual nor mirror, IsSpecialLayerEnable is false so never skip
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot014, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    RSUniRenderThread::ResetCaptureParam();
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetRSProcessor(MakeCurrentScreenProcessor(false));
+    params->SetIsMirrorScreen(false);
+    params->SetSecurityDisplay(true);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    RSUniRenderThread::Instance().SetBlackList({surfaceParams.GetId()});
+
+    ASSERT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: CheckIfSurfaceSkipInMirrorOrScreenshot015
+ * @tc.desc: the id blackList outranks cursorMode, a cursor node with FORCE_RENDER is still skipped once its id
+ *           is carried by the capture blackList
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, CheckIfSurfaceSkipInMirrorOrScreenshot015, TestSize.Level2)
+{
+    NodeId nodeId = GenerateNodeId();
+    RSSurfaceRenderParams surfaceParams(nodeId);
+    Drawing::Canvas drawingCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    surfaceParams.rsSurfaceNodeType_ = RSSurfaceNodeType::CURSOR_NODE;
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::FORCE_RENDER);
+    RSUniRenderThread::Instance().SetWhiteList({surfaceParams.GetId() + 1});
+    CaptureParam captureParam(true, false, false);
+    captureParam.blackList_ = {surfaceParams.GetId()};
+    RSUniRenderThread::SetCaptureParam(captureParam);
+
+    ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+}
+
+/**
+ * @tc.name: SpecialLayerRenderParamNullParams001
+ * @tc.desc: with renderThreadParams null the blackList/whiteList/cursorMode setters hit the null guard and
+ *           the getters fall back to the empty set and the default cursor mode
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSpecialLayerUtilsTest, SpecialLayerRenderParamNullParams001, TestSize.Level2)
+{
+    RSUniRenderThread::ResetCaptureParam();
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = nullptr;
+
+    RSUniRenderThread::Instance().SetBlackList({GenerateNodeId()});
+    RSUniRenderThread::Instance().SetWhiteList({GenerateNodeId()});
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::HIDE);
+    ASSERT_TRUE(RSUniRenderThread::Instance().GetBlackList().empty());
+    ASSERT_TRUE(RSUniRenderThread::Instance().GetWhiteList().empty());
+    ASSERT_EQ(RSUniRenderThread::Instance().GetCursorMode(), RSVirtualScreenCursorMode::DEFAULT);
+}
 } // namespace Rosen

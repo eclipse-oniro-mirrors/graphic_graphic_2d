@@ -1103,6 +1103,53 @@ HWTEST_F(RSUniDirtyComputeUtilTest, CheckCurrentFrameHasDirtyInVirtual002, TestS
 }
 
 /**
+ * @tc.name: CheckCurrentFrameHasDirtyInVirtual003
+ * @tc.desc: test CheckCurrentFrameHasDirtyInVirtual ignores CURSOR_NODE type hwc dirty when cursorMode is HIDE
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSUniDirtyComputeUtilTest, CheckCurrentFrameHasDirtyInVirtual003, TestSize.Level2)
+{
+    NodeId defaultScreenNodeId = 0;
+    NodeId mirroredScreenNodeId = 1;
+    NodeId logicalScreenNodeId = 2;
+    ScreenId screenId = 1;
+    std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
+    std::shared_ptr<RSScreenRenderNode> screenNode =
+        std::make_shared<RSScreenRenderNode>(defaultScreenNodeId, screenId, context);
+    screenNode->InitRenderParams();
+
+    RSScreenRenderNodeDrawable* mirroredScreenDrawable =
+        GenerateScreenDrawableById(mirroredScreenNodeId, screenId + 1, context);
+    ASSERT_NE(mirroredScreenDrawable, nullptr);
+    auto screenDrawable = static_cast<RSScreenRenderNodeDrawable*>(screenNode->renderDrawable_.get());
+    ASSERT_NE(screenDrawable, nullptr);
+    mirroredScreenDrawable->renderParams_ = std::make_unique<RSScreenRenderParams>(mirroredScreenNodeId);
+    auto mirroredScreenParams = static_cast<RSScreenRenderParams*>(mirroredScreenDrawable->GetRenderParams().get());
+    ASSERT_NE(mirroredScreenParams, nullptr);
+    mirroredScreenParams->mirrorSourceDrawable_ = screenNode->GetRenderDrawable();
+    screenDrawable->syncDirtyManager_ = std::make_shared<RSDirtyRegionManager>();
+    ASSERT_NE(screenDrawable->syncDirtyManager_, nullptr);
+
+    RSLogicalDisplayRenderNodeDrawable* displayDrawable =
+        GenerateLogicalscreenDrawableById(logicalScreenNodeId, context);
+    ASSERT_NE(displayDrawable, nullptr);
+    displayDrawable->renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(logicalScreenNodeId);
+    mirroredScreenParams->logicalDisplayNodeDrawables_.emplace_back(displayDrawable);
+
+    // HIDE mode filters the CURSOR_NODE type hwc dirty out
+    mirroredScreenParams->screenProperty_.Set<ScreenPropertyType::CURSOR_RENDER_MODE>(
+        static_cast<uint8_t>(RSVirtualScreenCursorMode::HIDE));
+    screenDrawable->syncDirtyManager_->typeHwcDirtyRegion_ = { { RSSurfaceNodeType::CURSOR_NODE, DEFAULT_RECT1 } };
+    ASSERT_FALSE(RSUniDirtyComputeUtil::CheckCurrentFrameHasDirtyInVirtual(*mirroredScreenDrawable));
+
+    // non-cursor type hwc dirty still triggers refresh
+    screenDrawable->syncDirtyManager_->typeHwcDirtyRegion_ = { { RSSurfaceNodeType::CURSOR_NODE, DEFAULT_RECT1 },
+        { RSSurfaceNodeType::APP_WINDOW_NODE, DEFAULT_RECT1 } };
+    ASSERT_TRUE(RSUniDirtyComputeUtil::CheckCurrentFrameHasDirtyInVirtual(*mirroredScreenDrawable));
+}
+
+/**
  * @tc.name: GetVisibleFilterRect_001
  * @tc.desc: test GetVisibleFilterRect
  * @tc.type: FUNC
