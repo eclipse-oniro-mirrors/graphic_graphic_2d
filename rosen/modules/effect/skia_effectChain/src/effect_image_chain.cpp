@@ -1178,6 +1178,11 @@ DrawingError EffectImageChain::ApplyStickerEmboss(
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
 
+    if (stickerEmbossData == nullptr) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerEmboss: stickerEmbossData is null.");
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+
     if (filters_ != nullptr) {
         UpdateImage();
     }
@@ -1224,6 +1229,11 @@ DrawingError EffectImageChain::ApplyStickerLaserShader(
     // CPU not supported
     if (forceCPU_) {
         EFFECT_LOG_E("EffectImageChain::ApplyStickerLaserShader: Not support CPU.");
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+
+    if (stickerLaserData == nullptr) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerLaserShader: stickerLaserData is null.");
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
 

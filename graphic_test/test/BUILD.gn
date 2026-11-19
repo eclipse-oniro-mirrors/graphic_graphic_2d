@@ -306,7 +306,6 @@ effect_kit_sources = [
   "effect_kit/oh_filter_test/oh_filter_waterdroplettransition_test.cpp",
   "effect_kit/oh_filter_test/oh_filter_waterglass_test.cpp",
   "effect_kit/oh_filter_test/oh_filter_test_utils.cpp",
-  "effect_kit/effect_image_test/effect_image_sticker_test.cpp",
 ]
 
 group("test") {
@@ -340,7 +339,6 @@ ohos_unittest("RSGraphicTest") {
   deps = [
     "$graphic_2d_root/graphic_test/graphic_test_framework:rs_graphic_test_main",
     "$graphic_2d_root/rosen/modules/effect/effect_ndk:native_effect_ndk",
-    "$graphic_2d_root/rosen/modules/effect/skia_effectChain:skeffectchain",
     "$rosen_text_root:rosen_text",
   ]
 

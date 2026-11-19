@@ -14,6 +14,7 @@
  */
 #include "effect_napi.h"
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include "ui_effect_napi_utils.h"
@@ -1441,7 +1442,7 @@ bool EffectNapi::FillShadowOptions(napi_env env, napi_value shadowOptions,
     napi_value shadowValue = nullptr;
     if (napi_get_named_property(env, shadowOptions, "radius", &shadowValue) == napi_ok &&
         UIEffectNapiUtils::GetType(env, shadowValue) == napi_number) {
-        shadowRadius = GetSpecialValue(env, shadowValue);
+        shadowRadius = std::max(0.0f, GetSpecialValue(env, shadowValue));
     }
     if (napi_get_named_property(env, shadowOptions, "lightDirection", &shadowValue) == napi_ok &&
         UIEffectNapiUtils::GetType(env, shadowValue) == napi_object) {
@@ -1452,7 +1453,7 @@ bool EffectNapi::FillShadowOptions(napi_env env, napi_value shadowOptions,
     }
     if (napi_get_named_property(env, shadowOptions, "shadowDistance", &shadowValue) == napi_ok &&
         UIEffectNapiUtils::GetType(env, shadowValue) == napi_number) {
-        shadowDistance = GetSpecialValue(env, shadowValue);
+        shadowDistance = std::max(0.0f, GetSpecialValue(env, shadowValue));
     }
     if (napi_get_named_property(env, shadowOptions, "color", &shadowValue) == napi_ok &&
         UIEffectNapiUtils::GetType(env, shadowValue) == napi_object) {

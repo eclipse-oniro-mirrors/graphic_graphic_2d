@@ -418,16 +418,6 @@ static HalftoneParam ParseHalftoneParam(ani_env* env, ani_object val, bool& ok)
 
 
 namespace {
-bool GetDoubleProperty(ani_env* env, ani_object obj, const char* name, float& out)
-{
-    ani_double val = 0.0;
-    if (env->Object_GetPropertyByName_Double(obj, name, &val) != ANI_OK || !std::isfinite(val)) {
-        return false;
-    }
-    out = static_cast<float>(val);
-    return true;
-}
-
 bool GetPointProperty(ani_env* env, ani_object obj, const char* name, Vector2f& out)
 {
     ani_ref ref = nullptr;
@@ -454,19 +444,28 @@ bool ParseEmbossParams(ani_env* env, ani_double outlineWidth, ani_object embossP
         return false;
     }
     params->outlineWidth = static_cast<float>(outlineWidth);
+    // reuses the file-level GetDoubleProperty(double&); params members are float
+    auto getFloatProperty = [env, embossParam](const char* name, float& out) {
+        double value = 0.0;
+        if (!GetDoubleProperty(env, embossParam, name, value)) {
+            return false;
+        }
+        out = static_cast<float>(value);
+        return true;
+    };
     // API-level edgeLightIntensity + edgeDarkIntensity are packed into the Vector2f pair
     float edgeLightIntensity = 0.0f;
     float edgeDarkIntensity = 0.0f;
-    if (!GetDoubleProperty(env, embossParam, "refractionRate", params->refractionRate) ||
-        !GetDoubleProperty(env, embossParam, "dirIntensity", params->dirIntensity) ||
-        !GetDoubleProperty(env, embossParam, "edgeLightWidth", params->edgeLightWidth) ||
-        !GetDoubleProperty(env, embossParam, "edgeLightFeatherRate", params->edgeLightFeatherRate) ||
-        !GetDoubleProperty(env, embossParam, "edgeLightIntensity", edgeLightIntensity) ||
-        !GetDoubleProperty(env, embossParam, "edgeDarkIntensity", edgeDarkIntensity) ||
+    if (!getFloatProperty("refractionRate", params->refractionRate) ||
+        !getFloatProperty("dirIntensity", params->dirIntensity) ||
+        !getFloatProperty("edgeLightWidth", params->edgeLightWidth) ||
+        !getFloatProperty("edgeLightFeatherRate", params->edgeLightFeatherRate) ||
+        !getFloatProperty("edgeLightIntensity", edgeLightIntensity) ||
+        !getFloatProperty("edgeDarkIntensity", edgeDarkIntensity) ||
         !GetPointProperty(env, embossParam, "spotLightCenter", params->spotLightCenter) ||
-        !GetDoubleProperty(env, embossParam, "spotLightIntensity", params->spotLightIntensity) ||
-        !GetDoubleProperty(env, embossParam, "specPow", params->specPow) ||
-        !GetDoubleProperty(env, embossParam, "specIntensity", params->specIntensity)) {
+        !getFloatProperty("spotLightIntensity", params->spotLightIntensity) ||
+        !getFloatProperty("specPow", params->specPow) ||
+        !getFloatProperty("specIntensity", params->specIntensity)) {
         return false;
     }
     params->edgeLightIntensity = Vector2f(edgeLightIntensity, edgeDarkIntensity);
@@ -480,42 +479,35 @@ bool ParseIridescenceParams(ani_env* env, ani_object iridescenceParam,
     if (params == nullptr) {
         return false;
     }
-    return GetDoubleProperty(env, iridescenceParam, "frequency", params->frequency) &&
+    auto getFloatProperty = [env, iridescenceParam](const char* name, float& out) {
+        double value = 0.0;
+        if (!GetDoubleProperty(env, iridescenceParam, name, value)) {
+            return false;
+        }
+        out = static_cast<float>(value);
+        return true;
+    };
+    return getFloatProperty("frequency", params->frequency) &&
         GetPointProperty(env, iridescenceParam, "direction", params->direction) &&
-        GetDoubleProperty(env, iridescenceParam, "progress", params->progress);
+        getFloatProperty("progress", params->progress);
 }
 
-// optional shadow fields keep the params defaults when absent; a shadow with
-// zero radius covers nothing, matching the ShadowOptions defaults
-void ParseShadowOptions(ani_env* env, ani_object shadowOptions,
+// reuses the file-level ParseShadowOptions(ShadowOptions&); a shadow with zero radius covers
+// nothing, and absent fields fall back to the ShadowOptions defaults like outline/halftone
+void FillLaserShadowParams(ani_env* env, ani_object shadowOptions,
     const std::shared_ptr<Drawing::GEStickerLaserShaderParams>& params)
 {
     if (shadowOptions == nullptr) {
         return;
     }
-    float radius = 0.0f;
-    if (GetDoubleProperty(env, shadowOptions, "radius", radius)) {
-        params->elevationShadowRadius = radius;
-    }
-    ani_object lightDir = nullptr;
-    if (GetObjectProperty(env, shadowOptions, "lightDirection", lightDir)) {
-        Drawing::PointF lightDirPoint;
-        ParsePoint(env, static_cast<ani_array>(lightDir), lightDirPoint);
-        params->lightDir = Vector2f(lightDirPoint.GetX(), lightDirPoint.GetY());
-    }
-    float shadowDistance = 0.0f;
-    if (GetDoubleProperty(env, shadowOptions, "shadowDistance", shadowDistance)) {
-        params->shadowDistance = shadowDistance;
-    }
-    ani_object colorVal = nullptr;
-    if (GetObjectProperty(env, shadowOptions, "color", colorVal)) {
-        Drawing::Color color;
-        ParseColor(env, static_cast<ani_array>(colorVal), color);
-        constexpr float rgbaColorMax = 255.0f;
-        params->elevationShadowColor = Vector4f(color.GetRed() / rgbaColorMax,
-            color.GetGreen() / rgbaColorMax, color.GetBlue() / rgbaColorMax,
-            color.GetAlpha() / rgbaColorMax);
-    }
+    ShadowOptions options = ParseShadowOptions(env, shadowOptions);
+    params->elevationShadowRadius = options.radius;
+    params->shadowDistance = options.shadowDistance;
+    params->lightDir = Vector2f(options.lightDirection.GetX(), options.lightDirection.GetY());
+    constexpr float rgbaColorMax = 255.0f;
+    params->elevationShadowColor = Vector4f(options.color.GetRed() / rgbaColorMax,
+        options.color.GetGreen() / rgbaColorMax, options.color.GetBlue() / rgbaColorMax,
+        options.color.GetAlpha() / rgbaColorMax);
 }
 } // namespace
 
@@ -650,7 +642,7 @@ ani_object AniFilter::Iridescence(ani_env* env, ani_object obj, ani_object iride
         return AniEffectKitUtils::CreateAniUndefined(env);
     }
     params->outlineWidth = static_cast<float>(outlineWidth);
-    ParseShadowOptions(env, shadowOptions, params);
+    FillLaserShadowParams(env, shadowOptions, params);
 
     // the sticker is the effect chain input image, supplied by EffectImageChain on apply
     auto iridescence = EffectImageFilter::StickerLaserShader(params);

@@ -608,9 +608,10 @@ static bool ParseColorFromJsObject(napi_env env, napi_value jsObject, const char
         napi_value field = nullptr;
         if (napi_get_named_property(env, value, colorFields[idx], &field) != napi_ok ||
             napi_get_value_double(env, field, &components[idx]) != napi_ok ||
-            components[idx] < 0.0 || !std::isfinite(components[idx])) {
+            !std::isfinite(components[idx])) {
             return false;
         }
+        components[idx] = std::clamp(components[idx], 0.0, 255.0);
     }
     out = Vector4f(static_cast<float>(components[NUM_0]) / rgbaColorMax,
         static_cast<float>(components[NUM_1]) / rgbaColorMax,
@@ -641,43 +642,47 @@ napi_value FilterNapi::Emboss(napi_env env, napi_callback_info info)
     EFFECT_JS_ARGS(env, info, status, argc, argv, _this);
     EFFECT_NAPI_CHECK_RET_D(status == napi_ok && argc == NUM_2 &&
         EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_0]) == napi_number &&
-        EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_1]) == napi_object, nullptr,
+        EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_1]) == napi_object, _this,
         EFFECT_LOG_E("FilterNapi Emboss parsing input fail"));
 
     double outlineWidth = 0.0;
-    EFFECT_NAPI_CHECK_RET_D(napi_get_value_double(env, argv[NUM_0], &outlineWidth) == napi_ok, nullptr,
-        EFFECT_LOG_E("FilterNapi Emboss parse outlineWidth fail"));
+    if (napi_get_value_double(env, argv[NUM_0], &outlineWidth) != napi_ok ||
+        !std::isfinite(outlineWidth) || outlineWidth < 0.0) {
+        EFFECT_LOG_E("FilterNapi Emboss outlineWidth is invalid, skip this filter");
+        return _this;
+    }
 
     auto params = std::make_shared<Drawing::GEStickerEmbossFilterParams>();
-    EFFECT_NAPI_CHECK_RET_D(params != nullptr, nullptr,
+    EFFECT_NAPI_CHECK_RET_D(params != nullptr, _this,
         EFFECT_LOG_E("FilterNapi Emboss params is nullptr"));
     params->outlineWidth = static_cast<float>(outlineWidth);
 
     // API-level edgeLightIntensity + edgeDarkIntensity are packed into the Vector2f pair
     float edgeLightIntensity = 0.0f;
     float edgeDarkIntensity = 0.0f;
-    EFFECT_NAPI_CHECK_RET_D(
-        ParseFloatFromJsObject(env, argv[NUM_1], "refractionRate", params->refractionRate) &&
-        ParseFloatFromJsObject(env, argv[NUM_1], "dirIntensity", params->dirIntensity) &&
-        ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightWidth", params->edgeLightWidth) &&
-        ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightFeatherRate", params->edgeLightFeatherRate) &&
-        ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightIntensity", edgeLightIntensity) &&
-        ParseFloatFromJsObject(env, argv[NUM_1], "edgeDarkIntensity", edgeDarkIntensity) &&
-        ParsePointFromJsObject(env, argv[NUM_1], "spotLightCenter", params->spotLightCenter) &&
-        ParseFloatFromJsObject(env, argv[NUM_1], "spotLightIntensity", params->spotLightIntensity) &&
-        ParseFloatFromJsObject(env, argv[NUM_1], "specPow", params->specPow) &&
-        ParseFloatFromJsObject(env, argv[NUM_1], "specIntensity", params->specIntensity), nullptr,
-        EFFECT_LOG_E("FilterNapi Emboss parse embossParam fail"));
+    if (!ParseFloatFromJsObject(env, argv[NUM_1], "refractionRate", params->refractionRate) ||
+        !ParseFloatFromJsObject(env, argv[NUM_1], "dirIntensity", params->dirIntensity) ||
+        !ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightWidth", params->edgeLightWidth) ||
+        !ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightFeatherRate", params->edgeLightFeatherRate) ||
+        !ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightIntensity", edgeLightIntensity) ||
+        !ParseFloatFromJsObject(env, argv[NUM_1], "edgeDarkIntensity", edgeDarkIntensity) ||
+        !ParsePointFromJsObject(env, argv[NUM_1], "spotLightCenter", params->spotLightCenter) ||
+        !ParseFloatFromJsObject(env, argv[NUM_1], "spotLightIntensity", params->spotLightIntensity) ||
+        !ParseFloatFromJsObject(env, argv[NUM_1], "specPow", params->specPow) ||
+        !ParseFloatFromJsObject(env, argv[NUM_1], "specIntensity", params->specIntensity)) {
+        EFFECT_LOG_E("FilterNapi Emboss parse embossParam fail, skip this filter");
+        return _this;
+    }
     params->edgeLightIntensity = Vector2f(edgeLightIntensity, edgeDarkIntensity);
 
     FilterNapi* thisFilter = nullptr;
     status = napi_unwrap_s(env, _this, &FilterNapi::NAPI_TYPE_TAG, reinterpret_cast<void**>(&thisFilter));
-    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && thisFilter != nullptr, nullptr,
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && thisFilter != nullptr, _this,
         EFFECT_LOG_E("FilterNapi Emboss napi_unwrap fail"));
 
     // the sticker is the effect chain input image, supplied by EffectImageChain on apply
     auto emboss = EffectImageFilter::StickerEmboss(params);
-    EFFECT_NAPI_CHECK_RET_D(emboss != nullptr, nullptr,
+    EFFECT_NAPI_CHECK_RET_D(emboss != nullptr, _this,
         EFFECT_LOG_E("FilterNapi Emboss create filter fail"));
     thisFilter->AddEffectFilter(emboss);
     return _this;

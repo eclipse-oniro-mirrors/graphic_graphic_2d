@@ -350,5 +350,53 @@ HWTEST_F(EffectImageStickerUnittest, StickerLaserShaderWithPendingFilters, TestS
     EXPECT_EQ(params->sticker, snapshot);
 }
 
+/**
+ * @tc.name: StickerEmbossSweepsOutlineWidth
+ * @tc.desc: Swept-parameter emboss smoke migrated from graphic_test; the effect stage is
+ *           reached for every outline width without crashing or tripping the basic guards
+ */
+HWTEST_F(EffectImageStickerUnittest, StickerEmbossSweepsOutlineWidth, TestSize.Level1)
+{
+    for (float outlineWidth : { 0.0f, 1.0f, 10.0f, 50.0f }) {
+        auto pixelMap = MakePixelMap();
+        ASSERT_NE(pixelMap, nullptr);
+        EffectImageChain chain;
+        ASSERT_EQ(chain.Prepare(pixelMap, false), DrawingError::ERR_OK);
+
+        auto params = MakeEmbossParams();
+        params->outlineWidth = outlineWidth;
+        auto ret = chain.ApplyStickerEmboss(params);
+        // The main path is reached (no crash, not blocked by the prepared/image guards)
+        EXPECT_NE(ret, DrawingError::ERR_NOT_PREPARED);
+        EXPECT_NE(ret, DrawingError::ERR_IMAGE_NULL);
+    }
+}
+
+/**
+ * @tc.name: StickerLaserShaderSweepsFrequencyAndProgress
+ * @tc.desc: Swept-parameter laser smoke migrated from graphic_test; the effect stage is
+ *           reached for every frequency/progress combination without crashing
+ */
+HWTEST_F(EffectImageStickerUnittest, StickerLaserShaderSweepsFrequencyAndProgress, TestSize.Level1)
+{
+    const float frequencies[] = { 0.0f, 1.0f, 10.0f, 50.0f };
+    const float progresses[] = { 0.0f, 0.5f, 1.0f };
+    for (float frequency : frequencies) {
+        for (float progress : progresses) {
+            auto pixelMap = MakePixelMap();
+            ASSERT_NE(pixelMap, nullptr);
+            EffectImageChain chain;
+            ASSERT_EQ(chain.Prepare(pixelMap, false), DrawingError::ERR_OK);
+
+            auto params = MakeLaserParams();
+            params->frequency = frequency;
+            params->progress = progress;
+            auto ret = chain.ApplyStickerLaserShader(params);
+            EXPECT_NE(ret, DrawingError::ERR_NOT_PREPARED);
+            EXPECT_NE(ret, DrawingError::ERR_IMAGE_NULL);
+        }
+    }
+}
+
 } // namespace Rosen
 } // namespace OHOS
