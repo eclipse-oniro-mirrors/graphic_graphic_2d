@@ -371,7 +371,6 @@ ohos_source_set("render_service_base_src") {
     "src/render/rs_mask.cpp",
     "src/render/rs_material_filter.cpp",
     "src/render/rs_motion_blur_filter.cpp",
-    "src/render/rs_particles_drawable.cpp",
     "src/render/rs_path.cpp",
     "src/render/rs_pixel_map_shader.cpp",
     "src/render/rs_pixel_map_shader_obj.cpp",
@@ -464,6 +463,7 @@ ohos_source_set("render_service_base_src") {
     "src/feature/behind_window_filter/rs_behind_window_filter_manager.cpp",
     "src/feature/delegate_composite/rs_delegate_composite_callback_manager.cpp",
     "src/feature/delegate_composite/rs_delegate_composite_params.cpp",
+    "src/feature/particle/rs_particles_painter.cpp",
 
     #dirty_region
     "src/dirty_region/rs_filter_dirty_collector.cpp",
