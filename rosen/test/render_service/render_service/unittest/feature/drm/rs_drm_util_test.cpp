@@ -1700,7 +1700,7 @@ HWTEST_F(RSDrmUtilTest, RecordDstRectDisplayDisabledOrSingular, TestSize.Level1)
     EXPECT_EQ(node->GetDstRectDisplayNodeId(), INVALID_NODEID);
 }
 
-// 同时检查两个入口：几何缺失不能留下有效的显示记录。
+// Check both entry points: missing geometry must not leave a valid display record.
 HWTEST_F(RSDrmUtilTest, CrossNodeConversionMissingGeometry, TestSize.Level1)
 {
     auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
@@ -1756,7 +1756,7 @@ HWTEST_F(RSDrmUtilTest, CalcCrossNodeLayerConversionSandboxParent, TestSize.Leve
     parentAbs.Translate(CONVERSION_TRANSLATE_X, CONVERSION_TRANSLATE_Y);
     parent->GetMutableRenderProperties().GetBoundsGeometry()->ReplaceMatrix(Drawing::Matrix(), parentAbs);
     Drawing::Matrix conversion;
-    // sandbox 没有祖先时不提供相对矩阵，父链仍应正常结束。
+    // A sandbox node without ancestors provides no relative matrix; the parent chain should still end normally.
     ASSERT_TRUE(RSDrmUtil::CalcCrossNodeLayerConversion(*node, *clone, *screen, conversion));
     EXPECT_TRUE(conversion.IsIdentity());
     parent->parent_ = screen;
@@ -1822,7 +1822,7 @@ HWTEST_F(RSDrmUtilTest, UpdateDrmCrossNodeConversionMissingRecordOrParams, TestS
     auto params = std::move(node->stagingRenderParams_);
     RSDrmUtil::UpdateDrmCrossNodeConversion(*node, targetId, conversion);
     auto it = matrices.find(targetId);
-    // 恢复测试节点状态后再作致命断言，避免影响 TearDown。
+    // Restore the test node state before fatal assertions so TearDown is not affected.
     node->stagingRenderParams_ = std::move(params);
     ASSERT_NE(it, matrices.end());
     EXPECT_TRUE(it->second == conversion);
@@ -1851,7 +1851,7 @@ HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfoSubpixelSize, TestSize.Level1)
     constexpr float subpixelSize = 0.5f;
     constexpr float outsideOffset = -50.0f;
     constexpr float visibleExtent = 100.0f;
-    // 浮点矩形有交集且发生裁剪，但转为整数后宽或高为零。
+    // The float rects intersect and get cropped, but the integer width or height becomes zero.
     const Drawing::Rect composedRects[] = { { 0, outsideOffset, subpixelSize, visibleExtent },
         { outsideOffset, 0, visibleExtent, subpixelSize } };
     for (const auto& composed : composedRects) {
