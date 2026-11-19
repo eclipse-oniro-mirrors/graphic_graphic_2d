@@ -63,6 +63,6 @@ ohos_source_set("frame_load") {
         "$graphic_2d_root/rosen/modules/frame_report:frame_report",
     ]
 
-      part_name = "graphic_2d"
-      subsystem_name = "graphic"
+    part_name = "graphic_2d"
+    subsystem_name = "graphic"
 }

@@ -60,6 +60,7 @@
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "info_collection/rs_frame_stats_collection.h"
+#include "info_collection/rs_gpu_dirty_region_collection.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/main_thread/rs_uni_render_listener.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
@@ -407,6 +408,7 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
             RSFrameStatsCollection::GetInstance().Increment(
                 FrameStatsCounter::ToIndex(FrameStatsCounter::RSUniRenderThread::SkipCommitFrames));
         }
+        GpuDirtyRegionCollection::GetInstance().AddSkipCommitFramesForDFX();
         return true;
     }
 

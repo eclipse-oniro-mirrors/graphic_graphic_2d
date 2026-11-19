@@ -2010,7 +2010,7 @@
   {
     "testCaseDesc": "SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST_TEST_001",
     "interfaceName": "SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST",
-    "inputParams": "WriteUint64;WriteUInt64Vector",
+    "inputParams": "WriteUint64;WriteUInt64Vector;WriteBool",
     "writeInterfaceToken": true,
     "messageOption": "TF_SYNC",
     "connectionType": 1

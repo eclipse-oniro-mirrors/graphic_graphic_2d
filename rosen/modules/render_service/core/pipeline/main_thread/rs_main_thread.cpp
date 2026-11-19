@@ -90,6 +90,7 @@
 #include "graphic_feature_param_manager.h"
 #include "info_collection/rs_frame_stats_collection.h"
 #include "info_collection/rs_gpu_dirty_region_collection.h"
+#include "info_collection/rs_layer_compose_collection.h"
 #include "memory/rs_canvas_dma_buffer_cache.h"
 #include "memory/rs_memory_graphic.h"
 #include "memory/rs_memory_manager.h"
@@ -3474,6 +3475,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         RSFrameStatsCollection::GetInstance().Increment(
             FrameStatsCounter::ToIndex(FrameStatsCounter::RSMainThread::DirectCompositionFrames));
     }
+    LayerComposeCollection::GetInstance().UpdateDirectCompositionFrameNumberForDFX();
     std::shared_ptr<RSScreenRenderNode> screenNode = nullptr;
     for (const auto& child : children) {
         auto node = child.lock();

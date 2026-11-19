@@ -17,6 +17,10 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr int32_t UNIFORM_RENDER_LAYER_SIZE = 1;
+constexpr int32_t RCD_EXTRA_LAYER_COUNT = 2;
+}
 LayerComposeCollection& LayerComposeCollection::GetInstance()
 {
     static LayerComposeCollection instance;
@@ -31,10 +35,18 @@ LayerComposeCollection::~LayerComposeCollection() noexcept
 {
 }
 
-void LayerComposeCollection::UpdateUniformOrOfflineComposeFrameNumberForDFX(size_t layerSize)
+void LayerComposeCollection::UpdateUniformOrOfflineComposeFrameNumberForDFX(size_t layerSize, bool hasRcdLayer)
 {
     std::lock_guard<std::mutex> lock(layerMtx_);
-    if (layerSize == 1) {
+    if (hasRcdLayer) {
+        if (layerSize == static_cast<size_t>(UNIFORM_RENDER_LAYER_SIZE + RCD_EXTRA_LAYER_COUNT)) {
+            ++layerComposeInfo_.uniformRenderFrameNumber;
+            return;
+        }
+        ++layerComposeInfo_.offlineComposeFrameNumber;
+        return;
+    }
+    if (layerSize == static_cast<size_t>(UNIFORM_RENDER_LAYER_SIZE)) {
         ++layerComposeInfo_.uniformRenderFrameNumber;
         return;
     }
@@ -55,6 +67,14 @@ void LayerComposeCollection::UpdateDrawImageNumberForDFX()
 {
     std::lock_guard<std::mutex> lock(layerMtx_);
     ++layerComposeInfo_.drawImageNumber;
+}
+// LCOV_EXCL_STOP
+
+// LCOV_EXCL_START
+void LayerComposeCollection::UpdateDirectCompositionFrameNumberForDFX()
+{
+    std::lock_guard<std::mutex> lock(layerMtx_);
+    ++layerComposeInfo_.directCompositionFrameNumber;
 }
 // LCOV_EXCL_STOP
 

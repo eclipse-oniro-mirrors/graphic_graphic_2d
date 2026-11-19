@@ -1593,12 +1593,16 @@ GlobalDirtyRegionInfo RSServiceToRenderConnectionProxy::GetGlobalDirtyRegionInfo
     int32_t globalFramesNumber{0};
     int32_t skipProcessFramesNumber{0};
     int32_t mostSendingPidWhenDisplayNodeSkip{0};
+    int32_t updateCacheSurfaceCount{0};
+    int32_t skipCommitFramesNumber{0};
     if (!reply.ReadInt64(globalDirtyRegionAreas) || !reply.ReadInt32(globalFramesNumber) ||
-        !reply.ReadInt32(skipProcessFramesNumber) || !reply.ReadInt32(mostSendingPidWhenDisplayNodeSkip)) {
+        !reply.ReadInt32(skipProcessFramesNumber) || !reply.ReadInt32(mostSendingPidWhenDisplayNodeSkip) ||
+        !reply.ReadInt32(updateCacheSurfaceCount) || !reply.ReadInt32(skipCommitFramesNumber)) {
         ROSEN_LOGE("%{public}s: Read parcel failed", __func__);
         return globalDirtyRegionInfo;
     }
-    return globalDirtyRegionInfo;
+    return GlobalDirtyRegionInfo(globalDirtyRegionAreas, globalFramesNumber, skipProcessFramesNumber,
+        0, 0, 0, mostSendingPidWhenDisplayNodeSkip, updateCacheSurfaceCount, skipCommitFramesNumber);
 }
 
 LayerComposeInfo RSServiceToRenderConnectionProxy::GetLayerComposeInfo()
@@ -1621,12 +1625,15 @@ LayerComposeInfo RSServiceToRenderConnectionProxy::GetLayerComposeInfo()
     int32_t uniformRenderFrameNumber{0};
     int32_t offlineComposeFrameNumber{0};
     int32_t redrawFrameNumber{0};
+    int32_t directCompositionFrameNumber{0};
     if (!reply.ReadInt32(uniformRenderFrameNumber) || !reply.ReadInt32(offlineComposeFrameNumber) ||
-        !reply.ReadInt32(redrawFrameNumber)) {
+        !reply.ReadInt32(redrawFrameNumber) ||
+        !reply.ReadInt32(directCompositionFrameNumber)) {
         ROSEN_LOGE("%{public}s: Read parcel failed", __func__);
         return layerComposeInfo;
     }
-    return LayerComposeInfo();
+    return LayerComposeInfo(uniformRenderFrameNumber, offlineComposeFrameNumber, redrawFrameNumber,
+        0, directCompositionFrameNumber);
 }
 
 HwcDisabledReasonInfos RSServiceToRenderConnectionProxy::GetHwcDisabledReasonInfo()

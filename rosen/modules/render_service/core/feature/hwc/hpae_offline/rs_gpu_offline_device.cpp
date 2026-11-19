@@ -18,6 +18,7 @@
 #include <map>
 
 #include "common/rs_optional_trace.h"
+#include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/hwc/hpae_offline/rs_gpu_offline_device.h"
 #include "feature/hwc/hpae_offline/rs_offline_util.h"

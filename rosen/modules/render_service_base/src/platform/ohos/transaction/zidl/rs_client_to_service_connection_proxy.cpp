@@ -667,8 +667,7 @@ ErrCode RSClientToServiceConnectionProxy::RemoveVirtualScreenWhiteList(
 }
 
 int32_t RSClientToServiceConnectionProxy::SetVirtualScreenSecurityExemptionList(
-    ScreenId id,
-    const std::vector<NodeId>& securityExemptionList)
+    ScreenId id, const std::vector<NodeId>& securityExemptionList, bool exemptAll)
 {
     if (securityExemptionList.size() > MAX_SECURITY_EXEMPTION_LIST_NUMBER) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::SetVirtualScreenSecurityExemptionList: too many lists.");
@@ -690,6 +689,10 @@ int32_t RSClientToServiceConnectionProxy::SetVirtualScreenSecurityExemptionList(
     }
     if (!data.WriteUInt64Vector(securityExemptionList)) {
         ROSEN_LOGE("SetVirtualScreenSecurityExemptionList: WriteUInt64Vector securityExemptionList err.");
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteBool(exemptAll)) {
+        ROSEN_LOGE("SetVirtualScreenSecurityExemptionList: WriteBool exemptAll err.");
         return WRITE_PARCEL_ERR;
     }
     uint32_t code = static_cast<uint32_t>(
@@ -4971,16 +4974,20 @@ GlobalDirtyRegionInfo RSClientToServiceConnectionProxy::GetGlobalDirtyRegionInfo
     int32_t consumeBufferSize{0};
     int32_t frameAnimationCount{0};
     int32_t mostSendingPidWhenDisplayNodeSkip{0};
+    int32_t updateCacheSurfaceCount{0};
+    int32_t skipCommitFramesNumber{0};
     if (!reply.ReadInt64(globalDirtyRegionAreas) || !reply.ReadInt32(globalFramesNumber) ||
         !reply.ReadInt32(skipProcessFramesNumber) || !reply.ReadInt32(commandCount) ||
         !reply.ReadInt32(consumeBufferSize) || !reply.ReadInt32(frameAnimationCount) ||
-        !reply.ReadInt32(mostSendingPidWhenDisplayNodeSkip)) {
+        !reply.ReadInt32(mostSendingPidWhenDisplayNodeSkip) ||
+        !reply.ReadInt32(updateCacheSurfaceCount) || !reply.ReadInt32(skipCommitFramesNumber)) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::GetGlobalDirtyRegionInfo Read parcel failed");
         return globalDirtyRegionInfo;
     }
     return GlobalDirtyRegionInfo(
         globalDirtyRegionAreas, globalFramesNumber, skipProcessFramesNumber, commandCount,
-        consumeBufferSize, frameAnimationCount, mostSendingPidWhenDisplayNodeSkip);
+        consumeBufferSize, frameAnimationCount, mostSendingPidWhenDisplayNodeSkip,
+        updateCacheSurfaceCount, skipCommitFramesNumber);
 }
 
 
@@ -5005,12 +5012,15 @@ LayerComposeInfo RSClientToServiceConnectionProxy::GetLayerComposeInfo()
     int32_t offlineComposeFrameNumber{0};
     int32_t redrawFrameNumber{0};
     int32_t drawImageNumber{0};
+    int32_t directCompositionFrameNumber{0};
     if (!reply.ReadInt32(uniformRenderFrameNumber) || !reply.ReadInt32(offlineComposeFrameNumber) ||
-        !reply.ReadInt32(redrawFrameNumber) || !reply.ReadInt32(drawImageNumber)) {
+        !reply.ReadInt32(redrawFrameNumber) || !reply.ReadInt32(drawImageNumber) ||
+        !reply.ReadInt32(directCompositionFrameNumber)) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::GetLayerComposeInfo Read parcel failed");
         return layerComposeInfo;
     }
-    return LayerComposeInfo(uniformRenderFrameNumber, offlineComposeFrameNumber, redrawFrameNumber, drawImageNumber);
+    return LayerComposeInfo(uniformRenderFrameNumber, offlineComposeFrameNumber, redrawFrameNumber,
+        drawImageNumber, directCompositionFrameNumber);
 }
 
 HwcDisabledReasonInfos RSClientToServiceConnectionProxy::GetHwcDisabledReasonInfo()

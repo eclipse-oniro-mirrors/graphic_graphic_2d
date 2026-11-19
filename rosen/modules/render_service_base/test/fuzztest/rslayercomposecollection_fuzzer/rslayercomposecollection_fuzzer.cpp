@@ -31,7 +31,8 @@ constexpr uint8_t TARGET_SIZE = 1;
 void DoUpdateUniformOrOfflineComposeFrameNumberForDFX(FuzzedDataProvider& fdp)
 {
     size_t layerSize = fdp.ConsumeIntegral<size_t>();
-    g_layercomposecollection->UpdateUniformOrOfflineComposeFrameNumberForDFX(layerSize);
+    bool hasRcdLayer = fdp.ConsumeBool();
+    g_layercomposecollection->UpdateUniformOrOfflineComposeFrameNumberForDFX(layerSize, hasRcdLayer);
 }
 
 } // namespace

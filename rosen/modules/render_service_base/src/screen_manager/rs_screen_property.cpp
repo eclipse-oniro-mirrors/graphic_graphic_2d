@@ -219,6 +219,11 @@ std::vector<NodeId> RSScreenProperty::GetSecurityExemptionList() const
     return Get<ScreenPropertyType::SECURITY_EXEMPTION_LIST>();
 }
 
+bool RSScreenProperty::GetSecurityExemptAll() const
+{
+    return Get<ScreenPropertyType::SECURITY_EXEMPT_ALL>();
+}
+
 std::shared_ptr<Media::PixelMap> RSScreenProperty::GetSecurityMask() const
 {
     return Get<ScreenPropertyType::SECURITY_MASK>();
@@ -412,6 +417,7 @@ bool ScreenPropertyBase::Unmarshalling(Parcel& data, ScreenPropertyType type, sp
         UNMARSHALL_CASE(ScreenPropertyType::VIRTUAL_SCREEN_HDR_MODE)
         UNMARSHALL_CASE(ScreenPropertyType::SKIP_COLOR_SPACE_CONVERSION)
         UNMARSHALL_CASE(ScreenPropertyType::POST_PROCESSING_SHADER)
+        UNMARSHALL_CASE(ScreenPropertyType::SECURITY_EXEMPT_ALL)
         default:
             RS_LOGW("%{public}s invalid type: %{public}u", __func__, static_cast<uint32_t>(type));
             return false;

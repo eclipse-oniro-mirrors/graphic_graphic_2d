@@ -78,6 +78,7 @@ private:
     RSLayerPtr uniLayer_ = nullptr;
     std::shared_ptr<RSComposerClient> composerClient_ = nullptr;
     bool hasTunnelLayer_ = false;
+    bool hasRcdLayer_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

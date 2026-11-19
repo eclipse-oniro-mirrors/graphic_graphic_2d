@@ -21,7 +21,11 @@
 
 #include "command/rs_command_verify_helper.h"
 #include "command/rs_surface_node_command.h"
+#include "common/rs_background_thread.h"
+#include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "platform/common/rs_system_properties.h"
+#include "transaction/rs_interfaces.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -152,6 +156,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSurfacenodecommand(data, size);
     OHOS::Rosen::DoCreateWithConfig(data, size);
     OHOS::Rosen::DoSurfacenodecommand002(data, size);
+    // Destroyed GC-managed nodes are queued in RSRenderNodeGC buckets. Flush them here, otherwise
+    // they accumulate across iterations (memory leak) or get deleted on RSBackgroundThread while
+    // the next iteration runs, which ASan reports as heap-use-after-free.
+    OHOS::Rosen::RSRenderNodeGC::Instance().ReleaseNodeMemory(true);
+    if (OHOS::Rosen::RSSystemProperties::GetBgNodeReleaseEnabled()) {
+        OHOS::Rosen::RSBackgroundThread::Instance().PostSyncTask([]() {});
+    }
     return 0;
 }
-
