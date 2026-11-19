@@ -113,6 +113,9 @@ ExtendRecordingCanvas* RSCanvasNode::BeginRecording(int width, int height)
         return recordingCanvas_;
     }
     recordingUpdated_ = false;
+    // Keep the client queue consistent with the render side: RSCanvasNodeClearRecording
+    // removes the oldest anonymous modifier from every draw slot (RemoveModifierNG),
+    // so drop the oldest queued modifier of each draw slot here as well.
     PopFrontRSCmdModifierQueue();
     std::unique_ptr<RSCommand> command = std::make_unique<RSCanvasNodeClearRecording>(GetId());
     AddCommand(command, IsRenderServiceNode());

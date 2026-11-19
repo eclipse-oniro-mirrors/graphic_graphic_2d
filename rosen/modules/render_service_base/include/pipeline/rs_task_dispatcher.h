@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_BASE_PIPELINE_RS_TASK_DISPATCHER_H
 
 #include <functional>
+#include <mutex>
 #include <unordered_map>
 #include <unistd.h>
 #include "common/rs_macros.h"
@@ -38,6 +39,7 @@ private:
     RSTaskDispatcher(const RSTaskDispatcher&&);
     RSTaskDispatcher& operator=(const RSTaskDispatcher&);
     RSTaskDispatcher& operator=(const RSTaskDispatcher&&);
+    mutable std::mutex mutex_;
     std::unordered_map<pid_t, std::function<void(RSTask, bool)>> taskDispatchFuncMap_;
 };
 } // namespace Rosen

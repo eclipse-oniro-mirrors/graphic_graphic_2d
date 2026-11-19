@@ -29,6 +29,7 @@
 #include "animation/rs_implicit_animation_param.h"
 #include "animation/rs_implicit_animator.h"
 #include "animation/rs_transition.h"
+#include "command_modifier/rs_canvas_node_command_modifier.h"
 #include "common/rs_rect.h"
 #include "common/rs_vector4.h"
 #include "modifier_ng/appearance/rs_background_filter_modifier.h"
@@ -9578,4 +9579,241 @@ HWTEST_F(RSNodeTest, SetClipShape003, TestSize.Level1)
     EXPECT_FLOAT_EQ(gotShape.radius_[3][0], secondRadius.w_);
 }
 
+// Test-only subclass exposing the protected cmd modifier queue for direct inspection.
+class TestRSCmdModifierQueueNode : public RSCanvasNode {
+public:
+    TestRSCmdModifierQueueNode() : RSCanvasNode(false) {}
+ 
+    void PushCmdModifier(const std::shared_ptr<RSCmdModifier>& modifier)
+    {
+        rsCmdModifierQueue_.push_back(modifier);
+    }
+ 
+    void PopFrontCmdModifier()
+    {
+        PopFrontRSCmdModifierQueue();
+    }
+ 
+    size_t GetCmdModifierQueueSize() const
+    {
+        return rsCmdModifierQueue_.size();
+    }
+ 
+    std::shared_ptr<RSCmdModifier> GetFrontCmdModifier() const
+    {
+        return rsCmdModifierQueue_.front();
+    }
+ 
+    std::list<std::shared_ptr<RSCmdModifier>>& GetCmdModifierQueue()
+    {
+        return rsCmdModifierQueue_;
+    }
+};
+
+/**
+ * @tc.name: PopFrontRSCmdModifierQueueEmpty001
+ * @tc.desc: PopFrontRSCmdModifierQueue on an empty queue keeps it empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, PopFrontRSCmdModifierQueueEmpty001, TestSize.Level1)
+{
+    // Scenario: the modifier queue is empty.
+    // Expectation: popping performs no erase and the queue stays empty.
+    auto node = std::make_shared<TestRSCmdModifierQueueNode>();
+    ASSERT_NE(node, nullptr);
+    ASSERT_EQ(node->GetCmdModifierQueueSize(), 0u);
+ 
+    node->PopFrontCmdModifier();
+ 
+    EXPECT_EQ(node->GetCmdModifierQueueSize(), 0u);
+}
+
+/**
+ * @tc.name: PopFrontRSCmdModifierQueueNonDraw001
+ * @tc.desc: PopFrontRSCmdModifierQueue keeps modifiers without a draw slot
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, PopFrontRSCmdModifierQueueNonDraw001, TestSize.Level1)
+{
+    // Scenario: queue contains only non-draw modifiers (GetDrawSlot == INVALID_DRAW_SLOT).
+    // Expectation: none are removed and the original order is preserved.
+    auto node = std::make_shared<TestRSCmdModifierQueueNode>();
+    ASSERT_NE(node, nullptr);
+    auto mod1 = std::make_shared<ClearRecordingCmdModifier>(node, ClearRecordingCmdParam{10, 20});
+    auto mod2 = std::make_shared<HdrPresentCmdModifier>(node, HdrPresentCmdParam{true});
+    node->PushCmdModifier(mod1);
+    node->PushCmdModifier(mod2);
+ 
+    node->PopFrontCmdModifier();
+ 
+    ASSERT_EQ(node->GetCmdModifierQueueSize(), 2u);
+    auto& queue = node->GetCmdModifierQueue();
+    auto it = queue.begin();
+    EXPECT_EQ(*it, mod1);
+    ++it;
+    EXPECT_EQ(*it, mod2);
+}
+
+/**
+ * @tc.name: PopFrontRSCmdModifierQueueSingleDraw001
+ * @tc.desc: PopFrontRSCmdModifierQueue removes the only draw modifier in the queue
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, PopFrontRSCmdModifierQueueSingleDraw001, TestSize.Level1)
+{
+    // Scenario: queue holds a single draw modifier (FinishRecord) with a valid slot.
+    // Expectation: the first occurrence of its slot is erased, leaving the queue empty.
+    auto node = std::make_shared<TestRSCmdModifierQueueNode>();
+    ASSERT_NE(node, nullptr);
+    auto mod = std::make_shared<FinishRecordCmdModifier>(node, FinishRecordCmdParam{1, nullptr});
+    node->PushCmdModifier(mod);
+ 
+    node->PopFrontCmdModifier();
+ 
+    EXPECT_EQ(node->GetCmdModifierQueueSize(), 0u);
+}
+
+/**
+ * @tc.name: PopFrontRSCmdModifierQueueInvalidSlot001
+ * @tc.desc: PopFrontRSCmdModifierQueue keeps draw modifiers whose slot is INVALID_DRAW_SLOT
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, PopFrontRSCmdModifierQueueInvalidSlot001, TestSize.Level1)
+{
+    // Scenario: a draw modifier carries INVALID_DRAW_SLOT (0), which means "no draw slot".
+    // Expectation: it is retained, just like a non-draw modifier.
+    auto node = std::make_shared<TestRSCmdModifierQueueNode>();
+    ASSERT_NE(node, nullptr);
+    auto mod = std::make_shared<FinishRecordCmdModifier>(
+        node, FinishRecordCmdParam{RSCmdModifier::INVALID_DRAW_SLOT, nullptr});
+    node->PushCmdModifier(mod);
+ 
+    node->PopFrontCmdModifier();
+ 
+    ASSERT_EQ(node->GetCmdModifierQueueSize(), 1u);
+    EXPECT_EQ(node->GetFrontCmdModifier(), mod);
+}
+
+/**
+ * @tc.name: PopFrontRSCmdModifierQueueDuplicateSlot001
+ * @tc.desc: PopFrontRSCmdModifierQueue removes only the oldest modifier of a duplicated draw slot
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, PopFrontRSCmdModifierQueueDuplicateSlot001, TestSize.Level1)
+{
+    // Scenario: two draw modifiers share the same slot value.
+    // Expectation: only the first (oldest) one is erased; the later one is retained.
+    auto node = std::make_shared<TestRSCmdModifierQueueNode>();
+    ASSERT_NE(node, nullptr);
+    constexpr uint16_t slot = 5;
+    auto first = std::make_shared<FinishRecordCmdModifier>(node, FinishRecordCmdParam{slot, nullptr});
+    auto second = std::make_shared<DrawOnNodeCmdModifier>(node, DrawOnNodeCmdParam{slot, nullptr});
+    node->PushCmdModifier(first);
+    node->PushCmdModifier(second);
+ 
+    node->PopFrontCmdModifier();
+ 
+    ASSERT_EQ(node->GetCmdModifierQueueSize(), 1u);
+    EXPECT_EQ(node->GetFrontCmdModifier(), second);
+}
+
+/**
+ * @tc.name: PopFrontRSCmdModifierQueueDifferentSlots001
+ * @tc.desc: PopFrontRSCmdModifierQueue removes the oldest modifier of each distinct draw slot
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, PopFrontRSCmdModifierQueueDifferentSlots001, TestSize.Level1)
+{
+    // Scenario: two draw modifiers use different slot values.
+    // Expectation: both distinct slots are cleared, leaving the queue empty.
+    auto node = std::make_shared<TestRSCmdModifierQueueNode>();
+    ASSERT_NE(node, nullptr);
+    auto first = std::make_shared<FinishRecordCmdModifier>(node, FinishRecordCmdParam{1, nullptr});
+    auto second = std::make_shared<DrawOnNodeCmdModifier>(node, DrawOnNodeCmdParam{2, nullptr});
+    node->PushCmdModifier(first);
+    node->PushCmdModifier(second);
+ 
+    node->PopFrontCmdModifier();
+ 
+    EXPECT_EQ(node->GetCmdModifierQueueSize(), 0u);
+}
+
+/**
+ * @tc.name: PopFrontRSCmdModifierQueueNullEntry001
+ * @tc.desc: PopFrontRSCmdModifierQueue skips null queue entries and clears draw modifiers
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, PopFrontRSCmdModifierQueueNullEntry001, TestSize.Level1)
+{
+    // Scenario: queue contains a null shared_ptr followed by a draw modifier.
+    // Expectation: the null entry is retained (treated as no draw slot) and the draw modifier is erased.
+    auto node = std::make_shared<TestRSCmdModifierQueueNode>();
+    ASSERT_NE(node, nullptr);
+    auto mod = std::make_shared<FinishRecordCmdModifier>(node, FinishRecordCmdParam{3, nullptr});
+    node->PushCmdModifier(nullptr);
+    node->PushCmdModifier(mod);
+ 
+    node->PopFrontCmdModifier();
+ 
+    ASSERT_EQ(node->GetCmdModifierQueueSize(), 1u);
+    EXPECT_EQ(node->GetFrontCmdModifier().get(), nullptr);
+}
+
+/**
+ * @tc.name: PopFrontRSCmdModifierQueueInterleaved001
+ * @tc.desc: PopFrontRSCmdModifierQueue preserves order of non-draw and duplicate-slot modifiers
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, PopFrontRSCmdModifierQueueInterleaved001, TestSize.Level1)
+{
+    // Scenario: non-draw and draw modifiers are interleaved, with slot 1 appearing twice.
+    // Expectation: non-draw modifiers and the second slot-1 modifier remain, in original order.
+    auto node = std::make_shared<TestRSCmdModifierQueueNode>();
+    ASSERT_NE(node, nullptr);
+    auto nonDrawA = std::make_shared<ClearRecordingCmdModifier>(node, ClearRecordingCmdParam{10, 20});
+    auto drawSlot1First = std::make_shared<FinishRecordCmdModifier>(node, FinishRecordCmdParam{1, nullptr});
+    auto nonDrawB = std::make_shared<HdrPresentCmdModifier>(node, HdrPresentCmdParam{true});
+    auto drawSlot2 = std::make_shared<DrawOnNodeCmdModifier>(node, DrawOnNodeCmdParam{2, nullptr});
+    auto drawSlot1Second = std::make_shared<DrawOnNodeCmdModifier>(node, DrawOnNodeCmdParam{1, nullptr});
+    node->PushCmdModifier(nonDrawA);
+    node->PushCmdModifier(drawSlot1First);
+    node->PushCmdModifier(nonDrawB);
+    node->PushCmdModifier(drawSlot2);
+    node->PushCmdModifier(drawSlot1Second);
+ 
+    node->PopFrontCmdModifier();
+ 
+    ASSERT_EQ(node->GetCmdModifierQueueSize(), 3u);
+    auto& queue = node->GetCmdModifierQueue();
+    auto it = queue.begin();
+    EXPECT_EQ(*it, nonDrawA);
+    ++it;
+    EXPECT_EQ(*it, nonDrawB);
+    ++it;
+    EXPECT_EQ(*it, drawSlot1Second);
+}
+
+/**
+ * @tc.name: PopFrontRSCmdModifierQueueNonAdjacentDuplicate001
+ * @tc.desc: PopFrontRSCmdModifierQueue keeps the last occurrence of a non-adjacent duplicated slot
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, PopFrontRSCmdModifierQueueNonAdjacentDuplicate001, TestSize.Level1)
+{
+    // Scenario: slot 1, slot 2, slot 1 appear in that order.
+    // Expectation: the first slot-1 and the slot-2 are erased; the last slot-1 is retained.
+    auto node = std::make_shared<TestRSCmdModifierQueueNode>();
+    ASSERT_NE(node, nullptr);
+    auto firstSlot1 = std::make_shared<FinishRecordCmdModifier>(node, FinishRecordCmdParam{1, nullptr});
+    auto slot2 = std::make_shared<DrawOnNodeCmdModifier>(node, DrawOnNodeCmdParam{2, nullptr});
+    auto secondSlot1 = std::make_shared<DrawOnNodeCmdModifier>(node, DrawOnNodeCmdParam{1, nullptr});
+    node->PushCmdModifier(firstSlot1);
+    node->PushCmdModifier(slot2);
+    node->PushCmdModifier(secondSlot1);
+ 
+    node->PopFrontCmdModifier();
+ 
+    ASSERT_EQ(node->GetCmdModifierQueueSize(), 1u);
+    EXPECT_EQ(node->GetFrontCmdModifier(), secondSlot1);
+}
 } // namespace OHOS::Rosen

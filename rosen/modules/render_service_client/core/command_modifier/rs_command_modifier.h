@@ -24,6 +24,7 @@
 
 #include "command/rs_command.h"
 #include "common/rs_common_def.h"
+#include "modifier_ng/rs_modifier_ng_type.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -148,6 +149,16 @@ public:
             return param.AffectsRendering();
         }
         return true;
+    }
+
+    static constexpr uint16_t INVALID_DRAW_SLOT =
+        static_cast<uint16_t>(ModifierNG::RSModifierType::INVALID);
+ 
+    // Returns the draw slot for draw modifiers (e.g. FinishRecording/DrawOnNode).
+    // Non-draw modifiers have no draw slot and return INVALID_DRAW_SLOT.
+    virtual uint16_t GetDrawSlot() const
+    {
+        return INVALID_DRAW_SLOT;
     }
 
     uint64_t GetIndex() const

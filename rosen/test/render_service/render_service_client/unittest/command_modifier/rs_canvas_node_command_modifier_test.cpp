@@ -532,7 +532,7 @@ HWTEST_F(RSCanvasNodeCommandModifierTest, FinishRecordTest006, TestSize.Level1)
     ASSERT_TRUE(mod);
     mod->UpdateToRender();
 }
- 
+
 /**
  * @tc.name: FinishRecordTest007
  * @tc.desc: Test UpdateToRender with both simpleDrawCmdList_ and simpleDrawCmdList_ as null
@@ -547,7 +547,7 @@ HWTEST_F(RSCanvasNodeCommandModifierTest, FinishRecordTest007, TestSize.Level1)
     ASSERT_TRUE(mod);
     mod->UpdateToRender();
 }
- 
+
 /**
  * @tc.name: DrawOnNodeTest008
  * @tc.desc: Test UpdateToRender with simpleDrawCmdList_ only (simpleDrawCmdList_ is null)
@@ -565,7 +565,7 @@ HWTEST_F(RSCanvasNodeCommandModifierTest, DrawOnNodeTest008, TestSize.Level1)
     ASSERT_TRUE(mod);
     mod->UpdateToRender();
 }
- 
+
 /**
  * @tc.name: DrawOnNodeTest009
  * @tc.desc: Test UpdateToRender with simpleDrawCmdList_ as null
@@ -579,7 +579,7 @@ HWTEST_F(RSCanvasNodeCommandModifierTest, DrawOnNodeTest009, TestSize.Level1)
     ASSERT_TRUE(mod);
     mod->UpdateToRender();
 }
- 
+
 /**
  * @tc.name: DrawOnNodeTest010
  * @tc.desc: Test UpdateToRenderWithResult with simpleDrawCmdList_ only
@@ -598,7 +598,7 @@ HWTEST_F(RSCanvasNodeCommandModifierTest, DrawOnNodeTest010, TestSize.Level1)
     bool val = std::get<bool>(result);
     EXPECT_TRUE(val);
 }
- 
+
 /**
  * @tc.name: DrawOnNodeTest011
  * @tc.desc: Test UpdateToRenderWithResult with both simpleDrawCmdList_ as null
@@ -614,7 +614,7 @@ HWTEST_F(RSCanvasNodeCommandModifierTest, DrawOnNodeTest011, TestSize.Level1)
     bool val = std::get<bool>(result);
     EXPECT_FALSE(val);
 }
- 
+
 /**
  * @tc.name: FinishRecordTest008
  * @tc.desc: Test DumpParam with simpleDrawCmdList_ only
@@ -633,7 +633,7 @@ HWTEST_F(RSCanvasNodeCommandModifierTest, FinishRecordTest008, TestSize.Level1)
     mod->DumpParam(out);
     EXPECT_NE(out.find("simple size"), std::string::npos);
 }
- 
+
 /**
  * @tc.name: DrawOnNodeTest012
  * @tc.desc: Test DumpParam with simpleDrawCmdList_ only
@@ -653,5 +653,114 @@ HWTEST_F(RSCanvasNodeCommandModifierTest, DrawOnNodeTest012, TestSize.Level1)
     EXPECT_NE(out.find("simple size"), std::string::npos);
 }
 
+/**
+ * @tc.name: FinishRecordGetDrawSlotTest001
+ * @tc.desc: Test FinishRecordCmdModifier::GetDrawSlot returns param_.modifierType_ (INVALID slot returned verbatim)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasNodeCommandModifierTest, FinishRecordGetDrawSlotTest001, TestSize.Level1)
+{
+    // Scenario: modifierType_ is 0 (INVALID_DRAW_SLOT).
+    // Expectation: GetDrawSlot returns the stored value verbatim.
+    auto node = RSCanvasNode::Create();
+    constexpr uint16_t slot = 0;
+    FinishRecordCmdParam param{slot, nullptr};
+    auto mod = std::make_shared<FinishRecordCmdModifier>(node, param);
+    EXPECT_EQ(mod->GetDrawSlot(), slot);
+    EXPECT_EQ(mod->GetDrawSlot(), RSCmdModifier::INVALID_DRAW_SLOT);
+}
+
+/**
+ * @tc.name: FinishRecordGetDrawSlotTest002
+ * @tc.desc: Test FinishRecordCmdModifier::GetDrawSlot returns the max uint16 slot value
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasNodeCommandModifierTest, FinishRecordGetDrawSlotTest002, TestSize.Level1)
+{
+    // Scenario: modifierType_ is the maximum uint16 value.
+    // Expectation: GetDrawSlot returns that exact value without truncation.
+    auto node = RSCanvasNode::Create();
+    constexpr uint16_t slot = 65535;
+    FinishRecordCmdParam param{slot, nullptr};
+    auto mod = std::make_shared<FinishRecordCmdModifier>(node, param);
+    EXPECT_EQ(mod->GetDrawSlot(), slot);
+}
+
+/**
+ * @tc.name: FinishRecordGetDrawSlotTest003
+ * @tc.desc: Test FinishRecordCmdModifier::GetDrawSlot reflects the value updated by SetParam
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasNodeCommandModifierTest, FinishRecordGetDrawSlotTest003, TestSize.Level1)
+{
+    // Scenario: SetParam replaces the stored parameter with a different modifierType_.
+    // Expectation: GetDrawSlot returns the new slot value.
+    auto node = RSCanvasNode::Create();
+    constexpr uint16_t oldSlot = 1;
+    constexpr uint16_t newSlot = 2;
+    FinishRecordCmdParam param{oldSlot, nullptr};
+    auto mod = std::make_shared<FinishRecordCmdModifier>(node, param);
+    EXPECT_EQ(mod->GetDrawSlot(), oldSlot);
+ 
+    FinishRecordCmdParam param2{newSlot, nullptr};
+    bool ret = mod->SetParam(param2);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(mod->GetDrawSlot(), newSlot);
+}
+
+/**
+ * @tc.name: DrawOnNodeGetDrawSlotTest001
+ * @tc.desc: Test DrawOnNodeCmdModifier::GetDrawSlot returns param_.modifierType_
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasNodeCommandModifierTest, DrawOnNodeGetDrawSlotTest001, TestSize.Level1)
+{
+    // Scenario: modifierType_ is a non-zero slot value.
+    // Expectation: GetDrawSlot returns the stored value.
+    auto node = RSCanvasNode::Create();
+    constexpr uint16_t slot = 7;
+    DrawOnNodeCmdParam param{slot, nullptr};
+    auto mod = std::make_shared<DrawOnNodeCmdModifier>(node, param);
+    EXPECT_EQ(mod->GetDrawSlot(), slot);
+}
+
+/**
+ * @tc.name: DrawOnNodeGetDrawSlotTest002
+ * @tc.desc: Test DrawOnNodeCmdModifier::GetDrawSlot returns slot 0 (INVALID_DRAW_SLOT) verbatim
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasNodeCommandModifierTest, DrawOnNodeGetDrawSlotTest002, TestSize.Level1)
+{
+    // Scenario: modifierType_ is 0 (INVALID_DRAW_SLOT).
+    // Expectation: GetDrawSlot returns the stored value verbatim.
+    auto node = RSCanvasNode::Create();
+    constexpr uint16_t slot = 0;
+    DrawOnNodeCmdParam param{slot, nullptr};
+    auto mod = std::make_shared<DrawOnNodeCmdModifier>(node, param);
+    EXPECT_EQ(mod->GetDrawSlot(), slot);
+    EXPECT_EQ(mod->GetDrawSlot(), RSCmdModifier::INVALID_DRAW_SLOT);
+}
+
+/**
+ * @tc.name: DrawOnNodeGetDrawSlotTest003
+ * @tc.desc: Test DrawOnNodeCmdModifier::GetDrawSlot reflects the value updated by SetParam
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasNodeCommandModifierTest, DrawOnNodeGetDrawSlotTest003, TestSize.Level1)
+{
+    // Scenario: SetParam replaces the stored parameter with a different modifierType_.
+    // Expectation: GetDrawSlot returns the new slot value.
+    auto node = RSCanvasNode::Create();
+    constexpr uint16_t oldSlot = 3;
+    constexpr uint16_t newSlot = 9;
+    DrawOnNodeCmdParam param{oldSlot, nullptr};
+    auto mod = std::make_shared<DrawOnNodeCmdModifier>(node, param);
+    EXPECT_EQ(mod->GetDrawSlot(), oldSlot);
+ 
+    DrawOnNodeCmdParam param2{newSlot, nullptr};
+    bool ret = mod->SetParam(param2);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(mod->GetDrawSlot(), newSlot);
+}
 } // namespace Rosen
 } // namespace OHOS

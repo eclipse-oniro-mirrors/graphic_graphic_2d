@@ -255,5 +255,19 @@ HWTEST_F(RSCommandModifierTest, GenerateCmdModifierIndexTest004, TestSize.Level1
     EXPECT_GT(newIndex, oldIndex);
 }
 
+/**
+ * @tc.name: GetDrawSlotTest001
+ * @tc.desc: Test base RSCmdModifier::GetDrawSlot returns INVALID_DRAW_SLOT for a non-draw modifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCommandModifierTest, GetDrawSlotTest001, TestSize.Level1)
+{
+    // Scenario: a modifier that does not override GetDrawSlot (non-draw modifier).
+    // Expectation: the base default implementation reports the invalid draw slot.
+    auto node = RSCanvasNode::Create();
+    auto modifier = std::make_shared<TestableCmdModifier>(node);
+    EXPECT_EQ(modifier->GetDrawSlot(), RSCmdModifier::INVALID_DRAW_SLOT);
+    EXPECT_EQ(RSCmdModifier::INVALID_DRAW_SLOT, 0u);
+}
 } // namespace Rosen
 } // namespace OHOS
