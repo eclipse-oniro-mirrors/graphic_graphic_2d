@@ -1700,6 +1700,170 @@ HWTEST_F(RSDrmUtilTest, RecordDstRectDisplayDisabledOrSingular, TestSize.Level1)
     EXPECT_EQ(node->GetDstRectDisplayNodeId(), INVALID_NODEID);
 }
 
+// 同时检查两个入口：几何缺失不能留下有效的显示记录。
+HWTEST_F(RSDrmUtilTest, CrossNodeConversionMissingGeometry, TestSize.Level1)
+{
+    auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    auto node = CreateRecordedDrmNode(Drawing::Matrix(), Drawing::Matrix(), screen);
+    auto parent = RSTestUtil::CreateSurfaceNode();
+    auto ancestor = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(node, nullptr);
+    ASSERT_NE(parent, nullptr);
+    ASSERT_NE(ancestor, nullptr);
+    ASSERT_EQ(node->GetDstRectDisplayNodeId(), screen->GetId());
+    node->parent_ = parent;
+    parent->parent_ = ancestor;
+    parent->GetMutableRenderProperties().SetSandBox(Vector2f(0, 0));
+    for (const auto& missing : { node, parent, ancestor }) {
+        SCOPED_TRACE(missing->GetId());
+        auto& properties = missing->GetMutableRenderProperties();
+        auto geometry = std::move(properties.boundsGeo_);
+        Drawing::Matrix conversion;
+        EXPECT_FALSE(RSDrmUtil::CalcCrossNodeLayerConversion(*node, *node, *screen, conversion));
+        node->SetDstRectDisplay(screen->GetId());
+        RSDrmUtil::RecordDstRectDisplay(*node, screen);
+        EXPECT_EQ(node->GetDstRectDisplayNodeId(), INVALID_NODEID);
+        properties.boundsGeo_ = std::move(geometry);
+    }
+}
+
+HWTEST_F(RSDrmUtilTest, CalcCrossNodeLayerConversionSingular, TestSize.Level1)
+{
+    auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    auto node = CreateRecordedDrmNode(Drawing::Matrix(), Drawing::Matrix(), screen);
+    ASSERT_NE(node, nullptr);
+    ASSERT_EQ(node->GetDstRectDisplayNodeId(), screen->GetId());
+    Drawing::Matrix singular;
+    singular.Scale(0, 1, 0, 0);
+    node->GetMutableRenderProperties().GetBoundsGeometry()->ReplaceMatrix(singular, Drawing::Matrix());
+    Drawing::Matrix conversion;
+    EXPECT_FALSE(RSDrmUtil::CalcCrossNodeLayerConversion(*node, *node, *screen, conversion));
+}
+
+HWTEST_F(RSDrmUtilTest, CalcCrossNodeLayerConversionSandboxParent, TestSize.Level1)
+{
+    auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    auto node = CreateRecordedDrmNode(Drawing::Matrix(), Drawing::Matrix(), screen);
+    auto clone = RSTestUtil::CreateSurfaceNode();
+    auto parent = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(node, nullptr);
+    ASSERT_NE(clone, nullptr);
+    ASSERT_NE(parent, nullptr);
+    ASSERT_EQ(node->GetDstRectDisplayNodeId(), screen->GetId());
+    node->parent_ = parent;
+    parent->GetMutableRenderProperties().SetSandBox(Vector2f(0, 0));
+    Drawing::Matrix parentAbs;
+    parentAbs.Translate(CONVERSION_TRANSLATE_X, CONVERSION_TRANSLATE_Y);
+    parent->GetMutableRenderProperties().GetBoundsGeometry()->ReplaceMatrix(Drawing::Matrix(), parentAbs);
+    Drawing::Matrix conversion;
+    // sandbox 没有祖先时不提供相对矩阵，父链仍应正常结束。
+    ASSERT_TRUE(RSDrmUtil::CalcCrossNodeLayerConversion(*node, *clone, *screen, conversion));
+    EXPECT_TRUE(conversion.IsIdentity());
+    parent->parent_ = screen;
+    ASSERT_TRUE(RSDrmUtil::CalcCrossNodeLayerConversion(*node, *clone, *screen, conversion));
+    Drawing::Matrix expected;
+    expected.Translate(-CONVERSION_TRANSLATE_X, -CONVERSION_TRANSLATE_Y);
+    EXPECT_TRUE(conversion == expected);
+}
+
+HWTEST_F(RSDrmUtilTest, CalcCrossNodeLayerConversionCloneParentAndOffset, TestSize.Level1)
+{
+    auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    RSScreenProperty property;
+    property.Set<ScreenPropertyType::OFFSET>({ static_cast<int32_t>(CROSS_SCREEN_OFFSET_X), CROSS_SCREEN_OFFSET_Y });
+    screen->SetScreenProperty(property);
+    auto node = CreateRecordedDrmNode(Drawing::Matrix(), Drawing::Matrix(), screen);
+    auto clone = RSTestUtil::CreateSurfaceNode();
+    auto parent = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(node, nullptr);
+    ASSERT_NE(clone, nullptr);
+    ASSERT_NE(parent, nullptr);
+    ASSERT_EQ(node->GetDstRectDisplayNodeId(), screen->GetId());
+    clone->parent_ = parent;
+    auto& properties = parent->GetMutableRenderProperties();
+    auto geometry = properties.GetBoundsGeometry();
+    Drawing::Matrix parentAbs;
+    parentAbs.Translate(CONVERSION_TRANSLATE_X, CONVERSION_TRANSLATE_Y);
+    geometry->SetAbsMatrix(parentAbs);
+    for (const bool globalPosition : { false, true }) {
+        node->isGlobalPositionEnabled_ = globalPosition;
+        for (const bool hasParentGeometry : { false, true }) {
+            SCOPED_TRACE(globalPosition);
+            SCOPED_TRACE(hasParentGeometry);
+            properties.boundsGeo_ = hasParentGeometry ? geometry : nullptr;
+            Drawing::Matrix conversion;
+            EXPECT_TRUE(RSDrmUtil::CalcCrossNodeLayerConversion(*node, *clone, *screen, conversion));
+            Drawing::Matrix expected;
+            expected.Translate(
+                (hasParentGeometry ? CONVERSION_TRANSLATE_X : 0) - (globalPosition ? CROSS_SCREEN_OFFSET_X : 0),
+                (hasParentGeometry ? CONVERSION_TRANSLATE_Y : 0) - (globalPosition ? CROSS_SCREEN_OFFSET_Y : 0));
+            EXPECT_TRUE(conversion == expected);
+        }
+    }
+    properties.boundsGeo_ = geometry;
+}
+
+HWTEST_F(RSDrmUtilTest, UpdateDrmCrossNodeConversionMissingRecordOrParams, TestSize.Level1)
+{
+    auto screen = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId());
+    auto node = CreateRecordedDrmNode(Drawing::Matrix(), Drawing::Matrix(), screen);
+    ASSERT_NE(node, nullptr);
+    ASSERT_EQ(node->GetDstRectDisplayNodeId(), screen->GetId());
+    const NodeId targetId = GenerateNodeId();
+    Drawing::Matrix conversion;
+    conversion.Translate(CONVERSION_TRANSLATE_X, CONVERSION_TRANSLATE_Y);
+    RSDrmUtil::ClearDrmNodes();
+    RSDrmUtil::UpdateDrmCrossNodeConversion(*node, targetId, conversion);
+    const auto& matrices = node->GetCrossNodeLayerConversionMatrices();
+    EXPECT_EQ(matrices.find(targetId), matrices.end());
+    RSDrmUtil::RecordDstRectDisplay(*node, screen);
+    EXPECT_EQ(node->GetDstRectDisplayNodeId(), INVALID_NODEID);
+    RSDrmUtil::CollectDrmNodes(node);
+    auto params = std::move(node->stagingRenderParams_);
+    RSDrmUtil::UpdateDrmCrossNodeConversion(*node, targetId, conversion);
+    auto it = matrices.find(targetId);
+    // 恢复测试节点状态后再作致命断言，避免影响 TearDown。
+    node->stagingRenderParams_ = std::move(params);
+    ASSERT_NE(it, matrices.end());
+    EXPECT_TRUE(it->second == conversion);
+}
+
+HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfoInvalidSourceSize, TestSize.Level1)
+{
+    const GraphicIRect dst = { -100, -50, 400, 200 };
+    const GraphicIRect sources[] = { { 0, 0, 0, DEFAULT_CANVAS_HEIGHT }, { 0, 0, DEFAULT_CANVAS_WIDTH, 0 },
+        { 0, 0, -static_cast<int32_t>(DEFAULT_CANVAS_WIDTH), DEFAULT_CANVAS_HEIGHT },
+        { 0, 0, DEFAULT_CANVAS_WIDTH, -static_cast<int32_t>(DEFAULT_CANVAS_HEIGHT) } };
+    for (const auto& src : sources) {
+        SCOPED_TRACE(src.w);
+        SCOPED_TRACE(src.h);
+        RSLayerInfo layer;
+        layer.dstRect = dst;
+        layer.srcRect = src;
+        const auto original = layer;
+        CropDrmLayer(DRM_PRIMARY_SCREEN, layer);
+        ExpectDrmLayerGeometry(layer, original);
+    }
+}
+
+HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfoSubpixelSize, TestSize.Level1)
+{
+    constexpr float subpixelSize = 0.5f;
+    constexpr float outsideOffset = -50.0f;
+    constexpr float visibleExtent = 100.0f;
+    // 浮点矩形有交集且发生裁剪，但转为整数后宽或高为零。
+    const Drawing::Rect composedRects[] = { { 0, outsideOffset, subpixelSize, visibleExtent },
+        { outsideOffset, 0, visibleExtent, subpixelSize } };
+    for (const auto& composed : composedRects) {
+        RSLayerInfo layer;
+        layer.dstRect = CONVERSION_TEST_DST;
+        layer.srcRect = DRM_VIDEO_SRC;
+        const auto original = layer;
+        RSDrmUtil::CropCrossNodeLayerInfo(composed, DRM_PRIMARY_SCREEN, layer);
+        ExpectDrmLayerGeometry(layer, original);
+    }
+}
+
 HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfoQuarterTurns, TestSize.Level1)
 {
     const GraphicIRect dst = { -100, -50, 400, 200 };
@@ -1707,9 +1871,10 @@ HWTEST_F(RSDrmUtilTest, CropCrossNodeLayerInfoQuarterTurns, TestSize.Level1)
     const GraphicIRect expectedDst = { 0, 0, 300, 150 };
     const GraphicTransformType transforms[] = { GraphicTransformType::GRAPHIC_ROTATE_NONE,
         GraphicTransformType::GRAPHIC_ROTATE_90, GraphicTransformType::GRAPHIC_ROTATE_180,
-        GraphicTransformType::GRAPHIC_ROTATE_270 };
-    const GraphicIRect expectedSources[] = { { 200, 100, 600, 300 }, { 200, 0, 600, 300 },
-        { 0, 0, 600, 300 }, { 0, 100, 600, 300 } };
+        GraphicTransformType::GRAPHIC_ROTATE_270, GraphicTransformType::GRAPHIC_FLIP_H,
+        GraphicTransformType::GRAPHIC_FLIP_V };
+    const GraphicIRect expectedSources[] = { { 200, 100, 600, 300 }, { 200, 0, 600, 300 }, { 0, 0, 600, 300 },
+        { 0, 100, 600, 300 }, { 0, 100, 600, 300 }, { 200, 0, 600, 300 } };
     size_t index = 0;
     for (const auto transform : transforms) {
         RSLayerInfo layer;
