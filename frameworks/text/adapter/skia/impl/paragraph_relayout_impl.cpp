@@ -63,8 +63,13 @@ namespace {
         },
 
         [](skt::Paragraph& paragraph, const ParagraphStyle& style, skt::InternalState& state) {
+            if (static_cast<int>(paragraph.getParagraphStyle().getTextDirection()) ==
+                static_cast<int>(style.textDirection)) {
+                state = std::min(skt::InternalState::kIndexed, state);
+            } else {
+                state = std::min(skt::InternalState::kUnknown, state);
+            }
             paragraph.getParagraphStyle().setTextDirection(static_cast<skt::TextDirection>(style.textDirection));
-            state = std::min(skt::InternalState::kIndexed, state);
         },
 
         [](skt::Paragraph& paragraph, const ParagraphStyle& style, skt::InternalState& state) {
