@@ -1810,6 +1810,21 @@ void RSNode::SetBgImagePositionY(float positionY)
         positionY);
 }
 
+void RSNode::SetBgImageConfig(const BgImageConfig& config)
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    SetPropertyNGWithoutLock<ModifierNG::RSBackgroundImageModifier,
+        &ModifierNG::RSBackgroundImageModifier::SetBgImageWidth>(config.width);
+    SetPropertyNGWithoutLock<ModifierNG::RSBackgroundImageModifier,
+        &ModifierNG::RSBackgroundImageModifier::SetBgImageHeight>(config.height);
+    SetPropertyNGWithoutLock<ModifierNG::RSBackgroundImageModifier,
+        &ModifierNG::RSBackgroundImageModifier::SetBgImagePositionX>(config.positionX);
+    SetPropertyNGWithoutLock<ModifierNG::RSBackgroundImageModifier,
+        &ModifierNG::RSBackgroundImageModifier::SetBgImagePositionY>(config.positionY);
+    SetPropertyNGWithoutLock<ModifierNG::RSBackgroundImageModifier,
+        &ModifierNG::RSBackgroundImageModifier::SetBgImageInnerRect>(config.innerRect);
+}
+
 // set inner border color
 void RSNode::SetBorderColor(uint32_t colorValue)
 {
@@ -2998,6 +3013,24 @@ void RSNode::SetPixelStretchPercent(const Vector4f& stretchPercent, Drawing::Til
         static_cast<int>(stretchTileMode));
 }
 
+void RSNode::SetPixelStretch(const PixelStretchConfig& config, Drawing::TileMode stretchTileMode)
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    if (config.usePercent) {
+        SetPropertyNGWithoutLock<ModifierNG::RSPixelStretchModifier,
+            &ModifierNG::RSPixelStretchModifier::SetPixelStretchPercent>(config.vector);
+        SetPropertyNGWithoutLock<ModifierNG::RSPixelStretchModifier,
+            &ModifierNG::RSPixelStretchModifier::SetPixelStretchSize>(Vector4f(0.f));
+    } else {
+        SetPropertyNGWithoutLock<ModifierNG::RSPixelStretchModifier,
+            &ModifierNG::RSPixelStretchModifier::SetPixelStretchSize>(config.vector);
+        SetPropertyNGWithoutLock<ModifierNG::RSPixelStretchModifier,
+            &ModifierNG::RSPixelStretchModifier::SetPixelStretchPercent>(Vector4f(0.f));
+    }
+    SetPropertyNGWithoutLock<ModifierNG::RSPixelStretchModifier,
+        &ModifierNG::RSPixelStretchModifier::SetPixelStretchTileMode>(static_cast<int>(stretchTileMode));
+}
+ 
 void RSNode::SetWaterRippleParams(const RSWaterRipplePara& params, float progress)
 {
     SetPropertyNG<ModifierNG::RSBackgroundFilterModifier,
@@ -4988,8 +5021,16 @@ void RSNode::SetPropertyNodeChangeCallback(PropertyNodeChangeCallback callback)
 
 void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 {
+    AddModifierInner(modifier);
+}
+
+void RSNode::AddModifierInner(const std::shared_ptr<ModifierNG::RSModifier> modifier, bool needLock)
+{
     {
-        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_, std::defer_lock);
+        if (needLock) {
+            lock.lock();
+        }
         CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
         if (modifier == nullptr) {
             RS_LOGE("RSNode::AddModifier: null modifier, nodeId=%{public}" PRIu64, id_);
@@ -5012,7 +5053,10 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 
     std::shared_ptr<ModifierNG::RSRenderModifier> renderModifier = nullptr;
     {
-        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_, std::defer_lock);
+        if (needLock) {
+            lock.lock();
+        }
         renderModifier = modifier->CreateRenderModifier();
     }
     std::unique_ptr<RSCommand> command = std::make_unique<RSAddModifierNG>(id_, renderModifier);
@@ -5028,8 +5072,27 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 
 void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 {
+    RemoveModifierInner(modifier);
+}
+
+void RSNode::RemoveModifiers(
+    const std::vector<std::shared_ptr<ModifierNG::RSModifier>>& modifiers)
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    for (auto &modifier : modifiers) {
+        if (modifier) {
+            RemoveModifierInner(modifier, false);
+        }
+    }
+}
+ 
+void RSNode::RemoveModifierInner(const std::shared_ptr<ModifierNG::RSModifier> modifier, bool needLock)
+{
     {
-        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_, std::defer_lock);
+        if (needLock) {
+            lock.lock();
+        }
         CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
         if (modifier == nullptr) {
             RS_LOGE("RSNode::RemoveModifier: null modifier, nodeId=%{public}" PRIu64, id_);
@@ -5051,6 +5114,17 @@ void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifi
             std::make_unique<RSRemoveModifierNG>(id_, modifier->GetType(), modifier->GetId());
         AddCommand(cmdForRemote, true, GetFollowType(), id_);
     }
+}
+
+void RSNode::SwapModifier(const std::shared_ptr<ModifierNG::RSModifier> &oldModifier,
+                          const std::shared_ptr<ModifierNG::RSModifier> &newModifier)
+{
+    if (oldModifier == newModifier) {
+        return;
+    }
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    RemoveModifierInner(oldModifier, false);
+    AddModifierInner(newModifier, false);
 }
 
 const std::shared_ptr<RSPropertyBase> RSNode::GetPropertyById(const PropertyId& propertyId)

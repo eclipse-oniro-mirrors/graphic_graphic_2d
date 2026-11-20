@@ -34,6 +34,10 @@
 #include "modifier_ng/appearance/rs_background_filter_modifier.h"
 #include "modifier_ng/appearance/rs_color_picker_modifier.h"
 #include "modifier_ng/appearance/rs_foreground_filter_modifier.h"
+#include "modifier_ng/appearance/rs_pixel_stretch_modifier.h"
+#include "modifier_ng/appearance/rs_pixel_stretch_modifier.h"
+#include "modifier_ng/background/rs_background_image_modifier.h"
+#include "modifier_ng/background/rs_background_image_modifier.h"
 #include "modifier_ng/custom/rs_content_style_modifier.h"
 #include "modifier_ng/geometry/rs_bounds_clip_modifier.h"
 #include "render/rs_filter.h"
@@ -9497,4 +9501,503 @@ HWTEST_F(RSNodeTest, SetClipShape003, TestSize.Level1)
     EXPECT_FLOAT_EQ(gotShape.radius_[3][0], secondRadius.w_);
 }
 
+/**
+ * @tc.name: SetBgImageConfig001
+ * @tc.desc: test results of SetBgImageConfig with all fields set
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetBgImageConfig001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    BgImageConfig config; // for test
+    config.width = floatData[1];
+    config.height = floatData[2];
+    config.positionX = floatData[3];
+    config.positionY = floatData[4];
+    config.innerRect = createV4fWithValue(floatData[5]);
+    rsNode->SetBgImageConfig(config);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE);
+    ASSERT_NE(modifier, nullptr);
+    auto bgImageModifier = std::static_pointer_cast<ModifierNG::RSBackgroundImageModifier>(modifier);
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImageWidth(), config.width));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImageHeight(), config.height));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImagePositionX(), config.positionX));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImagePositionY(), config.positionY));
+    EXPECT_TRUE(bgImageModifier->GetBgImageInnerRect().IsNearEqual(config.innerRect));
+}
+
+/**
+ * @tc.name: SetBgImageConfig002
+ * @tc.desc: test results of SetBgImageConfig with default config and repeated update
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetBgImageConfig002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    // Default config should not crash
+    BgImageConfig defaultConfig; // for test
+    rsNode->SetBgImageConfig(defaultConfig);
+    // Second call should update the same modifier instead of creating a new one
+    BgImageConfig config; // for test
+    config.width = floatData[1];
+    config.height = floatData[2];
+    config.positionX = floatData[3];
+    config.positionY = floatData[4];
+    rsNode->SetBgImageConfig(config);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE);
+    ASSERT_NE(modifier, nullptr);
+    auto bgImageModifier = std::static_pointer_cast<ModifierNG::RSBackgroundImageModifier>(modifier);
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImageWidth(), config.width));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImageHeight(), config.height));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImagePositionX(), config.positionX));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImagePositionY(), config.positionY));
+}
+
+/**
+ * @tc.name: SetPixelStretchConfig001
+ * @tc.desc: test results of SetPixelStretch(PixelStretchConfig) with usePercent
+ * @tc.type: FUNC
+ * @tc.require: SR20260812036057
+ */
+HWTEST_F(RSNodeTest, SetPixelStretchConfig001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    constexpr float STRETCH_VALUE = 10.0f; // for test
+    PixelStretchConfig config; // for test
+    config.usePercent = true;
+    config.vector = createV4fWithValue(STRETCH_VALUE);
+    config.tileMode = Drawing::TileMode::REPEAT;
+    rsNode->SetPixelStretch(config);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH);
+    ASSERT_NE(modifier, nullptr);
+    auto stretchModifier = std::static_pointer_cast<ModifierNG::RSPixelStretchModifier>(modifier);
+    // percent path: percent keeps value, stretch size cleared to zero
+    EXPECT_TRUE(stretchModifier->GetPixelStretchPercent().IsNearEqual(config.vector));
+    EXPECT_TRUE(stretchModifier->GetPixelStretchSize().IsNearEqual(Vector4f(0.f)));
+}
+
+/**
+ * @tc.name: SetPixelStretchConfig002
+ * @tc.desc: test results of SetPixelStretch(PixelStretchConfig) without usePercent
+ * @tc.type: FUNC
+ * @tc.require: SR20260812036057
+ */
+HWTEST_F(RSNodeTest, SetPixelStretchConfig002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    constexpr float STRETCH_VALUE = 20.0f; // for test
+    PixelStretchConfig config; // for test
+    config.usePercent = false;
+    config.vector = createV4fWithValue(STRETCH_VALUE);
+    config.tileMode = Drawing::TileMode::MIRROR;
+    rsNode->SetPixelStretch(config);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH);
+    ASSERT_NE(modifier, nullptr);
+    auto stretchModifier = std::static_pointer_cast<ModifierNG::RSPixelStretchModifier>(modifier);
+    // size path: stretch size keeps value, percent cleared to zero
+    EXPECT_TRUE(stretchModifier->GetPixelStretchSize().IsNearEqual(config.vector));
+    EXPECT_TRUE(stretchModifier->GetPixelStretchPercent().IsNearEqual(Vector4f(0.f)));
+}
+
+/**
+ * @tc.name: SetPixelStretchConfig003
+ * @tc.desc: test results of SetPixelStretch(PixelStretchConfig) switching between percent and size
+ * @tc.type: FUNC
+ * @tc.require: SR20260812036057
+ */
+HWTEST_F(RSNodeTest, SetPixelStretchConfig003, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    constexpr float PERCENT_VALUE = 0.5f; // for test
+    constexpr float SIZE_VALUE = 30.0f; // for test
+    PixelStretchConfig percentConfig; // for test
+    percentConfig.usePercent = true;
+    percentConfig.vector = createV4fWithValue(PERCENT_VALUE);
+    rsNode->SetPixelStretch(percentConfig);
+ 
+    PixelStretchConfig sizeConfig; // for test
+    sizeConfig.usePercent = false;
+    sizeConfig.vector = createV4fWithValue(SIZE_VALUE);
+    rsNode->SetPixelStretch(sizeConfig);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH);
+    ASSERT_NE(modifier, nullptr);
+    auto stretchModifier = std::static_pointer_cast<ModifierNG::RSPixelStretchModifier>(modifier);
+    // switch from percent to size: size is the latest value, percent cleared
+    EXPECT_TRUE(stretchModifier->GetPixelStretchSize().IsNearEqual(sizeConfig.vector));
+    EXPECT_TRUE(stretchModifier->GetPixelStretchPercent().IsNearEqual(Vector4f(0.f)));
+}
+
+/**
+ * @tc.name: AddAndRemoveModifier001
+ * @tc.desc: test results of AddModifier and RemoveModifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, AddAndRemoveModifier001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    auto modifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    rsNode->AddModifier(modifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), modifier);
+    // duplicate add should be ignored
+    rsNode->AddModifier(modifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), modifier);
+    rsNode->RemoveModifier(modifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+    // remove again should not crash
+    rsNode->RemoveModifier(modifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+}
+
+/**
+ * @tc.name: AddAndRemoveModifier002
+ * @tc.desc: test results of AddModifier and RemoveModifier with null modifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, AddAndRemoveModifier002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    std::shared_ptr<ModifierNG::RSModifier> nullModifier = nullptr;
+    // null modifier should not crash
+    rsNode->AddModifier(nullModifier);
+    rsNode->RemoveModifier(nullModifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+}
+
+/**
+ * @tc.name: RemoveModifiers001
+ * @tc.desc: test results of RemoveModifiers with mixed valid/null modifiers
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, RemoveModifiers001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    auto modifier1 = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    auto modifier2 = std::make_shared<ModifierNG::RSPixelStretchModifier>();
+    rsNode->AddModifier(modifier1);
+    rsNode->AddModifier(modifier2);
+    ASSERT_NE(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+    ASSERT_NE(rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH), nullptr);
+ 
+    // batch remove with a null entry in the middle should only remove valid ones
+    std::vector<std::shared_ptr<ModifierNG::RSModifier>> modifiers = { modifier1, nullptr, modifier2 };
+    rsNode->RemoveModifiers(modifiers);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH), nullptr);
+}
+
+/**
+ * @tc.name: RemoveModifiers002
+ * @tc.desc: test results of RemoveModifiers with empty vector
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, RemoveModifiers002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    auto modifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    rsNode->AddModifier(modifier);
+    // empty vector should not remove anything
+    std::vector<std::shared_ptr<ModifierNG::RSModifier>> emptyModifiers;
+    rsNode->RemoveModifiers(emptyModifiers);
+    EXPECT_NE(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+}
+
+/**
+ * @tc.name: SwapModifier001
+ * @tc.desc: test results of SwapModifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SwapModifier001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    auto oldModifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    rsNode->AddModifier(oldModifier);
+    ASSERT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), oldModifier);
+ 
+    auto newModifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    rsNode->SwapModifier(oldModifier, newModifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), newModifier);
+}
+
+/**
+ * @tc.name: SwapModifier002
+ * @tc.desc: test results of SwapModifier with same modifier and null pointers
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SwapModifier002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    auto modifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    rsNode->AddModifier(modifier);
+    // swap with the same modifier should be a no-op
+    rsNode->SwapModifier(modifier, modifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), modifier);
+    // swap with null old modifier should only add the new one
+    auto newModifier = std::make_shared<ModifierNG::RSPixelStretchModifier>();
+    rsNode->SwapModifier(nullptr, newModifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH), newModifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), modifier);
+    // swap with null new modifier should only remove the old one
+    rsNode->SwapModifier(modifier, nullptr);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+}
+
+/**
+ * @tc.name: SetBgImageConfig001
+ * @tc.desc: test results of SetBgImageConfig with all fields set
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetBgImageConfig001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    BgImageConfig config; // for test
+    config.width = floatData[1];
+    config.height = floatData[2];
+    config.positionX = floatData[3];
+    config.positionY = floatData[4];
+    config.innerRect = createV4fWithValue(floatData[5]);
+    rsNode->SetBgImageConfig(config);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE);
+    ASSERT_NE(modifier, nullptr);
+    auto bgImageModifier = std::static_pointer_cast<ModifierNG::RSBackgroundImageModifier>(modifier);
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImageWidth(), config.width));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImageHeight(), config.height));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImagePositionX(), config.positionX));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImagePositionY(), config.positionY));
+    EXPECT_TRUE(bgImageModifier->GetBgImageInnerRect().IsNearEqual(config.innerRect));
+}
+
+/**
+ * @tc.name: SetBgImageConfig002
+ * @tc.desc: test results of SetBgImageConfig with default config and repeated update
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetBgImageConfig002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    // Default config should not crash
+    BgImageConfig defaultConfig; // for test
+    rsNode->SetBgImageConfig(defaultConfig);
+    // Second call should update the same modifier instead of creating a new one
+    BgImageConfig config; // for test
+    config.width = floatData[1];
+    config.height = floatData[2];
+    config.positionX = floatData[3];
+    config.positionY = floatData[4];
+    rsNode->SetBgImageConfig(config);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE);
+    ASSERT_NE(modifier, nullptr);
+    auto bgImageModifier = std::static_pointer_cast<ModifierNG::RSBackgroundImageModifier>(modifier);
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImageWidth(), config.width));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImageHeight(), config.height));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImagePositionX(), config.positionX));
+    EXPECT_TRUE(ROSEN_EQ(bgImageModifier->GetBgImagePositionY(), config.positionY));
+}
+
+/**
+ * @tc.name: SetPixelStretchConfig001
+ * @tc.desc: test results of SetPixelStretch(PixelStretchConfig) with usePercent
+ * @tc.type: FUNC
+ * @tc.require: SR20260812036057
+ */
+HWTEST_F(RSNodeTest, SetPixelStretchConfig001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    constexpr float STRETCH_VALUE = 10.0f; // for test
+    PixelStretchConfig config; // for test
+    config.usePercent = true;
+    config.vector = createV4fWithValue(STRETCH_VALUE);
+    rsNode->SetPixelStretch(config, Drawing::TileMode::REPEAT);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH);
+    ASSERT_NE(modifier, nullptr);
+    auto stretchModifier = std::static_pointer_cast<ModifierNG::RSPixelStretchModifier>(modifier);
+    // percent path: percent keeps value, stretch size cleared to zero
+    EXPECT_TRUE(stretchModifier->GetPixelStretchPercent().IsNearEqual(config.vector));
+    EXPECT_TRUE(stretchModifier->GetPixelStretchSize().IsNearEqual(Vector4f(0.f)));
+}
+
+/**
+ * @tc.name: SetPixelStretchConfig002
+ * @tc.desc: test results of SetPixelStretch(PixelStretchConfig) without usePercent
+ * @tc.type: FUNC
+ * @tc.require: SR20260812036057
+ */
+HWTEST_F(RSNodeTest, SetPixelStretchConfig002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    constexpr float STRETCH_VALUE = 20.0f; // for test
+    PixelStretchConfig config; // for test
+    config.usePercent = false;
+    config.vector = createV4fWithValue(STRETCH_VALUE);
+    rsNode->SetPixelStretch(config, Drawing::TileMode::MIRROR);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH);
+    ASSERT_NE(modifier, nullptr);
+    auto stretchModifier = std::static_pointer_cast<ModifierNG::RSPixelStretchModifier>(modifier);
+    // size path: stretch size keeps value, percent cleared to zero
+    EXPECT_TRUE(stretchModifier->GetPixelStretchSize().IsNearEqual(config.vector));
+    EXPECT_TRUE(stretchModifier->GetPixelStretchPercent().IsNearEqual(Vector4f(0.f)));
+}
+
+/**
+ * @tc.name: SetPixelStretchConfig003
+ * @tc.desc: test results of SetPixelStretch(PixelStretchConfig) switching between percent and size
+ * @tc.type: FUNC
+ * @tc.require: SR20260812036057
+ */
+HWTEST_F(RSNodeTest, SetPixelStretchConfig003, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    constexpr float PERCENT_VALUE = 0.5f; // for test
+    constexpr float SIZE_VALUE = 30.0f; // for test
+    PixelStretchConfig percentConfig; // for test
+    percentConfig.usePercent = true;
+    percentConfig.vector = createV4fWithValue(PERCENT_VALUE);
+    rsNode->SetPixelStretch(percentConfig, Drawing::TileMode::CLAMP);
+ 
+    PixelStretchConfig sizeConfig; // for test
+    sizeConfig.usePercent = false;
+    sizeConfig.vector = createV4fWithValue(SIZE_VALUE);
+    rsNode->SetPixelStretch(sizeConfig, Drawing::TileMode::DECAL);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH);
+    ASSERT_NE(modifier, nullptr);
+    auto stretchModifier = std::static_pointer_cast<ModifierNG::RSPixelStretchModifier>(modifier);
+    // switch from percent to size: size is the latest value, percent cleared
+    EXPECT_TRUE(stretchModifier->GetPixelStretchSize().IsNearEqual(sizeConfig.vector));
+    EXPECT_TRUE(stretchModifier->GetPixelStretchPercent().IsNearEqual(Vector4f(0.f)));
+}
+
+/**
+ * @tc.name: AddAndRemoveModifier001
+ * @tc.desc: test results of AddModifier and RemoveModifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, AddAndRemoveModifier001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    auto modifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    rsNode->AddModifier(modifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), modifier);
+    // duplicate add should be ignored
+    rsNode->AddModifier(modifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), modifier);
+    rsNode->RemoveModifier(modifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+    // remove again should not crash
+    rsNode->RemoveModifier(modifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+}
+ 
+/**
+ * @tc.name: AddAndRemoveModifier002
+ * @tc.desc: test results of AddModifier and RemoveModifier with null modifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, AddAndRemoveModifier002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    std::shared_ptr<ModifierNG::RSModifier> nullModifier = nullptr;
+    // null modifier should not crash
+    rsNode->AddModifier(nullModifier);
+    rsNode->RemoveModifier(nullModifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+}
+
+/**
+ * @tc.name: RemoveModifiers001
+ * @tc.desc: test results of RemoveModifiers with mixed valid/null modifiers
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, RemoveModifiers001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    auto modifier1 = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    auto modifier2 = std::make_shared<ModifierNG::RSPixelStretchModifier>();
+    rsNode->AddModifier(modifier1);
+    rsNode->AddModifier(modifier2);
+    ASSERT_NE(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+    ASSERT_NE(rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH), nullptr);
+ 
+    // batch remove with a null entry in the middle should only remove valid ones
+    std::vector<std::shared_ptr<ModifierNG::RSModifier>> modifiers = { modifier1, nullptr, modifier2 };
+    rsNode->RemoveModifiers(modifiers);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH), nullptr);
+}
+
+/**
+ * @tc.name: RemoveModifiers002
+ * @tc.desc: test results of RemoveModifiers with empty vector
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, RemoveModifiers002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    auto modifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    rsNode->AddModifier(modifier);
+    // empty vector should not remove anything
+    std::vector<std::shared_ptr<ModifierNG::RSModifier>> emptyModifiers;
+    rsNode->RemoveModifiers(emptyModifiers);
+    EXPECT_NE(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+}
+
+/**
+ * @tc.name: SwapModifier001
+ * @tc.desc: test results of SwapModifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SwapModifier001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    auto oldModifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    rsNode->AddModifier(oldModifier);
+    ASSERT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), oldModifier);
+ 
+    auto newModifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    rsNode->SwapModifier(oldModifier, newModifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), newModifier);
+}
+
+/**
+ * @tc.name: SwapModifier002
+ * @tc.desc: test results of SwapModifier with same modifier and null pointers
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SwapModifier002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    auto modifier = std::make_shared<ModifierNG::RSBackgroundImageModifier>();
+    rsNode->AddModifier(modifier);
+    // swap with the same modifier should be a no-op
+    rsNode->SwapModifier(modifier, modifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), modifier);
+    // swap with null old modifier should only add the new one
+    auto newModifier = std::make_shared<ModifierNG::RSPixelStretchModifier>();
+    rsNode->SwapModifier(nullptr, newModifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::PIXEL_STRETCH), newModifier);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), modifier);
+    // swap with null new modifier should only remove the old one
+    rsNode->SwapModifier(modifier, nullptr);
+    EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
+}
 } // namespace OHOS::Rosen
