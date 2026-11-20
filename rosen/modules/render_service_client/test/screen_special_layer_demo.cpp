@@ -41,19 +41,16 @@ int main(int argc, char* argv[])
             "      hdc shell ./data/screen_special_layer_demo SetBlackList -s 1 -n 1 2\n"
             "      --- Set empty blacklist for screen 1:\n"
             "      hdc shell ./data/screen_special_layer_demo SetBlackList -s 1 -n\n"
-            "      --- Add blacklist [1, 2] for screen 1:\n"
-            "      hdc shell ./data/screen_special_layer_demo AddBlackList -s 1 -n 1 2\n\n"
 
-            "3. SetTypeBlackList\n"
-            "   a) Description: Set the typeBlacklist of a virtual screen.\n"
-            "                   Only CURSOR_NODE(12) takes effect, other node types are dropped.\n"
-            "   b) Parameter list: -s The id of the virtual screen whose typeBlackList is to be modified\n"
-            "                      -t The list of node types for the typeBlackList.\n"
+            "3. SetVirtualScreenCursorMode\n"
+            "   a) Description: Set the cursor render mode of a virtual screen.\n"
+            "                   The judgement order is blackList > cursorMode > whiteList, and the mode is\n"
+            "                   a single field, so the last call wins.\n"
+            "   b) Parameter list: -s The id of the virtual screen whose cursor mode is to be modified\n"
+            "                      -m The cursor mode:\n"
             "   c) Examples:\n"
-            "      --- Set type blacklist [CURSOR_NODE(12)] for screen 1:\n"
-            "      hdc shell ./data/screen_special_layer_demo SetTypeBlackList -s 1 -t 12\n"
-            "      --- Clear type blacklist for screen 1:\n"
-            "      hdc shell ./data/screen_special_layer_demo SetTypeBlackList -s 1 -t\n\n"
+            "      --- Hide the cursor on screen 1:\n"
+            "      hdc shell ./data/screen_special_layer_demo SetVirtualScreenCursorMode -s 1 -m 1\n\n"
 
             "4. EnableGlobalBlackList\n"
             "   a) Description: Set whether to enable the global blacklist for a virtual screen.\n"
@@ -71,6 +68,8 @@ int main(int argc, char* argv[])
         ScreenSpecialLayerDemoUtils::EnableGlobalBlackList(argc, argv);
     } else if (func == "SetVirtualScreenRefreshRate") {
         ScreenSpecialLayerDemoUtils::SetVirtualScreenRefreshRate(argc, argv);
+    } else if (func == "SetVirtualScreenCursorMode") {
+        ScreenSpecialLayerDemoUtils::SetVirtualScreenCursorMode(argc, argv);
     } else if (MODIFY_LIST_FUNC_MAP.find(func) != MODIFY_LIST_FUNC_MAP.end()) {
         ScreenSpecialLayerDemoUtils::ModifySpecialLayerList(argc, argv);
     } else if (func == "SetRogScreenResolution") {

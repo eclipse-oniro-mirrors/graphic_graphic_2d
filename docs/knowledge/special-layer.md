@@ -95,8 +95,8 @@ drawType = isSnapshot_ ? RSSpecialLayerUtils::GetDrawTypeInSnapshot(surfaceParam
 `rs_surface_render_node_drawable.cpp` 的 `OnDraw` / `OnCapture`）。
 先判生效门槛，再按固定优先级依次判定：
 
-1. 生效门槛：非镜像屏、非安全屏且非整屏截图（`isSnapshot_ && !isSingleSurface_`）时直接不跳绘；
-   `RSRenderThreadParams` 为空按“需要判定”处理；
+1. 生效门槛（`IsSpecialLayerEnable`）：整屏截图（`isSnapshot_ && !isSingleSurface_`）直接进入判定；
+   否则要求“当前输出屏是虚拟屏或镜像屏”且“当前 display 是安全屏”，`RSRenderThreadParams` 为空时不跳绘；
 2. id 黑名单：截图用 `CaptureParam::blackList_`，镜像屏/安全屏用
    `RSUniRenderThread::GetBlackList()`，两份名单不可混用；命中 `LeashPersistentId` 或 `Id` 即跳绘；
 3. cursorMode：仅对 `CURSOR_NODE` 生效，`HIDE` 跳绘，`FORCE_RENDER` 直接不跳绘

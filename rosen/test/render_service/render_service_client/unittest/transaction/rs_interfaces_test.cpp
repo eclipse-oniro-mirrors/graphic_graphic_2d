@@ -1370,4 +1370,22 @@ HWTEST_F(RSInterfacesTest, SetPostProcessingShader_001, TestSize.Level1)
         ret == static_cast<int32_t>(StatusCode::RS_CONNECTION_ERROR));
 }
 
+/**
+ * @tc.name: SetVirtualScreenCursorMode001
+ * @tc.desc: Test SetVirtualScreenCursorMode
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSInterfacesTest, SetVirtualScreenCursorMode001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    ScreenId screenId = 1;
+
+    constexpr int32_t SUCCESS_RET = static_cast<int32_t>(StatusCode::SUCCESS);
+    ASSERT_EQ(instance.SetVirtualScreenCursorMode(screenId, RSVirtualScreenCursorMode::HIDE), SUCCESS_RET);
+    const std::vector<NodeType> cursorList = {static_cast<NodeType>(RSSurfaceNodeType::CURSOR_NODE)};
+    ASSERT_EQ(instance.SetVirtualScreenTypeBlackList(screenId, cursorList), SUCCESS_RET);
+    ASSERT_EQ(instance.SetVirtualScreenTypeWhiteList(screenId, cursorList), SUCCESS_RET);
+}
 } // namespace OHOS::Rosen

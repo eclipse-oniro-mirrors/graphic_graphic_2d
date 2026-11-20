@@ -25,6 +25,7 @@ constexpr size_t EXPECTED_MATCH_COUNT = 3;
 constexpr size_t BUFFER_SIZE = 4096;
 constexpr int ENABLE_GLOBAL_BLACKLIST_PARAM_SIZE = 4;
 constexpr int SET_SCREEN_REFRESHRATE_PARAM_SIZE = 5;
+constexpr int SET_CURSOR_MODE_PARAM_SIZE = 6;
 constexpr int SET_ROG_SCREEN_RESOLUTION_SIZE = 5;
 constexpr int DECIMAL_BASE = 10;
 // Keep aligned with RSInterfaceCodeAccessVerifierBase::IsFoundationCalling.
@@ -134,6 +135,24 @@ void ScreenSpecialLayerDemoUtils::SetVirtualScreenRefreshRate(int argc, char* ar
     RSInterfaces::GetInstance().SetVirtualScreenRefreshRate(screenId, maxRefreshRate, actualRefreshRate);
 }
 
+void ScreenSpecialLayerDemoUtils::SetVirtualScreenCursorMode(int argc, char* argv[])
+{
+    // argv[0]:file path, argv[1]:command, argv[2]:"-s", argv[3]:screenId, argv[4]:"-m", argv[5]:cursor mode
+    if (argc != SET_CURSOR_MODE_PARAM_SIZE || std::string(argv[2]) != "-s" || std::string(argv[4]) != "-m") {
+        std::cerr << "Invalid parameter.";
+        return;
+    }
+
+    ScreenId screenId = std::strtoul(argv[3], nullptr, DECIMAL_BASE);
+    RSVirtualScreenCursorMode mode = RSVirtualScreenCursorMode::DEFAULT;
+    if (!ParseCursorModeParam(argv[5], mode)) {
+        return;
+    }
+
+    int32_t ret = RSInterfaces::GetInstance().SetVirtualScreenCursorMode(screenId, mode);
+    std::cout << "SetVirtualScreenCursorMode ret : " << ret << std::endl;
+}
+
 bool ScreenSpecialLayerDemoUtils::ParseBoolParam(char* input, bool& output)
 {
     if (input == nullptr) {
@@ -175,6 +194,20 @@ bool ScreenSpecialLayerDemoUtils::ParseUint32Param(char* input, uint32_t& output
     return true;
 }
 
+bool ScreenSpecialLayerDemoUtils::ParseCursorModeParam(char* input, RSVirtualScreenCursorMode& output)
+{
+    uint32_t mode = 0;
+    if (!ParseUint32Param(input, mode)) {
+        return false;
+    }
+    if (mode >= static_cast<uint32_t>(RSVirtualScreenCursorMode::MODE_MAX)) {
+        std::cerr << "Cursor mode out of range, valid: 0(follow white list), 1(hide), 2(force render).";
+        return false;
+    }
+    output = static_cast<RSVirtualScreenCursorMode>(mode);
+    return true;
+}
+
 void ScreenSpecialLayerDemoUtils::ModifySpecialLayerList(int argc, char* argv[])
 {
     ParamType curParamType =  ParamType::NONE;
@@ -188,9 +221,6 @@ void ScreenSpecialLayerDemoUtils::ModifySpecialLayerList(int argc, char* argv[])
         } else if (curArgv == "-n") {
             curParamType = ParamType::NODE_LIST;
             continue;
-        } else if (curArgv == "-t") {
-            curParamType = ParamType::TYPE_LIST;
-            continue;
         }
 
         switch (curParamType) {
@@ -199,9 +229,6 @@ void ScreenSpecialLayerDemoUtils::ModifySpecialLayerList(int argc, char* argv[])
                 break;
             case ParamType::NODE_LIST :
                 param.nodeList.push_back(std::strtoul(argv[i], nullptr, DECIMAL_BASE));
-                break;
-            case ParamType::TYPE_LIST :
-                param.typeList.push_back(std::strtoul(argv[i], nullptr, DECIMAL_BASE));
                 break;
             default :
                 std::cerr << "Invalid parameter.";

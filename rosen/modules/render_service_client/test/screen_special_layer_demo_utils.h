@@ -27,14 +27,12 @@ namespace Rosen {
 enum class ParamType {
     NONE,
     SCREEN_ID,
-    NODE_LIST,
-    TYPE_LIST
+    NODE_LIST
 };
 
 struct Params {
     ScreenId screenId = INVALID_SCREEN_ID;
     std::vector<NodeId> nodeList = {};
-    std::vector<NodeType> typeList = {};
 };
 
 using ModifyListFunc = std::function<void(RSInterfaces&, Params&)>;
@@ -49,9 +47,7 @@ const std::map<std::string, ModifyListFunc> MODIFY_LIST_FUNC_MAP {
     { "AddWhiteList",
         [](RSInterfaces& interface, Params& p) { interface.AddVirtualScreenWhiteList(p.screenId, p.nodeList); }},
     { "RemoveWhiteList",
-        [](RSInterfaces& interface, Params& p) { interface.RemoveVirtualScreenWhiteList(p.screenId, p.nodeList); }},
-    { "SetTypeBlackList",
-        [](RSInterfaces& interface, Params& p) { interface.SetVirtualScreenTypeBlackList(p.screenId, p.typeList); }}
+        [](RSInterfaces& interface, Params& p) { interface.RemoveVirtualScreenWhiteList(p.screenId, p.nodeList); }}
 };
 
 class ScreenSpecialLayerDemoUtils {
@@ -62,8 +58,10 @@ public:
     static std::string DumpRsTree();
     static void EnableGlobalBlackList(int argc, char* argv[]);
     static void SetVirtualScreenRefreshRate(int argc, char* argv[]);
+    static void SetVirtualScreenCursorMode(int argc, char* argv[]);
     static bool ParseBoolParam(char* input, bool& output);
     static bool ParseUint32Param(char* input, uint32_t& output);
+    static bool ParseCursorModeParam(char* input, RSVirtualScreenCursorMode& output);
     static void ModifySpecialLayerList(int argc, char* argv[]);
     static void SetRogScreenResolution(int argc, char* argv[]);
 };

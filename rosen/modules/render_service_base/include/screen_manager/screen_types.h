@@ -361,6 +361,14 @@ typedef enum : uint32_t {
     DISPLAY_CONNECTION_TYPE_EXTERNAL,
     INVALID_DISPLAY_CONNECTION_TYPE,
 } ScreenConnectionType;
+
+// Cursor render decision on one virtual screen. Priority: id blackList > cursorMode > id whiteList.
+enum class RSVirtualScreenCursorMode : uint8_t {
+    DEFAULT = 0,           // default behavior
+    HIDE,                  // cursor is never rendered on this screen
+    FORCE_RENDER,          // cursor bypasses the id white list, still dropped by any black list
+    MODE_MAX,
+};
 } // namespace Rosen
 } // namespace OHOS
 
