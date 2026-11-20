@@ -45,6 +45,9 @@ constexpr const char* LOG_FILE_NAME = "process.log";
 constexpr const char* EXCLUDE_FILE_NAME = "exclude_cases.txt";
 constexpr uint64_t MAX_TIMEOUT_MS = std::numeric_limits<uint32_t>::max();
 
+// Pre-attempt case statuses, kept locally so a progress-free diagnostic attempt can restore them.
+using StatusSnapshot = std::map<CaseRunRecord*, ExecutionStatus>;
+
 struct Session {
     const EmulatorRunConfig& config;
     IProcessController& processController;
@@ -54,8 +57,6 @@ struct Session {
     std::string statePath;
     std::string previousSuiteLog;
     std::string& error;
-    // Pre-attempt case statuses; used to restore state after a progress-free diagnostic.
-    std::map<CaseRunRecord*, ExecutionStatus> statusSnapshot;
 };
 
 struct AttemptOutcome {
@@ -351,7 +352,7 @@ std::string QualifiedName(const CaseRunRecord& item)
     return MakeQualifiedCaseName(item.info.suite, item.info.name);
 }
 
-std::string MakeExcludeFile(SuiteRunRecord& suite, const std::vector<CaseRunRecord*>& eligible)
+std::string MakeExcludeFile(const SuiteRunRecord& suite, const std::vector<CaseRunRecord*>& eligible)
 {
     std::set<const CaseRunRecord*> running(eligible.begin(), eligible.end());
     std::ostringstream content;
@@ -550,6 +551,23 @@ void MarkUnreportedInfra(const Session& session, const ProcessSpec& spec, const 
     }
 }
 
+// The child died before reporting any case (bad exclude file, init crash, SetUpTestCase crash).
+// A main attempt marks every unreported case INFRA_ERROR so the runner never loops on a hopeless
+// restart; a diagnostic attempt leaves the active case's earlier record for RunChildAndApply
+// to restore.
+AttemptOutcome MarkNoProgressAttempt(const Session& session, const ProcessSpec& spec,
+    const ProcessResult& result, const std::vector<CaseRunRecord*>& eligible, const ParsedLog& parsed,
+    uint32_t number, const std::string& directory, bool diagnostic)
+{
+    AttemptOutcome outcome;
+    if (!diagnostic) {
+        MarkUnreportedInfra(session, spec, result, eligible, parsed, number, directory,
+            ProcessFailureReason(result), diagnostic);
+    }
+    outcome.noProgress = true;
+    return outcome;
+}
+
 AttemptOutcome ApplyProcessResult(const Session& session, SuiteRunRecord& suite,
     const std::vector<CaseRunRecord*>& eligible, const ProcessSpec& spec, const ProcessResult& result,
     const ParsedLog& parsed, uint32_t number, const std::string& directory, bool diagnostic)
@@ -582,18 +600,7 @@ AttemptOutcome ApplyProcessResult(const Session& session, SuiteRunRecord& suite,
     outcome.abnormal = interrupted && hadUnreported;
     outcome.infrastructureFailure = !interrupted && hadUnreported;
     if (outcome.abnormal && observed.empty()) {
-        // The child died before reporting any case (bad exclude file, init crash, SetUpTestCase crash).
-        // Mark every unreported case INFRA_ERROR so the runner never loops on a hopeless restart.
-        // A diagnostic attempt leaves the active case's earlier CRASH/TIMEOUT record intact
-        // (restored by ExecuteAttempt); a main attempt marks cases INFRA_ERROR instead.
-        if (!diagnostic) {
-            MarkUnreportedInfra(session, spec, result, eligible, parsed, number, directory,
-                ProcessFailureReason(result), diagnostic);
-        }
-        outcome.abnormal = false;
-        outcome.infrastructureFailure = false;
-        outcome.noProgress = true;
-        return outcome;
+        return MarkNoProgressAttempt(session, spec, result, eligible, parsed, number, directory, diagnostic);
     }
     if (outcome.infrastructureFailure) {
         MarkUnreportedInfra(session, spec, result, eligible, parsed, number, directory,
@@ -619,52 +626,67 @@ std::vector<CaseRunRecord*> AttemptCases(SuiteRunRecord& suite, bool continuatio
     return eligible;
 }
 
-AttemptOutcome ExecuteAttempt(Session& session, SuiteRunRecord& suite, uint32_t number, bool continuation,
-    const std::string& diagnosticCase)
+StatusSnapshot SnapshotStatuses(const std::vector<CaseRunRecord*>& eligible)
 {
-    const auto eligible = AttemptCases(suite, continuation, diagnosticCase);
-    if (eligible.empty()) {
-        return AttemptOutcome {};
-    }
-    // Snapshot pre-attempt statuses so a progress-free diagnostic attempt can restore them.
-    session.statusSnapshot.clear();
+    StatusSnapshot snapshot;
     for (auto* item : eligible) {
-        session.statusSnapshot[item] = item->finalStatus;
+        snapshot[item] = item->finalStatus;
     }
-    const std::string directory = JoinPath(JoinPath(session.runDirectory, suite.name), "attempt" +
-        std::to_string(number));
-    const std::string excludePath = JoinPath(directory, EXCLUDE_FILE_NAME);
-    if (!EnsureDirectory(directory, &session.error) || !WriteTextFileAtomic(excludePath,
-        diagnosticCase.empty() ? MakeExcludeFile(suite, eligible) : std::string(), &session.error)) {
-        AttemptOutcome failed;
-        failed.persistenceFailure = true;
-        return failed;
-    }
-    ProcessSpec spec = MakeProcessSpec(session, suite, directory, excludePath, diagnosticCase);
+    return snapshot;
+}
+
+void RestoreStatuses(const std::vector<CaseRunRecord*>& eligible, const StatusSnapshot& snapshot)
+{
     for (auto* item : eligible) {
-        item->finalStatus = ExecutionStatus::PENDING;
+        const auto saved = snapshot.find(item);
+        if (saved != snapshot.end()) {
+            item->finalStatus = saved->second;
+        }
     }
-    suite.status = ExecutionStatus::RUNNING;
-    suite.activeCase = diagnosticCase;
-    if (!SaveEmulatorRunState(session.state, session.statePath, session.error)) {
-        AttemptOutcome failed;
-        failed.persistenceFailure = true;
-        return failed;
+}
+
+AttemptOutcome PersistenceFailure()
+{
+    AttemptOutcome failed;
+    failed.persistenceFailure = true;
+    return failed;
+}
+
+bool PrepareAttemptDirectory(const Session& session, const SuiteRunRecord& suite,
+    const std::vector<CaseRunRecord*>& eligible, uint32_t number, const std::string& diagnosticCase,
+    std::string& directory, std::string& excludePath)
+{
+    directory = JoinPath(JoinPath(session.runDirectory, suite.name), "attempt" + std::to_string(number));
+    excludePath = JoinPath(directory, EXCLUDE_FILE_NAME);
+    return EnsureDirectory(directory, &session.error) && WriteTextFileAtomic(excludePath,
+        diagnosticCase.empty() ? MakeExcludeFile(suite, eligible) : std::string(), &session.error);
+}
+
+AttemptOutcome HandleUnreadableLog(Session& session, SuiteRunRecord& suite, const ProcessSpec& spec,
+    const ProcessResult& result, const std::vector<CaseRunRecord*>& eligible, uint32_t number,
+    const std::string& directory, const std::string& diagnosticCase)
+{
+    if (result.spawnError) {
+        session.error = result.error;
     }
+    suite.error = session.error;
+    MarkUnreportedInfra(session, spec, result, eligible, {}, number, directory, session.error,
+        !diagnosticCase.empty());
+    AttemptOutcome failed;
+    failed.infrastructureFailure = true;
+    return failed;
+}
+
+AttemptOutcome RunChildAndApply(Session& session, SuiteRunRecord& suite,
+    const std::vector<CaseRunRecord*>& eligible, const ProcessSpec& spec, uint32_t number,
+    const std::string& directory, const std::string& diagnosticCase, const StatusSnapshot& snapshot)
+{
     const ProcessResult result = session.processController.Run(spec);
     session.previousSuiteLog = spec.logPath;
     session.state.phaseDurationsMs["execution"] += result.durationMs;
     std::string log;
     if (result.spawnError || !ReadTextFile(spec.logPath, log, &session.error)) {
-        if (result.spawnError) {
-            session.error = result.error;
-        }
-        suite.error = session.error;
-        MarkUnreportedInfra(session, spec, result, eligible, {}, number, directory, session.error,
-            !diagnosticCase.empty());
-        AttemptOutcome failed;
-        failed.infrastructureFailure = true;
-        return failed;
+        return HandleUnreadableLog(session, suite, spec, result, eligible, number, directory, diagnosticCase);
     }
     suite.activeCase.clear();
     suite.error.clear();
@@ -674,15 +696,37 @@ AttemptOutcome ExecuteAttempt(Session& session, SuiteRunRecord& suite, uint32_t 
         !diagnosticCase.empty());
     if (outcome.noProgress && !diagnosticCase.empty()) {
         // The diagnostic child died before reporting; restore pre-attempt case statuses.
-        for (auto* item : eligible) {
-            const auto saved = session.statusSnapshot.find(item);
-            if (saved != session.statusSnapshot.end()) {
-                item->finalStatus = saved->second;
-            }
-        }
+        RestoreStatuses(eligible, snapshot);
     }
     return outcome;
 }
+
+AttemptOutcome ExecuteAttempt(Session& session, SuiteRunRecord& suite, uint32_t number, bool continuation,
+    const std::string& diagnosticCase)
+{
+    const auto eligible = AttemptCases(suite, continuation, diagnosticCase);
+    if (eligible.empty()) {
+        return AttemptOutcome {};
+    }
+    const StatusSnapshot snapshot = SnapshotStatuses(eligible);
+    std::string directory;
+    std::string excludePath;
+    if (!PrepareAttemptDirectory(session, suite, eligible, number, diagnosticCase, directory, excludePath)) {
+        return PersistenceFailure();
+    }
+    const ProcessSpec spec = MakeProcessSpec(session, suite, directory, excludePath, diagnosticCase);
+    for (auto* item : eligible) {
+        item->finalStatus = ExecutionStatus::PENDING;
+    }
+    suite.status = ExecutionStatus::RUNNING;
+    suite.activeCase = diagnosticCase;
+    if (!SaveEmulatorRunState(session.state, session.statePath, session.error)) {
+        return PersistenceFailure();
+    }
+    return RunChildAndApply(session, suite, eligible, spec, number, directory, diagnosticCase, snapshot);
+}
+
+
 
 uint32_t NextAttemptNumber(const Session& session, const SuiteRunRecord& suite)
 {
@@ -890,7 +934,7 @@ bool EmulatorRunner::Run(const EmulatorRunConfig& config, const TestCatalog& cat
     if (!BuildIdentity(config, candidate.identity, error)) {
         return false;
     }
-    Session session { config, processController_, healthProbe_, candidate, {}, {}, {}, error, {} };
+    Session session { config, processController_, healthProbe_, candidate, {}, {}, {}, error };
     if (!PrepareState(session, catalog, suites)) {
         return false;
     }
