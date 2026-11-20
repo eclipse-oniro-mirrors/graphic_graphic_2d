@@ -31,6 +31,7 @@
 #include "transaction/rs_render_service_client.h"
 #include "ui/rs_display_node.h"
 #include "ui/rs_surface_node.h"
+#include "ui/rs_ui_director.h"
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"
 #include "rs_render_interface.h"
 
@@ -1152,6 +1153,27 @@ public:
      * @return UnRegister result, 0 success, else failed.
      */
     int32_t UnRegisterFirstFrameCommitCallback();
+
+    /**
+     * @brief Register UI context message lifecycle callbacks, forwarded to RSUIDirector.
+     *
+     * The received callback is triggered when a command is added to the UI context command
+     * map while RSUIDirector receives messages from the render service; the processed
+     * callback is triggered after the commands of the message have been processed on the
+     * UI task runner, right before requesting the next vsync. Both callbacks take the
+     * message id as input. The callbacks are shared by all RSUIDirector instances in
+     * this process. Registration and unregistration are thread safe.
+     * @param messageReceivedCallback Triggered when a UI context command is received.
+     * @param messageProcessedCallback Triggered when the received message has been processed.
+     */
+    void RegisterUIContextMessageCallbacks(const UIContextMessageCallback& messageReceivedCallback,
+        const UIContextMessageCallback& messageProcessedCallback);
+
+    /**
+     * @brief UnRegister UI context message lifecycle callbacks registered by
+     * RegisterUIContextMessageCallbacks.
+     */
+    void UnRegisterUIContextMessageCallbacks();
 
     /**
      * @brief Register the exposed event callback function.

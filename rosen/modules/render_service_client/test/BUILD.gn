@@ -506,6 +506,34 @@ ohos_executable("render_service_client_rs_animation_demo") {
   subsystem_name = "graphic"
 }
 
+ohos_executable("render_service_client_ui_context_message_callback_demo") {
+  sources = [ "render_service_client_ui_context_message_callback_demo.cpp" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "$public_deps_skia",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "safwk:system_ability_fwk",
+    "zlib:libz",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
 ohos_executable("surface_capture_demo") {
   sources = [ "surface_capture_test.cpp" ]
 

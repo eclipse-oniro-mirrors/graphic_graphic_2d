@@ -647,6 +647,21 @@ void RSUIDirector::SetRequestVsyncCallback(const std::function<void()>& callback
     }
 }
 
+void RSUIDirector::SetUIContextMessageCallbacks(
+    const UIContextMessageCallback& messageReceivedCallback, const UIContextMessageCallback& messageProcessedCallback)
+{
+    std::lock_guard<std::mutex> lock(uiContextMessageCallbacksMutex_);
+    uiContextMessageReceivedCallback_ = messageReceivedCallback;
+    uiContextMessageProcessedCallback_ = messageProcessedCallback;
+}
+
+void RSUIDirector::ClearUIContextMessageCallbacks()
+{
+    std::lock_guard<std::mutex> lock(uiContextMessageCallbacksMutex_);
+    uiContextMessageReceivedCallback_ = nullptr;
+    uiContextMessageProcessedCallback_ = nullptr;
+}
+
 void RSUIDirector::SetTimeStamp(uint64_t timeStamp, const std::string& abilityName)
 {
     timeStamp_ = timeStamp;
@@ -878,6 +893,32 @@ void RSUIDirector::ProcessInstanceMessages(
     }
 }
 
+// Copy the callback under lock and invoke it outside, so that registering or
+// unregistering from inside a callback cannot deadlock.
+void RSUIDirector::NotifyUIContextMessageReceived(uint32_t messageId)
+{
+    UIContextMessageCallback callback;
+    {
+        std::lock_guard<std::mutex> lock(uiContextMessageCallbacksMutex_);
+        callback = uiContextMessageReceivedCallback_;
+    }
+    if (callback != nullptr) {
+        callback(messageId);
+    }
+}
+
+void RSUIDirector::NotifyUIContextMessageProcessed(uint32_t messageId)
+{
+    UIContextMessageCallback callback;
+    {
+        std::lock_guard<std::mutex> lock(uiContextMessageCallbacksMutex_);
+        callback = uiContextMessageProcessedCallback_;
+    }
+    if (callback != nullptr) {
+        callback(messageId);
+    }
+}
+
 void RSUIDirector::ProcessUIContextMessages(
     std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>>& cmdMap, uint32_t messageId)
 {
@@ -905,6 +946,7 @@ void RSUIDirector::ProcessUIContextMessages(
                 RSContext context; // RSCommand->process() needs it
                 cmd->Process(context);
             }
+            NotifyUIContextMessageProcessed(messageId - 1);
             rsUICtx->RequestVsyncCallback();
         });
     }
@@ -938,6 +980,7 @@ void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds)
                 instanceCmdMap[instanceId].push_back(std::move(cmd));
             } else {
                 uiContextCmdMap[token].push_back(std::move(cmd));
+                NotifyUIContextMessageReceived(messageId);
             }
         }
     }
