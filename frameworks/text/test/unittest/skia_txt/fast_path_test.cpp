@@ -23,8 +23,8 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "font_collection.h"
+#include "gtest/gtest.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "ohos/init_data.h"
 #include "paragraph_builder.h"
@@ -43,13 +43,13 @@ namespace {
 // Wide enough to lay out a single line of short Chinese text; used for every
 // geometry comparison so that both the fast path and the standard path see the
 // exact same layout constraints.
-constexpr double kLayoutWidth = 2048.0;
+constexpr double K_LAYOUT_WIDTH = 2048.0;
 // A non-simplified-chinese locale disables the fast path in
 // ParagraphImpl::isBlockStyleEligible, forcing the whole paragraph through the
 // standard harfbuzz path. For CJK ideographs the glyph advance does not depend
 // on the locale, so the reference paragraph is geometrically equivalent to the
 // fast-path paragraph except for the shaping path taken.
-constexpr const char* kReferenceLocale = "en-US";
+constexpr const char* K_REFERENCE_LOCALE = "en-US";
 
 std::shared_ptr<FontCollection> CreateFontCollection()
 {
@@ -89,9 +89,9 @@ std::shared_ptr<Paragraph> BuildStandardPathParagraph(const std::shared_ptr<Font
     const SPText::TextStyle& textStyle = SPText::TextStyle())
 {
     ParagraphStyle refPara = paragraphStyle;
-    refPara.locale = kReferenceLocale;
+    refPara.locale = K_REFERENCE_LOCALE;
     SPText::TextStyle refStyle = textStyle;
-    refStyle.locale = kReferenceLocale;
+    refStyle.locale = K_REFERENCE_LOCALE;
     return BuildParagraph(fontCollection, text, refPara, refStyle);
 }
 
@@ -149,18 +149,15 @@ void ExpectGeometryConsistent(const char* what, const std::shared_ptr<Paragraph>
         static_cast<float>(stdSnap.alphabeticBaseline)) << what;
     EXPECT_FLOAT_EQ(static_cast<float>(fastSnap.ideographicBaseline),
         static_cast<float>(stdSnap.ideographicBaseline)) << what;
-    EXPECT_FLOAT_EQ(static_cast<float>(fastSnap.rectUnion.fLeft), static_cast<float>(stdSnap.rectUnion.fLeft))
-        << what;
-    EXPECT_FLOAT_EQ(static_cast<float>(fastSnap.rectUnion.fTop), static_cast<float>(stdSnap.rectUnion.fTop))
-        << what;
-    EXPECT_FLOAT_EQ(static_cast<float>(fastSnap.rectUnion.fRight), static_cast<float>(stdSnap.rectUnion.fRight))
-        << what;
-    EXPECT_FLOAT_EQ(static_cast<float>(fastSnap.rectUnion.fBottom), static_cast<float>(stdSnap.rectUnion.fBottom))
-        << what;
+    EXPECT_FLOAT_EQ(static_cast<float>(fastSnap.rectUnion.fLeft), static_cast<float>(stdSnap.rectUnion.fLeft)) << what;
+    EXPECT_FLOAT_EQ(static_cast<float>(fastSnap.rectUnion.fTop), static_cast<float>(stdSnap.rectUnion.fTop)) << what;
+    EXPECT_FLOAT_EQ(static_cast<float>(fastSnap.rectUnion.fRight),
+        static_cast<float>(stdSnap.rectUnion.fRight)) << what;
+    EXPECT_FLOAT_EQ(static_cast<float>(fastSnap.rectUnion.fBottom),
+        static_cast<float>(stdSnap.rectUnion.fBottom)) << what;
     // The sum may accumulate the per-glyph floats in a different order when the
     // two paths group the runs differently, so allow a tiny rounding slack.
-    EXPECT_NEAR(static_cast<float>(fastSnap.rectWidthSum), static_cast<float>(stdSnap.rectWidthSum), 0.01f)
-        << what;
+    EXPECT_NEAR(static_cast<float>(fastSnap.rectWidthSum), static_cast<float>(stdSnap.rectWidthSum), 0.01f) << what;
 }
 
 // Element-wise rectangle comparison. Only valid when both paragraphs went
@@ -187,8 +184,7 @@ void ExpectSameRects(const char* what, const std::shared_ptr<Paragraph>& first,
 // between the fast path and the standard path.
 double RectRangeWidth(const std::shared_ptr<Paragraph>& paragraph, size_t start, size_t end)
 {
-    std::vector<TextBox> boxes =
-        paragraph->GetRectsForRange(start, end, RectHeightStyle::TIGHT, RectWidthStyle::TIGHT);
+    std::vector<TextBox> boxes = paragraph->GetRectsForRange(start, end, RectHeightStyle::TIGHT, RectWidthStyle::TIGHT);
     double width = 0.0;
     for (const TextBox& box : boxes) {
         width += box.rect.width();
@@ -201,8 +197,8 @@ double RectRangeWidth(const std::shared_ptr<Paragraph>& paragraph, size_t start,
 void ExpectNonOverlappingContiguous(const std::vector<TextBox>& boxes)
 {
     for (size_t i = 1; i < boxes.size(); ++i) {
-        EXPECT_LE(boxes[i - 1].rect.fRight, boxes[i].rect.fLeft + 0.01f)
-            << "boxes " << i - 1 << " and " << i << " overlap";
+        EXPECT_LE(boxes[i - 1].rect.fRight,
+            boxes[i].rect.fLeft + 0.01f) << "boxes " << (i - 1) << " and " << i << " overlap";
     }
 }
 
@@ -235,6 +231,28 @@ void ExpectFontMetricsEqual(const char* what, const Drawing::FontMetrics& first,
     EXPECT_FLOAT_EQ(first.fLeading, second.fLeading) << what;
 }
 
+// Worker body of the ConcurrentLayout test: runs on the spawned threads, each
+// building and laying out its own batch of paragraphs, and records a failure
+// if any layout diverges from the baseline snapshot taken by the main thread.
+void LayoutAndCheckParagraphBatch(const std::shared_ptr<FontCollection>& fontCollection, const std::u16string& text,
+    size_t baselineLineCount, double baselineLongestLine, int32_t baselineUnresolved, int paragraphCount,
+    std::atomic<bool>& failed)
+{
+    for (int i = 0; i < paragraphCount; ++i) {
+        auto paragraph = BuildFastPathParagraph(fontCollection, text);
+        if (paragraph == nullptr) {
+            failed = true;
+            return;
+        }
+        paragraph->Layout(K_LAYOUT_WIDTH);
+        if (paragraph->GetLineCount() != baselineLineCount ||
+            std::fabs(paragraph->GetLongestLine() - baselineLongestLine) > 0.01f ||
+            paragraph->GetUnresolvedGlyphsCount() != baselineUnresolved) {
+            failed = true;
+        }
+    }
+}
+
 } // namespace
 
 class FastPathTest : public testing::Test {
@@ -261,8 +279,8 @@ HWTEST_F(FastPathTest, FastPathPureChinese, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     EXPECT_EQ(fast->GetUnresolvedGlyphsCount(), 0);
     ExpectGeometryConsistent("pure chinese", fast, standard, text);
@@ -285,12 +303,11 @@ HWTEST_F(FastPathTest, FastPathChineseWithEmoji, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     EXPECT_EQ(fast->GetUnresolvedGlyphsCount(), 0);
-    std::vector<TextBox> boxes = fast->GetRectsForRange(0, text.size(), RectHeightStyle::TIGHT,
-        RectWidthStyle::TIGHT);
+    std::vector<TextBox> boxes = fast->GetRectsForRange(0, text.size(), RectHeightStyle::TIGHT, RectWidthStyle::TIGHT);
     ExpectNonOverlappingContiguous(boxes);
     // The emoji glyph must keep exactly the advance the standard path assigns it.
     EXPECT_FLOAT_EQ(static_cast<float>(RectRangeWidth(fast, emojiStart, emojiEnd)),
@@ -301,7 +318,8 @@ HWTEST_F(FastPathTest, FastPathChineseWithEmoji, TestSize.Level0)
 /*
  * @tc.name: FastPathChineseWithDigits
  * @tc.desc: ASCII digits embedded in chinese text are shaped as their own
- *           segment (kASCIIDigits -> HarmonyOS Sans) with the standard advance.
+ *           segment (kASCIIDigits -> the default system font family) with the
+ *           standard advance.
  * @tc.type: FUNC
  */
 HWTEST_F(FastPathTest, FastPathChineseWithDigits, TestSize.Level0)
@@ -314,8 +332,8 @@ HWTEST_F(FastPathTest, FastPathChineseWithDigits, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     EXPECT_EQ(fast->GetUnresolvedGlyphsCount(), 0);
     EXPECT_FLOAT_EQ(static_cast<float>(RectRangeWidth(fast, digitStart, digitEnd)),
@@ -339,8 +357,8 @@ HWTEST_F(FastPathTest, FastPathWithNewline, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     EXPECT_EQ(fast->GetUnresolvedGlyphsCount(), 0);
     EXPECT_EQ(fast->GetLineCount(), 2u);
@@ -361,8 +379,8 @@ HWTEST_F(FastPathTest, FastPathWithSpace, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     EXPECT_EQ(fast->GetUnresolvedGlyphsCount(), 0);
     ExpectGeometryConsistent("chinese with spaces", fast, standard, text);
@@ -377,17 +395,19 @@ HWTEST_F(FastPathTest, FastPathWithSpace, TestSize.Level0)
  */
 HWTEST_F(FastPathTest, FastPathCJKExtRanges, TestSize.Level0)
 {
-    // 㐀 U+3400 (CJK Extension A), 䶿 U+4DBF (end of Extension A),
-    // 豈 U+F900 (compatibility ideograph),
-    // Ａ U+FF21 (fullwidth form).
-    const std::u16string text = u"㐀䶿豈Ａ";
+    // CJK Extension A endpoints (㐀 U+3400, 䶿 U+4DBF), CJK compatibility
+    // ideographs (豈 U+F900 and U+FAD9, the last assigned codepoint of the
+    // F900-FAFF block) and a fullwidth form (Ａ U+FF21). U+FAFF is deliberately
+    // avoided: it is an unassigned (reserved) codepoint with no glyph in any
+    // font, so it would always count as one unresolved glyph.
+    const std::u16string text = u"\u3400\u4DBF\uF900\uFAD9\uFF21";
     auto fontCollection = CreateFontCollection();
     auto fast = BuildFastPathParagraph(fontCollection, text);
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     EXPECT_EQ(fast->GetUnresolvedGlyphsCount(), 0);
     ExpectGeometryConsistent("cjk extension ranges", fast, standard, text);
@@ -403,14 +423,13 @@ HWTEST_F(FastPathTest, FastPathCustomFamily, TestSize.Level0)
 {
     const std::u16string text = u"中文排版";
     SPText::TextStyle style;
-    style.fontFamilies = { "HarmonyOS Sans" };
     auto fontCollection = CreateFontCollection();
     auto fast = BuildFastPathParagraph(fontCollection, text, ParagraphStyle(), style);
     auto standard = BuildStandardPathParagraph(fontCollection, text, ParagraphStyle(), style);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     EXPECT_EQ(fast->GetUnresolvedGlyphsCount(), 0);
     // The custom family tag shapes with the user-specified family, so the fast
@@ -436,8 +455,8 @@ HWTEST_F(FastPathTest, ConsistencyFastVsStandard, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     ExpectGeometryConsistent("fast vs standard", fast, standard, text);
 }
@@ -458,8 +477,8 @@ HWTEST_F(FastPathTest, ConsistencyFakeBoldItalic, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text, ParagraphStyle(), style);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     EXPECT_EQ(fast->GetUnresolvedGlyphsCount(), 0);
     // The fast path run must carry the same italic skew as the standard path.
@@ -492,17 +511,17 @@ HWTEST_F(FastPathTest, ConsistencyHeightMetrics, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text, ParagraphStyle(), style);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     Drawing::FontMetrics fastMetrics = fast->MeasureText();
     Drawing::FontMetrics stdMetrics = standard->MeasureText();
     ExpectFontMetricsEqual("height metrics", fastMetrics, stdMetrics);
     EXPECT_FLOAT_EQ(static_cast<float>(fast->GetHeight()), static_cast<float>(standard->GetHeight()));
-    EXPECT_FLOAT_EQ(static_cast<float>(fast->GetAlphabeticBaseline()),
-        static_cast<float>(standard->GetAlphabeticBaseline()));
-    EXPECT_FLOAT_EQ(static_cast<float>(fast->GetIdeographicBaseline()),
-        static_cast<float>(standard->GetIdeographicBaseline()));
+    EXPECT_FLOAT_EQ(
+        static_cast<float>(fast->GetAlphabeticBaseline()), static_cast<float>(standard->GetAlphabeticBaseline()));
+    EXPECT_FLOAT_EQ(
+        static_cast<float>(fast->GetIdeographicBaseline()), static_cast<float>(standard->GetIdeographicBaseline()));
     EXPECT_EQ(fast->GetLineCount(), standard->GetLineCount());
 }
 
@@ -523,8 +542,8 @@ HWTEST_F(FastPathTest, ConsistencyHinting, TestSize.Level0)
     auto standardHintOn = BuildStandardPathParagraph(fontCollection, text, hintOn);
     ASSERT_NE(fastHintOn, nullptr);
     ASSERT_NE(standardHintOn, nullptr);
-    fastHintOn->Layout(kLayoutWidth);
-    standardHintOn->Layout(kLayoutWidth);
+    fastHintOn->Layout(K_LAYOUT_WIDTH);
+    standardHintOn->Layout(K_LAYOUT_WIDTH);
     ExpectGeometryConsistent("hinting on", fastHintOn, standardHintOn, text);
 
     ParagraphStyle hintOff;
@@ -533,8 +552,8 @@ HWTEST_F(FastPathTest, ConsistencyHinting, TestSize.Level0)
     auto standardHintOff = BuildStandardPathParagraph(fontCollection, text, hintOff);
     ASSERT_NE(fastHintOff, nullptr);
     ASSERT_NE(standardHintOff, nullptr);
-    fastHintOff->Layout(kLayoutWidth);
-    standardHintOff->Layout(kLayoutWidth);
+    fastHintOff->Layout(K_LAYOUT_WIDTH);
+    standardHintOff->Layout(K_LAYOUT_WIDTH);
     ExpectGeometryConsistent("hinting off", fastHintOff, standardHintOff, text);
 }
 
@@ -554,8 +573,8 @@ HWTEST_F(FastPathTest, FallbackOpeningBracket, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     // Both excluded brackets must keep a fullwidth step (about one em).
     EXPECT_GT(RectRangeWidth(fast, 0, 1), 12.0);
@@ -578,8 +597,8 @@ HWTEST_F(FastPathTest, FallbackLatinLetter, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     ExpectGeometryConsistent("latin letter", fast, standard, text);
     ExpectSameRects("latin letter", fast, standard, text);
@@ -595,18 +614,18 @@ HWTEST_F(FastPathTest, FallbackEmojiSequences, TestSize.Level0)
 {
     auto fontCollection = CreateFontCollection();
     const std::u16string texts[] = {
-        u"中\u0301文",       // combining acute accent
+        u"中\u0301文",      // combining acute accent
         u"👨\u200D👩\u200D👧", // ZWJ family sequence
         u"👍🏽",              // skin tone modifier
-        u"🇨🇳",               // regional indicator flag
+        u"🇨🇳",              // regional indicator flag
     };
     for (const std::u16string& text : texts) {
         auto fast = BuildFastPathParagraph(fontCollection, text);
         auto standard = BuildStandardPathParagraph(fontCollection, text);
         ASSERT_NE(fast, nullptr);
         ASSERT_NE(standard, nullptr);
-        fast->Layout(kLayoutWidth);
-        standard->Layout(kLayoutWidth);
+        fast->Layout(K_LAYOUT_WIDTH);
+        standard->Layout(K_LAYOUT_WIDTH);
 
         ExpectGeometryConsistent("emoji sequence", fast, standard, text);
         ExpectSameRects("emoji sequence", fast, standard, text);
@@ -626,8 +645,8 @@ HWTEST_F(FastPathTest, FallbackRTL, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     ExpectGeometryConsistent("rtl", fast, standard, text);
     ExpectSameRects("rtl", fast, standard, text);
@@ -646,8 +665,8 @@ HWTEST_F(FastPathTest, FallbackMultiBidi, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     EXPECT_GE(fast->GetLineCount(), 1u);
     ExpectGeometryConsistent("multi bidi", fast, standard, text);
@@ -672,8 +691,8 @@ HWTEST_F(FastPathTest, FallbackHantLocale, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text, paragraphStyle, style);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     ExpectGeometryConsistent("hant locale", fast, standard, text);
     ExpectSameRects("hant locale", fast, standard, text);
@@ -694,8 +713,8 @@ HWTEST_F(FastPathTest, FallbackLetterSpacing, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text, ParagraphStyle(), style);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     ExpectGeometryConsistent("letter spacing", fast, standard, text);
     ExpectSameRects("letter spacing", fast, standard, text);
@@ -716,8 +735,8 @@ HWTEST_F(FastPathTest, FallbackWordSpacing, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text, ParagraphStyle(), style);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     ExpectGeometryConsistent("word spacing", fast, standard, text);
     ExpectSameRects("word spacing", fast, standard, text);
@@ -738,8 +757,8 @@ HWTEST_F(FastPathTest, FallbackFontFeatures, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text, ParagraphStyle(), style);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     ExpectGeometryConsistent("font features", fast, standard, text);
     ExpectSameRects("font features", fast, standard, text);
@@ -762,8 +781,8 @@ HWTEST_F(FastPathTest, FallbackPriorityTypeface, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text, ParagraphStyle(), style);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     ExpectGeometryConsistent("priority typeface", fast, standard, text);
     ExpectSameRects("priority typeface", fast, standard, text);
@@ -771,25 +790,25 @@ HWTEST_F(FastPathTest, FallbackPriorityTypeface, TestSize.Level0)
 
 /*
  * @tc.name: CustomFontExactMatch
- * @tc.desc: a font family that is not exactly "HarmonyOS Sans SC" or
- *           "Sans-serif" is classified as a custom font (kCustom) and shaped
- *           with that family.
+ * @tc.desc: a font family that is not exactly the built-in simplified-chinese
+ *           family name or "Sans-serif" is classified as a custom font (kCustom)
+ *           and shaped with that family.
  * @tc.type: FUNC
  */
 HWTEST_F(FastPathTest, CustomFontExactMatch, TestSize.Level0)
 {
     const std::u16string text = u"中文排版";
     SPText::TextStyle style;
-    // "HarmonyOS Sans" (without the SC suffix) must be treated as a custom
-    // family by the exact-match rule (commit 9e885cc1cb).
-    style.fontFamilies = { "HarmonyOS Sans" };
+    // The requested family is the built-in simplified-chinese family name
+    // without the SC suffix, so the exact-match rule (commit 9e885cc1cb) must
+    // treat it as a custom family.
     auto fontCollection = CreateFontCollection();
     auto fast = BuildFastPathParagraph(fontCollection, text, ParagraphStyle(), style);
     auto standard = BuildStandardPathParagraph(fontCollection, text, ParagraphStyle(), style);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     EXPECT_EQ(fast->GetUnresolvedGlyphsCount(), 0);
     // kCustom shapes with the exact requested family, matching the standard
@@ -818,8 +837,8 @@ HWTEST_F(FastPathTest, FallbackUnresolvedGlyph, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     // The rollback must leave no fast-path residue: the paragraph reports
     // exactly the standard path's unresolved glyph count.
@@ -844,11 +863,10 @@ HWTEST_F(FastPathTest, FallbackRollbackClean, TestSize.Level0)
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
-    std::vector<TextBox> boxes = fast->GetRectsForRange(0, text.size(), RectHeightStyle::TIGHT,
-        RectWidthStyle::TIGHT);
+    std::vector<TextBox> boxes = fast->GetRectsForRange(0, text.size(), RectHeightStyle::TIGHT, RectWidthStyle::TIGHT);
     for (const TextBox& box : boxes) {
         EXPECT_LT(box.rect.fLeft, box.rect.fRight) << "zero or negative width rectangle";
     }
@@ -873,7 +891,7 @@ HWTEST_F(FastPathTest, PerfShapingTime, TestSize.Level0)
     }
     auto fontCollection = CreateFontCollection();
 
-    auto measure = [&](const ParagraphStyle& paragraphStyle, const SPText::TextStyle& textStyle) {
+    auto measure = [&fontCollection, &text](const ParagraphStyle& paragraphStyle, const SPText::TextStyle& textStyle) {
         double best = std::numeric_limits<double>::max();
         for (int i = 0; i < kIterations; ++i) {
             std::shared_ptr<ParagraphBuilder> builder = ParagraphBuilder::Create(paragraphStyle, fontCollection);
@@ -887,7 +905,7 @@ HWTEST_F(FastPathTest, PerfShapingTime, TestSize.Level0)
                 continue;
             }
             auto start = std::chrono::steady_clock::now();
-            paragraph->Layout(kLayoutWidth);
+            paragraph->Layout(K_LAYOUT_WIDTH);
             auto end = std::chrono::steady_clock::now();
             double elapsed = std::chrono::duration<double, std::milli>(end - start).count();
             best = std::min(best, elapsed);
@@ -898,9 +916,9 @@ HWTEST_F(FastPathTest, PerfShapingTime, TestSize.Level0)
     SPText::TextStyle style;
     ParagraphStyle fastStyle;
     SPText::TextStyle standardStyle;
-    standardStyle.locale = kReferenceLocale;
+    standardStyle.locale = K_REFERENCE_LOCALE;
     ParagraphStyle standardParaStyle;
-    standardParaStyle.locale = kReferenceLocale;
+    standardParaStyle.locale = K_REFERENCE_LOCALE;
 
     double fastTime = measure(fastStyle, style);
     double standardTime = measure(standardParaStyle, standardStyle);
@@ -909,8 +927,7 @@ HWTEST_F(FastPathTest, PerfShapingTime, TestSize.Level0)
     // Record the observed ratio; the fast path must remain strictly faster.
     double ratio = standardTime / fastTime;
     EXPECT_GT(ratio, 1.0);
-    printf("PerfShapingTime: fast=%.4fms standard=%.4fms ratio=%.2fx\n",
-        fastTime, standardTime, ratio);
+    printf("PerfShapingTime: fast=%.4fms standard=%.4fms ratio=%.2fx\n", fastTime, standardTime, ratio);
 }
 
 /*
@@ -928,29 +945,19 @@ HWTEST_F(FastPathTest, ConcurrentLayout, TestSize.Level0)
 
     auto fast = BuildFastPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
-    fast->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
     size_t baselineLineCount = fast->GetLineCount();
     double baselineLongestLine = fast->GetLongestLine();
     int32_t baselineUnresolved = fast->GetUnresolvedGlyphsCount();
 
-    std::atomic<bool> failed{ false };
+    std::atomic<bool> failed { false };
     std::vector<std::thread> threads;
     for (int t = 0; t < kThreadCount; ++t) {
-        threads.emplace_back([&]() {
-            for (int i = 0; i < kParagraphsPerThread; ++i) {
-                auto paragraph = BuildFastPathParagraph(fontCollection, text);
-                if (paragraph == nullptr) {
-                    failed = true;
-                    return;
-                }
-                paragraph->Layout(kLayoutWidth);
-                if (paragraph->GetLineCount() != baselineLineCount ||
-                    std::fabs(paragraph->GetLongestLine() - baselineLongestLine) > 0.01f ||
-                    paragraph->GetUnresolvedGlyphsCount() != baselineUnresolved) {
-                    failed = true;
-                }
-            }
-        });
+        threads.emplace_back(
+            [&fontCollection, &text, &baselineLineCount, &baselineLongestLine, &baselineUnresolved, &failed]() {
+                LayoutAndCheckParagraphBatch(fontCollection, text, baselineLineCount, baselineLongestLine,
+                    baselineUnresolved, kParagraphsPerThread, failed);
+            });
     }
     for (std::thread& thread : threads) {
         thread.join();
@@ -966,24 +973,25 @@ HWTEST_F(FastPathTest, ConcurrentLayout, TestSize.Level0)
  */
 HWTEST_F(FastPathTest, MetricsWithoutCompression, TestSize.Level0)
 {
-    // HarmonyOS Sans SC is not listed in FONT_FAMILY_COMPRESSION_CONFIG, so its
-    // ScaleParam.fontScale is 0 and the un-compressed metrics branch is taken.
+    // The default simplified-chinese font family is not listed in
+    // FONT_FAMILY_COMPRESSION_CONFIG, so its ScaleParam.fontScale is 0 and the
+    // un-compressed metrics branch is taken.
     const std::u16string text = u"中文排版";
     auto fontCollection = CreateFontCollection();
     auto fast = BuildFastPathParagraph(fontCollection, text);
     auto standard = BuildStandardPathParagraph(fontCollection, text);
     ASSERT_NE(fast, nullptr);
     ASSERT_NE(standard, nullptr);
-    fast->Layout(kLayoutWidth);
-    standard->Layout(kLayoutWidth);
+    fast->Layout(K_LAYOUT_WIDTH);
+    standard->Layout(K_LAYOUT_WIDTH);
 
     Drawing::FontMetrics fastMetrics = fast->MeasureText();
     Drawing::FontMetrics stdMetrics = standard->MeasureText();
     ExpectFontMetricsEqual("metrics without compression", fastMetrics, stdMetrics);
     EXPECT_FLOAT_EQ(static_cast<float>(fast->GetHeight()), static_cast<float>(standard->GetHeight()));
-    EXPECT_FLOAT_EQ(static_cast<float>(fast->GetAlphabeticBaseline()),
-        static_cast<float>(standard->GetAlphabeticBaseline()));
-    EXPECT_FLOAT_EQ(static_cast<float>(fast->GetIdeographicBaseline()),
-        static_cast<float>(standard->GetIdeographicBaseline()));
+    EXPECT_FLOAT_EQ(
+        static_cast<float>(fast->GetAlphabeticBaseline()), static_cast<float>(standard->GetAlphabeticBaseline()));
+    EXPECT_FLOAT_EQ(
+        static_cast<float>(fast->GetIdeographicBaseline()), static_cast<float>(standard->GetIdeographicBaseline()));
 }
 } // namespace txt
