@@ -68,6 +68,15 @@ rosen/modules/render_service/core/drawable/rs_effect_render_node_drawable.h @han
 rosen/modules/render_service/core/drawable/rs_union_render_node_drawable.cpp @hanamaru
 rosen/modules/render_service/core/drawable/rs_union_render_node_drawable.h @hanamaru
 
+[ui_director]
+rosen/modules/render_service_base/include/command/rs_ui_director_command.h @chuchengcheng
+rosen/modules/render_service_base/src/command/rs_ui_director_command.cpp @chuchengcheng
+rosen/modules/render_service_base/include/pipeline/rs_ui_render_director.h @chuchengcheng
+rosen/modules/render_service_base/src/pipeline/rs_ui_render_director.cpp @chuchengcheng
+rosen/test/render_service/render_service_base/unittest/command/rs_ui_director_command_test.cpp @gao_yufan
+rosen/test/render_service/render_service_base/unittest/pipeline/rs_ui_render_director_test.cpp @gao_yufan
+rosen/test/render_service/render_service_client/unittest/ui/rs_ui_context_manager_test.cpp @gao_yufan
+
 [property-display]
 rosen/modules/render_service_client/core/modifier/ @xiaojianfeng_jeffery
 rosen/modules/render_service_client/core/modifier_ng/ @xiaojianfeng_jeffery
@@ -168,6 +177,9 @@ rosen/modules/render_service_base/include/feature/filter_cache_manager/ @hanamar
 rosen/modules/render_service/core/transaction/ @chuchengcheng
 rosen/modules/render_service/main/render_server/transaction/ @chuchengcheng
 rosen/modules/render_service_base/src/platform/ohos/rs_marshalling_helper.cpp @chuchengcheng
+rosen/modules/render_service_base/src/platform/linux/rs_marshalling_helper.cpp @chuchengcheng
+rosen/modules/render_service_base/src/platform/ohos/rs_render_service_connect_hub.h @chuchengcheng
+rosen/modules/render_service_base/src/platform/ohos/rs_render_service_connect_hub.cpp @chuchengcheng
 rosen/modules/render_service_base/src/platform/ohos/rs_client_to_render_connection_proxy.h @chuchengcheng
 rosen/modules/render_service_base/src/platform/ohos/rs_client_to_render_connection_proxy.cpp @chuchengcheng
 rosen/modules/render_service_base/src/platform/ohos/rs_client_to_service_connection_proxy.h @chuchengcheng
@@ -192,6 +204,17 @@ rosen/modules/render_service_base/src/animation/ @wang-luyu4
 [uifirst]
 rosen/modules/render_service/core/feature/uifirst/ @samuel789
 
+[background_rebuild]
+rosen/modules/render_service/core/feature_cfg/feature_param/performance_feature/background_rebuild_param.h @chuchengcheng
+rosen/modules/render_service/core/feature_cfg/feature_param/performance_feature/background_rebuild_param.cpp @chuchengcheng
+rosen/modules/render_service/core/feature_cfg/xml_parser/performance_feature_parser/background_rebuild_param_parse.h @chuchengcheng
+rosen/modules/render_service/core/feature_cfg/xml_parser/performance_feature_parser/background_rebuild_param_parse.cpp @chuchengcheng
+rosen/modules/render_service_base/include/pipeline/rs_background_rebuild_param.h @chuchengcheng
+rosen/modules/render_service_base/src/pipeline/rs_background_rebuild_param.cpp @chuchengcheng
+rosen/test/render_service/render_service/unittest/feature_cfg/background_rebuild_param_test.cpp @gao_yufan
+rosen/test/render_service/render_service/unittest/feature_cfg/background_rebuild_param_parse_test.cpp @gao_yufan
+rosen/test/render_service/render_service_base/unittest/pipeline/rs_background_rebuild_param_test.cpp @gao_yufan
+
 [opinc]
 rosen/modules/render_service_base/src/feature/opinc/ @conan13234
 rosen/modules/render_service/core/feature/opinc/ @conan13234
@@ -213,6 +236,29 @@ rosen/modules/render_service/core/pipeline/main_thread/rs_render_service_connect
 rosen/modules/render_service/core/pipeline/main_thread/rs_render_service_connection.cpp @chuchengcheng
 rosen/modules/render_service/core/pipeline/main_thread/rs_uni_render_visitor.cpp @chuchengcheng
 rosen/modules/render_service/core/pipeline/main_thread/rs_uni_render_visitor.h @chuchengcheng
+
+[render_pipeline]
+rosen/modules/render_service/core/rs_render_pipeline.h @chuchengcheng
+rosen/modules/render_service/core/rs_render_pipeline.cpp @chuchengcheng
+rosen/modules/render_service/core/rs_render_pipeline_agent.h @chuchengcheng
+rosen/modules/render_service/core/rs_render_pipeline_agent.cpp @chuchengcheng
+rosen/modules/render_service/main/render_process/rs_render_process.h @chuchengcheng
+rosen/modules/render_service/main/render_process/rs_render_process.cpp @chuchengcheng
+rosen/modules/render_service/main/render_server/rs_render_service.h @chuchengcheng
+rosen/modules/render_service/main/render_server/rs_render_service.cpp @chuchengcheng
+rosen/modules/render_service/core/transaction/rs_unmarshal_thread.h @chuchengcheng
+rosen/modules/render_service/core/transaction/rs_unmarshal_thread.cpp @chuchengcheng
+rosen/modules/render_service_base/include/transaction/rs_render_pipeline_client.h @chuchengcheng
+rosen/modules/render_service_base/src/platform/ohos/rs_render_pipeline_client.cpp @chuchengcheng
+rosen/modules/render_service_base/src/platform/linux/rs_render_pipeline_client.cpp @chuchengcheng
+rosen/modules/render_service_base/src/platform/darwin/rs_render_pipeline_client.cpp @chuchengcheng
+rosen/modules/render_service_base/src/platform/windows/rs_render_pipeline_client.cpp @chuchengcheng
+rosen/test/render_service/render_service/unittest/pipeline/main_thread/rs_render_pipeline_test.cpp @gao_yufan
+rosen/test/render_service/render_process/unittest/rs_render_process_test.cpp @gao_yufan
+rosen/test/render_service/render_server/unittest/rs_render_service_test.cpp @gao_yufan
+rosen/test/render_service/render_service/unittest/pipeline/rs_render_service_test.cpp @gao_yufan
+rosen/test/render_service/render_service/unittest/transaction/rs_unmarshal_thread_test.cpp @gao_yufan
+rosen/test/render_service/render_service/unittest/transaction/rs_irender_service_connection_ipc_interface_code_access_verifier_test.cpp @gao_yufan
 
 [buffer_manager]
 rosen/modules/render_service/core/pipeline/buffer_manager/rs_buffer_manager.cpp @lipeng123s
@@ -383,7 +429,13 @@ rosen/modules/render_service/core/feature/capture/rs_surface_capture_task_parall
 rosen/modules/render_service/core/feature/capture/rs_ui_capture_task_parallel.cpp @chuchengcheng
 rosen/modules/render_service/core/feature/capture/rs_blur_pixelmap.cpp @chuchengcheng
 rosen/modules/render_service/core/feature/capture/rs_blur_pixelmap.h @chuchengcheng
+rosen/modules/render_service/core/feature_cfg/xml_parser/extend_feature_parser/capture_base_param_parse.h @chuchengcheng
+rosen/modules/render_service/core/feature_cfg/xml_parser/extend_feature_parser/capture_base_param_parse.cpp @chuchengcheng
+rosen/modules/render_service/core/feature_cfg/xml_parser/extend_feature_parser/ui_capture_param_parse.h @chuchengcheng
+rosen/modules/render_service/core/feature_cfg/xml_parser/extend_feature_parser/ui_capture_param_parse.cpp @chuchengcheng
 rosen/test/render_service/render_service/unittest/feature/capture/ @gao_yufan
+rosen/test/render_service/render_service/unittest/feature_cfg/capture_base_param_test.cpp @gao_yufan
+rosen/test/render_service/render_service/unittest/feature_cfg/ui_capture_param_test.cpp @gao_yufan
 
 [ut_test_2d_framework]
 rosen/test/render_service/render_service_base/unittest/pipeline/rs_render_node_map_test.cpp @gao_yufan
