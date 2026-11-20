@@ -373,9 +373,13 @@ ErrCode RSClientToServiceConnection::CreateVSyncConnection(sptr<IVSyncConnection
         return ERR_INVALID_VALUE;
     }
     if (isLinkerPid && hgmContext_ != nullptr) {
-        renderServiceAgent_->ScheduleTask([hgmContext = hgmContext_, name, id, windowNodeId] {
+        bool isCreated = renderServiceAgent_->ScheduleTaskAndWait([hgmContext = hgmContext_, name, id,
+            windowNodeId] {
             hgmContext->CreateFrameRateLinker(name, id, windowNodeId);
-        }).wait();
+        });
+        if (!isCreated) {
+            RS_LOGE("%{public}s wait main thread timeout, name: %{public}s", __func__, name.c_str());
+        }
     }
     vsyncConn = conn;
     return ERR_OK;
@@ -701,12 +705,17 @@ int32_t RSClientToServiceConnection::SetScreenChangeCallback(sptr<RSIScreenChang
         return StatusCode::SCREEN_NOT_FOUND;
     }
 
-    // update
-    int32_t status;
-    renderServiceAgent_->ScheduleTask([this, callback, &status]() {
-        status = screenManagerAgent_->SetScreenChangeCallback(callback);
-    }).wait();
-    return status;
+    // update; result is returned by value; capture the sptr member by value so the
+    // deferred task stays valid even if this connection is destroyed after a wait timeout
+    auto statusOpt = renderServiceAgent_->ScheduleTaskAndWait(
+        [screenManagerAgent = screenManagerAgent_, callback]() -> int32_t {
+            return screenManagerAgent->SetScreenChangeCallback(callback);
+        });
+    if (!statusOpt.has_value()) {
+        RS_LOGE("%{public}s wait main thread timeout, callback may not be set", __func__);
+        return StatusCode::MAIN_THREAD_NULL;
+    }
+    return statusOpt.value();
 }
 
 int32_t RSClientToServiceConnection::SetScreenSwitchingNotifyCallback(sptr<RSIScreenSwitchingNotifyCallback> callback)
@@ -790,9 +799,13 @@ void RSClientToServiceConnection::SyncFrameRateRange(FrameRateLinkerId id,
         RS_LOGE("%{public}s renderServiceAgent or hgmContext is nullptr", __func__);
         return;
     }
-    renderServiceAgent_->ScheduleTask([this, id, range, animatorExpectedFrameRate] {
-        hgmContext_->SyncFrameRateRange(id, range, animatorExpectedFrameRate);
-    }).wait();
+    bool isSynced = renderServiceAgent_->ScheduleTaskAndWait([hgmContext = hgmContext_, id, range,
+        animatorExpectedFrameRate] {
+        hgmContext->SyncFrameRateRange(id, range, animatorExpectedFrameRate);
+    });
+    if (!isSynced) {
+        RS_LOGE("%{public}s wait main thread timeout, id: %{public}" PRIu64, __func__, id);
+    }
 }
 
 void RSClientToServiceConnection::UnregisterFrameRateLinker(FrameRateLinkerId id)
@@ -801,9 +814,12 @@ void RSClientToServiceConnection::UnregisterFrameRateLinker(FrameRateLinkerId id
         RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return;
     }
-    renderServiceAgent_->ScheduleTask([hgmContext = hgmContext_, id] {
+    bool isUnregistered = renderServiceAgent_->ScheduleTaskAndWait([hgmContext = hgmContext_, id] {
         hgmContext->UnregisterFrameRateLinker(id);
-    }).wait();
+    });
+    if (!isUnregistered) {
+        RS_LOGE("%{public}s wait main thread timeout, id: %{public}" PRIu64, __func__, id);
+    }
 }
 
 uint32_t RSClientToServiceConnection::GetScreenCurrentRefreshRate(ScreenId id)
@@ -1068,8 +1084,16 @@ void RSClientToServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerS
         }
 #endif
     } else {
-        renderServiceAgent_->ScheduleTask(
-            [=]() { screenManagerAgent_->SetScreenPowerStatus(id, status); }).wait();
+        // capture the sptr member by value: after a wait timeout the deferred task must not
+        // touch this connection, which may already be destroyed by the death-recipient path
+        bool isSet = renderServiceAgent_->ScheduleTaskAndWait(
+            [screenManagerAgent = screenManagerAgent_, id, status]() {
+                screenManagerAgent->SetScreenPowerStatus(id, status);
+            });
+        if (!isSet) {
+            RS_LOGE("%{public}s wait main thread timeout, screenId: %{public}" PRIu64
+                ", status: %{public}u", __func__, id, static_cast<uint32_t>(status));
+        }
     }
 }
 

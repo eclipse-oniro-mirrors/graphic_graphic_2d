@@ -82,7 +82,7 @@ public:
     void ShrinkCachesIfNeeded(bool isForUniRedraw = false) override; // only used for divided_render
 
 private:
-    void WaitAcquireFence(const sptr<SyncFence>& acquireFence);
+    void WaitAcquireFence(const sptr<SyncFence>& acquireFence, uint64_t bufferId, uint32_t seqNum);
     GLuint CreateEglImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
         const pid_t threadIndex);
     GLuint MapEglImageFromSurfaceBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,

@@ -107,7 +107,7 @@ private:
     bool CoreComponentsInit();
     void HgmInit();
     void FeatureComponentInit();
-    void RenderProcessManagerInit();
+    bool RenderProcessManagerInit();
     bool SAMgrRegister();
 
     // Dfx related

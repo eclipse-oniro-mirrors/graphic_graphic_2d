@@ -3856,4 +3856,25 @@ HWTEST_F(RSScreenTest, SetIsRogResolution006, testing::ext::TestSize.Level1)
     EXPECT_EQ(rsScreen->property_.GetHdiRogEnable(), false);
     EXPECT_EQ(rsScreen->property_.IsRogResolution(), false);
 }
+
+/**
+ * @tc.name: GetDevice001
+ * @tc.desc: HdiScreen::GetDevice returns the device object currently held by the HdiScreen
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSScreenTest, GetDevice001, testing::ext::TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(mockScreenId_);
+    ASSERT_NE(rsScreen, nullptr);
+    ASSERT_NE(rsScreen->hdiScreen_, nullptr);
+    // GetDevice reflects the device object the HdiScreen currently holds
+    auto origDevice = rsScreen->hdiScreen_->device_;
+    EXPECT_EQ(rsScreen->hdiScreen_->GetDevice(), origDevice);
+    // after injecting a mock device, GetDevice returns it (rs_screen distinguishes
+    // "device unavailable" from "init partially failed" through this accessor)
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    EXPECT_EQ(rsScreen->hdiScreen_->GetDevice(), hdiDeviceMock_);
+    rsScreen->hdiScreen_->device_ = origDevice;
+}
 } // namespace OHOS::Rosen

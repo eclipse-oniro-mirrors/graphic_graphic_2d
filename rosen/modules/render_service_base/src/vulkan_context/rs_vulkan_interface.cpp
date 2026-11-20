@@ -141,6 +141,13 @@ RsVulkanInterface::~RsVulkanInterface()
 void RsVulkanInterface::ReleaseVulkanResource()
 {
     std::lock_guard<std::mutex> lock(semaphoreLock_);
+    if (!usedSemaphoreFenceList_.empty()) {
+        // dfx hint: each Wait(-1) below is unbounded; hanging here means a producer fence
+        // was never signaled. Kept as-is deliberately (destroying an in-use semaphore
+        // is undefined behaviour per Vulkan spec, see the agreed conservative strategy).
+        RS_LOGW("%{public}s: waiting for [%{public}zu] in-flight semaphore fences before release, "
+            "wait is unbounded", __func__, usedSemaphoreFenceList_.size());
+    }
     for (auto&& semaphoreFence : usedSemaphoreFenceList_) {
         if (semaphoreFence.fence != nullptr) {
             semaphoreFence.fence->Wait(-1);
