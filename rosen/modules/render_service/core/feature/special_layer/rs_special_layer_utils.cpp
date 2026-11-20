@@ -385,32 +385,21 @@ DrawType RSSpecialLayerUtils::GetDrawTypeInSnapshot(const RSSurfaceRenderParams&
     return DrawType::NONE;
 }
 
-const RSScreenProperty* RSSpecialLayerUtils::GetAncestorScreenProperty(const RSSurfaceRenderParams& surfaceParams)
+bool RSSpecialLayerUtils::IsSpecialLayerEnable()
 {
-    auto screenDrawable = surfaceParams.GetAncestorScreenDrawable().lock();
-    if (screenDrawable == nullptr) {
-        return nullptr;
-    }
-    auto* screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
-    return screenParams != nullptr ? &screenParams->GetScreenProperty() : nullptr;
-}
-
-bool RSSpecialLayerUtils::IsSpecialLayerEnable(const RSScreenProperty* screenProperty)
-{
-    // check screenshot first because isMirrorScreen_ may be left over by the previous screen of this frame
     const auto& captureParam = RSUniRenderThread::GetCaptureParam();
     if (captureParam.isSnapshot_ && !captureParam.isSingleSurface_) {
         return true;
     }
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    if (uniParam == nullptr || screenProperty == nullptr) {
+    if (uniParam == nullptr) {
         return false;
     }
-    bool isVirtualOrMirrorScreen = uniParam->IsMirrorScreen() || screenProperty->IsVirtual();
-    // Window record filters a mixed-id whitelist during its own capture. The capture param is
-    // scoped to that pass, so a record filter is enabled independently of the real output security
-    // state; security, mute and exemption still follow the actual output/source properties.
-    return isVirtualOrMirrorScreen && (uniParam->IsSecurityDisplay() || captureParam.isWindowRecord_);
+    bool isVirtual = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(uniParam->GetRSProcessor()) != nullptr;
+    // Window record filtering is scoped to its own capture and does not depend on the real output
+    // security state; security, mute and exemption still follow the actual output/source properties.
+    return (isVirtual || uniParam->IsMirrorScreen()) &&
+        (uniParam->IsSecurityDisplay() || captureParam.isWindowRecord_);
 }
 
 bool RSSpecialLayerUtils::IsSurfaceInBlackList(const RSSurfaceRenderParams& surfaceParams)
@@ -463,7 +452,7 @@ bool RSSpecialLayerUtils::IsWhiteListNode()
 bool RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(
     const RSSurfaceRenderParams& surfaceParams, const RSPaintFilterCanvas& canvas)
 {
-    if (!IsSpecialLayerEnable(GetAncestorScreenProperty(surfaceParams))) {
+    if (!IsSpecialLayerEnable()) {
         return false;
     }
     // Rule priority: id blackList > cursorMode > id whiteList.

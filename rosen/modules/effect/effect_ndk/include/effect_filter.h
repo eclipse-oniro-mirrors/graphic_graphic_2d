@@ -295,6 +295,32 @@ EffectErrorCode OH_Filter_MapColorByBrightness(OH_Filter* filter, OH_Filter_MapC
  */
 EffectErrorCode OH_Filter_GammaCorrection(OH_Filter* filter, float gamma);
 
+/**
+ * @brief Sets a custom GPU resource tag for the filter, used for GPU memory tracking.
+ *
+ * @param filter The OH_Filter pointer will be operated.
+ * @param customTagId Custom tag ID set by the application. Use 0 for no custom tag.
+ * @param customTagName Custom tag name set by the application. Can be NULL.
+ * @return Returns {@link EffectErrorCode}.
+ * @since 24
+ * @version 1.0
+ */
+EffectErrorCode OH_Filter_SetGpuResourceTag(OH_Filter* filter,
+    uint32_t customTagId, const char* customTagName);
+
+/**
+ * @brief Obtains the GPU memory statistics of the last GPU rendering of the filter.
+ *
+ * @param filter The OH_Filter pointer will be operated.
+ * @param gpuMemoryStatistics Pointer to receive the statistics string. Cannot be NULL.
+ *        The caller must release it with free() after use.
+ * @return Returns {@link EffectErrorCode}.
+ * @since 24
+ * @version 1.0
+ */
+EffectErrorCode OH_Filter_GetGpuMemoryStatistics(OH_Filter* filter,
+    char** gpuMemoryStatistics);
+
  /**
  * @brief Obtains the OH_NativeBuffer used to create a filter.
  * This function could transform the pixelmap with effect to a shared memory directly.

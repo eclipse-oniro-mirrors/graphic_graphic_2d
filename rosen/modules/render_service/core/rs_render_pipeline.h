@@ -83,7 +83,7 @@ public:
 
     bool PostMainThreadSyncTask(RSTaskMessage::RSTask task);
 
-    void PostUniRenderThreadSyncTask(RSTaskMessage::RSTask task);
+    void PostUniRenderThreadSyncTask(const std::function<void()>& task);
 
     void PostMainThreadTask(RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
         AppExecFwk::EventQueue::Priority priority);
@@ -91,7 +91,7 @@ public:
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleMainThreadTask(Task&& task)
     {
-        auto [scheduledTask, taskFuture] = ST::ScheduledTask<Task>::Create(std::move(task));
+        auto [scheduledTask, taskFuture] = ST::ScheduledTask<Task>::Create(std::forward<Task&&>(task));
         PostMainThreadTask([t(std::move(scheduledTask))]() { t->Run(); });
         return std::move(taskFuture);
     }
@@ -123,7 +123,7 @@ private:
     bool RemoveConnection(pid_t remotePid, const sptr<RSIConnectionToken>& token);
     std::pair<sptr<RSIClientToRenderConnection>, uint64_t> AddConnection(pid_t remotePid, uint64_t tokenMaskId,
         sptr<IRemoteObject>& token, sptr<RSIClientToRenderConnection> connectToRenderConnection);
-    std::pair<sptr<RSIClientToRenderConnection>, uint64_t> FindClientToRenderConnection(uint64_t remotePid);
+    std::pair<sptr<RSIClientToRenderConnection>, uint64_t> FindClientToRenderConnection(pid_t remotePid);
     void AddTransactionDataPidInfo(pid_t remotePid);
     RSMainThread* GetMainThread()
     {

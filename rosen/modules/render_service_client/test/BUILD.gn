@@ -1475,3 +1475,35 @@ ohos_executable("render_service_client_cosmos_ring_demo") {
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }
+
+ohos_executable("blur_tracker_demo") {
+  sources = [ "blur_tracker_demo.cpp" ]
+  testonly = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  include_dirs = [
+    "$graphic_2d_root/rosen/modules/effect/effect_ndk/include",
+    "$graphic_2d_root/rosen/modules/effect/effect_ndk/src/filter",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/rosen/modules/2d_graphics/include",
+  ]
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/effect/effect_ndk:native_effect_ndk",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "image_framework:image",
+    "image_framework:pixelmap",
+    "image_framework:image_native",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}

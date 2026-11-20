@@ -1556,6 +1556,44 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, CalculateVirtualDirtyTest012, T
 }
 
 /**
+ * @tc.name: CalculateVirtualDirtyTest013
+ * @tc.desc: Test CalculateVirtualDirty when cursor is hidden and type hwc dirty is not cursor node
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, CalculateVirtualDirtyTest013, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->renderParams_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(mirroredScreenDrawable_, nullptr);
+
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+    // HIDE mode only filters CURSOR_NODE, it also differs from lastSpecialLayerRenderParam_ to force refresh
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::HIDE);
+    // start from a known empty dirty state, same manager type as the screen drawable constructor builds
+    screenDrawable_->syncDirtyManager_ = std::make_shared<RSDirtyRegionManager>(true);
+    mirroredScreenDrawable_->syncDirtyManager_ = std::make_shared<RSDirtyRegionManager>();
+    const RectI cursorRect(1, 1, 1, 1);
+    const RectI selfDrawingRect(10, 10, 5, 5);
+    mirroredScreenDrawable_->syncDirtyManager_->typeHwcDirtyRegion_ = {
+        {RSSurfaceNodeType::CURSOR_NODE, cursorRect}, {RSSurfaceNodeType::SELF_DRAWING_NODE, selfDrawingRect}};
+
+    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
+    Drawing::Matrix matrix;
+    auto damageRects =
+        displayDrawable_->CalculateVirtualDirty(virtualProcesser, *screenDrawable_, *renderParams, matrix);
+    // the non-cursor type hwc dirty is still joined and merged into the current screen dirty region
+    EXPECT_EQ(screenDrawable_->syncDirtyManager_->GetCurrentFrameDirtyRegion(), selfDrawingRect);
+    EXPECT_FALSE(damageRects.empty());
+    // restore, renderThreadParams is thread_local and shared by the following cases
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::DEFAULT);
+}
+
+/**
  * @tc.name: CalculateVirtualDirtyForWiredScreenTest001
  * @tc.desc: Test CalculateVirtualDirtyForWiredScreen, without mirrorNode
  * @tc.type: FUNC

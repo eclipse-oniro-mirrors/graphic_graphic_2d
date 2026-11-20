@@ -215,6 +215,55 @@ namespace effectKit {
     setColorMatrix(colorMatrix: Array<double>): Filter;
 
     /**
+     * Sets a custom GPU resource tag on the filter for GPU memory tracking. A tag is identified
+     * by customTagId and customTagName so that the application can distinguish GPU resources by
+     * usage scenario. The tag takes effect in subsequent rendering (such as getEffectPixelMap).
+     *
+     * > **NOTE**
+     * >
+     * > When this interface is not called, a default tag derived from the filter chain types
+     * > (such as "blur" and "blur+brightness") is used, so that DFX can still observe the
+     * > approximate GPU memory usage of each filter type. When no filter is added, no tag is
+     * > set and getGpuMemoryStatistics returns an empty string.
+     * >
+     * > This interface is for DFX purposes only.
+     *
+     * @param { int } customTagId - Custom tag ID set by the application. Pass 0 to indicate no
+     * custom tag.
+     * @param { string } customTagName - Custom tag name set by the application.
+     * @returns { Filter } The Filter instance, supporting chained calls.
+     * @syscap SystemCapability.Multimedia.Image.Core
+     * @systemapi
+     * @stagemodelonly
+     * @since 26.1.0 dynamic&static
+     */
+    setGpuResourceTag(customTagId: int, customTagName: string): Filter;
+
+    /**
+     * Obtains the GPU memory statistics of the last rendering as a formatted string. The
+     * statistics are computed and cached in the filter during rendering (such as
+     * getEffectPixelMap). The application decides how to output the returned string, for
+     * example, printing it to hilog or writing it to a file.
+     *
+     * > **NOTE**
+     * >
+     * > When no custom tag is set through setGpuResourceTag, a default tag derived from the
+     * > filter chain types (such as "blur" and "blur+brightness") is used, and the application
+     * > can still observe the approximate GPU memory usage of each filter type.
+     * >
+     * > This interface is for DFX purposes only.
+     *
+     * @returns { string } GPU memory statistics dump string. An empty string is returned when
+     * no statistics are available, such as when CPU rendering is used or no rendering has been
+     * performed.
+     * @syscap SystemCapability.Multimedia.Image.Core
+     * @systemapi
+     * @stagemodelonly
+     * @since 26.1.0 dynamic&static
+     */
+    getGpuMemoryStatistics(): string;
+
+    /**
      * Adds the outline and shadow effects to the effect chain and returns the head node of the chain. This effect
      * extracts the contour of non-transparent areas in the image to generate an outline, and generates a projection
      * based on the shadow configuration.
@@ -464,6 +513,10 @@ namespace effectKit {
 
     public native getPixelMapNative(): image.PixelMap;
 
+    public native setGpuResourceTagNative(customTagId: int, customTagName: string): Filter;
+
+    public native getGpuMemoryStatisticsNative(): string;
+
     public native outlineNative(outlineWidth: double, shadowOptions: ShadowOptions): Filter;
 
     public native halftoneNative(halftoneParam: HalftoneParam, outlineWidth: double,
@@ -523,6 +576,12 @@ namespace effectKit {
     }
     public getPixelMap(): image.PixelMap {
       return this.getPixelMapNative();
+    }
+    public setGpuResourceTag(customTagId: int, customTagName: string): Filter {
+        return this.setGpuResourceTagNative(customTagId, customTagName);
+    }
+    public getGpuMemoryStatistics(): string {
+      return this.getGpuMemoryStatisticsNative();
     }
     public outline(outlineWidth: double, shadowOptions?: ShadowOptions): Filter {
       return this.outlineNative(outlineWidth, shadowOptions ?? ({} as ShadowOptions));
