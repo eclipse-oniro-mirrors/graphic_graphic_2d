@@ -1768,6 +1768,8 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_003, testing::ext::TestSize.Level1)
             gamuts.resize(modeIdx - 1);
             return GRAPHIC_DISPLAY_SUCCESS;
         });
+    std::vector<GraphicColorGamut> hdiGamuts;
+    rsScreen->hdiScreen_->GetScreenSupportedColorGamuts(hdiGamuts);
 
     ASSERT_EQ(rsScreen->SetScreenColorGamut(modeIdx), StatusCode::SUCCESS);
 }
@@ -1814,6 +1816,7 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_005, testing::ext::TestSize.Level1)
     ASSERT_NE(nullptr, rsScreen);
 
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    rsScreen->supportedPhysicalColorGamuts_ = rsScreen->supportedVirtualColorGamuts_;
 
     // modeIdx >=0
     int32_t modeIdx = 2;
@@ -1825,6 +1828,8 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_005, testing::ext::TestSize.Level1)
             gamuts.resize(modeIdx + 1);
             return GRAPHIC_DISPLAY_SUCCESS;
         });
+    std::vector<GraphicColorGamut> hdiGamuts;
+    rsScreen->hdiScreen_->GetScreenSupportedColorGamuts(hdiGamuts);
 
     // result != GRAPHIC_DISPLAY_SUCCESS
     EXPECT_CALL(*hdiDeviceMock_, SetScreenColorGamut(_, _))
@@ -1888,6 +1893,7 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_007, testing::ext::TestSize.Level1)
     ASSERT_NE(nullptr, rsScreen);
 
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    rsScreen->supportedPhysicalColorGamuts_ = rsScreen->supportedVirtualColorGamuts_;
 
     // modeIdx >=0
     int32_t modeIdx = 2;
