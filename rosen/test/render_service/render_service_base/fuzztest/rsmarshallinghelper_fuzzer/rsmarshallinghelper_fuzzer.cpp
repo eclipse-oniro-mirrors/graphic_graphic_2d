@@ -754,6 +754,35 @@ bool DoMarshallingHelper022()
     return true;
 }
 
+// RSWindowRecordConfig round trip; the id count spans 0..MAX_WINDOW_RECORD_SURFACE_NUM + 1.
+bool DoMarshallingHelper023()
+{
+    if (DATA == nullptr) {
+        return false;
+    }
+
+    Parcel parcel;
+    RSWindowRecordConfig config;
+    // Read one byte and use the lowest bit: a bool copy of 0x02 is a UBSan trap before business code.
+    const uint8_t renderFitBits = GetData<uint8_t>();
+    config.renderFit = (renderFitBits & 1) ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
+    size_t idCount = GetData<uint16_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
+    for (size_t i = 0; i < idCount; i++) {
+        config.surfaceNodeIds.push_back(GetData<NodeId>());
+    }
+    RSMarshallingHelper::Marshalling(parcel, config);
+    RSWindowRecordConfig unmarshalled;
+    RSMarshallingHelper::Unmarshalling(parcel, unmarshalled);
+
+    // Untrusted wire value: a renderFit value outside the enum range must be rejected.
+    Parcel invalidFitParcel;
+    invalidFitParcel.WriteInt32(static_cast<int32_t>(GetData<uint8_t>()));
+    invalidFitParcel.WriteUint64(0);
+    RSWindowRecordConfig invalidFitConfig;
+    RSMarshallingHelper::Unmarshalling(invalidFitParcel, invalidFitConfig);
+    return true;
+}
+
 } // namespace Rosen
 } // namespace OHOS
 
@@ -788,5 +817,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoMarshallingHelper019(data, size);
     OHOS::Rosen::DoMarshallingHelper020(data, size);
     OHOS::Rosen::DoMarshallingHelper022();
+    OHOS::Rosen::DoMarshallingHelper023();
     return 0;
 }

@@ -542,6 +542,9 @@ private:
     void UpdateScreenProperty(ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property);
     void HandleProtectiveSolidNode(ScreenId id);
     void UpdateSubSurfaceCnt();
+    // Main thread, once per frame after MoveSplitSurfaceNode and before animation/HWC/visitor
+    // construction: publishes window-record mirror sources after the tree has settled.
+    void PublishWindowRecordMirrorSources();
     void HandleGameNode();
     void Animate(uint64_t timestamp);
     void ConsumeAndUpdateAllNodes();

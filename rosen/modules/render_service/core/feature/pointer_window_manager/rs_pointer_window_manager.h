@@ -16,6 +16,8 @@
 #ifndef RENDER_SERVICE_CORE_PIPELINE_RS_POINTER_WINDOW_MANAGER_H
 #define RENDER_SERVICE_CORE_PIPELINE_RS_POINTER_WINDOW_MANAGER_H
 
+#include <atomic>
+
 #include "params/rs_render_thread_params.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_logical_display_render_node.h"

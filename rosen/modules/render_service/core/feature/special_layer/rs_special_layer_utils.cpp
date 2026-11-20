@@ -111,10 +111,10 @@ DisplaySpecialLayerState RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(
     ScreenId screenId = displayParams->GetScreenId();
     const auto& screenProperty = screenParams->GetScreenProperty();
     bool hideCursor = screenProperty.GetCursorMode() == RSVirtualScreenCursorMode::HIDE;
-    bool hasGeneralSpecialLayer = !screenProperty.GetWhiteList().empty() ||
+    bool hasGeneralSpecialLayer = !screenParams->GetEffectiveWhiteList().empty() ||
         hideCursor || specialLayerManager.GetHasSlInVisibleRect(screenId);
     RS_LOGD("%{public}sWhiteList:%{public}d, HideCursor:%{public}d, "
-        "HasSlInVisibleRect:%{public}d", __func__, !screenProperty.GetWhiteList().empty(),
+        "HasSlInVisibleRect:%{public}d", __func__, !screenParams->GetEffectiveWhiteList().empty(),
         hideCursor, specialLayerManager.GetHasSlInVisibleRect(screenId));
     
     return hasGeneralSpecialLayer ? DisplaySpecialLayerState::HAS_SPECIAL_LAYER :
@@ -138,7 +138,7 @@ DisplaySpecialLayerState RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(
         hasGeneralSpecialLayer |= (specialLayerManager.Find(SpecialLayerType::HAS_SNAPSHOT_SKIP) ||
             uniRenderThread.IsCurtainScreenOn());
     } else {
-        hasGeneralSpecialLayer |= !screenProperty.GetWhiteList().empty()
+        hasGeneralSpecialLayer |= !screenParams->GetEffectiveWhiteList().empty()
             || screenProperty.GetCursorMode() == RSVirtualScreenCursorMode::HIDE
             || specialLayerManager.FindWithScreen(screenId, SpecialLayerType::HAS_BLACK_LIST);
     }
@@ -449,7 +449,7 @@ bool RSSpecialLayerUtils::IsWhiteListNode()
 bool RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(
     const RSSurfaceRenderParams& surfaceParams, const RSPaintFilterCanvas& canvas)
 {
-    if (!IsSpecialLayerEnable()) {
+    if (!IsSpecialLayerEnable() && !RSUniRenderThread::GetCaptureParam().isWindowRecord_) {
         return false;
     }
     // Rule priority: id blackList > cursorMode > id whiteList.

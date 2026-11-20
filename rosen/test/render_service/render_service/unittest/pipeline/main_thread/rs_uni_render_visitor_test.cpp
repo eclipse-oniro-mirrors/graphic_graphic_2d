@@ -30,6 +30,7 @@
 #include "effect/rs_render_filter_base.h"
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "params/rs_screen_render_params.h"
 #include "feature/buffer_reclaim/rs_buffer_reclaim.h"
 #include "feature/layer/rs_layer_cache_manager_base.h"
 #include "feature/protective_solid/rs_protective_solid_render_node.h"

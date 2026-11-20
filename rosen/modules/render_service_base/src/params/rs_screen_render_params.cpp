@@ -280,6 +280,8 @@ void RSScreenRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     targetScreenParams->compositeType_ = compositeType_;
     targetScreenParams->mirrorSourceDrawable_ = mirrorSourceDrawable_;
     targetScreenParams->isMirrorScreen_ = isMirrorScreen_;
+    targetScreenParams->hasWindowRecordDisplay_ = hasWindowRecordDisplay_;
+    targetScreenParams->effectiveWhiteList_ = effectiveWhiteList_;
     targetScreenParams->screenInfo_ = std::move(screenInfo_);
     targetScreenParams->screenProperty_ = std::move(screenProperty_);
     targetScreenParams->isMainAndLeashSurfaceDirty_ = isMainAndLeashSurfaceDirty_;
@@ -336,15 +338,21 @@ void RSScreenRenderParams::SetHasMirrorScreen(bool hasMirrorScreen)
 {
     if (hasMirrorScreen) {
         mirrorDstCount_++;
+    } else if (mirrorDstCount_ == 0) {
+        // A shared source can receive a duplicate release after its last real owner; never let the
+        // unsigned count wrap and report a phantom mirror screen.
+        RS_LOGE("RSScreenRenderParams::%{public}s release without a mirror destination reference", __func__);
+        return;
     } else {
         mirrorDstCount_--;
     }
+    // hasMirrorScreen_ is derived from the balanced per-relationship count.
     bool ret = (mirrorDstCount_ != 0);
     if (hasMirrorScreen_ == ret) {
         return;
     }
     needSync_ = true;
-    hasMirrorScreen_ = hasMirrorScreen;
+    hasMirrorScreen_ = ret;
 }
 
 bool RSScreenRenderParams::HasMirrorScreen() const

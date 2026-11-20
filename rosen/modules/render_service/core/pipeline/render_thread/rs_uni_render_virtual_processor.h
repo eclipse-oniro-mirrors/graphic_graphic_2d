@@ -21,6 +21,8 @@
 
 namespace OHOS {
 namespace Rosen {
+class RSLogicalDisplayRenderParams;
+class RSScreenRenderParams;
 constexpr uint32_t ROI_REGIONS_MAX_CNT = 8;
 constexpr int32_t NO_SPECIAL_LAYER = 0;
 constexpr int32_t HAS_SPECIAL_LAYER = 1;
@@ -116,6 +118,15 @@ public:
     void CancelCurrentFrame();
     sptr<SyncFence> GetFrameAcquireFence();
     bool SetCropRectForMetadata(const HDI::Display::Graphic::Common::V1_0::BufferHandleMetaRegion& metaRegion);
+    GSError SetScreenInfoForWindowRecord(const Rect& currentFrameRect, const Rect& originalRect, float angle);
+    // Record content resolves its source snapshot on the screen path before any output buffer
+    // exists. Store the same rotation/correction that the record canvas uses so SetVirtualScreenSize()
+    // sizes the buffer from one source of truth. Record does not call CanvasInit(), so the canvas
+    // rotation stays record-owned.
+    void SetWindowRecordSource(const RSLogicalDisplayRenderParams& sourceDisplayParams,
+        const RSScreenRenderParams& sourceScreenParams);
+    // rotationAngle = rotation - correction, shared by buffer sizing, CanvasInit and the record canvas.
+    static ScreenRotation GetRotationWithCorrection(ScreenRotation rotation, ScreenRotation correction);
 
     // Multi-surface support
     bool IsMultiSurfaceExtendMode() const { return needsOffscreenRender_; }
@@ -167,6 +178,12 @@ private:
     Drawing::Rect visibleRect_;
     ScreenId virtualScreenId_ = INVALID_SCREEN_ID;
     NodeId mirroredScreenNodeId_ = INVALID_NODEID;
+    bool mergeHardwareEnabledFence_ = false;
+    // Record source resolved on the screen path for this frame; never set by ordinary mirror.
+    bool hasWindowRecordSource_ = false;
+    ScreenRotation windowRecordRotation_ = ScreenRotation::ROTATION_0;
+    ScreenRotation windowRecordCorrection_ = ScreenRotation::ROTATION_0;
+    NodeId windowRecordScreenNodeId_ = INVALID_NODEID;
     std::shared_ptr<RSSLRScaleFunction> slrManager_ = nullptr;
     bool drawMirrorCopy_ = false;
     bool displaySkipInMirror_ = false;

@@ -546,6 +546,28 @@ public:
         return Unmarshalling(parcel, val.first) && Unmarshalling(parcel, val.second);
     }
 
+    static bool Marshalling(Parcel& parcel, const RSWindowRecordConfig& val)
+    {
+        return Marshalling(parcel, static_cast<int32_t>(val.renderFit)) &&
+               Marshalling(parcel, val.surfaceNodeIds, MAX_WINDOW_RECORD_SURFACE_NUM);
+    }
+
+    static bool Unmarshalling(Parcel& parcel, RSWindowRecordConfig& val)
+    {
+        int32_t renderFit = 0;
+        if (!Unmarshalling(parcel, renderFit) ||
+            renderFit < static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT) ||
+            renderFit > static_cast<int32_t>(WindowRecordFit::ASPECT_FIT)) {
+            return false; // out-of-range enum from an untrusted parcel: drop the config
+        }
+        val.renderFit = static_cast<WindowRecordFit>(renderFit);
+        if (!Unmarshalling(parcel, val.surfaceNodeIds, MAX_WINDOW_RECORD_SURFACE_NUM)) {
+            val.surfaceNodeIds.clear();
+            return false;
+        }
+        return true;
+    }
+
     template<typename T, typename... Args>
     static bool Marshalling(Parcel& parcel, const T& first, const Args&... args)
     {

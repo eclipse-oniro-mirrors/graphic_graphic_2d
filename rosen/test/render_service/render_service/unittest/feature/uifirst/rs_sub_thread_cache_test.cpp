@@ -1221,6 +1221,7 @@ HWTEST_F(RSSubThreadCacheTest, DealWithUIFirstCacheTest006, TestSize.Level1)
     surfaceParams->uifirstParams_.leashAllEnabled = true;
     EXPECT_TRUE(subThreadCache.DealWithUIFirstCache(surfaceDrawable_.get(), *canvas_, *surfaceParams, *uniParams));
 }
+
 /**
  * @tc.name: SetSubThreadSkip001
  * @tc.desc: Test SetSubThreadSkip

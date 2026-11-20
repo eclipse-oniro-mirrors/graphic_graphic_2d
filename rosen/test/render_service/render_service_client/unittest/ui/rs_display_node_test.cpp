@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "common/rs_common_def.h"
 #include "transaction/rs_interfaces.h"
 #include "ui/rs_display_node.h"
 
@@ -494,4 +495,38 @@ HWTEST_F(RSDisplayNodeTest, ClearModifierByPid003, TestSize.Level1)
     }
 }
 #endif
+
+/**
+ * @tc.name: SetWindowRecordConfigTest001
+ * @tc.desc: SetWindowRecordConfig queues a bounded config and drops an oversized list before IPC.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDisplayNodeTest, SetWindowRecordConfigTest001, TestSize.Level1)
+{
+    RSDisplayNodeConfig config;
+    config.screenId = 6000;
+    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    ASSERT_NE(displayNode, nullptr);
+
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    ASSERT_NE(transactionProxy, nullptr);
+    // Clear the commands queued by Create.
+    transactionProxy->FlushImplicitTransaction();
+    ASSERT_TRUE(transactionProxy->IsEmpty());
+
+    // Phase 1: the accepted config must reach RSTransactionProxy as a queued render-service command.
+    RSWindowRecordConfig recordConfig;
+    recordConfig.renderFit = WindowRecordFit::ASPECT_FIT;
+    recordConfig.surfaceNodeIds = { 1, 2 };
+    displayNode->SetWindowRecordConfig(recordConfig);
+    EXPECT_FALSE(transactionProxy->IsEmpty());
+    transactionProxy->FlushImplicitTransaction();
+    EXPECT_TRUE(transactionProxy->IsEmpty());
+
+    // Phase 2: an id list above the cap is dropped early, so no command is queued for it.
+    RSWindowRecordConfig oversizedConfig;
+    oversizedConfig.surfaceNodeIds.assign(MAX_WINDOW_RECORD_SURFACE_NUM + 1, 1);
+    displayNode->SetWindowRecordConfig(oversizedConfig);
+    EXPECT_TRUE(transactionProxy->IsEmpty());
+}
 } // namespace OHOS::Rosen

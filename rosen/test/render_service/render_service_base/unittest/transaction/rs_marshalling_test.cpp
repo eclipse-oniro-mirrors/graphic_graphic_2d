@@ -711,4 +711,120 @@ HWTEST_F(RSMarshallingTest, DepthLightParaMarshalling002, TestSize.Level1)
     EXPECT_TRUE(unmarshalPara == para);
 }
 
+static RSWindowRecordConfig CreateWindowRecordConfig(size_t idCount)
+{
+    RSWindowRecordConfig config;
+    config.renderFit = WindowRecordFit::ASPECT_FIT;
+    for (size_t i = 0; i < idCount; i++) {
+        config.surfaceNodeIds.push_back(static_cast<NodeId>(i + 1));
+    }
+    return config;
+}
+
+/**
+ * @tc.name: RSWindowRecordConfigMarshalling002
+ * @tc.desc: test round trip of a default RSWindowRecordConfig with an empty id list
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling002, TestSize.Level1)
+{
+    RSWindowRecordConfig config;
+
+    MessageParcel parcel;
+    ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, config));
+
+    RSWindowRecordConfig unmarshalled;
+    // Prefilled stale values must be replaced by the decoded defaults.
+    unmarshalled.renderFit = WindowRecordFit::ASPECT_FIT;
+    unmarshalled.surfaceNodeIds = { 5 };
+    ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.renderFit, WindowRecordFit::ASPECT_FIT_TOP_LEFT);
+    EXPECT_TRUE(unmarshalled.surfaceNodeIds.empty());
+}
+
+/**
+ * @tc.name: RSWindowRecordConfigMarshalling003
+ * @tc.desc: test empty and truncated parcel input is rejected
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling003, TestSize.Level1)
+{
+    RSWindowRecordConfig unmarshalled;
+
+    MessageParcel emptyParcel;
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(emptyParcel, unmarshalled));
+
+    MessageParcel renderFitOnlyParcel;
+    renderFitOnlyParcel.WriteInt32(static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT)); // id list missing
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(renderFitOnlyParcel, unmarshalled));
+
+    MessageParcel missingIdParcel;
+    missingIdParcel.WriteInt32(static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT));
+    missingIdParcel.WriteUint64(2); // declares two ids but only one is present
+    missingIdParcel.WriteUint64(7);
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(missingIdParcel, unmarshalled));
+}
+
+/**
+ * @tc.name: RSWindowRecordConfigMarshalling004
+ * @tc.desc: test out-of-range renderFit from the parcel is rejected
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling004, TestSize.Level1)
+{
+    const int32_t invalidFits[] = { -1, static_cast<int32_t>(WindowRecordFit::ASPECT_FIT) + 1, 1000 };
+    for (const auto invalidFit : invalidFits) {
+        MessageParcel parcel;
+        parcel.WriteInt32(invalidFit);
+        parcel.WriteUint64(0); // empty id list
+
+        RSWindowRecordConfig unmarshalled;
+        EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(parcel, unmarshalled)) << "renderFit: " << invalidFit;
+    }
+}
+
+/**
+ * @tc.name: RSWindowRecordConfigMarshalling005
+ * @tc.desc: test exactly MAX_WINDOW_RECORD_SURFACE_NUM ids are accepted
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling005, TestSize.Level1)
+{
+    RSWindowRecordConfig config = CreateWindowRecordConfig(MAX_WINDOW_RECORD_SURFACE_NUM);
+
+    MessageParcel parcel;
+    ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, config));
+
+    RSWindowRecordConfig unmarshalled;
+    ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(parcel, unmarshalled));
+    ASSERT_EQ(unmarshalled.surfaceNodeIds.size(), MAX_WINDOW_RECORD_SURFACE_NUM);
+    EXPECT_EQ(unmarshalled.surfaceNodeIds, config.surfaceNodeIds);
+}
+
+/**
+ * @tc.name: RSWindowRecordConfigMarshalling006
+ * @tc.desc: test one id above the bound is rejected and leaves an empty output list
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling006, TestSize.Level1)
+{
+    RSWindowRecordConfig config = CreateWindowRecordConfig(MAX_WINDOW_RECORD_SURFACE_NUM + 1);
+    MessageParcel encodingParcel;
+    EXPECT_FALSE(RSMarshallingHelper::Marshalling(encodingParcel, config));
+
+    // Over-cap declared count without an id payload must be rejected before reserve/loop.
+    MessageParcel decodingParcel;
+    decodingParcel.WriteInt32(static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT));
+    decodingParcel.WriteUint64(MAX_WINDOW_RECORD_SURFACE_NUM + 1);
+    RSWindowRecordConfig unmarshalled;
+    unmarshalled.surfaceNodeIds = { 3, 4 }; // stale entries must be dropped together with the config
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(decodingParcel, unmarshalled));
+    EXPECT_TRUE(unmarshalled.surfaceNodeIds.empty());
+}
+
 } // namespace OHOS::Rosen

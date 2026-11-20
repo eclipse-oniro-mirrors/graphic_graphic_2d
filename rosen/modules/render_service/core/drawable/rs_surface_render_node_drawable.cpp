@@ -646,8 +646,18 @@ NodeId RSSurfaceRenderNodeDrawable::GetWhiteListPersistentId(
 
     // 1 . sub thread drawing doesn't check the whitelist, so there is no need to get whiteList's persistentId
     // 2 . when the persistent id of the node doesn't match the whitelist, don't return the persistent id
-    return (canvas.GetIsParallelCanvas() || whiteList.find(persistentId) == whiteList.end()) ?
-        INVALID_LEASH_PERSISTENTID : persistentId;
+    if (canvas.GetIsParallelCanvas() || whiteList.find(persistentId) == whiteList.end()) {
+        // Only window record allows any surface to match the mixed whitelist by its own node id.
+        // Other captures match persistent ids only; parallel canvas keeps the existing behavior.
+        bool allowNodeIdFallback =
+            !canvas.GetIsParallelCanvas() && RSUniRenderThread::GetCaptureParam().isWindowRecord_;
+        if (allowNodeIdFallback && whiteList.find(surfaceParam.GetId()) != whiteList.end()) {
+            persistentId = surfaceParam.GetId();
+        } else {
+            persistentId = INVALID_LEASH_PERSISTENTID;
+        }
+    }
+    return persistentId;
 }
 
 void RSSurfaceRenderNodeDrawable::DrawUifirstContentChildren(Drawing::Canvas& canvas, const Drawing::Rect& rect)
@@ -862,8 +872,9 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
-    // process white list
-    NodeId persistentId = uniParam->IsSecurityDisplay() ?
+    // process white list. A window-record capture traverses the normal draw path, so it must build
+    // the same whitelist root stack even while the real output security state stays false.
+    NodeId persistentId = (uniParam->IsSecurityDisplay() || RSUniRenderThread::GetCaptureParam().isWindowRecord_) ?
         GetWhiteListPersistentId(*surfaceParams, *rscanvas) : INVALID_LEASH_PERSISTENTID;
     AutoSpecialLayerStateRecover whiteListRecover(persistentId);
 
