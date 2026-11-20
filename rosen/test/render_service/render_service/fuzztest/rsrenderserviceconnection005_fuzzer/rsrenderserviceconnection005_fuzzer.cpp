@@ -424,6 +424,7 @@ void CreateSurfaceNode()
     dataParcel.WriteBool(false);
     dataParcel.WriteUint8(GetData<uint8_t>());
     dataParcel.WriteBool(GetData<bool>());
+    dataParcel.WriteBool(GetData<bool>()); // isSceneBoard
 
     g_renderConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }

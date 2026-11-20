@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_SERVICE_BASE_RENDER_RENDER_RS_PARTICLE_DRAWABLE_H
-#define RENDER_SERVICE_BASE_RENDER_RENDER_RS_PARTICLE_DRAWABLE_H
+#ifndef RENDER_SERVICE_BASE_FEATURE_PARTICLE_RS_PARTICLES_PAINTER_H
+#define RENDER_SERVICE_BASE_FEATURE_PARTICLE_RS_PARTICLES_PAINTER_H
 
 #include "animation/rs_render_particle.h"
 #include "animation/rs_render_particle_pool.h"
@@ -23,12 +23,12 @@
 #include "render/rs_image.h"
 namespace OHOS {
 namespace Rosen {
-class RSB_EXPORT RSParticlesDrawable {
+class RSB_EXPORT RSParticlesPainter {
 public:
-    explicit RSParticlesDrawable(const std::shared_ptr<RSRenderParticlePool>& pool,
+    explicit RSParticlesPainter(const std::shared_ptr<RSRenderParticlePool>& pool,
         const std::vector<std::shared_ptr<RSImage>>& imageVector, size_t imageCount);
-    RSParticlesDrawable() = default;
-    ~RSParticlesDrawable() = default;
+    RSParticlesPainter() = default;
+    ~RSParticlesPainter() = default;
     void Draw(Drawing::Canvas& canvas, std::shared_ptr<RectF> bounds);
     void UpdateData(const std::shared_ptr<RSRenderParticlePool>& pool,
         const std::vector<std::shared_ptr<RSImage>>& imageVector, size_t imageCount);
@@ -155,4 +155,4 @@ private:
 
 } // namespace Rosen
 } // namespace OHOS
-#endif // RENDER_SERVICE_BASE_RENDER_RENDER_RS_PARTICLE_DRAWABLE_H
+#endif // RENDER_SERVICE_BASE_FEATURE_PARTICLE_RS_PARTICLES_PAINTER_H

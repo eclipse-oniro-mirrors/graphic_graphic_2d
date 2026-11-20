@@ -3072,6 +3072,130 @@ HWTEST_F(RSRenderNodeTest, RemoveCrossParentChild009, TestSize.Level1)
 }
 
 /**
+ * @tc.name: AddCrossParentChildTest010
+ * @tc.desc: AddCrossParentChild would not create cycle
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest010, TestSize.Level1)
+{
+    // A->AddCrossParentChild(B), C->AddCrossParentChild(B), then B->AddCrossParentChild(A) would create
+    // cycle A->B->A, the last operation should be rejected.
+    std::shared_ptr<RSSurfaceRenderNode> nodeA = std::make_shared<RSSurfaceRenderNode>(1);
+    std::shared_ptr<RSSurfaceRenderNode> nodeB = std::make_shared<RSSurfaceRenderNode>(2);
+    std::shared_ptr<RSRenderNode> nodeC = std::make_shared<RSRenderNode>(3);
+    nodeA->AddCrossParentChild(nodeB);
+    EXPECT_EQ(nodeA->GetChildrenCount(), 1u);
+    nodeC->AddCrossParentChild(nodeB);
+    EXPECT_EQ(nodeC->GetChildrenCount(), 1u);
+
+    nodeB->AddCrossParentChild(nodeA);
+    EXPECT_EQ(nodeB->GetChildrenCount(), 0u);
+
+    // normal cross parent add is not affected
+    std::shared_ptr<RSRenderNode> nodeD = std::make_shared<RSRenderNode>(4);
+    nodeD->AddCrossParentChild(nodeB);
+    EXPECT_EQ(nodeD->GetChildrenCount(), 1u);
+}
+
+/**
+ * @tc.name: AddCrossParentChildTest011
+ * @tc.desc: AddCrossParentChild would not create cycle with ancestor
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest011, TestSize.Level1)
+{
+    // ancestor of current node should be rejected
+    std::shared_ptr<RSSurfaceRenderNode> nodeC = std::make_shared<RSSurfaceRenderNode>(3);
+    std::shared_ptr<RSRenderNode> nodeD = std::make_shared<RSRenderNode>(4);
+    nodeC->AddChild(nodeD);
+    EXPECT_EQ(nodeC->GetChildrenCount(), 1u);
+    nodeD->AddCrossParentChild(nodeC);
+    EXPECT_EQ(nodeD->GetChildrenCount(), 0u);
+}
+
+/**
+ * @tc.name: AddCrossParentChildTest012
+ * @tc.desc: AddCrossParentChild would not create cycle via disappearing children
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest012, TestSize.Level1)
+{
+    // Construct cycle A->B->A where the B->A edge is kept by a disappearing transition:
+    // 1. A registers a disappearing transition, then B->AddChild(A) and B->RemoveChild(A) moves A
+    //    into B.disappearingChildren_ while A.parent_ still points to B;
+    // 2. D->AddCrossParentChild(A) repoints A.parent_ to D, so the parent-chain ancestor check
+    //    cannot see B anymore;
+    // 3. A->AddCrossParentChild(B) would close the cycle A->B(disappearing)->A via the traversal
+    //    graph (fullChildrenList_ merges children_ and disappearingChildren_), it must be rejected.
+    std::shared_ptr<RSSurfaceRenderNode> nodeA = std::make_shared<RSSurfaceRenderNode>(1);
+    std::shared_ptr<RSSurfaceRenderNode> nodeB = std::make_shared<RSSurfaceRenderNode>(2);
+    std::shared_ptr<RSRenderNode> nodeD = std::make_shared<RSRenderNode>(3);
+
+    nodeA->isOnTheTree_ = true;
+    nodeA->disappearingTransitionCount_ = 1;
+    nodeB->AddChild(nodeA);
+    EXPECT_EQ(nodeB->GetChildrenCount(), 1u);
+    nodeB->RemoveChild(nodeA);
+    EXPECT_EQ(nodeB->GetChildrenCount(), 0u);
+    EXPECT_EQ(nodeB->disappearingChildren_.size(), 1u);
+
+    nodeD->AddCrossParentChild(nodeA);
+    EXPECT_EQ(nodeD->GetChildrenCount(), 1u);
+
+    nodeA->AddCrossParentChild(nodeB);
+    EXPECT_EQ(nodeA->GetChildrenCount(), 0u);
+
+    // simulate per-frame traversal: regenerate fullChildrenList_ like ApplyModifiers and walk
+    // recursively like RSRenderServiceVisitor::PrepareChildren; unbounded recursion means cycle.
+    nodeA->GenerateFullChildrenList();
+    nodeB->GenerateFullChildrenList();
+    std::vector<NodeId> allChildren;
+    nodeA->CollectAllChildren(nodeA, allChildren);
+    EXPECT_GT(allChildren.size(), 0u);
+}
+
+/**
+ * @tc.name: AddCrossParentChildTest013
+ * @tc.desc: AddCrossParentChild cycle check covers all branches of IsReachableFrom
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest013, TestSize.Level1)
+{
+    // defensive null input of IsReachableFrom
+    std::shared_ptr<RSRenderNode> nodeF = std::make_shared<RSRenderNode>(1);
+    EXPECT_FALSE(nodeF->IsReachableFrom(nullptr));
+
+    // search graph: B -> {expired, C, D}, C -> E, D -> E (diamond), X standalone;
+    // disappearing list of B holds a null entry, an already-visited node and a new node
+    std::shared_ptr<RSSurfaceRenderNode> nodeB = std::make_shared<RSSurfaceRenderNode>(2);
+    std::shared_ptr<RSRenderNode> nodeC = std::make_shared<RSRenderNode>(3);
+    std::shared_ptr<RSRenderNode> nodeD = std::make_shared<RSRenderNode>(4);
+    std::shared_ptr<RSSurfaceRenderNode> nodeE = std::make_shared<RSSurfaceRenderNode>(5);
+    std::shared_ptr<RSRenderNode> nodeX = std::make_shared<RSRenderNode>(6);
+    {
+        // leave an expired weak entry in B.children_
+        std::shared_ptr<RSSurfaceRenderNode> expiredChild = std::make_shared<RSSurfaceRenderNode>(7);
+        nodeB->AddChild(expiredChild);
+    }
+    nodeB->AddChild(nodeC);
+    nodeB->AddChild(nodeD);
+    nodeC->AddChild(nodeE);
+    nodeD->AddCrossParentChild(nodeE);
+    nodeB->disappearingChildren_.emplace_back(nullptr, 0);
+    nodeB->disappearingChildren_.emplace_back(nodeC, 1);
+    nodeB->disappearingChildren_.emplace_back(nodeX, 2);
+
+    // F is not reachable from B: the search must pass the expired and null entries, dedup C and E,
+    // push and traverse multi-hop nodes, then return false and allow the add
+    nodeF->AddCrossParentChild(nodeB);
+    EXPECT_EQ(nodeF->GetChildrenCount(), 1u);
+}
+
+/**
  * @tc.name: AddCrossScreenChild
  * @tc.desc: AddCrossScreenChild test
  * @tc.type: FUNC

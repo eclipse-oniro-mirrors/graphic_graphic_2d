@@ -19,31 +19,12 @@
 
 #include "draw/color.h"
 #include "effect/shader_effect.h"
-#include "gex_dot_matrix_shader_params.h"
 #include "random/random_data.h"
 #include "random/random_engine.h"
-#include "render/rs_flow_light_sweep_shader.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace {
-
-std::vector<std::pair<Drawing::Color, float>> GetRandomDrawingColorAndFloatPairVector()
-{
-    std::vector<std::pair<Drawing::Color, float>> vector;
-    int vectorLength = RandomEngine::GetRandomMiddleVectorLength();
-    for (int i = 0; i < vectorLength; ++i) {
-        vector.emplace_back(std::make_pair(RandomData::GetRandomDrawingColor(), RandomData::GetRandomFloat()));
-    }
-    return vector;
-}
-
-GEXFlowLightSweepParams GetRandomGEXFlowLightSweepParams()
-{
-    GEXFlowLightSweepParams params;
-    params.effectColors_ = GetRandomDrawingColorAndFloatPairVector();
-    return params;
-}
 
 Drawing::ShaderEffect::ShaderEffectType GetRandomDrawingShaderEffectType()
 {
@@ -56,7 +37,6 @@ Drawing::ShaderEffect::ShaderEffectType GetRandomDrawingShaderEffectType()
 std::shared_ptr<RSShader> RandomRSShader::GetRandomRSShader()
 {
     static const std::vector<std::function<std::shared_ptr<RSShader>()>> rsShaderRandomGenerator = {
-        GetRandomRSFlowLightSweepShader,
         GetRandomRSDrawingShader,
     };
     int index = RandomEngine::GetRandomIndex(rsShaderRandomGenerator.size() - 1);
@@ -65,23 +45,6 @@ std::shared_ptr<RSShader> RandomRSShader::GetRandomRSShader()
         shader->SetDrawingShader(std::make_shared<Drawing::ShaderEffect>(GetRandomDrawingShaderEffectType()));
     }
     return shader;
-}
-
-std::shared_ptr<RSShader> RandomRSShader::GetRandomRSFlowLightSweepShader()
-{
-    auto params = GetRandomGEXFlowLightSweepParams();
-    Parcel parcel;
-    if (!params.Marshalling(parcel)) {
-        return nullptr;
-    }
-
-    std::shared_ptr<RSFlowLightSweepShader> rsShader = std::make_shared<RSFlowLightSweepShader>();
-    rsShader->type_ = RSShader::ShaderType::FLOW_LIGHT_SWEEP;
-    bool needReset = false;
-    if (!rsShader->Unmarshalling(parcel, needReset)) {
-        return nullptr;
-    }
-    return rsShader;
 }
 
 std::shared_ptr<RSShader> RandomRSShader::GetRandomRSDrawingShader()

@@ -28,6 +28,7 @@
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 #include "feature/overlay_display/rs_overlay_display_manager.h"
 #endif
+#include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 #include "memory/rs_memory_manager.h"
 #include "params/rs_screen_render_params.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
@@ -1582,8 +1583,9 @@ void RSUifirstManager::AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRe
     // process for uifirst node
     UpdateChildrenDirtyRect(*node);
     node->SetHwcChildrenDisabledState();
-    RS_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " children disabled by uifirst",
-        node->GetName().c_str(), node->GetId());
+    HwcDisabledReasonCollection::GetInstance().RecordHwcDisabledWithTrace(
+        node->GetId(), HwcDisabledReasons::DISABLED_BY_UIFIRST, node->GetName(),
+        "children disabled by uifirst");
     node->AddToPendingSyncList();
 
     if (currentFrameCacheType == MultiThreadCacheType::LEASH_WINDOW ||
@@ -1916,8 +1918,9 @@ void RSUifirstManager::ProcessFirstFrameCache(RSSurfaceRenderNode& node, MultiTh
             node.SetSubThreadAssignable(true); // mark as assignable to uifirst next frame
             node.SetNeedCacheSurface(true); // mark as that needs cache win in RT
             node.SetHwcChildrenDisabledState();
-            RS_OPTIONAL_TRACE_NAME_FMT("name:%s id:%" PRIu64 " children disabled by uifirst first frame",
-                node.GetName().c_str(), node.GetId());
+            HwcDisabledReasonCollection::GetInstance().RecordHwcDisabledWithTrace(
+                node.GetId(), HwcDisabledReasons::DISABLED_BY_UIFIRST, node.GetName(),
+                "children disabled by uifirst first frame");
             // delete caches when node is not on the tree.
             auto func = &RSUifirstManager::ProcessTreeStateChange;
             node.RegisterTreeStateChangeCallback(func);

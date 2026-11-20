@@ -20,6 +20,7 @@
 
 #include "common/rs_optional_trace.h"
 #include "feature/hwc/rs_uni_hwc_prevalidate_param_util.h"
+#include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 
 #undef LOG_TAG
 #define LOG_TAG "RSUniHwcComputeUtil"
@@ -71,9 +72,10 @@ bool RSUniHwcComputeUtil::IsHwcEnabledByGravity(RSSurfaceRenderNode& node, const
     // we currently disable hardware composer.
     if (frameGravity != Gravity::RESIZE && frameGravity != Gravity::TOP_LEFT &&
         !node.GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by frameGravity[%d]",
-            node.GetName().c_str(), node.GetId(), static_cast<int32_t>(frameGravity));
         node.SetHardwareForcedDisabledState(true);
+        HwcDisabledReasonCollection::GetInstance().RecordHwcDisabledWithTrace(node.GetId(),
+            HwcDisabledReasons::DISABLED_BY_FRAME_GRAVITY, node.GetName(),
+            "disabled by frameGravity[%d]", static_cast<int32_t>(frameGravity));
         return false;
     }
     return true;
@@ -365,9 +367,10 @@ bool RSUniHwcComputeUtil::IsHwcEnabledByScalingMode(RSSurfaceRenderNode& node, c
     // We temporarily disabled HWC when scalingMode is freeze or no_scale_crop
     if (!node.GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED) &&
         (scalingMode == ScalingMode::SCALING_MODE_FREEZE || scalingMode == ScalingMode::SCALING_MODE_NO_SCALE_CROP)) {
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by scalingMode[%d]",
-            node.GetName().c_str(), node.GetId(), static_cast<int32_t>(scalingMode));
         node.SetHardwareForcedDisabledState(true);
+        HwcDisabledReasonCollection::GetInstance().RecordHwcDisabledWithTrace(node.GetId(),
+            HwcDisabledReasons::DISABLED_BY_SCALING_MODE, node.GetName(),
+            "disabled by scalingMode[%d]", static_cast<int32_t>(scalingMode));
         return false;
     }
     return true;
@@ -560,12 +563,11 @@ void RSUniHwcComputeUtil::UpdateHwcEnableByProperty(const std::shared_ptr<RSSurf
     const HwcPropertyContext& ctx)
 {
     if (ctx.isNodeRenderByDrawingCache || ctx.isNodeRenderByChildNode) {
-        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by drawing cache or need blend with "
-            "childNode, isNodeRenderByDrawingCache[%d], isNodeRenderByChildNode[%d]",
-            hwcNode->GetName().c_str(), hwcNode->GetId(), ctx.isNodeRenderByDrawingCache, ctx.isNodeRenderByChildNode);
         hwcNode->SetHardwareForcedDisabledState(true);
-        HwcDisabledReasonCollection::GetInstance().UpdateHwcDisabledReasonForDFX(hwcNode->GetId(),
-            HwcDisabledReasons::DISABLED_BY_DRAWING_CACHE, hwcNode->GetName());
+        HwcDisabledReasonCollection::GetInstance().RecordHwcDisabledWithTrace(hwcNode->GetId(),
+            HwcDisabledReasons::DISABLED_BY_DRAWING_CACHE, hwcNode->GetName(),
+            "disabled by drawing cache or need blend with childNode, isNodeRenderByDrawingCache[%d], "
+            "isNodeRenderByChildNode[%d]", ctx.isNodeRenderByDrawingCache, ctx.isNodeRenderByChildNode);
     }
 }
 
@@ -832,7 +834,7 @@ bool RSUniHwcComputeUtil::IsBlendNeedChildNode(RSRenderNode& node)
         property.GetCompositingFilter() != nullptr ||
         property.GetColorNGFilter() != nullptr ||
         property.GetLinearGradientBlurPara() != nullptr ||
-        property.IsFgBlenderEffectValid() ||
+        property.IsNGBlenderValid() ||
         property.IsWaterRippleValid() ||
         property.GetColorFilter() != nullptr;
 }

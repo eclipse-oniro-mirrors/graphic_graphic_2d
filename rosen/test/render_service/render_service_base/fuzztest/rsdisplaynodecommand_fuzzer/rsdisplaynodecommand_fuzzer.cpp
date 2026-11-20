@@ -20,8 +20,10 @@
 #include <securec.h>
 
 #include "command/rs_display_node_command.h"
+#include "common/rs_background_thread.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_screen_render_node.h"
+#include "platform/common/rs_system_properties.h"
 #include "screen_manager/rs_screen_property.h"
 
 namespace OHOS {
@@ -98,7 +100,7 @@ bool DoDisplayNode(const uint8_t* data, size_t size, RSContext& context)
     bool isBootAnimation = GetData<bool>();
     NodeId id2 = GetData<NodeId>();
     ScreenRotation screenRotation = GetData<ScreenRotation>();
-    DisplayNodeCommandHelper::Create(context, id, config);
+    DisplayNodeCommandHelper::Create(context, id, config, GetData<uint64_t>());
     DisplayNodeCommandHelper::SetScreenId(context, id, screenId);
     DisplayNodeCommandHelper::SetSecurityDisplay(context, id, isSecurityDisplay);
     DisplayNodeCommandHelper::SetDisplayMode(context, id, config);
@@ -117,7 +119,7 @@ bool DoSetDisplayMode(const uint8_t* data, size_t size, RSContext& context)
     RSDisplayNodeConfig config { 0, DisplayMode::EXPAND, 0};
     DisplayNodeCommandHelper::SetDisplayMode(context, id, config);
 
-    DisplayNodeCommandHelper::Create(context, id, config);
+    DisplayNodeCommandHelper::Create(context, id, config, GetData<uint64_t>());
     DisplayNodeCommandHelper::SetDisplayMode(context, id, config);
 
     config.displayMode = DisplayMode::MIRROR;
@@ -125,7 +127,7 @@ bool DoSetDisplayMode(const uint8_t* data, size_t size, RSContext& context)
 
     NodeId mirrorNodeId = GetData<NodeId>();
     config.mirrorNodeId = mirrorNodeId;
-    DisplayNodeCommandHelper::Create(context, mirrorNodeId, config);
+    DisplayNodeCommandHelper::Create(context, mirrorNodeId, config, GetData<uint64_t>());
     DisplayNodeCommandHelper::SetDisplayMode(context, id, config);
 
     return true;
@@ -139,7 +141,7 @@ bool DoSetBootAnimation(const uint8_t* data, size_t size, RSContext& context)
     NodeId id = GetData<NodeId>();
     NodeId rID = GetData<NodeId>();
     RSDisplayNodeConfig config { 0, DisplayMode::MIRROR, 0};
-    DisplayNodeCommandHelper::Create(context, id, config);
+    DisplayNodeCommandHelper::Create(context, id, config, GetData<uint64_t>());
     DisplayNodeCommandHelper::SetBootAnimation(context, id, true);
     DisplayNodeCommandHelper::SetBootAnimation(context, rID, true);
 
@@ -202,6 +204,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     context = nullptr;
     OHOS::Rosen::RSRenderNodeGC::Instance().ReleaseNodeMemory();
+    // Node destruction is posted to RSBackgroundThread asynchronously. Wait for the queue to be
+    // drained here, otherwise the background delete may overlap with the next iteration's node-map
+    // traversal on the fuzzer thread, which ASan reports as heap-use-after-free.
+    if (OHOS::Rosen::RSSystemProperties::GetBgNodeReleaseEnabled()) {
+        OHOS::Rosen::RSBackgroundThread::Instance().PostSyncTask([]() {});
+    }
 
     return 0;
 }

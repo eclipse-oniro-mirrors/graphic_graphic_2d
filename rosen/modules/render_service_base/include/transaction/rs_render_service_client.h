@@ -161,7 +161,8 @@ public:
     int32_t SetVirtualScreenCursorMode(ScreenId id, RSVirtualScreenCursorMode mode);
 #endif
 
-    int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList);
+    int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList,
+        bool exemptAll = false);
 
     int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask);
 

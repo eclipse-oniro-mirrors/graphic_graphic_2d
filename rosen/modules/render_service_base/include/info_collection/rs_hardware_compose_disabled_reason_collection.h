@@ -50,7 +50,21 @@ enum HwcDisabledReasons {
     DISABLED_BY_IS_CLONE_NODE = 22,
     DISABLED_BY_POINT_WINDOW = 23,
     DISABLED_BY_PREVIOUS_FLITER_RECT = 24,
-    DISABLED_REASON_LENGTH = 25,
+    DISABLED_BY_FORCE_DISABLE_HDR = 25,
+    DISABLED_BY_3D_GLASS_FREE = 26,
+    DISABLED_BY_ANCO_GLOBAL_POSITION = 27,
+    DISABLED_BY_ANCO_DIMMING_NODE_BELOW = 28,
+    DISABLED_BY_DELEGATE_MODE = 29,
+    DISABLED_BY_SUBTREE_SKIPPED_OCCLUDED = 30,
+    DISABLED_BY_GPU_OFFLINE_NOT_READY = 31,
+    DISABLED_BY_NO_BUFFER_IN_SKIPPEDBUFFER = 32,
+    DISABLED_BY_FRAME_GRAVITY = 33,
+    DISABLED_BY_SCALING_MODE = 34,
+    DISABLED_BY_RENDERFIT = 35,
+    DISABLED_BY_ACCUMULATE_BUFFER_FRAME_TIME_INTERVALS = 36,
+    DISABLED_BY_TRANSPARENT_LAYER_ABOVE = 37,
+    DISABLED_BY_OTHERS = 38,
+    DISABLED_REASON_LENGTH = 39,
 };
 
 static const size_t HWC_DISABLED_REASON_INFO_MINIMUM_SIZE = (DISABLED_REASON_LENGTH + 2) * sizeof(int32_t);
@@ -69,6 +83,9 @@ public:
 
     void UpdateHwcDisabledReasonForDFX(NodeId id, int32_t disabledReason, const std::string& nodeName);
     HwcDisabledReasonInfos GetHwcDisabledReasonInfo();
+
+    void RecordHwcDisabledWithTrace(NodeId id, int32_t disabledReason, const std::string& nodeName,
+        const char* traceFmt, ...);
 
 private:
     HwcDisabledReasonCollection();

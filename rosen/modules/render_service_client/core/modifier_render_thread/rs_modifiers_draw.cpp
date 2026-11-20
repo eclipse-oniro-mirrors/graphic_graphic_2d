@@ -92,7 +92,7 @@ void RSModifiersDraw::ReleaseResource()
 }
 
 void RSModifiersDraw::CommitTransaction(std::shared_ptr<RSCanvasModifiersDrawAgent> canvasModifiersDrawAgent,
-    std::shared_ptr<RSRenderPipelineClient> renderPiplineClient, std::unique_ptr<RSTransactionData>& transactionData,
+    std::shared_ptr<RSRenderPipelineClient> renderPipelineClient, std::unique_ptr<RSTransactionData>& transactionData,
     std::atomic<uint32_t>& transactionDataIndex)
 {
     if (canvasModifiersDrawAgent != nullptr) {
@@ -101,7 +101,7 @@ void RSModifiersDraw::CommitTransaction(std::shared_ptr<RSCanvasModifiersDrawAge
             transactionData->AddCommand(command, command->GetNodeId(), FollowType::NONE);
         }
     }
-    renderPiplineClient->CommitTransaction(transactionData);
+    renderPipelineClient->CommitTransaction(transactionData);
     transactionDataIndex.store(transactionData->GetIndex(), std::memory_order_relaxed);
 }
 } // namespace OHOS::Rosen

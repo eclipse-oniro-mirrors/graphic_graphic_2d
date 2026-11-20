@@ -1485,7 +1485,7 @@
     "inputParams": "WriteRSTransactionData",
     "writeInterfaceToken": false,
     "messageOption": "TF_ASYNC",
-    "commandList": "RSUpdatePropertyShadowBlenderPara*100",
+    "commandList": "RSUpdatePropertyNGBlenderBase*100",
     "commandListRepeat": 1,
     "connectionType": 0
   },
@@ -1790,15 +1790,6 @@
     "connectionType": 0
   },
   {
-    "testCaseDesc": "COMMIT_TRANSACTION_TEST_184",
-    "interfaceName": "COMMIT_TRANSACTION",
-    "inputParams": "WriteRSTransactionData",
-    "writeInterfaceToken": false,
-    "messageOption": "TF_ASYNC",
-    "commandList": "RSUpdatePropertyHdrDarkenBlenderPara*100",
-    "commandListRepeat": 1
-  },
-  {
     "testCaseDesc": "COMMIT_TRANSACTION_TEST_185",
     "interfaceName": "COMMIT_TRANSACTION",
     "inputParams": "WriteRSTransactionData",
@@ -2010,7 +2001,7 @@
   {
     "testCaseDesc": "SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST_TEST_001",
     "interfaceName": "SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST",
-    "inputParams": "WriteUint64;WriteUInt64Vector",
+    "inputParams": "WriteUint64;WriteUInt64Vector;WriteBool",
     "writeInterfaceToken": true,
     "messageOption": "TF_SYNC",
     "connectionType": 1

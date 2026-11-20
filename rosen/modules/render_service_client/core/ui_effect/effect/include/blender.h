@@ -22,9 +22,9 @@ public:
     enum BlenderType {
         NONE,
         BRIGHTNESS_BLENDER,
-        SHADOW_BLENDER,
         HDR_DARKEN_BLENDER,
         COLORFUL_BRIGHTNESS_BLENDER,
+        BLENDER_BASE, // new blender types held by BlenderBase via BlenderNapi::Create;
     };
     Blender() = default;
     virtual ~Blender() = default;

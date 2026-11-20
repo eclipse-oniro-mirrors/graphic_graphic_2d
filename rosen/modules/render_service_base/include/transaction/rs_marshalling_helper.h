@@ -68,6 +68,7 @@ class RSNGRenderFilterBase;
 class RSNGRenderMaskBase;
 class RSNGRenderShaderBase;
 class RSNGRenderShapeBase;
+class RSNGRenderBlenderBase;
 class RSImage;
 class RSImageBase;
 class RSMask;
@@ -297,6 +298,7 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSNGRenderMaskBase>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSNGRenderShaderBase>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSNGRenderShapeBase>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSNGRenderBlenderBase>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSMask>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImage>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImageBase>)

@@ -643,7 +643,7 @@ HWTEST_F(RSDelegateCompositeCommandTest, TransactionBufferCommandProcessSetBuffe
     auto context = CreateContextWithSurfaceNode(nodeId, true);
     RSTransactionConfig config;
     config.nodeId = nodeId;
-    config.transaction = new Transaction(); // empty transaction without buffer
+    config.transaction = new RSBufferTransaction(); // empty transaction without buffer
     config.delList = {};
     std::vector<RSTransactionConfig> configs = { config };
     TransactionBufferCommand cmd(configs, nodeId);

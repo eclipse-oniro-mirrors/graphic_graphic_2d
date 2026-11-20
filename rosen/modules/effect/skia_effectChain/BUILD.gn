@@ -86,6 +86,7 @@ if (is_arkui_x) {
 
     deps = [
       "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+      "//foundation/graphic/graphics_effect:libgraphics_effect",
     ]
 
     public_deps = [

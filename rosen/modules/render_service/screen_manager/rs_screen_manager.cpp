@@ -736,7 +736,7 @@ int32_t RSScreenManager::RemoveGlobalBlackList(const std::vector<NodeId>& blackL
 }
 
 int32_t RSScreenManager::SetVirtualScreenSecurityExemptionList(
-    ScreenId id, const std::vector<uint64_t>& securityExemptionList)
+    ScreenId id, const std::vector<uint64_t>& securityExemptionList, bool exemptAll)
 {
     if (id == INVALID_SCREEN_ID) {
         RS_LOGW("%{public}s: INVALID_SCREEN_ID.", __func__);
@@ -753,6 +753,10 @@ int32_t RSScreenManager::SetVirtualScreenSecurityExemptionList(
         return INVALID_ARGUMENTS;
     }
     virtualScreen->SetSecurityExemptionList(securityExemptionList);
+    virtualScreen->SetSecurityExemptAll(exemptAll);
+    // audit trace: callers carry full state, log the security switch value on each call
+    RS_LOGI("%{public}s: security exemptAll switch set to %{public}d on virtual screen(id %{public}" PRIu64 ")",
+        __func__, exemptAll, id);
     for (const auto& exemption : securityExemptionList) {
         RS_LOGW("%{public}s: virtual screen(id %{public}" PRIu64 "), nodeId %{public}" PRIu64,
             __func__, id, exemption);

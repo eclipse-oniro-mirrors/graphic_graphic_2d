@@ -80,6 +80,7 @@ class RSNGShapeBase;
 #include "effect/rs_render_property_tag_mask_def.in"
 #include "effect/rs_render_property_tag_shader_def.in"
 #include "effect/rs_render_property_tag_shape_def.in"
+#include "effect/rs_render_property_tag_blender_def.in"
 
 #undef MASK_PTR
 #undef SHAPE_PTR

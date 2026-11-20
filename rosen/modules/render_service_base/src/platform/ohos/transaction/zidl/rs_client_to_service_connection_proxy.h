@@ -79,7 +79,7 @@ public:
     void ForceRefreshOneFrameWithNextVSync() override;
 
     int32_t SetVirtualScreenSecurityExemptionList(
-        ScreenId id, const std::vector<NodeId>& securityExemptionList) override;
+        ScreenId id, const std::vector<NodeId>& securityExemptionList, bool exemptAll = false) override;
 
     int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask) override;
 

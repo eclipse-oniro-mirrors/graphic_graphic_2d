@@ -18,7 +18,6 @@
 
 #include "effect/shader_effect.h"
 #include "ge_shader_filter_params.h"
-#include "render/rs_flow_light_sweep_shader.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 
 using namespace testing;
@@ -343,17 +342,28 @@ GRAPHIC_TEST(BackgroundTest, CONTENT_DISPLAY_TEST, BackGround_FlowLightSweep_Sha
         0.66 };
 
     for (int i = 0; i < columnCount * rowCount; i++) {
-        auto flowLightShader = std::make_shared<Rosen::RSFlowLightSweepShader>(effectColorList[i / columnCount]);
+        auto flowLightShader = std::make_shared<Rosen::RSNGFlowLightSweep>();
         if (flowLightShader == nullptr) {
             return;
         }
+        // 设置效果颜色和停止点
+        std::vector<Vector4f> effectColors;
+        std::vector<float> effectStops;
+        for (const auto& colorStop : effectColorList[i / columnCount]) {
+            Vector4f color = {colorStop.first.GetRedF(), colorStop.first.GetGreenF(),
+                colorStop.first.GetBlueF(), colorStop.first.GetAlphaF()};
+            effectColors.emplace_back(color);
+            effectStops.push_back(colorStop.second);
+        }
+        flowLightShader->Setter<Rosen::FlowLightSweepEffectColorsTag>(effectColors);
+        flowLightShader->Setter<Rosen::FlowLightSweepEffectStopsTag>(effectStops);
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
         auto testNodeBackGround = RSCanvasNode::Create(false, false,
         RSGraphicTestDirector::Instance().GetRSUIContext());
         testNodeBackGround->SetBounds({ x, y, sizeX - 10, sizeY - 10 });
-        testNodeBackGround->SetBackgroundShader(flowLightShader);
-        testNodeBackGround->SetBackgroundShaderProgress(progressList[i % progressList.size()]);
+        testNodeBackGround->SetBackgroundNGShader(flowLightShader);
+        flowLightShader->Setter<Rosen::FlowLightSweepProgressTag>(progressList[i % progressList.size()]);
         GetRootNode()->AddChild(testNodeBackGround);
         RegisterNode(testNodeBackGround);
     }

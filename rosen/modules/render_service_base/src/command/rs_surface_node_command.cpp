@@ -80,7 +80,7 @@ void SurfaceNodeCommandHelper::CreateWithConfig(
 }
 
 std::shared_ptr<RSSurfaceRenderNode> SurfaceNodeCommandHelper::CreateWithConfigInRS(
-    const RSSurfaceRenderNodeConfig& config, RSContext& context, bool unobscured,
+    const RSSurfaceRenderNodeConfig &config, RSContext &context, bool unobscured,
     std::shared_ptr<RSSurfaceHandler> surfaceHandler)
 {
     if (!RsCommandVerifyHelper::GetInstance().IsSurfaceNodeCreateCommandVaild(ExtractPid(config.id))) {
@@ -521,26 +521,27 @@ void SurfaceNodeCommandHelper::SetHDRType(RSContext& context, NodeId nodeId, uin
 }
 
 void SurfaceNodeCommandHelper::UpdateCompositeLayerdToRender(
-    RSContext& context, NodeId nodeId, bool isTop, uint32_t TopLayerZOrder)
+    RSContext& context, NodeId nodeId, bool isTop, uint32_t topLayerZOrder)
 {
     if (const auto& node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetLayerTop(isTop, false);
-        node->SetTopLayerZOrder(TopLayerZOrder);
+        node->SetTopLayerZOrder(topLayerZOrder);
     }
 }
 
-void SurfaceNodeCommandHelper::SetStaticCachedToRender(RSContext& context, NodeId nodeId, bool isStaticCached)
+void SurfaceNodeCommandHelper::SetStaticCachedToRender(
+    RSContext& context, NodeId nodeId, bool isStaticCached)
 {
     if (const auto& node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetStaticCached(isStaticCached);
     }
 }
 
-void SurfaceNodeCommandHelper::SetHardwareEnabled(RSContext& context, NodeId nodeId, bool isHardwareEnabled,
-    SelfDrawingNodeType isSelfDrawingNodeType, bool isDynamicHardwareEnabled)
+void SurfaceNodeCommandHelper::SetHardwareEnabled(RSContext &context, NodeId nodeId, bool isHardwareEnabled,
+    SelfDrawingNodeType isSelfDrawingNodeType, bool isDynamicHardwareEnable)
 {
     if (const auto& node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
-        node->SetHardwareEnabled(isHardwareEnabled, isSelfDrawingNodeType, isDynamicHardwareEnabled);
+        node->SetHardwareEnabled(isHardwareEnabled, isSelfDrawingNodeType, isDynamicHardwareEnable);
     }
 }
 
@@ -548,7 +549,9 @@ void SurfaceNodeCommandHelper::SetSolidLayerEnabled(RSContext& context, NodeId n
 {
     if (const auto& node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         RS_TRACE_NAME_FMT("SetSolidLayerEnabled id:%" PRIu64 " enabled:%d", nodeId, isSolidLayerEnabled);
-        ROSEN_LOGI("SetSolidLayerEnabled id:%{public}" PRIu64 " enabled:%{public}d", nodeId, isSolidLayerEnabled);
+        ROSEN_LOGI("SetSolidLayerEnabled id:%{public}" PRIu64 ", enabled:%{public}d"
+            ". Note: SolidLayer takes effect only when the node has no buffer and its parent has a"
+            " non-transparent background color.", nodeId, isSolidLayerEnabled);
         node->SetSolidLayerEnabled(isSolidLayerEnabled);
     }
 }
@@ -561,8 +564,8 @@ void SurfaceNodeCommandHelper::SetHidePrivacyContent(RSContext& context, NodeId 
 }
 
 #ifndef ROSEN_CROSS_PLATFORM
-    void SurfaceNodeCommandHelper::RecreateNodeAndSurface(
-        RSContext& context, const RSSurfaceRenderNodeConfig& config, SurfaceId surfaceId, bool unobscured)
+void SurfaceNodeCommandHelper::RecreateNodeAndSurface(
+    RSContext& context, const RSSurfaceRenderNodeConfig& config, SurfaceId surfaceId, bool unobscured)
 {
     NodeId nodeId = config.id;
     if (context.GetNodeMap().GetRenderNode(nodeId)) {
@@ -575,24 +578,24 @@ void SurfaceNodeCommandHelper::SetHidePrivacyContent(RSContext& context, NodeId 
     auto surfaceHandler = savedInfo.first;
     if (surfaceHandler == nullptr) {
         ROSEN_LOGE("SurfaceNodeCommandHelper::RecreateNodeAndSurface surfaceHandler is null! nodeId:%{public}" PRIu64,
-            nodeId);
+        nodeId);
         return;
     }
     sptr<IConsumerSurface> consumer = surfaceHandler->GetConsumer();
     if (consumer == nullptr) {
         ROSEN_LOGE("SurfaceNodeCommandHelper::RecreateNodeAndSurface consumer is null! nodeId:%{public}" PRIu64,
-            nodeId);
+        nodeId);
         return;
     }
     if (savedInfo.second == nullptr) {
         ROSEN_LOGE("SurfaceNodeCommandHelper::RecreateNodeAndSurface listener is null! nodeId:%{public}" PRIu64,
-            nodeId);
+        nodeId);
         return;
     }
     auto node = CreateWithConfigInRS(config, context, unobscured, surfaceHandler);
     if (node == nullptr) {
         ROSEN_LOGE("SurfaceNodeCommandHelper::RecreateNodeAndSurface create node failed! nodeId:%{public}" PRIu64,
-            nodeId);
+        nodeId);
         return;
     }
     // Compensate bundleName lost during rebuild: rebuild command carries an empty bundleName,
@@ -610,15 +613,9 @@ void SurfaceNodeCommandHelper::SetHidePrivacyContent(RSContext& context, NodeId 
         surfaceHandler->GetDamageRegion(), surfaceHandler->GetAcquireFence(), surfaceHandler->GetPreBuffer(),
         surfaceHandler->GetPreBufferOwnerCount());
     ROSEN_LOGI("SurfaceNodeCommandHelper::RecreateNodeAndSurface nodeId:%{public}" PRIu64
-               " reuse consumer:%{public}" PRIu64 " unobscured:%{public}d bundleName:%{public}s",
+        " reuse consumer:%{public}" PRIu64 " unobscured:%{public}d bundleName:%{public}s",
         nodeId, consumer->GetUniqueId(), unobscured, node->GetBundleName().c_str());
 }
 #endif
-void SurfaceNodeCommandHelper::SetDelegateMode(RSContext& context, NodeId nodeId, bool isDelegateMode)
-{
-    if (const auto& node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
-        node->SetDelegateMode(isDelegateMode);
-    }
-}
 } // namespace Rosen
 } // namespace OHOS

@@ -144,7 +144,8 @@ void RSUniRenderProcessor::PostProcess()
         RSUniRenderThread::Instance().NotifyCommitDone(screenInfo_.id);
     }
 
-    LayerComposeCollection::GetInstance().UpdateUniformOrOfflineComposeFrameNumberForDFX(layers_.size());
+    LayerComposeCollection::GetInstance().UpdateUniformOrOfflineComposeFrameNumberForDFX(
+        layers_.size(), hasRcdLayer_);
     RS_LOGD_IF(DEBUG_PIPELINE, "RSUniRenderProcessor::PostProcess layers_:%{public}zu", layers_.size());
 }
 
@@ -650,6 +651,7 @@ void RSUniRenderProcessor::ProcessRcdSurface(RSRcdSurfaceRenderNode& node)
         return;
     }
     layers_.emplace_back(layer);
+    hasRcdLayer_ = true;
 }
 
 void RSUniRenderProcessor::CreateProtectiveSolidLayer(RSProtectiveSolidRenderNode& node, RSSurfaceRenderParams& params)

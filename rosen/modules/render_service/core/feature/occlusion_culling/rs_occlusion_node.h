@@ -105,7 +105,7 @@ protected:
 
     bool IsBlendOpaque(const RSProperties& renderProperties) const
     {
-        if (renderProperties.IsFgBlenderEffectValid()) {
+        if (renderProperties.IsNGBlenderValid()) {
             return false;
         }
         auto blendMode = static_cast<RSColorBlendMode>(renderProperties.GetColorBlendMode());

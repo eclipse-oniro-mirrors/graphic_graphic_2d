@@ -46,27 +46,6 @@ HWTEST_F(RSBlendModifierNGTypeTest, RSBlendModifierTest, TestSize.Level1)
 
     modifier->SetColorBlendApplyType(static_cast<RSColorBlendApplyType>(2));
     EXPECT_EQ(modifier->GetColorBlendApplyType(), static_cast<RSColorBlendApplyType>(2));
-
-    Vector4f rates{1.f, 2.f, 3.f, 4.f};
-    modifier->SetFgBrightnessRates(rates);
-    EXPECT_EQ(modifier->GetFgBrightnessRates(), rates);
-
-    modifier->SetFgBrightnessSaturation(0.5f);
-    EXPECT_FLOAT_EQ(modifier->GetFgBrightnessSaturation(), 0.5f);
-
-    Vector4f posCoeff{0.1f, 0.2f, 0.3f, 0.4f};
-    modifier->SetFgBrightnessPosCoeff(posCoeff);
-    EXPECT_EQ(modifier->GetFgBrightnessPosCoeff(), posCoeff);
-
-    Vector4f negCoeff{-1.f, -2.f, -3.f, -4.f};
-    modifier->SetFgBrightnessNegCoeff(negCoeff);
-    EXPECT_EQ(modifier->GetFgBrightnessNegCoeff(), negCoeff);
-
-    modifier->SetFgBrightnessFract(0.75f);
-    EXPECT_FLOAT_EQ(modifier->GetFgBrightnessFract(), 0.75f);
-
-    modifier->SetFgBrightnessHdr(true);
-    EXPECT_EQ(modifier->GetFgBrightnessHdr(), true);
 }
 
-} // namespace OHOS::Rosen
+} // namespace OHOS::Rosen::ModifierNG

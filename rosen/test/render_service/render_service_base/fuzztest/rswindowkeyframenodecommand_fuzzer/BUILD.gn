@@ -42,8 +42,10 @@ ohos_fuzztest("RSWindowKeyFrameNodeCommandFuzzTest") {
   ]
   external_deps = [
     "c_utils:utils",
+    "egl:libEGL",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
+    "opengles:libGLES",
   ]
   sources = [ "rswindowkeyframenodecommand_fuzzer.cpp" ]
 }

@@ -77,6 +77,7 @@ class RSUIContext;
 class RSNGFilterBase;
 class RSNGShaderBase;
 class RSNGMaskBase;
+class RSNGBlenderBase;
 class RSNGShapeBase;
 class Blender;
 class ColorfulBrightnessBlender;
@@ -93,6 +94,34 @@ class RSBackgroundFilterModifier;
 enum class RSModifierType : uint16_t;
 }
 
+/**
+ * @struct BgImageConfig
+ *
+ * @brief Batch config for background image geometry properties, equivalent to calling
+ *        SetBgImageWidth, SetBgImageHeight, SetBgImagePositionX, SetBgImagePositionY
+ *        and SetBgImageInnerRect one by one.
+ */
+struct BgImageConfig {
+    float width = 0.0f;
+    float height = 0.0f;
+    float positionX = 0.0f;
+    float positionY = 0.0f;
+    Vector4f innerRect;
+};
+ 
+/**
+ * @struct PixelStretchConfig
+ *
+ * @brief Batch config for pixel stretch effect properties, equivalent to calling
+ *        SetPixelStretchPercent (or SetPixelStretch) plus SetPixelStretchTileMode
+ *        one by one. When usePercent is true, vector is the stretch percent and the
+ *        stretch size is cleared to zero, and vice versa.
+ */
+struct PixelStretchConfig {
+    Vector4f vector;
+    bool usePercent = false;
+};
+ 
 /**
  * @enum RSNodeState
  *
@@ -1001,6 +1030,15 @@ public:
     void SetBgImagePositionY(float positionY);
 
     /**
+     * @brief Batch sets the background image geometry properties with a single lock.
+     *        Equivalent to calling SetBgImageWidth, SetBgImageHeight,
+     *        SetBgImagePositionX, SetBgImagePositionY and SetBgImageInnerRect one by one.
+     *
+     * @param config The batch config of background image geometry properties.
+     */
+    void SetBgImageConfig(const BgImageConfig& config);
+
+    /**
      * @brief Sets the border color of the node.
      *
      * @param colorValue The color value to set for the border.
@@ -1361,54 +1399,18 @@ public:
     void SetDynamicDimDegree(const float dimDegree);
 
     /**
-     * @brief Sets the Blender.
+     * @brief Sets the Blender. A null blender clears the current one.
      *
-     * @param blender Pointer to a Blender object.
+     * @param blender Pointer to a Blender object; nullptr clears the effect.
      */
     void SetBlender(const Blender* blender);
 
     /**
-     * @brief Sets the parameters for foreground brightness.
+     * @brief Sets the NG blender, sent through a single FOREGROUND_NG_BLENDER IPC property.
      *
-     * @param params Indicates the parameters for foreground brightness.
+     * @param blender NG blender object converted from an old-style Blender.
      */
-    void SetFgBrightnessParams(const RSDynamicBrightnessPara& params);
-
-    /**
-     * @brief Sets the rates for foreround brightness.
-     *
-     * @param rates Indicates the rates for foreground brightness.
-     */
-    void SetFgBrightnessRates(const Vector4f& rates);
-
-    /**
-     * @brief Sets the saturation for foreground brightness.
-     *
-     * @param saturation Indicates the saturation for foreground brightness.
-     */
-    void SetFgBrightnessSaturation(const float& saturation);
-
-    /**
-     * @brief Sets the positive coefficient for foreground brightness.
-     *
-     * @param coeff Indicates the positive coefficient for foreground brightness.
-     */
-    void SetFgBrightnessPosCoeff(const Vector4f& coeff);
-
-    /**
-     * @brief Sets the negative coefficient for foreground brightness.
-     *
-     * @param coeff Indicates the negative coefficient for foreground brightness.
-     */
-    void SetFgBrightnessNegCoeff(const Vector4f& coeff);
-    void SetFgBrightnessFract(const float& fract);
-
-    /**
-     * @brief Sets the hdr using for foreground brightness.
-     *
-     * @param hdr Indicates the hdr using for foreground brightness.
-     */
-    void SetFgBrightnessHdr(const bool hdr);
+    void SetNGBlender(const std::shared_ptr<RSNGBlenderBase>& blender);
 
     /**
      * @brief Sets the parameters for background brightness.
@@ -1683,7 +1685,18 @@ public:
     void SetPixelStretch(const Vector4f& stretchSize, Drawing::TileMode stretchTileMode = Drawing::TileMode::CLAMP);
     void SetPixelStretchPercent(const Vector4f& stretchPercent,
         Drawing::TileMode stretchTileMode = Drawing::TileMode::CLAMP);
-
+    
+    /**
+     * @brief Batch sets the pixel stretch effect with a single lock. Equivalent to
+     *        calling SetPixelStretchPercent (or SetPixelStretch) and
+     *        SetPixelStretchTileMode one by one; the unused slot (percent or size)
+     *        is cleared to zero.
+     *
+     * @param config The batch config of pixel stretch effect.
+     */
+    void SetPixelStretch(const PixelStretchConfig &config,
+                         Drawing::TileMode stretchTileMode = Drawing::TileMode::CLAMP);
+ 
     void SetWaterRippleParams(const RSWaterRipplePara& params, float progress);
     void SetFlyOutParams(const RSFlyOutPara& params, float degree);
 
@@ -1758,6 +1771,25 @@ public:
     void AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier);
 
     void RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier);
+
+    /**
+     * @brief Atomically swaps an attached modifier with a new one, with a single lock
+     *        covering the detach/attach of both modifiers. Equivalent to calling
+     *        RemoveModifier(oldModifier) and AddModifier(newModifier) one by one.
+     *
+     * @param oldModifier The modifier to be removed.
+     * @param newModifier The modifier to be added.
+     */
+    void SwapModifier(const std::shared_ptr<ModifierNG::RSModifier>& oldModifier,
+        const std::shared_ptr<ModifierNG::RSModifier>& newModifier);
+ 
+    /**
+     * @brief Batch removes the attached modifiers with a single lock. Equivalent to
+     *        calling RemoveModifier(modifier) for each modifier one by one.
+     *
+     * @param modifiers The modifiers to be removed.
+     */
+    void RemoveModifiers(const std::vector<std::shared_ptr<ModifierNG::RSModifier>>& modifiers);
 
     const std::shared_ptr<ModifierNG::RSModifier> GetModifierByType(const ModifierNG::RSModifierType& type);
 
@@ -2327,18 +2359,7 @@ protected:
     template<typename ModifierType, auto Setter, typename T>
     void SetPropertyNG(T value)
     {
-        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
-        auto modifier = GetModifierCreatedBySetter(ModifierType::Type);
-        // Create corresponding modifier if not exist
-        if (modifier == nullptr) {
-            modifier = std::make_shared<ModifierType>();
-            (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value);
-            modifiersNGCreatedBySetter_.emplace(ModifierType::Type, modifier);
-            AddModifier(modifier);
-        } else {
-            (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value);
-            NotifyPageNodeChanged();
-        }
+        SetPropertyNGInner<ModifierType>([value](ModifierType &modifier) { (modifier.*Setter)(value); }, true);
     }
 
     /**
@@ -2353,18 +2374,8 @@ protected:
     template<typename ModifierType, auto Setter, typename T>
     void SetPropertyNG(T value, bool animatable)
     {
-        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
-        auto modifier = GetModifierCreatedBySetter(ModifierType::Type);
-        // Create corresponding modifier if not exist
-        if (modifier == nullptr) {
-            modifier = std::make_shared<ModifierType>();
-            (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value, animatable);
-            modifiersNGCreatedBySetter_.emplace(ModifierType::Type, modifier);
-            AddModifier(modifier);
-        } else {
-            (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value, animatable);
-            NotifyPageNodeChanged();
-        }
+        SetPropertyNGInner<ModifierType>(
+            [value, animatable](ModifierType &modifier) { (modifier.*Setter)(value, animatable); }, true);
     }
 
     virtual bool SetNodeState(RSNodeState state);
@@ -2427,13 +2438,6 @@ private:
     void SetForegroundBlurRadiusX(float blurRadiusX);
     void SetForegroundBlurRadiusY(float blurRadiusY);
     void SetFgBlurDisableSystemAdaptation(bool disableSystemAdaptation);
-
-    void SetShadowBlenderParams(const RSShadowBlenderPara& params);
-    void SetHdrDarkenBlenderParams(const RSHdrDarkenBlenderPara& params);
-    void ApplyColorfulBrightnessBlender(const ColorfulBrightnessBlender& blender);
-
-    void DetachFgBrightnessProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
-    void DetachColorfulBrightnessBlenderProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
 
     void NotifyPageNodeChanged() const;
 
@@ -2509,6 +2513,9 @@ private:
      */
     void ClearAllModifiers();
 
+    void AddModifierInner(const std::shared_ptr<ModifierNG::RSModifier> modifier, bool needLock = true);
+    void RemoveModifierInner(const std::shared_ptr<ModifierNG::RSModifier> modifier, bool needLock = true);
+
     void LoadRenderNodeIfNeed() const;
     void ReleaseInRender();
 
@@ -2525,6 +2532,63 @@ private:
     void SetBoundsInner(const Vector4f& bounds);
     void SetFrameInner(const Vector4f& frame);
     void SetCoverageNGShader(const std::shared_ptr<RSNGShaderBase>& coverageShader);
+
+    /**
+     * @brief Sets a property value for a specific modifier without locking.
+     *
+     * If property already exists, it will be updated.
+     * If property does not exist, it will be created.
+     *
+     * @param value The value to assign to the property.
+     */
+    template <typename ModifierType, auto Setter, typename T>
+    void SetPropertyNGWithoutLock(T value)
+    {
+        SetPropertyNGInner<ModifierType>([value](ModifierType &modifier) { (modifier.*Setter)(value); }, false);
+    }
+
+    /**
+     * @brief Sets a property value for a specific modifier without locking.
+     *
+     * If property already exists, it will be updated.
+     * If property does not exist, it will be created.
+     *
+     * @param value The value to assign to the property.
+     * @param animatable The property is animatable or not.
+     */
+    template <typename ModifierType, auto Setter, typename T>
+    void SetPropertyNGWithoutLock(T value, bool animatable)
+    {
+        SetPropertyNGInner<ModifierType>(
+            [value, animatable](ModifierType &modifier) { (modifier.*Setter)(value, animatable); }, false);
+    }
+
+    /**
+     * @brief Common implementation of SetPropertyNG and SetPropertyNGWithoutLock.
+     *
+     * @param apply Invocable that applies the setter on the modifier.
+     * @param needLock Whether to lock propertyMutex_. Pass false only when the
+     *                 caller already holds it.
+     */
+    template<typename ModifierType, typename Apply>
+    void SetPropertyNGInner(Apply&& apply, bool needLock)
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_, std::defer_lock);
+        if (needLock) {
+            lock.lock();
+        }
+        auto modifier = GetModifierCreatedBySetter(ModifierType::Type);
+        // Create corresponding modifier if not exist
+        if (modifier == nullptr) {
+            modifier = std::make_shared<ModifierType>();
+            apply(*std::static_pointer_cast<ModifierType>(modifier));
+            modifiersNGCreatedBySetter_.emplace(ModifierType::Type, modifier);
+            AddModifierInner(modifier, needLock);
+        } else {
+            apply(*std::static_pointer_cast<ModifierType>(modifier));
+            NotifyPageNodeChanged();
+        }
+    }
 
     uint32_t dirtyType_ = static_cast<uint32_t>(NodeDirtyType::NOT_DIRTY);
 

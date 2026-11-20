@@ -200,7 +200,8 @@ bool DoCreateNodeAndSurface()
     rsToRenderConn_->CreateNode(config, success);
     sptr<Surface> surface = nullptr;
     bool unobscured = false;
-    rsToRenderConn_->CreateNodeAndSurface(config, surface, unobscured);
+    bool isSceneBoard = GetData<bool>();
+    rsToRenderConn_->CreateNodeAndSurface(config, surface, unobscured, isSceneBoard);
     return true;
 }
 
@@ -747,7 +748,7 @@ bool DoCreateNode1()
     displayNodeConfig.positionZ = GetData<float>();
     uint64_t nodeId = GetData<uint64_t>();
     bool success;
-    rsToRenderConn_->CreateDisplayNode(displayNodeConfig, nodeId, success);
+    rsToRenderConn_->CreateDisplayNode(displayNodeConfig, nodeId, success, GetData<bool>());
     return true;
 }
 

@@ -95,7 +95,6 @@ void RSRenderPipelineClient::CommitTransaction(std::unique_ptr<RSTransactionData
         tokenMaskId_ = RSRenderServiceConnectHub::GetDefaultTokenMaskId();
         RSRenderServiceConnectHub::SeedTransactionDataIndex(tokenMaskId_);
     }
-
     auto clientToRenderConnection = RSRenderServiceConnectHub::GetClientToRenderConnection(tokenMaskId_);
     if (clientToRenderConnection != nullptr) {
         clientToRenderConnection->CommitTransaction(transactionData);

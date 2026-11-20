@@ -136,6 +136,7 @@ HWTEST_F(RSNGRenderEffectTemplateTest, GetEffectTypeStringForShaderEffectTypes, 
     EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT),
         "ContourDiagonalFlowLight");
     EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::DOT_MATRIX_SHADER), "DotMatrixShader");
+    EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::FLOW_LIGHT_SWEEP), "FlowLightSweep");
     EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::WAVY_RIPPLE_LIGHT), "WavyRippleLight");
     EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::AURORA_NOISE), "AuroraNoise");
     EXPECT_EQ(
@@ -196,6 +197,21 @@ HWTEST_F(RSNGRenderEffectTemplateTest, GetEffectTypeStringForGlassAndAtlasFrameT
 {
     EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::GLASS_MARBLE_EFFECT), "GlassMarbleEffect");
     EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::ATLAS_FRAME_MASK), "AtlasFrameMask");
+}
+
+/**
+ * @tc.name: GetEffectTypeStringForBlenderTypes
+ * @tc.desc: Verify GetEffectTypeString for blender types
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, GetEffectTypeStringForBlenderTypes, TestSize.Level1)
+{
+    EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER),
+        "ColorfulBrightnessBlender");
+    EXPECT_EQ(RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::BRIGHTNESS_BLENDER),
+        "BrightnessBlender");
+    EXPECT_EQ(
+        RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::HDR_DARKEN_BLENDER), "HdrDarkenBlender");
 }
 
 /**

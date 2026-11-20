@@ -703,7 +703,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             // read the parcel data.
             ScreenId id{INVALID_SCREEN_ID};
             std::vector<NodeId> securityExemptionList;
-            if (!data.ReadUint64(id) || !data.ReadUInt64Vector(&securityExemptionList)) {
+            bool exemptAll{false};
+            if (!data.ReadUint64(id) || !data.ReadUInt64Vector(&securityExemptionList) || !data.ReadBool(exemptAll)) {
                 RS_LOGE(
                     "RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST read parcel failed!");
                 ret = ERR_INVALID_DATA;
@@ -715,7 +716,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            int32_t status = SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+            int32_t status = SetVirtualScreenSecurityExemptionList(id, securityExemptionList, exemptAll);
             if (!reply.WriteInt32(status)) {
                 RS_LOGE(
                     "RSClientToServiceConnectionStub::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST Write status failed!");
@@ -3068,7 +3069,9 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 !reply.WriteInt32(globalDirtyRegionInfo.commandCount) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.consumeBufferSize) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.frameAnimationCount) ||
-                !reply.WriteInt32(globalDirtyRegionInfo.mostSendingPidWhenDisplayNodeSkip)) {
+                !reply.WriteInt32(globalDirtyRegionInfo.mostSendingPidWhenDisplayNodeSkip) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.updateCacheSurfaceCount) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.skipCommitFrames)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_GLOBAL_DIRTY_REGION_INFO Write globalDirtyRegionInfo "
                         "failed!");
                 ret = ERR_INVALID_REPLY;
@@ -3080,7 +3083,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             if (!reply.WriteInt32(LayerComposeInfo.uniformRenderFrameNumber) ||
                 !reply.WriteInt32(LayerComposeInfo.offlineComposeFrameNumber) ||
                 !reply.WriteInt32(LayerComposeInfo.redrawFrameNumber) ||
-                !reply.WriteInt32(LayerComposeInfo.drawImageNumber)) {
+                !reply.WriteInt32(LayerComposeInfo.drawImageNumber) ||
+                !reply.WriteInt32(LayerComposeInfo.directCompositionFrameNumber)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_LAYER_COMPOSE_INFO Write LayerComposeInfo failed!");
                 ret = ERR_INVALID_REPLY;
             }

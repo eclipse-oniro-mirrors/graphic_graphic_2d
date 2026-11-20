@@ -47,6 +47,8 @@
 #include "ui_effect/property/include/rs_ui_filter_base.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 #include "ui_effect/property/include/rs_ui_mask_base.h"
+#include "ui_effect/property/include/rs_ui_blender_base.h"
+#include "ui_effect/effect/include/blender_base.h"
 #include "ui_effect/property/include/rs_ui_shape_base.h"
 
 #include "animation/rs_animation.h"
@@ -1808,6 +1810,21 @@ void RSNode::SetBgImagePositionY(float positionY)
         positionY);
 }
 
+void RSNode::SetBgImageConfig(const BgImageConfig& config)
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    SetPropertyNGWithoutLock<ModifierNG::RSBackgroundImageModifier,
+        &ModifierNG::RSBackgroundImageModifier::SetBgImageWidth>(config.width);
+    SetPropertyNGWithoutLock<ModifierNG::RSBackgroundImageModifier,
+        &ModifierNG::RSBackgroundImageModifier::SetBgImageHeight>(config.height);
+    SetPropertyNGWithoutLock<ModifierNG::RSBackgroundImageModifier,
+        &ModifierNG::RSBackgroundImageModifier::SetBgImagePositionX>(config.positionX);
+    SetPropertyNGWithoutLock<ModifierNG::RSBackgroundImageModifier,
+        &ModifierNG::RSBackgroundImageModifier::SetBgImagePositionY>(config.positionY);
+    SetPropertyNGWithoutLock<ModifierNG::RSBackgroundImageModifier,
+        &ModifierNG::RSBackgroundImageModifier::SetBgImageInnerRect>(config.innerRect);
+}
+
 // set inner border color
 void RSNode::SetBorderColor(uint32_t colorValue)
 {
@@ -2426,147 +2443,44 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
 void RSNode::SetBlender(const Blender* blender)
 {
     if (blender == nullptr) {
-        ROSEN_LOGE("RSNode::SetBlender: blender is null!");
+        SetNGBlender(nullptr);
         return;
     }
 
-    if (Blender::BRIGHTNESS_BLENDER == blender->GetBlenderType()) {
-        auto brightnessBlender = static_cast<const BrightnessBlender*>(blender);
+    auto convertAndSet = [this](const Blender* source) {
+        auto ngBlender = RSNGBlenderBase::Create(source);
+        if (ngBlender == nullptr && source != nullptr) {
+            return; // convertor failure already logged in Create
+        }
+        SetNGBlender(ngBlender);
+    };
+
+    if (Blender::BLENDER_BASE == blender->GetBlenderType()) {
+        convertAndSet(static_cast<const BlenderBase*>(blender)->GetBlender());
+        return;
+    }
+
+    if (Blender::BRIGHTNESS_BLENDER == blender->GetBlenderType() ||
+        Blender::COLORFUL_BRIGHTNESS_BLENDER == blender->GetBlenderType() ||
+        Blender::HDR_DARKEN_BLENDER == blender->GetBlenderType()) {
+        convertAndSet(blender);
+    }
+}
+
+void RSNode::SetNGBlender(const std::shared_ptr<RSNGBlenderBase>& blender)
+{
+    if (!blender) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
         auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::BLENDER);
-        if (modifier) {
-            DetachColorfulBrightnessBlenderProperties(modifier);
+        // nothing to detach: null or no FOREGROUND_NG_BLENDER property (it may also carry only COLOR_BLEND_MODE etc.).
+        if (modifier == nullptr || !modifier->HasProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER)) {
+            return;
         }
-        SetFgBrightnessFract(brightnessBlender->GetFraction());
-        SetFgBrightnessParams({ brightnessBlender->GetLinearRate(), brightnessBlender->GetDegree(),
-            brightnessBlender->GetCubicRate(), brightnessBlender->GetQuadRate(), brightnessBlender->GetSaturation(),
-            { brightnessBlender->GetPositiveCoeff().x_, brightnessBlender->GetPositiveCoeff().y_,
-                brightnessBlender->GetPositiveCoeff().z_ },
-            { brightnessBlender->GetNegativeCoeff().x_, brightnessBlender->GetNegativeCoeff().y_,
-                brightnessBlender->GetNegativeCoeff().z_ }});
-        if (brightnessBlender->GetHdr() && ROSEN_LNE(brightnessBlender->GetFraction(), 1.0f)) {
-            SetFgBrightnessHdr(brightnessBlender->GetHdr());
-        }
-    } else if (Blender::COLORFUL_BRIGHTNESS_BLENDER == blender->GetBlenderType()) {
-        auto colorfulBrightnessBlender = static_cast<const ColorfulBrightnessBlender*>(blender);
-        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::BLENDER);
-        if (modifier) {
-            DetachFgBrightnessProperties(modifier);
-        }
-        ApplyColorfulBrightnessBlender(*colorfulBrightnessBlender);
-    } else if (Blender::SHADOW_BLENDER == blender->GetBlenderType()) {
-        auto shadowBlender = static_cast<const ShadowBlender*>(blender);
-        SetShadowBlenderParams({ shadowBlender->GetCubicCoeff(), shadowBlender->GetQuadraticCoeff(),
-            shadowBlender->GetLinearCoeff(), shadowBlender->GetConstantTerm() });
-    } else if (Blender::HDR_DARKEN_BLENDER == blender->GetBlenderType()) {
-        auto hdrDarkenBlender = static_cast<const HdrDarkenBlender*>(blender);
-        SetHdrDarkenBlenderParams({ hdrDarkenBlender->GetHdrBrightnessRatio(),
-            hdrDarkenBlender->GetGrayscaleFactor() });
+        modifier->DetachProperty(ModifierNG::RSPropertyType::FOREGROUND_NG_BLENDER);
+        return;
     }
-}
-
-void RSNode::DetachFgBrightnessProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier)
-{
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_RATES)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_RATES);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_SATURATION)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_SATURATION);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_POSCOEFF)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_POSCOEFF);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_NEGCOEFF)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_NEGCOEFF);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_FRACTION)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_FRACTION);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_HDR)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::FG_BRIGHTNESS_HDR);
-    }
-}
-
-void RSNode::DetachColorfulBrightnessBlenderProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier)
-{
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_DARKEN_WEIGHT)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_DARKEN_WEIGHT);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_FRACTION)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_FRACTION);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_CUBIC_RATE)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_CUBIC_RATE);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_QUAD_RATE)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_QUAD_RATE);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_LINEAR_RATE)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_LINEAR_RATE);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_DEGREE)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_DEGREE);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_SATURATION)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_SATURATION);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_POSITIVE_COEFF)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_POSITIVE_COEFF);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_NEGATIVE_COEFF)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_NEGATIVE_COEFF);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_VIBRANCY_STRENGTH)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_VIBRANCY_STRENGTH);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_LUMA_DIFF)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_LUMA_DIFF);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_HDR_ENABLED)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_HDR_ENABLED);
-    }
-    if (modifier->HasProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_TINTED_COLOR_PERCENT)) {
-        modifier->DetachProperty(ModifierNG::RSPropertyType::COLORFUL_BRIGHTNESS_TINTED_COLOR_PERCENT);
-    }
-}
-
-void RSNode::SetShadowBlenderParams(const RSShadowBlenderPara& params)
-{
-    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetShadowBlenderParams>(params);
-}
-
-void RSNode::SetHdrDarkenBlenderParams(const RSHdrDarkenBlenderPara& params)
-{
-    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetHdrDarkenBlenderParams>(params);
-}
-
-void RSNode::ApplyColorfulBrightnessBlender(const ColorfulBrightnessBlender& blender)
-{
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessDarkenWeight>(blender.GetDarkenWeight());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessFraction>(blender.GetFraction());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessCubicRate>(blender.GetCubicRate());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessQuadRate>(blender.GetQuadRate());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessLinearRate>(blender.GetLinearRate());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessDegree>(blender.GetDegree());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessSaturation>(blender.GetSaturation());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessPositiveCoeff>(blender.GetPositiveCoeff());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessNegativeCoeff>(blender.GetNegativeCoeff());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessVibrancyStrength>(blender.GetVibrancyStrength());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessLumaDiff>(blender.GetLumaDiff());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessHdrEnabled>(blender.GetHdrEnabled());
-    SetPropertyNG<ModifierNG::RSBlendModifier,
-        &ModifierNG::RSBlendModifier::SetColorfulBrightnessTintedColorPercent>(blender.GetTintedColorPercent());
+    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetNGBlenderBase>(blender);
 }
 
 void RSNode::SetForegroundEffectRadius(const float blurRadius)
@@ -2772,45 +2686,6 @@ void RSNode::SetDynamicLightUpDegree(const float lightUpDegree)
 {
     SetPropertyNG<ModifierNG::RSDynamicLightUpModifier, &ModifierNG::RSDynamicLightUpModifier::SetDynamicLightUpDegree>(
         lightUpDegree);
-}
-
-void RSNode::SetFgBrightnessParams(const RSDynamicBrightnessPara& params)
-{
-    // Compatible with original interfaces
-    SetFgBrightnessRates(params.rates_);
-    SetFgBrightnessSaturation(params.saturation_);
-    SetFgBrightnessPosCoeff(params.posCoeff_);
-    SetFgBrightnessNegCoeff(params.negCoeff_);
-}
-
-void RSNode::SetFgBrightnessRates(const Vector4f& rates)
-{
-    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetFgBrightnessRates>(rates);
-}
-
-void RSNode::SetFgBrightnessSaturation(const float& saturation)
-{
-    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetFgBrightnessSaturation>(saturation);
-}
-
-void RSNode::SetFgBrightnessPosCoeff(const Vector4f& coeff)
-{
-    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetFgBrightnessPosCoeff>(coeff);
-}
-
-void RSNode::SetFgBrightnessNegCoeff(const Vector4f& coeff)
-{
-    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetFgBrightnessNegCoeff>(coeff);
-}
-
-void RSNode::SetFgBrightnessFract(const float& fract)
-{
-    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetFgBrightnessFract>(fract);
-}
-
-void RSNode::SetFgBrightnessHdr(const bool hdr)
-{
-    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetFgBrightnessHdr>(hdr);
 }
 
 void RSNode::SetBgBrightnessParams(const RSDynamicBrightnessPara& params)
@@ -3138,6 +3013,24 @@ void RSNode::SetPixelStretchPercent(const Vector4f& stretchPercent, Drawing::Til
         static_cast<int>(stretchTileMode));
 }
 
+void RSNode::SetPixelStretch(const PixelStretchConfig& config, Drawing::TileMode stretchTileMode)
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    if (config.usePercent) {
+        SetPropertyNGWithoutLock<ModifierNG::RSPixelStretchModifier,
+            &ModifierNG::RSPixelStretchModifier::SetPixelStretchPercent>(config.vector);
+        SetPropertyNGWithoutLock<ModifierNG::RSPixelStretchModifier,
+            &ModifierNG::RSPixelStretchModifier::SetPixelStretchSize>(Vector4f(0.f));
+    } else {
+        SetPropertyNGWithoutLock<ModifierNG::RSPixelStretchModifier,
+            &ModifierNG::RSPixelStretchModifier::SetPixelStretchSize>(config.vector);
+        SetPropertyNGWithoutLock<ModifierNG::RSPixelStretchModifier,
+            &ModifierNG::RSPixelStretchModifier::SetPixelStretchPercent>(Vector4f(0.f));
+    }
+    SetPropertyNGWithoutLock<ModifierNG::RSPixelStretchModifier,
+        &ModifierNG::RSPixelStretchModifier::SetPixelStretchTileMode>(static_cast<int>(stretchTileMode));
+}
+ 
 void RSNode::SetWaterRippleParams(const RSWaterRipplePara& params, float progress)
 {
     SetPropertyNG<ModifierNG::RSBackgroundFilterModifier,
@@ -5128,8 +5021,16 @@ void RSNode::SetPropertyNodeChangeCallback(PropertyNodeChangeCallback callback)
 
 void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 {
+    AddModifierInner(modifier);
+}
+
+void RSNode::AddModifierInner(const std::shared_ptr<ModifierNG::RSModifier> modifier, bool needLock)
+{
     {
-        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_, std::defer_lock);
+        if (needLock) {
+            lock.lock();
+        }
         CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
         if (modifier == nullptr) {
             RS_LOGE("RSNode::AddModifier: null modifier, nodeId=%{public}" PRIu64, id_);
@@ -5152,7 +5053,10 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 
     std::shared_ptr<ModifierNG::RSRenderModifier> renderModifier = nullptr;
     {
-        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_, std::defer_lock);
+        if (needLock) {
+            lock.lock();
+        }
         renderModifier = modifier->CreateRenderModifier();
     }
     std::unique_ptr<RSCommand> command = std::make_unique<RSAddModifierNG>(id_, renderModifier);
@@ -5168,8 +5072,27 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 
 void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 {
+    RemoveModifierInner(modifier);
+}
+
+void RSNode::RemoveModifiers(
+    const std::vector<std::shared_ptr<ModifierNG::RSModifier>>& modifiers)
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    for (auto &modifier : modifiers) {
+        if (modifier) {
+            RemoveModifierInner(modifier, false);
+        }
+    }
+}
+ 
+void RSNode::RemoveModifierInner(const std::shared_ptr<ModifierNG::RSModifier> modifier, bool needLock)
+{
     {
-        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_, std::defer_lock);
+        if (needLock) {
+            lock.lock();
+        }
         CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
         if (modifier == nullptr) {
             RS_LOGE("RSNode::RemoveModifier: null modifier, nodeId=%{public}" PRIu64, id_);
@@ -5191,6 +5114,17 @@ void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifi
             std::make_unique<RSRemoveModifierNG>(id_, modifier->GetType(), modifier->GetId());
         AddCommand(cmdForRemote, true, GetFollowType(), id_);
     }
+}
+
+void RSNode::SwapModifier(const std::shared_ptr<ModifierNG::RSModifier> &oldModifier,
+                          const std::shared_ptr<ModifierNG::RSModifier> &newModifier)
+{
+    if (oldModifier == newModifier) {
+        return;
+    }
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    RemoveModifierInner(oldModifier, false);
+    AddModifierInner(newModifier, false);
 }
 
 const std::shared_ptr<RSPropertyBase> RSNode::GetPropertyById(const PropertyId& propertyId)

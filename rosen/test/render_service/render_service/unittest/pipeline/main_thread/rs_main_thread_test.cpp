@@ -1598,6 +1598,62 @@ HWTEST_F(RSMainThreadTest, ProcessCommandForUniRenderTest002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: CompareTransactionDataSort
+ * @tc.desc: Sort transaction data with null and unordered indices during uni render command processing
+ * @tc.type: FUNC
+ * @tc.require: issue#26887
+ */
+HWTEST_F(RSMainThreadTest, CompareTransactionDataSort, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    mainThread->effectiveTransactionDataIndexMap_.clear();
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_.empty(), true);
+
+    uint32_t pid = 12345;
+    uint64_t curTime = REFRESH_PERIOD;
+    mainThread->transactionDataLastWaitTime_[pid] = 0;
+    mainThread->effectiveTransactionDataIndexMap_[pid].first = 0;
+
+    NodeId nodeId = 1;
+    std::weak_ptr<RSContext> context = {};
+    auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(nodeId, context);
+    auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(rsCanvasDrawingRenderNode);
+    drawableNode->SetNeedDraw(true);
+    mainThread->context_->nodeMap.RegisterRenderNode(rsCanvasDrawingRenderNode);
+
+    // unordered indices with null data, null data must not break the sorting and consuming
+    auto data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(1);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(3);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(nullptr);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(nullptr);
+
+    // index 2 is missing, wait for the RSTransactionData with continuous index values
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(2);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    curTime += REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], 0);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), true);
+
+    mainThread->transactionDataLastWaitTime_[pid] = 0;
+    mainThread->effectiveTransactionDataIndexMap_.clear();
+}
+
+/**
  * @tc.name: IsWatermarkFlagChanged
  * @tc.desc: IsWatermarkFlagChanged test
  * @tc.type: FUNC

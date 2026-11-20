@@ -341,6 +341,9 @@ std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
     sptr<RSRenderPipelineAgent> renderPipelineAgent = new RSRenderPipelineAgent(renderPipeline_);
     sptr<RSIClientToRenderConnection> newRenderConn(
         new RSClientToRenderConnection(remotePid, renderPipelineAgent, tokenObj, needRefresh));
+    // Tag the construction-time default connection; on multi-display products the stub rejects
+    // any request on it (see RSClientToRenderConnectionStub::OnRemoteRequest).
+    newRenderConn->MarkAsDefaultConnection();
     if (needRefresh) {
         newConn->RegisterRemoteRefreshCallback();
         newRenderConn->RegisterRemoteRefreshCallback();

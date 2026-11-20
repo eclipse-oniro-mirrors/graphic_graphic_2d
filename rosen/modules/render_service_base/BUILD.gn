@@ -334,6 +334,7 @@ ohos_source_set("render_service_base_src") {
     "src/effect/rs_render_mask_base.cpp",
     "src/effect/rs_render_shape_base.cpp",
     "src/effect/rs_render_shader_base.cpp",
+    "src/effect/rs_render_blender_base.cpp",
 
     #hpae
     "src/hpae_base/rs_hpae_base_data.cpp",
@@ -356,7 +357,6 @@ ohos_source_set("render_service_base_src") {
     "src/render/rs_drawing_filter.cpp",
     "src/render/rs_effect_luminance_manager.cpp",
     "src/render/rs_filter.cpp",
-    "src/render/rs_flow_light_sweep_shader.cpp",
     "src/render/rs_fly_out_shader_filter.cpp",
     "src/render/rs_foreground_effect_filter.cpp",
     "src/render/rs_hdr_ui_brightness_filter.cpp",
@@ -370,7 +370,6 @@ ohos_source_set("render_service_base_src") {
     "src/render/rs_mask.cpp",
     "src/render/rs_material_filter.cpp",
     "src/render/rs_motion_blur_filter.cpp",
-    "src/render/rs_particles_drawable.cpp",
     "src/render/rs_path.cpp",
     "src/render/rs_pixel_map_shader.cpp",
     "src/render/rs_pixel_map_shader_obj.cpp",
@@ -463,6 +462,7 @@ ohos_source_set("render_service_base_src") {
     "src/feature/behind_window_filter/rs_behind_window_filter_manager.cpp",
     "src/feature/delegate_composite/rs_delegate_composite_callback_manager.cpp",
     "src/feature/delegate_composite/rs_delegate_composite_params.cpp",
+    "src/feature/particle/rs_particles_painter.cpp",
 
     #dirty_region
     "src/dirty_region/rs_filter_dirty_collector.cpp",
@@ -472,6 +472,7 @@ ohos_source_set("render_service_base_src") {
   if (rs_enable_gpu) {
     sources += [
       #drawable
+      "src/drawable/rs_blender_drawable_utils.cpp",
       "src/drawable/rs_color_picker_drawable.cpp",
       "src/drawable/rs_drawable.cpp",
       "src/drawable/rs_misc_drawable.cpp",
@@ -583,6 +584,7 @@ ohos_source_set("render_service_base_src") {
 
       "src/pipeline/rs_logical_display_render_node.cpp",
       "src/effect/rs_render_mask_base.cpp",
+      "src/effect/rs_render_blender_base.cpp",
       "src/feature/window_keyframe/rs_window_keyframe_render_node.cpp",
       "src/feature/hyper_graphic_manager/rs_render_frame_rate_linker.cpp",
       "src/feature/hyper_graphic_manager/rs_render_frame_rate_linker_map.cpp",

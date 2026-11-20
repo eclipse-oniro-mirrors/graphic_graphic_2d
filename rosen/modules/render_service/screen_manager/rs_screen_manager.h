@@ -189,7 +189,7 @@ public:
     int32_t RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
 
     int32_t SetVirtualScreenSecurityExemptionList(
-        ScreenId id, const std::vector<uint64_t>& securityExemptionList);
+        ScreenId id, const std::vector<uint64_t>& securityExemptionList, bool exemptAll = false);
 
     int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask);
 

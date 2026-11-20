@@ -26,6 +26,7 @@
 #include "modifier_ng/appearance/rs_dynamic_light_up_modifier.h"
 #include "modifier_ng/appearance/rs_foreground_filter_modifier.h"
 #include "modifier_ng/appearance/rs_hdr_brightness_modifier.h"
+#include "ui_effect/property/include/rs_ui_blender_base.h"
 #include "ui_effect/property/include/rs_ui_filter_base.h"
 
 namespace OHOS {
@@ -118,19 +119,20 @@ void DoBlendModifier(FuzzedDataProvider& fdp)
         static_cast<RSColorBlendApplyType>(fdp.ConsumeIntegral<uint32_t>() % COLOR_BLEND_APPLY_TYPE_MAX);
     modifier->SetColorBlendApplyType(applyType);
     modifier->GetColorBlendApplyType();
-    Vector4f randomVec4F(fdp.ConsumeFloatingPoint<float>(), fdp.ConsumeFloatingPoint<float>(),
-        fdp.ConsumeFloatingPoint<float>(), fdp.ConsumeFloatingPoint<float>());
-    modifier->SetFgBrightnessRates(randomVec4F);
-    modifier->GetFgBrightnessRates();
-    float randomFloat = fdp.ConsumeFloatingPoint<float>();
-    modifier->SetFgBrightnessSaturation(randomFloat);
-    modifier->GetFgBrightnessSaturation();
-    modifier->SetFgBrightnessPosCoeff(randomVec4F);
-    modifier->GetFgBrightnessPosCoeff();
-    modifier->SetFgBrightnessNegCoeff(randomVec4F);
-    modifier->GetFgBrightnessNegCoeff();
-    modifier->SetFgBrightnessFract(randomFloat);
-    modifier->GetFgBrightnessFract();
+
+    // NG blender: random type (valid and unregistered values both), concrete tag values and null
+    auto ngBlenderType = static_cast<RSNGEffectType>(fdp.ConsumeIntegral<int16_t>());
+    auto ngBlender = RSNGBlenderBase::Create(ngBlenderType);
+    modifier->SetNGBlenderBase(ngBlender);
+
+    auto hdrDarkenBlender = std::make_shared<RSNGHdrDarkenBlender>();
+    hdrDarkenBlender->Setter<HdrDarkenBlenderHdrBrightnessRatioTag>(fdp.ConsumeFloatingPoint<float>());
+    Vector3f grayscaleFactor{fdp.ConsumeFloatingPoint<float>(), fdp.ConsumeFloatingPoint<float>(),
+        fdp.ConsumeFloatingPoint<float>()};
+    hdrDarkenBlender->Setter<HdrDarkenBlenderGrayscaleFactorTag>(grayscaleFactor);
+    modifier->SetNGBlenderBase(hdrDarkenBlender);
+
+    modifier->SetNGBlenderBase(nullptr);
 }
 
 void DoBorderModifier(FuzzedDataProvider& fdp)
