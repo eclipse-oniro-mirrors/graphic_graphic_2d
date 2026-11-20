@@ -25,16 +25,12 @@
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "engine/rs_base_render_engine.h"
 #include "engine/rs_uni_render_engine.h"
+#include "feature/filter_cache_manager/rs_filter_cache_manager.h"
 #include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
 #include "feature/tunnel_layer/rs_tunnel_layer_state_handler.h"
 #ifdef RS_ENABLE_GPU
 #include "feature/uifirst/rs_sub_thread_manager.h"
-#include "feature/uifirst/rs_uifirst_frame_rate_control.h"
-#include "feature/uifirst/rs_uifirst_manager.h"
 #include "feature/capture/rs_ui_capture.h"
-#endif
-#ifdef RS_ENABLE_OVERLAY_DISPLAY
-#include "feature/overlay_display/rs_overlay_display_manager.h"
 #endif
 #ifdef RS_ENABLE_TV_PQ_METADATA
 #include "feature/tv_metadata/rs_tv_metadata_manager.h"
@@ -44,7 +40,6 @@
 #include "ge_mesa_blur_shader_filter.h"
 #include "ge_render.h"
 #include "graphic_feature_param_manager.h"
-
 #include "parameter.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
@@ -52,7 +47,6 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include <platform/common/rs_log.h>
 #include "platform/common/rs_system_properties.h"
-#include "feature/filter_cache_manager/rs_filter_cache_manager.h"
 #ifdef HETERO_HDR_ENABLE
 #include "rs_hetero_hdr_manager.h"
 #endif
@@ -118,8 +112,8 @@ void RSRenderPipeline::PostMainThreadTask(RSTaskMessage::RSTask task)
     mainThread_->PostTask(task);
 }
 
-void RSRenderPipeline::PostMainThreadTask(RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
-    AppExecFwk::EventQueue::Priority priority)
+void RSRenderPipeline::PostMainThreadTask(
+    RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime, AppExecFwk::EventQueue::Priority priority)
 {
     if (mainThread_ == nullptr) {
         return;
@@ -143,7 +137,7 @@ bool RSRenderPipeline::PostMainThreadSyncTask(RSTaskMessage::RSTask task)
     return mainThread_->PostSyncTask(task);
 }
 
-void RSRenderPipeline::PostUniRenderThreadSyncTask(RSTaskMessage::RSTask task)
+void RSRenderPipeline::PostUniRenderThreadSyncTask(const std::function<void()>& task)
 {
     if (uniRenderThread_ == nullptr) {
         return;
@@ -158,6 +152,7 @@ void RSRenderPipeline::AddTransactionDataPidInfo(pid_t remotePid)
     }
     mainThread_->AddTransactionDataPidInfo(remotePid);
 }
+
 
 void RSRenderPipeline::OnScreenConnected(const sptr<RSScreenProperty>& rsScreenProperty,
     const sptr<IRSRenderToComposerConnection>& renderToComposerConn,
@@ -330,6 +325,14 @@ void RSRenderPipeline::InitDumper(const std::shared_ptr<AppExecFwk::EventHandler
     rpDumper_->RenderPipelineDumpInit(rpDumpManager_);
 }
 
+void RSRenderPipeline::RegisterJudgeLppLayerCB(const sptr<IRSComposerToRenderConnection>& composerToRenderConn)
+{
+    composerToRenderConn->RegisterJudgeLppLayerCB(
+        [mainThread = mainThread_](uint64_t vsyncId, const std::unordered_set<uint64_t>& lppNodeIds) {
+            mainThread->GetLppVideoHander().JudgeLppLayer(vsyncId, lppNodeIds);
+        });
+}
+
 bool RSRenderPipeline::RemoveConnection(pid_t remotePid, const sptr<RSIConnectionToken>& token)
 {
     if (token == nullptr) {
@@ -339,6 +342,7 @@ bool RSRenderPipeline::RemoveConnection(pid_t remotePid, const sptr<RSIConnectio
     std::unique_lock<std::mutex> lock(renderConnectionMutex_);
     auto iter = renderConnections_.find(remotePid);
     if (iter == renderConnections_.end()) {
+        RS_LOGE("RSRenderPipeline::RemoveConnection: find token fail");
         return false;
     }
     // verify token consistency
@@ -346,6 +350,7 @@ bool RSRenderPipeline::RemoveConnection(pid_t remotePid, const sptr<RSIConnectio
         RS_LOGE("RemoveConnection: token mismatch for pid %{public}d", remotePid);
         return false;
     }
+    RS_LOGI("RSRenderPipeline::RemoveConnection from token pid %{public}d", remotePid);
     renderConnections_.erase(iter);
     return true;
 }
@@ -363,8 +368,7 @@ std::pair<sptr<RSIClientToRenderConnection>, uint64_t> RSRenderPipeline::AddConn
     return {connectToRenderConnection, tokenMaskId};
 }
 
-std::pair<sptr<RSIClientToRenderConnection>, uint64_t> RSRenderPipeline::FindClientToRenderConnection(
-    uint64_t remotePid)
+std::pair<sptr<RSIClientToRenderConnection>, uint64_t> RSRenderPipeline::FindClientToRenderConnection(pid_t remotePid)
 {
     std::unique_lock<std::mutex> lock(renderConnectionMutex_);
     auto iter = renderConnections_.find(static_cast<pid_t>(remotePid));
@@ -372,14 +376,6 @@ std::pair<sptr<RSIClientToRenderConnection>, uint64_t> RSRenderPipeline::FindCli
         return {nullptr, INVALID_TOKEN_MASK_ID};
     }
     return {iter->second.connection, iter->second.tokenMaskId};
-}
-
-void RSRenderPipeline::RegisterJudgeLppLayerCB(const sptr<IRSComposerToRenderConnection>& composerToRenderConn)
-{
-    composerToRenderConn->RegisterJudgeLppLayerCB(
-        [mainThread = mainThread_](uint64_t vsyncId, const std::unordered_set<uint64_t>& lppNodeIds) {
-            mainThread->GetLppVideoHander().JudgeLppLayer(vsyncId, lppNodeIds);
-        });
 }
 
 void RSRenderPipeline::RegisterLayerStateChangedCB(const sptr<IRSComposerToRenderConnection>& composerToRenderConn)
