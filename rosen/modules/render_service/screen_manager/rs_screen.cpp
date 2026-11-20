@@ -153,7 +153,17 @@ void RSScreen::PhysicalScreenInit() noexcept
         return;
     }
 
-    hdiScreen_->Init();
+    if (!hdiScreen_->Init()) {
+        if (hdiScreen_->GetDevice() == nullptr) {
+            RS_LOGE("%{public}s: RSScreen(id %{public}" PRIu64 ") failed to init HdiScreen, "
+                "device is unavailable, skip following HDI queries.", __func__, id);
+            return;
+        }
+        // VBlank callback registration failed but the device is usable: keep querying so the
+        // screen can still light up (matches the historical behaviour for such device quirks)
+        RS_LOGE("%{public}s: RSScreen(id %{public}" PRIu64 ") HdiScreen init partially failed "
+            "(device available), continue with mode/capability queries.", __func__, id);
+    }
     if (hdiScreen_->GetScreenSupportedModes(supportedModes_) < 0) {
         RS_LOGE("%{public}s: RSScreen(id %{public}" PRIu64 ") failed to GetScreenSupportedModes.", __func__, id);
     } else {

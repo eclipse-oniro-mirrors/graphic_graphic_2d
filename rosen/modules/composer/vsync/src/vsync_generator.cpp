@@ -37,6 +37,7 @@
 #include "if_system_ability_manager.h"
 #include <iservice_registry.h>
 #include "system_ability_definition.h"
+#include <unistd.h>
 #endif
 
 #include "dvsync_lib_manager.h"
@@ -73,6 +74,14 @@ constexpr double DVSYNC_PERIOD_MIN_INTERVAL = 0.6;
 
 constexpr char CMDLINE_PATH[] = "/proc/self/cmdline";
 constexpr char RENDER_SERVICE_PATH[] = "/system/bin/render_service";
+#ifdef COMPOSER_SCHED_ENABLE
+// bounded retry for synchronous samgr subscribe failures;
+// wait grows linearly per retry (1000us * retry count), following the ConnectToServer pattern.
+// NOTE: keep in sync with rs_samgr_retry.h in render_service_base; duplicated here because
+// the vsync module cannot depend on render_service_base and uses a different log macro
+constexpr int32_t SAMGR_CALL_MAX_RETRY = 5;
+constexpr int32_t SAMGR_CALL_RETRY_INTERVAL_US = 1000; // 1ms base, linear backoff per retry
+#endif
 
 static void SetThreadHighPriority()
 {
@@ -758,23 +767,37 @@ VsyncError VSyncGenerator::UpdateReferenceTimeLocked(int64_t referenceTime)
 void VSyncGenerator::SubScribeSystemAbility()
 {
     VLOGI("%{public}s", __func__);
-    sptr<ISystemAbilityManager> systemAbilityManager =
-        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (!systemAbilityManager) {
-        VLOGE("%{public}s failed to get system ability manager client", __func__);
-        return;
-    }
     std::string threadName = "VSyncGenerator";
     std::string strUid = std::to_string(getuid());
     std::string strPid = std::to_string(getpid());
     std::string strTid = std::to_string(gettid());
 
-    saStatusChangeListener_ = new VSyncSystemAbilityListener(threadName, strUid, strPid, strTid);
-    int32_t ret = systemAbilityManager->SubscribeSystemAbility(RES_SCHED_SYS_ABILITY_ID, saStatusChangeListener_);
-    if (ret != ERR_OK) {
-        VLOGE("%{public}s subscribe system ability %{public}d failed.", __func__, RES_SCHED_SYS_ABILITY_ID);
-        saStatusChangeListener_ = nullptr;
+    saStatusChangeListener_ = new (std::nothrow)VSyncSystemAbilityListener(threadName, strUid, strPid, strTid);
+    if (saStatusChangeListener_ == nullptr) {
+        VLOGE("%{public}s new VSyncSystemAbilityListener failed", __func__);
+        return;
     }
+    for (int32_t retryCnt = 0; retryCnt < SAMGR_CALL_MAX_RETRY; retryCnt++) {
+        sptr<ISystemAbilityManager> systemAbilityManager =
+            SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (systemAbilityManager == nullptr) {
+            VLOGE("%{public}s failed to get system ability manager client, retry [%{public}d/%{public}d]",
+                __func__, retryCnt + 1, SAMGR_CALL_MAX_RETRY);
+            usleep(SAMGR_CALL_RETRY_INTERVAL_US * (retryCnt + 1));
+            continue;
+        }
+        int32_t ret = systemAbilityManager->SubscribeSystemAbility(RES_SCHED_SYS_ABILITY_ID, saStatusChangeListener_);
+        if (ret == ERR_OK) {
+            return;
+        }
+        VLOGE("%{public}s subscribe system ability %{public}d failed, ret [%{public}d], retry [%{public}d/%{public}d]",
+            __func__, RES_SCHED_SYS_ABILITY_ID, ret, retryCnt + 1, SAMGR_CALL_MAX_RETRY);
+        usleep(SAMGR_CALL_RETRY_INTERVAL_US * (retryCnt + 1));
+    }
+    // subscription failure is not fatal; resched qos features stay unavailable for this thread
+    VLOGE("%{public}s subscribe system ability %{public}d failed after [%{public}d] retries",
+        __func__, RES_SCHED_SYS_ABILITY_ID, SAMGR_CALL_MAX_RETRY);
+    saStatusChangeListener_ = nullptr;
 }
 #endif
 

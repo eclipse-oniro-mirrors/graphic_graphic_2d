@@ -1653,6 +1653,292 @@ HWTEST_F(RSMainThreadTest, CompareTransactionDataSort, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ProcessCommandForUniRenderTest003
+ * @tc.desc: skip on a missing hole advances lastIndex to curIndex and consumes the transaction
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, ProcessCommandForUniRenderTest003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    constexpr uint32_t pid = 23456;
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_[pid] = 0;
+    mainThread->transactionDataLastLogTime_.erase(pid);
+    mainThread->effectiveTransactionDataIndexMap_[pid].first = 0;
+
+    NodeId nodeId = 1;
+    std::weak_ptr<RSContext> context = {};
+    auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(nodeId, context);
+    auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(rsCanvasDrawingRenderNode);
+    drawableNode->SetNeedDraw(true);
+    mainThread->context_->nodeMap.RegisterRenderNode(rsCanvasDrawingRenderNode);
+
+    // hole at index 1..6: transaction 7 waits
+    auto data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(7);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    uint64_t curTime = REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+
+    // wait exceeds the skip limit: lastIndex jumps to 7 and 7 is applied
+    // (31 full frames: waitedFrames must be strictly greater than the 30-frame limit)
+    curTime += REFRESH_PERIOD * (SKIP_COMMAND_FREQ_LIMIT + 1);
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], 0);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 7); // lastIndex advanced to curIndex
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), true);
+
+    // next consecutive index applies without any wait
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(8);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    curTime += REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 8);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), true);
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], 0);
+
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_.erase(pid);
+    mainThread->transactionDataLastLogTime_.erase(pid);
+}
+
+/**
+ * @tc.name: ProcessCommandForUniRenderTest004
+ * @tc.desc: skip on a late/duplicate transaction (curIndex <= lastIndex) rolls lastIndex back
+ *           to curIndex, forcing the next index into a new wait cycle (historical semantics)
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, ProcessCommandForUniRenderTest004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    constexpr uint32_t pid = 23457;
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_[pid] = 0;
+    mainThread->transactionDataLastLogTime_.erase(pid);
+    // index 1..5 already applied
+    mainThread->effectiveTransactionDataIndexMap_[pid].first = 5;
+
+    NodeId nodeId = 1;
+    std::weak_ptr<RSContext> context = {};
+    auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(nodeId, context);
+    auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(rsCanvasDrawingRenderNode);
+    drawableNode->SetNeedDraw(true);
+    mainThread->context_->nodeMap.RegisterRenderNode(rsCanvasDrawingRenderNode);
+
+    // late duplicate transaction 4 arrives: it enters the wait branch (existing semantics)
+    auto data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(4);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    uint64_t curTime = REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+
+    // after the skip timeout the late transaction is consumed and lastIndex rolls back to 4
+    // (31 full frames: waitedFrames must be strictly greater than the 30-frame limit)
+    curTime += REFRESH_PERIOD * (SKIP_COMMAND_FREQ_LIMIT + 1);
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], 0);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 4); // rolled back to curIndex
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), true);
+
+    // index 6 no longer follows the rolled-back lastIndex (still waiting for 5): a new wait
+    // cycle starts instead of applying immediately
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(6);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    curTime += REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 4); // unchanged while waiting
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_.erase(pid);
+    mainThread->transactionDataLastLogTime_.erase(pid);
+}
+
+/**
+ * @tc.name: ProcessCommandForUniRenderTest005
+ * @tc.desc: missing-index wait below the skip limit keeps waiting and requests next vsync for keep-alive
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, ProcessCommandForUniRenderTest005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    constexpr uint32_t pid = 23458;
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_[pid] = 0;
+    mainThread->transactionDataLastLogTime_.erase(pid);
+    mainThread->effectiveTransactionDataIndexMap_[pid].first = 0;
+
+    NodeId nodeId = 1;
+    std::weak_ptr<RSContext> context = {};
+    auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(nodeId, context);
+    auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(rsCanvasDrawingRenderNode);
+    drawableNode->SetNeedDraw(true);
+    mainThread->context_->nodeMap.RegisterRenderNode(rsCanvasDrawingRenderNode);
+
+    // hole at index 1: transaction 2 waits
+    auto data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(2);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    uint64_t curTime = REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+
+    // wait for 16 frames (< skip limit 30): still waiting, pending kept, timer advances with vsync
+    curTime += REFRESH_PERIOD * 16;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], REFRESH_PERIOD); // wait start unchanged
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 0); // lastIndex unchanged
+
+    // hole filled: transaction 1 arrives and both apply consecutively, timer cleared
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(1);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    curTime += REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 2);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), true);
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], 0);
+
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_.erase(pid);
+    mainThread->transactionDataLastLogTime_.erase(pid);
+}
+
+#ifdef RES_SCHED_ENABLE
+/**
+ * @tc.name: SubScribeSystemAbilityUniRenderThread001
+ * @tc.desc: Test RSUniRenderThread::SubScribeSystemAbility keeps the listener after subscribing
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, SubScribeSystemAbilityUniRenderThread001, TestSize.Level1)
+{
+    // bounded-retry subscribe against the real samgr: a successful subscribe keeps the
+    // listener registered; exhausted retries would clear it (see RetrySamgrCall)
+    auto& uniRenderThread = RSUniRenderThread::Instance();
+    uniRenderThread.SubScribeSystemAbility();
+    EXPECT_NE(uniRenderThread.saStatusChangeListener_, nullptr);
+    // re-subscribing installs a fresh listener and still succeeds
+    uniRenderThread.SubScribeSystemAbility();
+    EXPECT_NE(uniRenderThread.saStatusChangeListener_, nullptr);
+}
+#endif
+
+/**
+ * @tc.name: RequestNextVsyncForPendingTransaction001
+ * @tc.desc: RequestNextVsyncForPendingTransaction with null and non-null vsync manager agent
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, RequestNextVsyncForPendingTransaction001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    pid_t pid = 23459;
+    // null agent: the dvsync branch is skipped, RequestNextVSync is still a safe no-op
+    auto origAgent = mainThread->rsVsyncManagerAgent_;
+    mainThread->rsVsyncManagerAgent_ = nullptr;
+    EXPECT_NO_FATAL_FAILURE(mainThread->RequestNextVsyncForPendingTransaction(pid));
+    // non-null agent: both inner branches (dvsync on/off) resolve to a safe vsync request
+    mainThread->rsVsyncManagerAgent_ = origAgent;
+    EXPECT_NO_FATAL_FAILURE(mainThread->RequestNextVsyncForPendingTransaction(pid));
+}
+
+/**
+ * @tc.name: RequestNextVsyncForCachedCommand001
+ * @tc.desc: RequestNextVsyncForCachedCommand appends the cache marker and requests vsync safely
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, RequestNextVsyncForCachedCommand001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    pid_t pid = 23460;
+    uint64_t curIndex = 1;
+    std::string transactionFlags = "";
+    // null agent: falls into the plain "UI" vsync request branch
+    auto origAgent = mainThread->rsVsyncManagerAgent_;
+    mainThread->rsVsyncManagerAgent_ = nullptr;
+    mainThread->RequestNextVsyncForCachedCommand(transactionFlags, pid, curIndex);
+    EXPECT_NE(transactionFlags.find("cache"), std::string::npos);
+    // non-null agent: exercises the dvsync check before requesting vsync
+    transactionFlags = "";
+    mainThread->rsVsyncManagerAgent_ = origAgent;
+    mainThread->RequestNextVsyncForCachedCommand(transactionFlags, pid, curIndex);
+    EXPECT_NE(transactionFlags.find("cache"), std::string::npos);
+}
+
+/**
+ * @tc.name: NeedConsumeDVSyncCommand001
+ * @tc.desc: NeedConsumeDVSyncCommand detects descending timestamps and reports the boundary index
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, NeedConsumeDVSyncCommand001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    // ascending timestamps: no dvsync boundary detected
+    {
+        std::vector<std::unique_ptr<RSTransactionData>> transactionVec;
+        auto data = std::make_unique<RSTransactionData>();
+        data->SetTimestamp(100);
+        data->SetIndex(1);
+        transactionVec.emplace_back(std::move(data));
+        data = std::make_unique<RSTransactionData>();
+        data->SetTimestamp(200);
+        data->SetIndex(2);
+        transactionVec.emplace_back(std::move(data));
+        uint32_t endIndex = 0;
+        EXPECT_FALSE(mainThread->NeedConsumeDVSyncCommand(endIndex, transactionVec));
+        EXPECT_EQ(endIndex, 0);
+    }
+    // descending timestamps: the boundary transaction index is reported and time is marked updated
+    {
+        std::vector<std::unique_ptr<RSTransactionData>> transactionVec;
+        auto data = std::make_unique<RSTransactionData>();
+        data->SetTimestamp(200);
+        data->SetIndex(1);
+        transactionVec.emplace_back(std::move(data));
+        data = std::make_unique<RSTransactionData>();
+        data->SetTimestamp(100);
+        data->SetIndex(2);
+        transactionVec.emplace_back(std::move(data));
+        uint32_t endIndex = 0;
+        EXPECT_TRUE(mainThread->NeedConsumeDVSyncCommand(endIndex, transactionVec));
+        EXPECT_EQ(endIndex, 2);
+    }
+}
+
+/**
  * @tc.name: IsWatermarkFlagChanged
  * @tc.desc: IsWatermarkFlagChanged test
  * @tc.type: FUNC

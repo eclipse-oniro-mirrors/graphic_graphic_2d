@@ -16,6 +16,12 @@
 #ifndef RENDER_SERVICE_MAIN_RENDER_SERVER_RS_RENDER_SERVICE_AGENT_H
 #define RENDER_SERVICE_MAIN_RENDER_SERVER_RS_RENDER_SERVICE_AGENT_H
 
+#include <chrono>
+#include <future>
+#include <optional>
+#include <type_traits>
+#include <utility>
+
 #include "feature/hyper_graphic_manager/hgm_context.h"
 #include "rs_render_service.h"
 
@@ -58,6 +64,36 @@ public:
         return std::move(taskFuture);
     }
 
+    // schedules the task and waits with SCHEDULE_TASK_TIMEOUT_MS; returns false on timeout.
+    // the task may still execute later on the main thread, so tasks must not capture
+    // references to caller-local storage nor raw `this`/raw member pointers: everything
+    // the task uses must be captured by value (smart-pointer copies extend lifetime) and
+    // results must be returned by value
+    template<typename Task, typename Return = std::invoke_result_t<Task>>
+    std::enable_if_t<std::is_void_v<Return>, bool> ScheduleTaskAndWait(
+        Task&& task, int64_t timeoutMs = SCHEDULE_TASK_TIMEOUT_MS)
+    {
+        auto taskFuture = ScheduleTask(std::forward<Task>(task));
+        if (taskFuture.wait_for(std::chrono::milliseconds(timeoutMs)) != std::future_status::ready) {
+            ReportSyncTaskTimeout(timeoutMs);
+            return false;
+        }
+        return true;
+    }
+
+    // value-returning variant; returns std::nullopt on timeout
+    template<typename Task, typename Return = std::invoke_result_t<Task>>
+    std::enable_if_t<!std::is_void_v<Return>, std::optional<Return>> ScheduleTaskAndWait(
+        Task&& task, int64_t timeoutMs = SCHEDULE_TASK_TIMEOUT_MS)
+    {
+        auto taskFuture = ScheduleTask(std::forward<Task>(task));
+        if (taskFuture.wait_for(std::chrono::milliseconds(timeoutMs)) != std::future_status::ready) {
+            ReportSyncTaskTimeout(timeoutMs);
+            return std::nullopt;
+        }
+        return taskFuture.get();
+    }
+
     sptr<IRemoteObject> GetConnectToRenderToken(ScreenId screenId);
     void RemoveToken(const sptr<RSIConnectionToken>& token);
 
@@ -82,6 +118,12 @@ public:
 private:
     RSRenderService& renderService_;
     HgmProcessCallback hgmProcessCallback_ = nullptr;
+
+    // bounded wait for tasks scheduled to the render service main thread; binder threads must
+    // never block on it indefinitely, otherwise a stuck main thread drains the binder pool
+    static constexpr int64_t SCHEDULE_TASK_TIMEOUT_MS = 3000; // 3s
+
+    static void ReportSyncTaskTimeout(int64_t timeoutMs);
 };
 } // namespace Rosen
 } // namespace OHOS

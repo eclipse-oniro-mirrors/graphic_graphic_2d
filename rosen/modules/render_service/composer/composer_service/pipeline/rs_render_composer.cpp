@@ -45,6 +45,7 @@
 #endif
 #include "parameters.h"
 #include "platform/common/rs_hisysevent.h"
+#include "common/rs_samgr_retry.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "platform/ohos/backend/rs_surface_ohos_gl.h"
@@ -1075,21 +1076,21 @@ void RSRenderComposer::Redraw(const sptr<Surface>& surface, const std::vector<st
 void RSRenderComposer::SubScribeSystemAbility()
 {
     RS_LOGI("%{public}s", __func__);
-    sptr<ISystemAbilityManager> systemAbilityManager =
-        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (!systemAbilityManager) {
-        RS_LOGE("%{public}s failed to get system ability manager client", __func__);
-        return;
-    }
     std::string threadName = "CompThread_" + std::to_string(screenId_);
     std::string strUid = std::to_string(getuid());
     std::string strPid = std::to_string(getpid());
     std::string strTid = std::to_string(gettid());
 
     saStatusChangeListener_ = new (std::nothrow)VSyncSystemAbilityListener(threadName, strUid, strPid, strTid);
-    int32_t ret = systemAbilityManager->SubscribeSystemAbility(RES_SCHED_SYS_ABILITY_ID, saStatusChangeListener_);
-    if (ret != ERR_OK) {
-        RS_LOGE("%{public}s subscribe system ability %{public}d failed.", __func__, RES_SCHED_SYS_ABILITY_ID);
+    if (saStatusChangeListener_ == nullptr) {
+        RS_LOGE("%{public}s saStatusChangeListener_ is nullptr", __func__);
+        return;
+    }
+    if (!RetrySamgrCall(__func__, [listener = saStatusChangeListener_](
+        const sptr<ISystemAbilityManager>& samgr) {
+        return samgr->SubscribeSystemAbility(RES_SCHED_SYS_ABILITY_ID, listener);
+    })) {
+        // subscription failure is not fatal; resched qos features stay unavailable for this thread
         saStatusChangeListener_ = nullptr;
     }
 }

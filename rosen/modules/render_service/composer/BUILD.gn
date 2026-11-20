@@ -155,7 +155,8 @@ ohos_source_set("librender_composer") {
 
   if ((rs_enable_eglimage && rs_enable_gpu) || graphic_2d_feature_enable_vulkan) {
     sources += [
-      "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/external_depend/gpuComposition/rs_image_manager.cpp" ]
+      "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/external_depend/gpuComposition/rs_image_manager.cpp",
+      "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/external_depend/gpuComposition/rs_fence_wait_dfx.cpp" ]
   }
 
   # GPU cache coordinator (coordinate cross-component GPU cache cleanup)

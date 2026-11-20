@@ -17,6 +17,8 @@
 #include <parameters.h>
 
 #include "gtest/gtest.h"
+#include "hdi_backend.h"
+#include "mock_hdi_device.h"
 #include "param/sys_param.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/rs_screen.h"
@@ -512,5 +514,79 @@ HWTEST_F(RSScreenPreprocessorTest, ProcessNoScreenAfterRegHwcEventCallbackTest00
     preprocessor_->isHwcDead_ = false;
     screenManager_->screens_.clear();
     preprocessor_->ProcessNoScreenAfterRegHwcEventCallback();
+}
+
+/*
+ * @tc.name: InitTest001
+ * @tc.desc: Test Init when RegScreenRefresh fails: log only, Init still succeeds (non-fatal)
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSScreenPreprocessorTest, InitTest001, TestSize.Level1)
+{
+    ASSERT_NE(preprocessor_, nullptr);
+    auto hdiDeviceMock = Mock::HdiDeviceMock::GetInstance();
+    ASSERT_NE(hdiDeviceMock, nullptr);
+    auto backend = HdiBackend::GetInstance();
+    ASSERT_NE(backend, nullptr);
+    auto origDevice = backend->device_;
+    backend->device_ = hdiDeviceMock;
+    EXPECT_CALL(*hdiDeviceMock, RegHotPlugCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegRefreshCallback(_, _)).WillOnce(testing::Return(-1));
+    EXPECT_CALL(*hdiDeviceMock, RegHwcDeadCallback(_, _)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*hdiDeviceMock, RegHwcEventCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegScreenVBlankIdleCallback(_, _)).WillOnce(testing::Return(0));
+    // RegScreenRefresh failure is non-fatal: the error is logged and Init still succeeds
+    EXPECT_TRUE(preprocessor_->Init());
+    backend->device_ = origDevice;
+}
+
+/*
+ * @tc.name: InitTest002
+ * @tc.desc: Test Init when all HDI registrations succeed via mock device, Init must return true
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSScreenPreprocessorTest, InitTest002, TestSize.Level1)
+{
+    ASSERT_NE(preprocessor_, nullptr);
+    auto hdiDeviceMock = Mock::HdiDeviceMock::GetInstance();
+    ASSERT_NE(hdiDeviceMock, nullptr);
+    auto backend = HdiBackend::GetInstance();
+    ASSERT_NE(backend, nullptr);
+    auto origDevice = backend->device_;
+    backend->device_ = hdiDeviceMock;
+    EXPECT_CALL(*hdiDeviceMock, RegHotPlugCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegRefreshCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegHwcDeadCallback(_, _)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*hdiDeviceMock, RegHwcEventCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegScreenVBlankIdleCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_TRUE(preprocessor_->Init());
+    backend->device_ = origDevice;
+}
+
+/*
+ * @tc.name: InitTest003
+ * @tc.desc: Test Init when RegScreenVBlankIdleCallback fails: warn only, Init still succeeds
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSScreenPreprocessorTest, InitTest003, TestSize.Level1)
+{
+    ASSERT_NE(preprocessor_, nullptr);
+    auto hdiDeviceMock = Mock::HdiDeviceMock::GetInstance();
+    ASSERT_NE(hdiDeviceMock, nullptr);
+    auto backend = HdiBackend::GetInstance();
+    ASSERT_NE(backend, nullptr);
+    auto origDevice = backend->device_;
+    backend->device_ = hdiDeviceMock;
+    EXPECT_CALL(*hdiDeviceMock, RegHotPlugCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegRefreshCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegHwcDeadCallback(_, _)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*hdiDeviceMock, RegHwcEventCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegScreenVBlankIdleCallback(_, _)).WillOnce(testing::Return(-1));
+    // the idle callback is non-core for startup: failure is logged and Init still succeeds
+    EXPECT_TRUE(preprocessor_->Init());
+    backend->device_ = origDevice;
 }
 } // namespace OHOS::Rosen

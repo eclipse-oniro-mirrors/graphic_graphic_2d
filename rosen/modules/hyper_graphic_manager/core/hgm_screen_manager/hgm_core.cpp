@@ -200,20 +200,28 @@ int32_t HgmCore::InitXmlConfig()
     if (!mParser_) {
         mParser_ = std::make_unique<XMLParser>();
     }
-    if (mParser_->LoadConfiguration(GetHgmXmlPath().c_str()) != EXEC_SUCCESS) {
-        HGM_LOGW("failed to load prod xml configuration file");
+    int32_t loadRet = mParser_->LoadConfiguration(GetHgmXmlPath().c_str());
+    if (loadRet != EXEC_SUCCESS) {
+        HGM_LOGE("failed to load prod xml configuration file, ret %{public}d", loadRet);
     }
-    if (mParser_->Parse() != EXEC_SUCCESS) {
-        HGM_LOGW("failed to parse prod xml configuration");
+    int32_t parseRet = mParser_->Parse();
+    if (parseRet != EXEC_SUCCESS) {
+        HGM_LOGE("failed to parse prod xml configuration, ret %{public}d", parseRet);
     }
 
+    // adopt whatever was parsed, even partially (historical behaviour): a mid-file parse
+    // error must not discard the entries that were parsed before it
     if (!mPolicyConfigData_) {
         mPolicyConfigData_ = mParser_->GetParsedData();
     }
-    if (mPolicyConfigData_ != nullptr) {
-        mPolicyConfigVisitor_ = std::make_shared<PolicyConfigVisitorImpl>(*mPolicyConfigData_);
-        hgmAbilityEnabled_ = mPolicyConfigData_->hgmAbilityEnabled_;
+    if (mPolicyConfigData_ == nullptr) {
+        // keep the historical degraded behaviour: hgm keeps running with an empty config
+        // (frameRateManager is still created downstream); the failure is visible via logs above
+        HGM_LOGE("no usable xml config, hgm runs with an empty config");
+        return EXEC_SUCCESS;
     }
+    mPolicyConfigVisitor_ = std::make_shared<PolicyConfigVisitorImpl>(*mPolicyConfigData_);
+    hgmAbilityEnabled_ = mPolicyConfigData_->hgmAbilityEnabled_;
     return EXEC_SUCCESS;
 }
 

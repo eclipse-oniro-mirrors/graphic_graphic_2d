@@ -190,7 +190,7 @@ sptr<IRemoteObject> RSMultiRenderProcessManager::HandleNewGroup(GroupId groupId,
     }
 
     renderProcessReadyFuture.wait();
-    RS_LOGI("%{public}s: render process is ready", __func__);
+    RS_LOGI("%{public}s: render process wait finished", __func__);
     auto renderConnProxy = stateStore_.GotConnectToRenderConnByUniqueId(processUniqueIdOpt.value());
     if (!renderConnProxy) {
         RS_LOGE("%{public}s: processUniqueId invalidated by death cleanup", __func__);

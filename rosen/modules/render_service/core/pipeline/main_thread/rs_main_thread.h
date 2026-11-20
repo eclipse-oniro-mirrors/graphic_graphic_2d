@@ -624,6 +624,14 @@ private:
     int64_t GetCurrentSteadyTimeMs() const;
     float GetCurrentSteadyTimeMsFloat() const;
     void RequestNextVsyncForCachedCommand(std::string &transactionFlags, pid_t pid, uint64_t index);
+    // requests the next vsync while a transaction-index hole is being waited on, so the
+    // skip timeout can still trigger when no other vsync source (animation/transaction) is active
+    void RequestNextVsyncForPendingTransaction(pid_t pid);
+    // handles a transaction whose index does not follow lastIndex: past the skip limit it skips
+    // to the transaction (lastIndex = curIndex) and returns true so the caller consumes it;
+    // otherwise keeps waiting for the missing index and returns false so the caller stops at it
+    bool HandleTransactionIndexHole(pid_t pid, uint64_t curIndex, uint64_t& lastIndex,
+        size_t pendingCount, std::string& transactionFlags);
     void UpdateLuminanceAndColorTemp();
     void UpdateCompositionType(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, UIMode3D uiMode3D);
 
@@ -795,6 +803,8 @@ private:
     TransactionDataMap cachedTransactionDataMap_;
     TransactionDataIndexMap effectiveTransactionDataIndexMap_;
     std::unordered_map<pid_t, uint64_t> transactionDataLastWaitTime_;
+    // per-pid vsync timestamp of the last missing-index error log, for log throttling
+    std::unordered_map<pid_t, uint64_t> transactionDataLastLogTime_;
 
     int64_t requestNextVsyncTime_ = -1;
     bool isHdrSwitchChanged_ = false;

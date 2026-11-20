@@ -160,6 +160,49 @@ HWTEST_F(HgmCommandTest, InitXmlConfig, Function | SmallTest | Level0)
 }
 
 /**
+ * @tc.name: InitXmlConfig002
+ * @tc.desc: Verify no usable xml data keeps the run-with-empty config behaviour (EXEC_SUCCESS)
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(HgmCommandTest, InitXmlConfig002, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    // a /sys_prod-prefixed nonexistent path is returned by GetHgmXmlPath as-is, so
+    // xmlReadFile fails deterministically; an empty mock would fall back to the real
+    // product config path and make the assertions below env-dependent
+    g_mockStr = "/sys_prod/nonexistent/hgm_policy_config.xml";
+    auto origData = hgmCore.mPolicyConfigData_;
+    hgmCore.mPolicyConfigData_ = nullptr;
+    // also reset the reused parser: it retains previously parsed data and would hand the
+    // stale non-null object back through GetParsedData on the failed load
+    hgmCore.mParser_ = nullptr;
+    // historical degraded behaviour: hgm keeps running with an empty config, no failure propagate
+    EXPECT_EQ(hgmCore.InitXmlConfig(), EXEC_SUCCESS);
+    EXPECT_EQ(hgmCore.mPolicyConfigData_, nullptr);
+    // restore state for the following test cases
+    hgmCore.mPolicyConfigData_ = origData;
+    g_mockStr = CONFIG_FILE_PRODUCT;
+}
+
+/**
+ * @tc.name: InitXmlConfigKeepParsedData001
+ * @tc.desc: Verify a failing re-init keeps the previously adopted config data
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(HgmCommandTest, InitXmlConfigKeepParsedData001, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    ASSERT_NE(hgmCore.mPolicyConfigData_, nullptr);
+    // a failing re-load must not clobber the already-adopted config data
+    g_mockStr = "/sys_prod/nonexistent/hgm_policy_config.xml";
+    EXPECT_EQ(hgmCore.InitXmlConfig(), EXEC_SUCCESS);
+    EXPECT_NE(hgmCore.mPolicyConfigData_, nullptr);
+    g_mockStr = CONFIG_FILE_PRODUCT;
+}
+
+/**
  * @tc.name: Init001
  * @tc.desc: Verify the result of Init001 function
  * @tc.type: FUNC

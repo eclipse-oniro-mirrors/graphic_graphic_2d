@@ -325,7 +325,7 @@ HWTEST_F(RSUniRenderThreadTest, Render001, TestSize.Level1)
 #ifdef RES_SCHED_ENABLE
 /**
  * @tc.name: SubScribeSystemAbility001
- * @tc.desc: Test SubScribeSystemAbility
+ * @tc.desc: Test SubScribeSystemAbility keeps the listener after subscribing
  * @tc.type: FUNC
  * @tc.require: issueIAE59W
  */
@@ -333,7 +333,11 @@ HWTEST_F(RSUniRenderThreadTest, SubScribeSystemAbility001, TestSize.Level1)
 {
     RSUniRenderThread& instance = RSUniRenderThread::Instance();
     instance.SubScribeSystemAbility();
-    EXPECT_TRUE(instance.rootNodeDrawable_);
+    // a successful subscribe keeps the listener registered; exhausted retries would clear it
+    EXPECT_NE(instance.saStatusChangeListener_, nullptr);
+    // re-subscribing installs a fresh listener and still succeeds
+    instance.SubScribeSystemAbility();
+    EXPECT_NE(instance.saStatusChangeListener_, nullptr);
 }
 #endif
 

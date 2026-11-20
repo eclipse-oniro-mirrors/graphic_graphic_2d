@@ -15,6 +15,8 @@
 
 #include "hgm_context.h"
 
+#include <chrono>
+
 #include "feature/vrate/rs_vsync_rate_reduce_manager.h"
 #include "hgm_config_callback_manager.h"
 #include "hgm_core.h"
@@ -22,6 +24,11 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+// death recipient / binder threads must not block forever on the hgm queue; the vote cleanup
+// is idempotent per pid, a later clean of the same pid converges to the same state
+constexpr int64_t HGM_CLEAN_TASK_TIMEOUT_MS = 3000; // 3s
+}
 
 HgmContext::HgmContext(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
     const std::shared_ptr<HgmFrameRateManager>& frameRateMgr,
@@ -246,11 +253,15 @@ void HgmContext::CleanAllWhenServiceConnectionDie(pid_t remotePid)
         frameRateLinkerMap_.FilterFrameRateLinkerByPid(remotePid);
     });
 
-    HgmTaskHandleThread::Instance().ScheduleTask([frameRateManager = frameRateManager_, remotePid] {
+    auto cleanFuture = HgmTaskHandleThread::Instance().ScheduleTask([frameRateManager = frameRateManager_,
+        remotePid] {
         RS_TRACE_NAME_FMT("CleanHgmEvent %d", remotePid);
         HgmConfigCallbackManager::GetInstance()->UnRegisterHgmConfigChangeCallback(remotePid);
         frameRateManager->CleanVote(remotePid);
-    }).wait();
+    });
+    if (cleanFuture.wait_for(std::chrono::milliseconds(HGM_CLEAN_TASK_TIMEOUT_MS)) != std::future_status::ready) {
+        HGM_LOGE("%{public}s wait hgm clean task timeout, remotePid: %{public}d", __func__, remotePid);
+    }
 }
 
 void HgmContext::CreateFrameRateLinker(const std::string& name, FrameRateLinkerId id, NodeId windowNodeId)
