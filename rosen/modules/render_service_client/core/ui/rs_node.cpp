@@ -450,7 +450,7 @@ void RSNode::AddDurationKeyFrame(const std::shared_ptr<RSUIContext> rsUIContext,
 bool RSNode::IsImplicitAnimationOpen(const std::shared_ptr<RSUIContext> rsUIContext)
 {
     if (rsUIContext == nullptr) {
-        ROSEN_LOGE("RSNode::IsImplicitAnimationOpen, rsUIContext is null!");
+        RS_LOGE_LIMIT(__func__, __line__, "RSNode::IsImplicitAnimationOpen, rsUIContext is null!");
         return false;
     }
     auto implicitAnimator = rsUIContext->GetRSImplicitAnimator();
