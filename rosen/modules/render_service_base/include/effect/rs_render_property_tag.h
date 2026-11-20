@@ -186,6 +186,10 @@ enum class RSNGEffectType : int16_t {
 
 using RSNGEffectTypeUnderlying = std::underlying_type<RSNGEffectType>::type;
 constexpr auto END_OF_CHAIN = static_cast<RSNGEffectTypeUnderlying>(RSNGEffectType::INVALID); // -1
+constexpr auto END_OF_EFFECTS = END_OF_CHAIN - 1; // -2, effects list done, trailer section follows
+
+// Trailer flag bits — each effect reports which trailer data it carries
+constexpr uint32_t TRAILER_FLAG_CACHE_POLICY = 1 << 0;
 
 } // namespace Rosen
 } // namespace OHOS

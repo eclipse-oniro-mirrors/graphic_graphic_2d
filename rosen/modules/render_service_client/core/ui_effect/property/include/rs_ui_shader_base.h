@@ -16,6 +16,7 @@
 #ifndef ROSEN_ENGINE_CORE_RENDER_UI_SHADER_BASE_H
 #define ROSEN_ENGINE_CORE_RENDER_UI_SHADER_BASE_H
 
+#include "effect/rs_frame_cache_level.h"
 #include "effect/rs_render_shader_base.h"
 #include "ui_effect/property/include/rs_ui_property_tag.h"
 #include "ui_effect/property/include/rs_ui_template.h"
@@ -29,6 +30,34 @@ public:
 
     RSC_EXPORT static std::shared_ptr<RSNGShaderBase> Create(RSNGEffectType type);
     RSC_EXPORT static std::shared_ptr<RSNGShaderBase> Create(std::shared_ptr<VisualEffectPara> effectPara);
+
+    void EnableCache(RSFrameCacheLevel level, const RSFrameSkipPolicy& skipPolicy)
+    {
+        cacheLevel_ = level;
+        skipPolicy_ = skipPolicy;
+        auto current = nextEffect_;
+        while (current) {
+            current->cacheLevel_ = level;
+            current->skipPolicy_ = skipPolicy;
+            current = current->nextEffect_;
+        }
+    }
+
+    RSFrameCacheLevel GetFrameCacheLevel() const { return cacheLevel_; }
+
+    const RSFrameSkipPolicy& GetFrameSkipPolicy() const { return skipPolicy_; }
+
+    RSFrameCacheLevel GetCacheLevel() const override { return cacheLevel_; }
+    RSFrameSkipPolicy GetCacheSkipPolicy() const override { return skipPolicy_; }
+
+    void OnCopyCachePolicyTo(RSNGRenderShaderBase& server) override
+    {
+        server.SetCachePolicy(cacheLevel_, skipPolicy_);
+    }
+
+protected:
+    RSFrameCacheLevel cacheLevel_ = RSFrameCacheLevel::NONE;
+    RSFrameSkipPolicy skipPolicy_ {};
 };
 
 template<RSNGEffectType Type, typename... PropertyTags>

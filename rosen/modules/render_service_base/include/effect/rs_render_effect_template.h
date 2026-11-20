@@ -275,6 +275,66 @@ public:
     virtual void CalculateHashInner(uint32_t& hash) = 0;
     virtual bool CanSkipFrame() = 0;
 
+    // Recursively marshal type + properties for the effect chain (no end marker).
+    // Marshalling calls this, then writes end marker + optional trailer at head level.
+    virtual bool MarshalEffects(Parcel& parcel) const { return true; }
+
+    // Per-effect trailer data (additive, default no-op).
+    virtual uint32_t GetTrailerFlags() const { return 0; }
+    virtual bool OnMarshalTrailerData(Parcel& parcel, uint32_t flags) const { return true; }
+    [[nodiscard]] virtual bool OnUnmarshalTrailerData(Parcel& parcel, uint32_t flags) { return true; }
+
+    bool HasTrailersInChain() const
+    {
+        auto current = this;
+        while (current) {
+            if (current->GetTrailerFlags() != 0) {
+                return true;
+            }
+            current = current->nextEffect_.get();
+        }
+        return false;
+    }
+
+    bool MarshalTrailers(Parcel& parcel) const
+    {
+        uint32_t count = static_cast<uint32_t>(GetEffectCount());
+        if (!RSMarshallingHelper::Marshalling(parcel, count)) {
+            return false;
+        }
+        auto current = this;
+        for (uint8_t i = 0; i < count && current; i++) {
+            uint32_t flags = current->GetTrailerFlags();
+            if (!RSMarshallingHelper::Marshalling(parcel, flags)) {
+                return false;
+            }
+            if (!current->OnMarshalTrailerData(parcel, flags)) {
+                return false;
+            }
+            current = current->GetNext().get();
+        }
+        return true;
+    }
+
+    void UnmarshalTrailers(Parcel& parcel)
+    {
+        uint8_t count = 0;
+        if (!RSMarshallingHelper::Unmarshalling(parcel, count)) {
+            return;
+        }
+        auto current = this;
+        for (uint8_t i = 0; i < count && current; i++) {
+            uint32_t flags = 0;
+            if (!RSMarshallingHelper::Unmarshalling(parcel, flags)) {
+                break;
+            }
+            if (!current->OnUnmarshalTrailerData(parcel, flags)) {
+                break;
+            }
+            current = current->GetNext().get();
+        }
+    }
+
     bool ContainsType(RSNGEffectType type)
     {
         auto current = this;
@@ -410,7 +470,7 @@ public:
         Getter<Tag>()->Dump(out);
     }
 
-    bool Marshalling(Parcel& parcel) const override
+    bool MarshalEffects(Parcel& parcel) const override
     {
         auto count = Base::GetEffectCount();
         if (count >= Base::EFFECT_COUNT_LIMIT) {
@@ -430,9 +490,35 @@ public:
         }
 
         if (Base::nextEffect_) {
-            return Base::nextEffect_->Marshalling(parcel);
+            return Base::nextEffect_->MarshalEffects(parcel);
+        }
+        return true;
+    }
+
+    /* Effect chain wire format:
+     *   No trailer:  [type1][props1]...[typeN][propsN][END_OF_CHAIN]
+     *   With trailer: [type1][props1]...[typeN][propsN][END_OF_EFFECTS]
+     *                  [num_effects:u32][flags:u32][trailer_data]...  (per effect, head→tail)
+     *                  [END_OF_CHAIN]
+     * MarshalEffects writes type+props recursively (no end marker).
+     * Marshalling calls MarshalEffects, then writes END_OF_EFFECTS + trailer + END_OF_CHAIN
+     * at head level (full chain visible). Old clients without trailer write END_OF_CHAIN
+     * directly; new servers handle both formats.
+     */
+    bool Marshalling(Parcel& parcel) const override
+    {
+        if (!MarshalEffects(parcel)) {
+            return false;
         }
 
+        if (this->HasTrailersInChain()) {
+            if (!RSMarshallingHelper::Marshalling(parcel, END_OF_EFFECTS)) {
+                return false;
+            }
+            if (!this->MarshalTrailers(parcel)) {
+                return false;
+            }
+        }
         return RSMarshallingHelper::Marshalling(parcel, END_OF_CHAIN);
     }
 

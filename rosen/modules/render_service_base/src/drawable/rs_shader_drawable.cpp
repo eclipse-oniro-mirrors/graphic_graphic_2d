@@ -64,6 +64,7 @@ void RSShaderDrawable::OnSync()
     auto visualEffectContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
     stagingShader_->AppendToGEContainer(visualEffectContainer);
     visualEffectContainer->UpdateCacheDataFrom(visualEffectContainer_);
+    stagingShader_->ApplyCacheConfigToGEContainer(visualEffectContainer);
     visualEffectContainer_ = visualEffectContainer;
 
     nodeId_ = stagingNodeId_;
@@ -124,6 +125,7 @@ void RSShaderDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect
     auto color = static_cast<RSPaintFilterCanvas*>(canvas)->GetColorPicked(ColorPlaceholder::SURFACE_CONTRAST);
     constexpr float COLOR_MAX = 255.0f;
     visualEffectContainer_->UpdateDarkScale(static_cast<float>(Drawing::Color::ColorQuadGetR(color)) / COLOR_MAX);
+    RSTagTracker tag(canvas->GetGPUContext(), RSTagTracker::TAGTYPE::TAG_SHADER_CACHE);
     geRender->DrawShaderEffect(*canvas, *visualEffectContainer_, drawRect);
 }
 

@@ -41,6 +41,12 @@ public:
     virtual void Detach() = 0;
     virtual std::shared_ptr<Derived> CopyAsSingleEffect() = 0;
 
+    virtual void OnCopyCachePolicyTo(RenderEffectBase& server) {}
+
+    // Cache policy accessors for SetValue comparison (default: no cache policy)
+    virtual RSFrameCacheLevel GetCacheLevel() const { return RSFrameCacheLevel::NONE; }
+    virtual RSFrameSkipPolicy GetCacheSkipPolicy() const { return {}; }
+
     /**
     * @brief Append a single effect to the end of the current effect chain, enabling all
     * effects in the chain to take effect simultaneously.
@@ -159,6 +165,7 @@ public:
                 (res->template Setter<std::decay_t<decltype(args)>>(args.value_->Get()), ...);
             },
             properties_);
+        Base::OnCopyCachePolicyTo(*res);
         return res; // Implicit upcast from std::shared_ptr<RSNGEffectTemplate> to std::shared_ptr<Base>.
     }
 
@@ -170,6 +177,7 @@ public:
 
         // 2. Create render filter by type and fill properties
         auto current = std::make_shared<RenderEffectTemplate>(renderProperties);
+        Base::OnCopyCachePolicyTo(*current);
         if (auto& nextEffect = Base::nextEffect_) {
             current->nextEffect_ = nextEffect->GetRenderEffect();
         }
@@ -186,6 +194,16 @@ public:
         auto otherDown = std::static_pointer_cast<RSNGEffectTemplate>(other);
         // effect chain structure changed, eg. a => a->b
         if (Base::GetEffectCount() != otherDown->GetEffectCount()) {
+            return false;
+        }
+        // cache policy changed — force full replacement via GetRenderEffect
+        // so OnCopyCachePolicyTo propagates the new policy to server side
+        if (Base::GetCacheLevel() != other->GetCacheLevel()) {
+            return false;
+        }
+        auto thisPolicy = Base::GetCacheSkipPolicy();
+        auto otherPolicy = other->GetCacheSkipPolicy();
+        if (thisPolicy.mode != otherPolicy.mode || thisPolicy.skipInterval != otherPolicy.skipInterval) {
             return false;
         }
         auto& otherProps = otherDown->GetProperties();

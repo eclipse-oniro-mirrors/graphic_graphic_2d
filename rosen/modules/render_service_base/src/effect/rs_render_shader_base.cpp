@@ -197,6 +197,21 @@ std::shared_ptr<RSNGRenderShaderBase> RSNGRenderShaderBase::Create(RSNGEffectTyp
             return true;
         }
 
+        if (type == END_OF_EFFECTS) {
+            val = head;
+            if (head) {
+                head->UnmarshalTrailers(parcel);
+            }
+            // Consume final END_OF_CHAIN terminator
+            RSNGEffectTypeUnderlying terminator = 0;
+            if (!RSMarshallingHelper::Unmarshalling(parcel, terminator) || terminator != END_OF_CHAIN) {
+                ROSEN_LOGE("RSNGRenderShaderBase: expected END_OF_CHAIN after trailers, got %{public}d",
+                    terminator);
+                return false;
+            }
+            return true;
+        }
+
         auto shader = Create(static_cast<RSNGEffectType>(type));
         if (!shader || !shader->OnUnmarshalling(parcel)) {
             ROSEN_LOGE("RSNGRenderShaderBase: Unmarshalling shader failed with type %{public}d", type);
@@ -213,6 +228,25 @@ std::shared_ptr<RSNGRenderShaderBase> RSNGRenderShaderBase::Create(RSNGEffectTyp
     ROSEN_LOGE("RSNGRenderShaderBase: Unmarshalling shader count arrive limit(%{public}zu)",
         EFFECT_COUNT_LIMIT);
     return false;
+}
+
+void RSNGRenderShaderBase::ApplyCacheConfigToGEContainer(
+    std::shared_ptr<Drawing::GEVisualEffectContainer>& ge) const
+{
+    if (!ge) {
+        return;
+    }
+    if (cacheLevel_ == RSFrameCacheLevel::NONE) {
+        // Clear stale cache from a previous shader in the same slot
+        ge->GetCacheStore().ApplyCachePolicy(GEFrameCacheLevel::NONE, {}, ge->GetFilterTypes());
+        return;
+    }
+    auto geLevel = static_cast<GEFrameCacheLevel>(static_cast<int32_t>(cacheLevel_));
+    GEFrameSkipPolicy geSkipPolicy {
+        static_cast<GEFrameSkipMode>(static_cast<int32_t>(skipPolicy_.mode)),
+        skipPolicy_.skipInterval
+    };
+    ge->GetCacheStore().ApplyCachePolicy(geLevel, geSkipPolicy, ge->GetFilterTypes());
 }
 
 bool RSNGRenderShaderHelper::CheckEnableEDR(std::shared_ptr<RSNGRenderShaderBase>& shader)
