@@ -872,8 +872,9 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
-    // process white list
-    NodeId persistentId = uniParam->IsSecurityDisplay() ?
+    // process white list. A window-record capture traverses the normal draw path, so it must build
+    // the same whitelist root stack even while the real output security state stays false.
+    NodeId persistentId = (uniParam->IsSecurityDisplay() || RSUniRenderThread::GetCaptureParam().isWindowRecord_) ?
         GetWhiteListPersistentId(*surfaceParams, *rscanvas) : INVALID_LEASH_PERSISTENTID;
     AutoSpecialLayerStateRecover whiteListRecover(persistentId);
 

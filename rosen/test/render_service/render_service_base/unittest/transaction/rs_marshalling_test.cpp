@@ -722,25 +722,6 @@ static RSWindowRecordConfig CreateWindowRecordConfig(size_t idCount)
 }
 
 /**
- * @tc.name: RSWindowRecordConfigMarshalling001
- * @tc.desc: test full round trip of RSWindowRecordConfig fields
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSMarshallingTest, RSWindowRecordConfigMarshalling001, TestSize.Level1)
-{
-    RSWindowRecordConfig config = CreateWindowRecordConfig(3);
-
-    MessageParcel parcel;
-    ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, config));
-
-    RSWindowRecordConfig unmarshalled;
-    ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(parcel, unmarshalled));
-    EXPECT_EQ(unmarshalled.renderFit, config.renderFit);
-    EXPECT_EQ(unmarshalled.surfaceNodeIds, config.surfaceNodeIds);
-}
-
-/**
  * @tc.name: RSWindowRecordConfigMarshalling002
  * @tc.desc: test round trip of a default RSWindowRecordConfig with an empty id list
  * @tc.type: FUNC

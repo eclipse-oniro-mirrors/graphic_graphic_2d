@@ -111,6 +111,10 @@ void DisplayNodeCommandHelper::RemoveDisplayNodeFromTree(RSContext& context, Nod
         return;
     }
 
+    // End an active record session while the old parent is still reachable: the counted release
+    // needs that output screen to drop the mirror relation derived from this display.
+    logicalDisplayNode->EndWindowRecordSession();
+
     auto lambda = [&logicalDisplayNode](const std::shared_ptr<RSScreenRenderNode>& screenRenderNode) {
         screenRenderNode->RemoveChild(logicalDisplayNode);
     };
@@ -134,7 +138,9 @@ void DisplayNodeCommandHelper::SetScreenId(RSContext& context, NodeId id, uint64
 
     logicalDisplayNode->NotifyScreenSwitchFinish(logicalDisplayNode->GetScreenId());
     if (logicalDisplayNode->GetScreenId() != screenId) {
-        logicalDisplayNode->ClearWindowRecordSession();
+        // An active record session cannot carry its source relation to the new screen, so end it
+        // and release both layers before the display attaches to its new parent.
+        logicalDisplayNode->EndWindowRecordSession();
     }
     logicalDisplayNode->SetScreenId(screenId);
     for (auto& child : *(logicalDisplayNode->GetChildren())) {
@@ -223,15 +229,21 @@ void DisplayNodeCommandHelper::SetDisplayMode(RSContext& context, NodeId id, con
     }
 
     DisplayMode mode = config.displayMode;
+    const bool wasRecordActive = node->IsWindowRecordActive();
     node->SetDisplayMode(mode);
-    // Any display-mode update ends the record session before mirror state is applied; the config
-    // itself is delivered only through SetWindowRecordConfig.
-    node->ClearWindowRecordSession();
+    if (wasRecordActive) {
+        // Explicit DMS ends the session and releases both record-owned relations before the
+        // requested source is applied.
+        node->EndWindowRecordSession();
+    }
     if (mode == DisplayMode::MIRROR) {
         NodeId mirroredNodeId = config.mirrorNodeId;
         auto& nodeMap = context.GetNodeMap();
         auto mirrorSourceNode = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(mirroredNodeId);
         if (mirrorSourceNode == nullptr) {
+            // An active record session was already ended above, which released both record-owned
+            // relations; keep that paused empty+no-source result. Without an active record this is
+            // just a rejected DMS selection, so the existing mirror source must be retained.
             RS_LOGW("DisplayNodeCommandHelper::%{public}s fail, displayNodeId[%{public}" PRIu64
                     "], mirroredNodeId[%{public}" PRIu64 "]", __func__, id, mirroredNodeId);
             return;
@@ -289,14 +301,25 @@ void DisplayNodeCommandHelper::SetWindowRecordConfig(RSContext& context, NodeId 
             " is not on a virtual screen, config ignored", __func__, id);
         return;
     }
-    node->SetWindowRecordConfig(config);
-    // Only a config that actually starts a record session drops the mirror source. An empty config
-    // just stops recording and keeps the current mirror; an oversized config is rejected by the node
-    // setter and must not disturb the mirror either.
-    if (config.surfaceNodeIds.empty() || config.surfaceNodeIds.size() > MAX_WINDOW_RECORD_SURFACE_NUM) {
+    const bool isStart = !config.surfaceNodeIds.empty();
+    const bool wasActive = node->IsWindowRecordActive();
+    if (isStart) {
+        if (!node->IsMirrorDisplay()) {
+            // Validate the whole start before mutation: record requires a virtual MIRROR output.
+            // A pre-existing live source is not required; early publication selects the window.
+            RS_LOGE("DisplayNodeCommandHelper::%{public}s NodeId: %{public}" PRIu64
+                " is not a MIRROR output, record ignored", __func__, id);
+            return;
+        }
+        // The node setter stays the server authority for the surface-count bound and keeps the
+        // previous config when the limit is exceeded.
+        node->SetWindowRecordConfig(config);
         return;
     }
-    node->ResetMirrorSource();
+    // Empty config stops recording. An inactive empty config leaves ordinary mirror untouched.
+    if (wasActive) {
+        node->EndWindowRecordSession();
+    }
 }
 
 } // namespace Rosen

@@ -43,8 +43,8 @@ namespace Rosen {
 bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable,
     std::shared_ptr<RSBaseRenderEngine> renderEngine, int32_t tid)
 {
-    mergeHardwareEnabledFence_ = false;
-    mirroredScreenNodeId_ = INVALID_NODEID;
+    mergeHardwareEnabledFence_ = hasWindowRecordSource_;
+    mirroredScreenNodeId_ = hasWindowRecordSource_ ? windowRecordScreenNodeId_ : INVALID_NODEID;
     if (!RSProcessor::InitForRenderThread(screenDrawable, renderEngine)) {
         return false;
     }
@@ -78,6 +78,9 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRender
     bool mirrorScreenHDR = false;
     bool expandScreenHDR = false;
     renderFrameConfig_.colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    // Window record is SDR-only in this version: IsHDRCast may still select the fixed 10-bit format,
+    // but its BT2100_HLG gamut selection must never reach the record output.
+    const bool isWindowRecord = params->HasWindowRecordDisplay();
     auto mirroredScreenDrawable =
         std::static_pointer_cast<DrawableV2::RSScreenRenderNodeDrawable>(params->GetMirrorSourceDrawable().lock());
     auto virtualScreenColorSpace = params->GetNewColorSpace();
@@ -108,14 +111,29 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRender
             renderFrameConfig_.colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
             RS_LOGD_IF(DEBUG_PIPELINE, "RSUniRenderVirtualProcessor::Init Set virtual screen buffer colorGamut to P3.");
         }
+        // Remember the SDR/P3 gamut selected above, in case IsHDRCast returns HDR for a record.
+        const auto mirrorSdrColorGamut = renderFrameConfig_.colorGamut;
         mirrorScreenHDR = RSHdrUtil::IsHDRCast(params, renderFrameConfig_);
+        if (isWindowRecord) {
+            renderFrameConfig_.colorGamut = mirrorSdrColorGamut;
+            // Record content stays SDR: no HDR Cast metadata and no HDR canvas processing.
+            mirrorScreenHDR = false;
+            expandScreenHDR = false;
+        }
         RS_LOGD_IF(DEBUG_PIPELINE, "RSUniRenderVirtualProcessor::Init HDRCast mirrorScreenHDR: %{public}d",
             mirrorScreenHDR);
     } else {
         if (virtualScreenColorSpace != GRAPHIC_COLOR_GAMUT_SRGB) {
             renderFrameConfig_.colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
         }
+        // Remember the SDR/P3 gamut selected above, in case IsHDRCast returns HDR for a record.
+        const auto expandSdrColorGamut = renderFrameConfig_.colorGamut;
         expandScreenHDR = RSHdrUtil::IsHDRCast(params, renderFrameConfig_);
+        if (isWindowRecord) {
+            renderFrameConfig_.colorGamut = expandSdrColorGamut;
+            expandScreenHDR = false;
+            mirrorScreenHDR = false;
+        }
         RS_LOGD_IF(DEBUG_PIPELINE, "RSUniRenderVirtualProcessor::Init HDRCast expandScreenHDR: %{public}d",
             expandScreenHDR);
     }
@@ -183,10 +201,23 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRender
     return true;
 }
 
-void RSUniRenderVirtualProcessor::SetWindowRecordSourceScreen(NodeId sourceScreenNodeId)
+void RSUniRenderVirtualProcessor::SetWindowRecordSource(
+    const RSLogicalDisplayRenderParams& sourceDisplayParams, const RSScreenRenderParams& sourceScreenParams)
 {
-    mirroredScreenNodeId_ = sourceScreenNodeId;
-    mergeHardwareEnabledFence_ = sourceScreenNodeId != INVALID_NODEID;
+    // A record session has no whole-screen mirror content to consume; the snapshot's own source
+    // supplies rotation and correction. Arming the fence merge here keeps the record-only
+    // hardware-enabled fence behavior without a second source lookup at display draw time.
+    hasWindowRecordSource_ = true;
+    windowRecordRotation_ = sourceDisplayParams.GetScreenRotation();
+    windowRecordCorrection_ = sourceScreenParams.GetScreenProperty().GetScreenCorrection();
+    windowRecordScreenNodeId_ = sourceScreenParams.GetId();
+}
+
+ScreenRotation RSUniRenderVirtualProcessor::GetRotationWithCorrection(
+    ScreenRotation rotation, ScreenRotation correction)
+{
+    auto rotationDiff = static_cast<int>(rotation) - static_cast<int>(correction);
+    return static_cast<ScreenRotation>((rotationDiff + SCREEN_ROTATION_NUM) % SCREEN_ROTATION_NUM);
 }
 
 void RSUniRenderVirtualProcessor::CancelCurrentFrame()
@@ -280,9 +311,8 @@ void RSUniRenderVirtualProcessor::CanvasInit(DrawableV2::RSLogicalDisplayRenderN
     } else if (displayDrawable.IsFirstTimeToProcessor() || canvasRotation_ || autoBufferRotation_) {
         displayDrawable.SetOriginScreenRotation(screenRotation_);
     }
-    auto rotationDiff =
-        static_cast<int>(displayDrawable.GetOriginScreenRotation()) - static_cast<int>(screenCorrection_);
-    auto rotationAngle = static_cast<ScreenRotation>((rotationDiff + SCREEN_ROTATION_NUM) % SCREEN_ROTATION_NUM);
+    auto rotationAngle = GetRotationWithCorrection(
+        displayDrawable.GetOriginScreenRotation(), screenCorrection_);
     OriginScreenRotation(rotationAngle, renderFrameConfig_.width, renderFrameConfig_.height);
 
     RS_LOGD_IF(DEBUG_PIPELINE, "RSUniRenderVirtualProcessor::CanvasInit, id: %{public}" PRIu64 ", "
@@ -753,12 +783,17 @@ void RSUniRenderVirtualProcessor::SetVirtualScreenSize(DrawableV2::RSScreenRende
     }
     const auto& screenProperty = screenParams->GetScreenProperty();
     autoBufferRotation_ = screenProperty.GetAutoBufferRotation();
+    if (hasWindowRecordSource_) {
+        // Record content resolved its source on the screen path before this buffer exists. Use the
+        // same rotation/correction as the record canvas so sizing and content cannot diverge; the
+        // record canvas is rotated once by the record geometry, never by CanvasInit().
+        screenRotation_ = windowRecordRotation_;
+        screenCorrection_ = windowRecordCorrection_;
+    }
     virtualScreenWidth_ = screenProperty.GetWidth();
     virtualScreenHeight_ = screenProperty.GetHeight();
     if (autoBufferRotation_) {
-        auto rotationDiff = static_cast<int>(screenRotation_) - static_cast<int>(screenCorrection_);
-        auto curBufferRotation =
-            static_cast<ScreenRotation>((rotationDiff + SCREEN_ROTATION_NUM) % SCREEN_ROTATION_NUM);
+        auto curBufferRotation = GetRotationWithCorrection(screenRotation_, screenCorrection_);
         ScreenRotation firstBufferRotation = screenDrawable.GetFirstBufferRotation();
         if (firstBufferRotation == ScreenRotation::INVALID_SCREEN_ROTATION) {
             screenDrawable.SetFirstBufferRotation(curBufferRotation);

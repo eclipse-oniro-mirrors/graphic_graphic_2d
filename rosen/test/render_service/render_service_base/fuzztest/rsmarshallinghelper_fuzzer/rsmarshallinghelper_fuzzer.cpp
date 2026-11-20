@@ -763,7 +763,9 @@ bool DoMarshallingHelper023()
 
     Parcel parcel;
     RSWindowRecordConfig config;
-    config.renderFit = GetData<bool>() ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
+    // Read one byte and use the lowest bit: a bool copy of 0x02 is a UBSan trap before business code.
+    const uint8_t renderFitBits = GetData<uint8_t>();
+    config.renderFit = (renderFitBits & 1) ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
     size_t idCount = GetData<uint16_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
     for (size_t i = 0; i < idCount; i++) {
         config.surfaceNodeIds.push_back(GetData<NodeId>());

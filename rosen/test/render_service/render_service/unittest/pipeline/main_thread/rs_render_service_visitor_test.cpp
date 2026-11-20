@@ -1422,4 +1422,115 @@ HWTEST_F(RSRenderServiceVisitorTest, UpdateScreenNodeCompositeTypeTest004, TestS
     // Composite type should remain unchanged when state is unusual
     EXPECT_EQ(CompositeType::HARDWARE_COMPOSITE, node->GetCompositeType());
 }
+class WindowRecordVisitorProbeNode : public RSRenderNode {
+public:
+    explicit WindowRecordVisitorProbeNode(NodeId id) : RSRenderNode(id) {}
+    void Prepare(const std::shared_ptr<RSNodeVisitor>&) override
+    {
+        prepareCount_++;
+    }
+    void Process(const std::shared_ptr<RSNodeVisitor>&) override
+    {
+        processCount_++;
+    }
+    int prepareCount_ = 0;
+    int processCount_ = 0;
+};
+
+/**
+ * @tc.name: ScreenWindowRecordOutputFailsClosed
+ * @tc.desc: Legacy screen prepare/process rejects both the active-record branch and the paused
+ * empty+no-source MIRROR branch before traversal, processor creation or PostProcess.
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSRenderServiceVisitorTest, ScreenWindowRecordOutputFailsClosed, TestSize.Level1)
+{
+    for (int pass = 0; pass < 2; ++pass) {
+        constexpr NodeId nodeId = 800;
+        constexpr NodeId displayId = 801;
+        constexpr NodeId probeId = 802;
+        RSRenderServiceVisitor visitor;
+        auto rsContext = std::make_shared<RSContext>();
+        auto screen = std::make_shared<RSScreenRenderNode>(nodeId, 800, rsContext);
+        screen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+        RSDisplayNodeConfig config;
+        config.screenId = 800;
+        config.displayMode = DisplayMode::MIRROR;
+        auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config, rsContext);
+        display->SetDisplayMode(DisplayMode::MIRROR);
+        RSWindowRecordConfig recordConfig;
+        recordConfig.surfaceNodeIds = { 803 };
+        display->SetWindowRecordConfig(recordConfig);
+        // pass 0: active record branch. pass 1: empty config + no source (paused) branch.
+        if (pass == 1) {
+            display->EndWindowRecordSession();
+            ASSERT_TRUE(display->GetMirrorSource().expired());
+        } else {
+            ASSERT_TRUE(display->IsWindowRecordActive());
+        }
+        auto probe = std::make_shared<WindowRecordVisitorProbeNode>(probeId);
+        screen->AddChild(display);
+        screen->AddChild(probe);
+        // A rejected output must not expose a surface vector left over from an earlier prepare.
+        screen->GetCurAllSurfaces().emplace_back(display);
+        ASSERT_FALSE(screen->GetCurAllSurfaces().empty());
+
+        visitor.PrepareScreenRenderNode(*screen);
+        EXPECT_TRUE(screen->GetCurAllSurfaces().empty());
+        EXPECT_EQ(visitor.currentVisitDisplay_, INVALID_SCREEN_ID);
+        EXPECT_EQ(probe->prepareCount_, 0);
+        visitor.ProcessScreenRenderNode(*screen);
+        EXPECT_EQ(visitor.curScreenNode_, nullptr);
+        EXPECT_EQ(visitor.processor_, nullptr);
+    }
+}
+
+/**
+ * @tc.name: LogicalDisplayWindowRecordOutputFailsClosed
+ * @tc.desc: Legacy display prepare/process rejects both the active-record branch and the paused
+ * empty+no-source MIRROR branch before whole-source traversal.
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSRenderServiceVisitorTest, LogicalDisplayWindowRecordOutputFailsClosed, TestSize.Level1)
+{
+    for (int pass = 0; pass < 2; ++pass) {
+        constexpr NodeId displayId = 810;
+        constexpr NodeId sourceDisplayId = 811;
+        constexpr NodeId probeId = 812;
+        RSRenderServiceVisitor visitor(true);
+        auto rsContext = std::make_shared<RSContext>();
+        auto outputScreen = std::make_shared<RSScreenRenderNode>(814, 8140, rsContext);
+        outputScreen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+        visitor.curScreenNode_ = outputScreen;
+        RSDisplayNodeConfig config;
+        config.screenId = 8140;
+        config.displayMode = DisplayMode::MIRROR;
+        auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, config, rsContext);
+        auto sourceDisplay = std::make_shared<RSLogicalDisplayRenderNode>(sourceDisplayId, config, rsContext);
+        auto probe = std::make_shared<WindowRecordVisitorProbeNode>(probeId);
+        sourceDisplay->AddChild(probe);
+        display->SetDisplayMode(DisplayMode::MIRROR);
+        display->SetMirrorSource(sourceDisplay);
+        RSWindowRecordConfig recordConfig;
+        recordConfig.surfaceNodeIds = { 813 };
+        display->SetWindowRecordConfig(recordConfig);
+        // pass 0: active record branch. pass 1: empty config + no source (paused) branch.
+        if (pass == 1) {
+            display->EndWindowRecordSession();
+            ASSERT_TRUE(display->GetMirrorSource().expired());
+        } else {
+            ASSERT_TRUE(display->IsWindowRecordActive());
+        }
+        outputScreen->AddChild(display);
+
+        visitor.PrepareLogicalDisplayRenderNode(*display);
+        EXPECT_EQ(probe->prepareCount_, 0);
+        EXPECT_EQ(visitor.canvas_, nullptr);
+        visitor.ProcessLogicalDisplayRenderNode(*display);
+        EXPECT_EQ(probe->processCount_, 0);
+    }
+}
+
 } // namespace OHOS::Rosen

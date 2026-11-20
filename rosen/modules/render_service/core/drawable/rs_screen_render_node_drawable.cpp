@@ -830,7 +830,17 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto mirrorSourceParams =
         mirroredDrawable ? static_cast<RSScreenRenderParams*>(mirroredDrawable->GetRenderParams().get()) : nullptr;
     if (mirrorSourceParams) {
-        RSMultiScreenUtil::HandleMirrorScreen(*this, *mirrorSourceParams, *params, processor);
+        RSMultiScreenUtil::HandleMirrorScreen(*this, mirrorSourceParams, *params, processor);
+        return;
+    }
+    if (params->GetCompositeType() == CompositeType::UNI_RENDER_VIRTUAL_MIRROR_COMPOSITE) {
+        // Four-state output contract: a virtual MIRROR output without usable source params is
+        // paused, even muted, and must not request a buffer or PostProcess. This covers both an
+        // absent source drawable and a source drawable whose params are not ready yet. A
+        // record-active output returned above with its record gates; an ordinary source mirror
+        // returned with valid params too.
+        RS_TRACE_NAME_FMT("RSScreenRenderNodeDrawable::%s paused virtual mirror output, skip", __func__);
+        SetDrawSkipType(DrawSkipType::SKIP_FRAME);
         return;
     }
     if (params->GetCompositeType() == CompositeType::UNI_RENDER_VIRTUAL_EXPAND_COMPOSITE ||

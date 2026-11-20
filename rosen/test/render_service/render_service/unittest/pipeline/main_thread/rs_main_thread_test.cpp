@@ -48,6 +48,7 @@
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
+#include "params/rs_screen_render_params.h"
 #include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
 #include "feature/tunnel_layer/rs_tunnel_route_arbiter.h"
 #include "platform/common/rs_innovation.h"
@@ -10444,6 +10445,74 @@ HWTEST_F(RSMainThreadTest, SetAdapterLtpoConfig_NullAndNotNull, TestSize.Level1)
     mainThread->SetAdapterLtpoConfig(config);
 
     mainThread->hgmRenderContext_ = savedHgmRenderContext;
+}
+HWTEST_F(RSMainThreadTest, PublishWindowRecordMirrorSourcesTest, TestSize.Level2)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    constexpr ScreenId outputScreenId = 7700;
+    constexpr NodeId outputScreenNodeId = 7701;
+    constexpr ScreenId sourceScreenId = 7702;
+    constexpr NodeId sourceScreenNodeId = 7703;
+    constexpr NodeId displayId = 7704;
+    constexpr NodeId anchorDisplayId = 7705;
+    constexpr NodeId mainId = 7706;
+    auto rsContext = std::make_shared<RSContext>();
+    auto outputScreen = std::make_shared<RSScreenRenderNode>(outputScreenNodeId, outputScreenId, rsContext);
+    outputScreen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    auto sourceScreen = std::make_shared<RSScreenRenderNode>(sourceScreenNodeId, sourceScreenId, rsContext);
+    sourceScreen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(sourceScreenNodeId);
+    auto sourceParams = static_cast<RSScreenRenderParams*>(sourceScreen->stagingRenderParams_.get());
+    ASSERT_NE(sourceParams, nullptr);
+
+    RSDisplayNodeConfig outputConfig;
+    outputConfig.screenId = outputScreenId;
+    outputConfig.displayMode = DisplayMode::MIRROR;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, outputConfig, rsContext);
+    display->SetDisplayMode(DisplayMode::MIRROR);
+
+    RSDisplayNodeConfig anchorConfig;
+    anchorConfig.screenId = sourceScreenId;
+    auto anchorDisplay = std::make_shared<RSLogicalDisplayRenderNode>(anchorDisplayId, anchorConfig, rsContext);
+    // The production factory creates the drawable and its params, as for any real display/window.
+    DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(anchorDisplay);
+    ASSERT_NE(anchorDisplay->GetRenderDrawable(), nullptr);
+    sourceScreen->AddChild(anchorDisplay);
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
+    DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(mainNode);
+    ASSERT_NE(mainNode->GetRenderDrawable(), nullptr);
+    mainNode->isOnTheTree_ = true;
+    anchorDisplay->AddChild(mainNode);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(anchorDisplayId)][anchorDisplayId] = anchorDisplay;
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { mainId };
+    display->SetWindowRecordConfig(recordConfig);
+    outputScreen->AddChild(display);
+    // The main-thread node map is process global; keep the registration scoped so an aborted
+    // expectation cannot leak the output screen into later tests.
+    struct NodeMapRegistrationGuard {
+        RSRenderNodeMap& nodeMap;
+        NodeId id;
+        ~NodeMapRegistrationGuard()
+        {
+            nodeMap.UnregisterRenderNode(id);
+        }
+    };
+    auto& mainThreadNodeMap = mainThread->GetContext().GetMutableNodeMap();
+    mainThreadNodeMap.RegisterRenderNode(outputScreen);
+    NodeMapRegistrationGuard registrationGuard { mainThreadNodeMap, outputScreenNodeId };
+
+    mainThread->PublishWindowRecordMirrorSources();
+    EXPECT_EQ(display->GetMirrorSource().lock(), anchorDisplay);
+    EXPECT_TRUE(display->IsWindowRecordActive());
+    // Both layers are published in the same early main-thread step.
+    EXPECT_TRUE(outputScreen->IsMirrorScreen());
+    EXPECT_EQ(outputScreen->GetMirrorSource().lock(), sourceScreen);
+    EXPECT_EQ(sourceParams->mirrorDstCount_, 1u);
 }
 } // namespace OHOS::Rosen
 #endif

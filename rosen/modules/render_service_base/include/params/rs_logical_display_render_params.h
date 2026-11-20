@@ -162,14 +162,18 @@ public:
         return fixedHeight_;
     }
 
-    // A record session is only active on a virtual screen: consumers gate on this instead of the
-    // raw config, so a display re-parented to a physical screen falls back to normal drawing.
+    // A record session is only active on a virtual MIRROR output: consumers gate on this instead
+    // of the raw config, so a display re-parented to a physical screen or changed to another mode
+    // falls back to normal drawing.
     bool IsRecordSessionActive() const
     {
-        return !windowRecordConfig_.surfaceNodeIds.empty() && isOnVirtualScreen_;
+        return !windowRecordConfig_.surfaceNodeIds.empty() && isOnVirtualScreen_ && IsMirrorDisplay();
     }
     void SetOnVirtualScreen(bool onVirtualScreen)
     {
+        if (isOnVirtualScreen_ == onVirtualScreen) {
+            return;
+        }
         isOnVirtualScreen_ = onVirtualScreen;
         needSync_ = true;
     }
@@ -197,7 +201,15 @@ public:
     // access).
     void MarkWindowRecordSnapshotSynced() { needSync_ = true; }
 
-    void SetWindowRecordConfig(const RSWindowRecordConfig& config) { windowRecordConfig_ = config; needSync_ = true; }
+    // Per-frame callers pass the same resolved value; only an actual config change needs a sync.
+    void SetWindowRecordConfig(const RSWindowRecordConfig& config)
+    {
+        if (windowRecordConfig_ == config) {
+            return;
+        }
+        windowRecordConfig_ = config;
+        needSync_ = true;
+    }
 
 private:
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr ancestorScreenDrawable_;

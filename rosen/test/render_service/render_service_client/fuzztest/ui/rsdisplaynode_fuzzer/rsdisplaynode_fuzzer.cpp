@@ -52,7 +52,9 @@ T GetData()
 RSWindowRecordConfig GetWindowRecordConfigFromData()
 {
     RSWindowRecordConfig recordConfig;
-    recordConfig.renderFit = GetData<bool>() ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
+    // Read one byte and use the lowest bit: a bool copy of 0x02 is a UBSan trap before business code.
+    const uint8_t renderFitBits = GetData<uint8_t>();
+    recordConfig.renderFit = (renderFitBits & 1) ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
     // Bounded id count; includes the over-cap MAX_WINDOW_RECORD_SURFACE_NUM + 1 value.
     size_t idCount = GetData<uint16_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
     for (size_t i = 0; i < idCount; ++i) {

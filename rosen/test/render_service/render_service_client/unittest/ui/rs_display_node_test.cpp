@@ -498,7 +498,7 @@ HWTEST_F(RSDisplayNodeTest, ClearModifierByPid003, TestSize.Level1)
 
 /**
  * @tc.name: SetWindowRecordConfigTest001
- * @tc.desc: SetWindowRecordConfig accepts a bounded config through the public API.
+ * @tc.desc: SetWindowRecordConfig queues a bounded config and drops an oversized list before IPC.
  * @tc.type: FUNC
  */
 HWTEST_F(RSDisplayNodeTest, SetWindowRecordConfigTest001, TestSize.Level1)
@@ -514,47 +514,19 @@ HWTEST_F(RSDisplayNodeTest, SetWindowRecordConfigTest001, TestSize.Level1)
     transactionProxy->FlushImplicitTransaction();
     ASSERT_TRUE(transactionProxy->IsEmpty());
 
+    // Phase 1: the accepted config must reach RSTransactionProxy as a queued render-service command.
     RSWindowRecordConfig recordConfig;
     recordConfig.renderFit = WindowRecordFit::ASPECT_FIT;
     recordConfig.surfaceNodeIds = { 1, 2 };
     displayNode->SetWindowRecordConfig(recordConfig);
-
-    // The accepted config must reach RSTransactionProxy as a queued render-service command.
     EXPECT_FALSE(transactionProxy->IsEmpty());
     transactionProxy->FlushImplicitTransaction();
     EXPECT_TRUE(transactionProxy->IsEmpty());
-}
 
-/**
- * @tc.name: SetWindowRecordConfigTest002
- * @tc.desc: SetWindowRecordConfig rejects an id list above the cap before submitting a command.
- * @tc.type: FUNC
- */
-HWTEST_F(RSDisplayNodeTest, SetWindowRecordConfigTest002, TestSize.Level1)
-{
-    RSDisplayNodeConfig config;
-    config.screenId = 6000;
-    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
-    ASSERT_NE(displayNode, nullptr);
-
+    // Phase 2: an id list above the cap is dropped early, so no command is queued for it.
     RSWindowRecordConfig oversizedConfig;
     oversizedConfig.surfaceNodeIds.assign(MAX_WINDOW_RECORD_SURFACE_NUM + 1, 1);
-
-    auto transactionProxy = RSTransactionProxy::GetInstance();
-    ASSERT_NE(transactionProxy, nullptr);
-    transactionProxy->FlushImplicitTransaction();
-    ASSERT_TRUE(transactionProxy->IsEmpty());
-
-    // The oversized list must be dropped early, so no command is queued for it.
     displayNode->SetWindowRecordConfig(oversizedConfig);
-    EXPECT_TRUE(transactionProxy->IsEmpty());
-
-    // A valid config still queues a command.
-    RSWindowRecordConfig validConfig;
-    validConfig.surfaceNodeIds = { 1 };
-    displayNode->SetWindowRecordConfig(validConfig);
-    EXPECT_FALSE(transactionProxy->IsEmpty());
-    transactionProxy->FlushImplicitTransaction();
     EXPECT_TRUE(transactionProxy->IsEmpty());
 }
 } // namespace OHOS::Rosen

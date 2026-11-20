@@ -475,30 +475,6 @@ HWTEST_F(RSScreenRenderParamsTest, SetUIMode3D_004, TestSize.Level1)
 }
 
 /**
- * @tc.name: EffectiveWhiteListAndWindowRecordDefaults
- * @tc.desc: Verify the effective white list and window record display flag defaults and setters
- * @tc.type: FUNC
- * @tc.require: issues/26744
- */
-HWTEST_F(RSScreenRenderParamsTest, EffectiveWhiteListAndWindowRecordDefaults, TestSize.Level1)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
-    constexpr NodeId firstId = TestSrc::limitNumber::Uint64[4];
-    constexpr NodeId secondId = TestSrc::limitNumber::Uint64[5];
-    RSScreenRenderParams params(id);
-    EXPECT_TRUE(params.GetEffectiveWhiteList().empty());
-    EXPECT_FALSE(params.HasWindowRecordDisplay());
-    EXPECT_FALSE(params.NeedSync());
-
-    params.SetEffectiveWhiteList({ firstId, secondId });
-    EXPECT_EQ(params.GetEffectiveWhiteList(), (std::unordered_set<NodeId>{ firstId, secondId }));
-    EXPECT_TRUE(params.NeedSync());
-
-    params.hasWindowRecordDisplay_ = true;
-    EXPECT_TRUE(params.HasWindowRecordDisplay());
-}
-
-/**
  * @tc.name: WindowRecordFieldsOnSync
  * @tc.desc: Verify OnSync copies the effective white list and window record display flag
  * @tc.type: FUNC

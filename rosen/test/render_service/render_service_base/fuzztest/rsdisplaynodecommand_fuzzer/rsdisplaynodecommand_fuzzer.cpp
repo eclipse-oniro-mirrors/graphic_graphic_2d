@@ -68,7 +68,9 @@ T GetData()
 RSWindowRecordConfig GetWindowRecordConfigFromData()
 {
     RSWindowRecordConfig recordConfig;
-    recordConfig.renderFit = GetData<bool>() ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
+    // Read one byte and use the lowest bit: a bool copy of 0x02 is a UBSan trap before business code.
+    const uint8_t renderFitBits = GetData<uint8_t>();
+    recordConfig.renderFit = (renderFitBits & 1) ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
     // Bounded id count; includes the over-cap MAX_WINDOW_RECORD_SURFACE_NUM + 1 value.
     size_t idCount = GetData<uint16_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
     for (size_t i = 0; i < idCount; ++i) {
@@ -159,18 +161,23 @@ bool DoSetVirtualScreenMuteStatus(const uint8_t* data, size_t size, RSContext& c
 
 bool DoSetWindowRecordConfig()
 {
+    if (g_data == nullptr) {
+        return false;
+    }
     // A dedicated context keeps the fixed virtual screen and display away from the random fixtures above.
     std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
     RegisterScreenNode(*context);
+    // The start gate requires an existing virtual MIRROR output, so configure one before a
+    // non-empty record config; an unregistered source keeps the paused empty+no-source state.
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = TEST_SCREEN_ID;
+    displayConfig.displayMode = DisplayMode::MIRROR;
     DisplayNodeCommandHelper::Create(*context, TEST_DISPLAY_NODE_ID, displayConfig);
 
     RSWindowRecordConfig recordConfig = GetWindowRecordConfigFromData();
     DisplayNodeCommandHelper::SetWindowRecordConfig(*context, TEST_DISPLAY_NODE_ID, recordConfig);
 
     context = nullptr;
-    RSRenderNodeGC::Instance().ReleaseNodeMemory();
     return true;
 }
 } // namespace Rosen

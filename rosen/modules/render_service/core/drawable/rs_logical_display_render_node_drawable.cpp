@@ -179,7 +179,9 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 " nodeId[%{public}" PRIu64 "]", __func__, GetId());
             return;
         }
-        RSMultiScreenUtil::HandleWindowRecord(*this, *params, *virtualProcessor);
+        // Record is a virtual-mirror subcase: the shared mirror entry forces a rebuild and owns
+        // record output preparation. A source-less mask is handled inside that entry.
+        RSMultiScreenUtil::HandleMirrorDisplay(*this, *params, processor);
         return;
     }
     auto mirroredRenderParams = mirroredDrawable ? mirroredDrawable->GetRenderParams().get() : nullptr;

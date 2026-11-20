@@ -407,7 +407,10 @@ bool RSSpecialLayerUtils::IsSpecialLayerEnable(const RSScreenProperty* screenPro
         return false;
     }
     bool isVirtualOrMirrorScreen = uniParam->IsMirrorScreen() || screenProperty->IsVirtual();
-    return isVirtualOrMirrorScreen && uniParam->IsSecurityDisplay();
+    // Window record filters a mixed-id whitelist during its own capture. The capture param is
+    // scoped to that pass, so a record filter is enabled independently of the real output security
+    // state; security, mute and exemption still follow the actual output/source properties.
+    return isVirtualOrMirrorScreen && (uniParam->IsSecurityDisplay() || captureParam.isWindowRecord_);
 }
 
 bool RSSpecialLayerUtils::IsSurfaceInBlackList(const RSSurfaceRenderParams& surfaceParams)

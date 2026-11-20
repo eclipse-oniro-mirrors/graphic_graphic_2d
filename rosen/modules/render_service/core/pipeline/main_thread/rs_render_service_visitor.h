@@ -69,6 +69,12 @@ private:
         const RSScreenRenderNode& screenNode, RSSurfaceRenderNode& surfaceNode);
     void ResetSurfaceNodeAttrsInScreenNode(RSScreenRenderNode& screenNode);
 
+    // The legacy (non-Uni) renderer has no record whitelist/bbox path. A record-active output or a
+    // paused empty+no-source MIRROR output fails closed before whole-source prepare/process or output
+    // commit; an ordinary source mirror continues unchanged.
+    static bool HasUnsupportedWindowRecordOutput(const RSScreenRenderNode& node);
+    static bool IsUnsupportedWindowRecordOutput(const RSLogicalDisplayRenderNode& node);
+
 private:
     bool isSecurityDisplay_ = false;
     bool mParallelEnable = false;

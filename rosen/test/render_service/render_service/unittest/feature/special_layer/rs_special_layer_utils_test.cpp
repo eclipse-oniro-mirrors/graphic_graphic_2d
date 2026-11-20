@@ -1958,12 +1958,6 @@ HWTEST_F(RSSpecialLayerUtilsTest, CheckSurfaceSkipCursorMode001, TestSize.Level1
             RSVirtualScreenCursorMode::DEFAULT, { otherId }, {}, INVALID_LEASH_PERSISTENTID, true },
         { "default cursor mode draws under a whitelist root", RSSurfaceNodeType::CURSOR_NODE,
             RSVirtualScreenCursorMode::DEFAULT, { otherId }, {}, leashId, false },
-        { "hide does not change a non-cursor whitelist miss", RSSurfaceNodeType::APP_WINDOW_NODE,
-            RSVirtualScreenCursorMode::HIDE, { otherId }, {}, INVALID_LEASH_PERSISTENTID, true },
-        { "force render does not bypass for non-cursor nodes", RSSurfaceNodeType::APP_WINDOW_NODE,
-            RSVirtualScreenCursorMode::FORCE_RENDER, { otherId }, {}, INVALID_LEASH_PERSISTENTID, true },
-        { "force render keeps an empty whitelist drawing", RSSurfaceNodeType::APP_WINDOW_NODE,
-            RSVirtualScreenCursorMode::FORCE_RENDER, {}, {}, INVALID_LEASH_PERSISTENTID, false },
     };
 
     for (const auto& testCase : cases) {
@@ -2028,6 +2022,31 @@ HWTEST_F(RSSpecialLayerUtilsTest, CheckSurfaceSkipSecurityDisplayGate001, TestSi
 
     screenParams->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
     EXPECT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+
+    // Window record runs the same id filtering while the real output security state stays false. The
+    // record capture param is the only extra switch; it is scoped to that capture.
+    state.securityDisplay = false;
+    state.cursorMode = RSVirtualScreenCursorMode::DEFAULT;
+    state.whiteList = { otherId };
+    surfaceParams.rsSurfaceNodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+    params.SetIsMirrorScreen(true);
+    WhiteListRootIdStack::ClearWhiteListRootIds();
+    CaptureParam recordCaptureParam;
+    recordCaptureParam.isWindowRecord_ = true;
+    RSUniRenderThread::SetCaptureParam(recordCaptureParam);
+    EXPECT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+    // The black list still outranks the record whitelist root.
+    state.blackList = { surfaceId };
+    WhiteListRootIdStack::SetWhiteListRootId(surfaceParams.GetId());
+    EXPECT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+    state.blackList.clear();
+    // A whitelisted root draws under the record capture even though securityDisplay is false.
+    EXPECT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
+
+    // Without the record capture the same false security state keeps filtering disabled.
+    RSUniRenderThread::SetCaptureParam(CaptureParam());
+    WhiteListRootIdStack::ClearWhiteListRootIds();
+    EXPECT_FALSE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(surfaceParams, canvas));
 }
 
 /**

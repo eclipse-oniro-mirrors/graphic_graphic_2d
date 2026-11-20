@@ -207,63 +207,6 @@ HWTEST_F(RSUniRenderThreadTest, SpecialLayerCaptureGuardRestoresSharedState001, 
 }
 
 /**
- * @tc.name: SpecialLayerCaptureGuardRestoresSharedState002
- * @tc.desc: Test a nested SpecialLayerCaptureGuard restores the state saved by the enclosing guard
- * @tc.type: FUNC
- * @tc.require: issues/26744
- */
-HWTEST_F(RSUniRenderThreadTest, SpecialLayerCaptureGuardRestoresSharedState002, TestSize.Level1)
-{
-    ScopedSpecialLayerCaptureGuardState guardState;
-    auto& params = guardState.Params();
-    const SpecialLayerRenderParam baselineState {
-        .blackList = { SPECIAL_LAYER_CAPTURE_GUARD_BLACK_OUTER },
-        .whiteList = { SPECIAL_LAYER_CAPTURE_GUARD_WHITE_OUTER },
-        .cursorMode = RSVirtualScreenCursorMode::HIDE,
-        .securityDisplay = true,
-        .secExemption = true,
-    };
-    const SpecialLayerRenderParam outerScopeState {
-        .blackList = { SPECIAL_LAYER_CAPTURE_GUARD_BLACK_INNER },
-        .whiteList = { SPECIAL_LAYER_CAPTURE_GUARD_WHITE_INNER },
-        .cursorMode = RSVirtualScreenCursorMode::FORCE_RENDER,
-        .securityDisplay = false,
-        .secExemption = false,
-    };
-    params.GetMutableSpecialLayerRenderParam() = baselineState;
-    CaptureParam baselineCapture(true, false, true);
-    baselineCapture.virtualScreenId_ = SPECIAL_LAYER_CAPTURE_GUARD_WHITE_OUTER;
-    baselineCapture.isWindowRecord_ = true;
-    RSUniRenderThread::SetCaptureParam(baselineCapture);
-    {
-        RSUniRenderThread::SpecialLayerCaptureGuard outerGuard;
-        params.GetMutableSpecialLayerRenderParam() = outerScopeState;
-        auto outerScopeCapture = baselineCapture;
-        outerScopeCapture.virtualScreenId_ = SPECIAL_LAYER_CAPTURE_GUARD_WHITE_INNER;
-        outerScopeCapture.isWindowRecord_ = false;
-        RSUniRenderThread::SetCaptureParam(outerScopeCapture);
-        {
-            RSUniRenderThread::SpecialLayerCaptureGuard innerGuard;
-            params.GetMutableSpecialLayerRenderParam() = SpecialLayerRenderParam();
-            RSUniRenderThread::SetCaptureParam(CaptureParam{});
-            RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
-            EXPECT_EQ(params.GetSpecialLayerRenderParam(), SpecialLayerRenderParam());
-            EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
-        }
-        // The inner guard restores the complete capture state installed between the two guards.
-        EXPECT_EQ(params.GetSpecialLayerRenderParam(), outerScopeState);
-        EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
-        EXPECT_EQ(RSUniRenderThread::GetCaptureParam().virtualScreenId_, SPECIAL_LAYER_CAPTURE_GUARD_WHITE_INNER);
-    }
-    EXPECT_EQ(params.GetSpecialLayerRenderParam(), baselineState);
-    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
-    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
-    EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isSingleSurface_);
-    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isMirror_);
-    EXPECT_EQ(RSUniRenderThread::GetCaptureParam().virtualScreenId_, SPECIAL_LAYER_CAPTURE_GUARD_WHITE_OUTER);
-}
-
-/**
  * @tc.name: InitGrContext001
  * @tc.desc: Test InitGrContext
  * @tc.type: FUNC

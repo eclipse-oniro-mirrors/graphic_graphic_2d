@@ -54,8 +54,43 @@ void RSRenderServiceVisitor::ProcessChildren(RSRenderNode& node)
     }
 }
 
+bool RSRenderServiceVisitor::HasUnsupportedWindowRecordOutput(const RSScreenRenderNode& node)
+{
+    auto children = node.GetChildren();
+    if (children == nullptr) {
+        return false;
+    }
+    for (const auto& child : *children) {
+        auto displayNode = child ? child->ReinterpretCastTo<RSLogicalDisplayRenderNode>() : nullptr;
+        if (displayNode != nullptr && IsUnsupportedWindowRecordOutput(*displayNode)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool RSRenderServiceVisitor::IsUnsupportedWindowRecordOutput(const RSLogicalDisplayRenderNode& node)
+{
+    // Four-state output contract: an active record output is unsupported by the legacy renderer,
+    // and a virtual empty-config MIRROR with no source is the paused output. An ordinary virtual
+    // MIRROR with a live source continues through the existing whole-source path, and non-virtual
+    // mirror behavior is unchanged.
+    if (node.IsWindowRecordActive()) {
+        return true;
+    }
+    return node.IsOnVirtualScreen() && node.IsMirrorDisplay() && node.GetMirrorSource().expired();
+}
+
 void RSRenderServiceVisitor::PrepareScreenRenderNode(RSScreenRenderNode& node)
 {
+    if (HasUnsupportedWindowRecordOutput(node)) {
+        RS_LOGW("RSRenderServiceVisitor::%{public}s legacy renderer cannot prepare window record display",
+            __func__);
+        // A previous prepare may have left the surface vector populated; the legacy renderer must
+        // not expose surfaces for an output it rejects.
+        node.GetCurAllSurfaces().clear();
+        return;
+    }
     currentVisitDisplay_ = node.GetScreenId();
     displayHasSecSurface_.emplace(currentVisitDisplay_, false);
 
@@ -78,6 +113,11 @@ void RSRenderServiceVisitor::PrepareScreenRenderNode(RSScreenRenderNode& node)
 
 void RSRenderServiceVisitor::PrepareLogicalDisplayRenderNode(RSLogicalDisplayRenderNode& node)
 {
+    if (IsUnsupportedWindowRecordOutput(node)) {
+        RS_LOGW("RSRenderServiceVisitor::%{public}s legacy renderer cannot prepare record display %{public}"
+            PRIu64, __func__, node.GetId());
+        return;
+    }
     if (!curScreenNode_) {
         RS_LOGE("PrepareLogicalDisplayRenderNode curScreenNode is nullptr");
         return;
@@ -115,6 +155,10 @@ void RSRenderServiceVisitor::PrepareLogicalDisplayRenderNode(RSLogicalDisplayRen
 //todo:need to check
 void RSRenderServiceVisitor::ProcessScreenRenderNode(RSScreenRenderNode& node)
 {
+    if (HasUnsupportedWindowRecordOutput(node)) {
+        RS_LOGW("RSRenderServiceVisitor::%{public}s legacy renderer skips window record output", __func__);
+        return;
+    }
     // need reset isSecurityDisplay_ on ProcessScreenRenderNode
     RS_LOGD_IF(DEBUG_PIPELINE, "RsDebug ProcessScreenRenderNode: nodeid:[%{public}" PRIu64 "]"
         " screenid:[%{public}" PRIu64 "] isSecurityDisplay:[%{public}s] child size:[%{public}d]",
@@ -144,6 +188,11 @@ void RSRenderServiceVisitor::ProcessScreenRenderNode(RSScreenRenderNode& node)
 
 void RSRenderServiceVisitor::ProcessLogicalDisplayRenderNode(RSLogicalDisplayRenderNode& node)
 {
+    if (IsUnsupportedWindowRecordOutput(node)) {
+        RS_LOGW("RSRenderServiceVisitor::%{public}s legacy renderer skips record display %{public}" PRIu64,
+            __func__, node.GetId());
+        return;
+    }
     if (node.IsMirrorDisplay()) {
         auto mirrorSource = node.GetMirrorSource();
         auto existingSource = mirrorSource.lock();

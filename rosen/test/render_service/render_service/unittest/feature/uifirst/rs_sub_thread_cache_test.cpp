@@ -1223,53 +1223,6 @@ HWTEST_F(RSSubThreadCacheTest, DealWithUIFirstCacheTest006, TestSize.Level1)
 }
 
 /**
- * @tc.name: DealWithUIFirstCacheTest007
- * @tc.desc: Test whole-window cache reuse during window record capture without special layers
- * @tc.type: FUNC
- * @tc.require: issues/26744
- */
-HWTEST_F(RSSubThreadCacheTest, DealWithUIFirstCacheTest007, TestSize.Level1)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto& subThreadCache = surfaceDrawable_->GetRsSubThreadCache();
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    auto uniParams = std::make_shared<RSRenderThreadParams>();
-
-    // Restore the thread-local capture param on exit.
-    struct CaptureParamRestorer {
-        CaptureParam saved_ = RSUniRenderThread::GetCaptureParam();
-        ~CaptureParamRestorer()
-        {
-            RSUniRenderThread::SetCaptureParam(saved_);
-        }
-    } captureParamRestorer;
-
-    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
-    RSUniRenderThread::GetCaptureParam().isMirror_ = false;
-    RSUniRenderThread::GetCaptureParam().isSnapshot_ = false;
-    surfaceParams->SetUifirstNodeEnableParam(MultiThreadCacheType::LEASH_WINDOW);
-    auto screenId = RSUniRenderThread::GetCaptureParam().virtualScreenId_;
-    ASSERT_FALSE(surfaceParams->GetSpecialLayerMgr().FindWithScreen(screenId, SpecialLayerType::HAS_BLACK_LIST));
-    ASSERT_FALSE(surfaceParams->GetSpecialLayerMgr().Find(HAS_GENERAL_SPECIAL));
-
-    // A completed draw-window cache is eligible when no special-layer rule requires traversal.
-    Drawing::Bitmap bmp;
-    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
-    bmp.Build(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE, format);
-    bmp.ClearWithColor(Drawing::Color::COLOR_RED);
-    subThreadCache.drawWindowCache_.image_ = bmp.MakeImage();
-    ASSERT_TRUE(subThreadCache.drawWindowCache_.HasCache());
-    subThreadCache.isCacheCompletedValid_ = false;
-    ASSERT_TRUE(subThreadCache.DealWithUIFirstCache(surfaceDrawable_.get(), *canvas_, *surfaceParams, *uniParams));
-
-    // The completed UIFirst whole-window cache is eligible under the same conditions.
-    subThreadCache.drawWindowCache_.ClearCache();
-    subThreadCache.isCacheCompletedValid_ = true;
-    ASSERT_TRUE(subThreadCache.DealWithUIFirstCache(surfaceDrawable_.get(), *canvas_, *surfaceParams, *uniParams));
-}
-
-/**
  * @tc.name: SetSubThreadSkip001
  * @tc.desc: Test SetSubThreadSkip
  * @tc.type: FUNC

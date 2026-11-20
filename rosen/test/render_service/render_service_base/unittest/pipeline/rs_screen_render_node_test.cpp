@@ -52,6 +52,27 @@ private:
     ScreenId screenId_;
 };
 
+// Adds a selectable anchor (drawable display + drawable main window) under a source screen and
+// registers both in the node map, so publication tests can observe source switching.
+std::shared_ptr<RSLogicalDisplayRenderNode> CreateRecordAnchorOnScreen(const std::shared_ptr<RSContext>& context,
+    const std::shared_ptr<RSScreenRenderNode>& screen, NodeId anchorDisplayId, NodeId mainId)
+{
+    RSDisplayNodeConfig anchorConfig;
+    anchorConfig.screenId = screen->GetScreenId();
+    auto anchorDisplay = std::make_shared<RSLogicalDisplayRenderNode>(anchorDisplayId, anchorConfig, context);
+    anchorDisplay->renderDrawable_ = std::make_shared<ScreenTestDrawableAdapterMock>(anchorDisplay);
+    screen->AddChild(anchorDisplay);
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, context);
+    mainNode->renderDrawable_ = std::make_shared<ScreenTestDrawableAdapterMock>(mainNode);
+    mainNode->isOnTheTree_ = true;
+    anchorDisplay->AddChild(mainNode);
+    auto& nodeMap = context->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(anchorDisplayId)][anchorDisplayId] = anchorDisplay;
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+    return anchorDisplay;
+}
+
 constexpr uint32_t ROG_TEST_WIDTH = 1080;
 constexpr uint32_t ROG_TEST_HEIGHT = 2400;
 // 2 means physical resolution is twice of render resolution
@@ -1664,7 +1685,6 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildAndEitherOrWhiteLi
     constexpr NodeId displayId = 7102;
     constexpr NodeId mainId = 7103;
     constexpr NodeId propertyWhiteListId = 7104;
-    constexpr NodeId nonRecordDisplayId = 7105;
     ScopedScreenSpecialLayerCleaner cleaner(testScreenId);
     auto rsContext = std::make_shared<RSContext>();
     std::unordered_set<NodeId> propertyWhiteList = { propertyWhiteListId };
@@ -1684,16 +1704,22 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildAndEitherOrWhiteLi
     displayConfig.screenId = testScreenId;
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = { mainId };
-    // Add a non-record display child first so the scan has to skip it before the record-active one.
-    RSDisplayNodeConfig nonRecordDisplayConfig;
-    nonRecordDisplayConfig.screenId = testScreenId;
-    auto nonRecordDisplay =
-        std::make_shared<RSLogicalDisplayRenderNode>(nonRecordDisplayId, nonRecordDisplayConfig, rsContext);
-    EXPECT_FALSE(nonRecordDisplay->IsWindowRecordActive());
-    screen->AddChild(nonRecordDisplay);
+    // A single output display is required for record, so the either/or whitelist selection is
+    // exercised without a sibling that would reject the session.
     auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
     display->SetWindowRecordConfig(recordConfig);
     screen->AddChild(display);
+    // The display prepares before the screen in production; the screen still rebuilds the record
+    // white list from the node map because config equality alone cannot prove freshness.
+    display->InitRenderParams();
+    display->UpdateRenderParams();
+
+    // An ordinary mirror relation stays on the screen while the record child owns the routing.
+    auto mirrorScreen = std::make_shared<RSScreenRenderNode>(7105, 7106, rsContext);
+    mirrorScreen->renderDrawable_ = std::make_shared<ScreenTestDrawableAdapterMock>(mirrorScreen);
+    screen->isMirroredScreen_ = true;
+    screen->SetMirrorSource(mirrorScreen);
+    ASSERT_NE(screen->GetMirrorSource().lock(), nullptr);
 
     screen->UpdateRenderParams();
     auto screenParams = static_cast<RSScreenRenderParams*>(screen->stagingRenderParams_.get());
@@ -1704,10 +1730,16 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildAndEitherOrWhiteLi
     EXPECT_EQ(ScreenSpecialLayerInfo::QueryEnableScreen(SpecialLayerType::IS_WHITE_LIST,
         { mainId, INVALID_LEASH_PERSISTENTID }), (std::unordered_set<ScreenId>{ testScreenId }));
     EXPECT_NE(ScreenSpecialLayerInfo::QueryNodeIdsByType(SpecialLayerType::IS_WHITE_LIST).count(mainId), 0u);
+    // The record source is the same ordinary mirror relation, so the source drawable is retained.
+    EXPECT_EQ(screenParams->GetMirrorSourceDrawable().lock(), mirrorScreen->renderDrawable_);
 
-    display->ClearWindowRecordSession();
+    // End-session is the only clear path: it releases both the display and the screen relation.
+    display->EndWindowRecordSession();
+    EXPECT_TRUE(display->GetMirrorSource().expired());
+    EXPECT_TRUE(screen->GetMirrorSource().expired());
     screen->UpdateRenderParams();
     EXPECT_FALSE(screenParams->HasWindowRecordDisplay());
+    EXPECT_TRUE(screenParams->GetMirrorSourceDrawable().expired());
     EXPECT_EQ(screenParams->GetEffectiveWhiteList(), propertyWhiteList);
     EXPECT_TRUE(ScreenSpecialLayerInfo::QueryEnableScreen(SpecialLayerType::IS_WHITE_LIST,
         { mainId, INVALID_LEASH_PERSISTENTID }).empty());
@@ -1720,62 +1752,12 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildAndEitherOrWhiteLi
 }
 
 /**
- * @tc.name: UpdateRenderParamsKeepsSingleRecordChild
- * @tc.desc: Verify only the first record-active child remains on a virtual screen
+ * @tc.name: NormalizeWindowRecordDisplaysRejectsMultiDisplay
+ * @tc.desc: Verify normalization clears every record session on a multi-display screen before child prepare
  * @tc.type: FUNC
  * @tc.require: issues/26744
  */
-HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsKeepsSingleRecordChild, TestSize.Level1)
-{
-    constexpr ScreenId testScreenId = 7400;
-    constexpr NodeId screenNodeId = 7401;
-    constexpr NodeId firstDisplayId = 7402;
-    constexpr NodeId secondDisplayId = 7403;
-    constexpr NodeId mainId = 7404;
-    ScopedScreenSpecialLayerCleaner cleaner(testScreenId);
-    auto rsContext = std::make_shared<RSContext>();
-    auto screen = std::make_shared<RSScreenRenderNode>(screenNodeId, testScreenId, rsContext);
-    screen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
-    screen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(screenNodeId);
-    ASSERT_NE(screen->stagingRenderParams_, nullptr);
-
-    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
-    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
-    mainNode->renderDrawable_ = std::make_shared<ScreenTestDrawableAdapterMock>(mainNode);
-    auto& nodeMap = rsContext->GetMutableNodeMap();
-    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
-
-    RSDisplayNodeConfig firstConfig;
-    firstConfig.screenId = testScreenId;
-    RSWindowRecordConfig recordConfig;
-    recordConfig.surfaceNodeIds = { mainId };
-    auto firstDisplay = std::make_shared<RSLogicalDisplayRenderNode>(firstDisplayId, firstConfig, rsContext);
-    firstDisplay->SetWindowRecordConfig(recordConfig);
-    screen->AddChild(firstDisplay);
-    auto secondDisplay = std::make_shared<RSLogicalDisplayRenderNode>(secondDisplayId, firstConfig, rsContext);
-    secondDisplay->SetWindowRecordConfig(recordConfig);
-    screen->AddChild(secondDisplay);
-
-    screen->UpdateRenderParams();
-    EXPECT_TRUE(firstDisplay->IsWindowRecordActive());
-    EXPECT_FALSE(secondDisplay->IsWindowRecordActive());
-    auto screenParams = static_cast<RSScreenRenderParams*>(screen->stagingRenderParams_.get());
-    ASSERT_NE(screenParams, nullptr);
-    EXPECT_TRUE(screenParams->HasWindowRecordDisplay());
-    EXPECT_EQ(screenParams->GetEffectiveWhiteList(), std::unordered_set<NodeId>({ mainId }));
-
-    secondDisplay->SetWindowRecordConfig(recordConfig);
-    screen->UpdateRenderParams();
-    EXPECT_FALSE(secondDisplay->IsWindowRecordActive());
-}
-
-/**
- * @tc.name: NormalizeWindowRecordDisplaysKeepsSingleOwnerSameFrame
- * @tc.desc: Verify normalization clears the second record display before its params sync in the same frame
- * @tc.type: FUNC
- * @tc.require: issues/26744
- */
-HWTEST_F(RSScreenRenderNodeTest, NormalizeWindowRecordDisplaysKeepsSingleOwnerSameFrame, TestSize.Level1)
+HWTEST_F(RSScreenRenderNodeTest, NormalizeWindowRecordDisplaysRejectsMultiDisplay, TestSize.Level1)
 {
     constexpr ScreenId testScreenId = 7500;
     constexpr NodeId screenNodeId = 7501;
@@ -1795,6 +1777,7 @@ HWTEST_F(RSScreenRenderNodeTest, NormalizeWindowRecordDisplaysKeepsSingleOwnerSa
 
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = testScreenId;
+    displayConfig.displayMode = DisplayMode::MIRROR;
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = { mainId };
     auto firstDisplay = std::make_shared<RSLogicalDisplayRenderNode>(firstDisplayId, displayConfig, rsContext);
@@ -1811,16 +1794,20 @@ HWTEST_F(RSScreenRenderNodeTest, NormalizeWindowRecordDisplaysKeepsSingleOwnerSa
     auto firstParams = static_cast<RSLogicalDisplayRenderParams*>(firstDisplay->stagingRenderParams_.get());
     auto secondParams = static_cast<RSLogicalDisplayRenderParams*>(secondDisplay->stagingRenderParams_.get());
 
-    // Production screen prepare picks the record owner before the display children publish params.
+    // Production screen prepare rejects the multi-display topology before any child publishes params.
     auto visitor = std::make_shared<RSRenderThreadVisitor>();
     screen->QuickPrepare(visitor);
     firstDisplay->UpdateRenderParams();
     secondDisplay->UpdateRenderParams();
 
-    EXPECT_TRUE(firstDisplay->IsWindowRecordActive());
+    EXPECT_FALSE(firstDisplay->IsWindowRecordActive());
     EXPECT_FALSE(secondDisplay->IsWindowRecordActive());
-    EXPECT_TRUE(firstParams->IsRecordSessionActive());
-    EXPECT_EQ(firstParams->GetWindowRecordConfig().surfaceNodeIds, std::vector<NodeId>({ mainId }));
+    // Every rejected session falls back to the four-state empty+no-source MIRROR state.
+    EXPECT_TRUE(firstDisplay->IsMirrorDisplay());
+    EXPECT_TRUE(firstDisplay->GetMirrorSource().expired());
+    EXPECT_TRUE(secondDisplay->GetMirrorSource().expired());
+    EXPECT_FALSE(firstParams->IsRecordSessionActive());
+    EXPECT_TRUE(firstParams->GetWindowRecordConfig().surfaceNodeIds.empty());
     EXPECT_FALSE(secondParams->IsRecordSessionActive());
     EXPECT_TRUE(secondParams->GetWindowRecordConfig().surfaceNodeIds.empty());
     EXPECT_TRUE(secondParams->GetRecordWhiteListIds().empty());
@@ -1830,55 +1817,193 @@ HWTEST_F(RSScreenRenderNodeTest, NormalizeWindowRecordDisplaysKeepsSingleOwnerSa
 }
 
 /**
- * @tc.name: UpdateRenderParamsRecordChildResetsMirrorSource
- * @tc.desc: Verify a record-active child suppresses the mirror source drawable until the session is cleared.
+ * @tc.name: SetHasMirrorScreenBalancesSharedSource
+ * @tc.desc: Verify the mirror destination count is balanced, shared, idempotent and rejects underflow.
  * @tc.type: FUNC
  * @tc.require: issues/26744
  */
-HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildResetsMirrorSource, TestSize.Level1)
+HWTEST_F(RSScreenRenderNodeTest, SetHasMirrorScreenBalancesSharedSource, TestSize.Level1)
 {
-    constexpr ScreenId testScreenId = 7200;
-    constexpr NodeId screenNodeId = 7201;
-    constexpr NodeId displayId = 7202;
-    constexpr NodeId mainId = 7203;
-    ScopedScreenSpecialLayerCleaner cleaner(testScreenId);
-    auto rsContext = std::make_shared<RSContext>();
-    auto screen = std::make_shared<RSScreenRenderNode>(screenNodeId, testScreenId, rsContext);
-    screen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
-    screen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(screenNodeId);
-    ASSERT_NE(screen->stagingRenderParams_, nullptr);
+    constexpr NodeId paramsId = 7600;
+    RSScreenRenderParams params(paramsId);
+    EXPECT_FALSE(params.HasMirrorScreen());
+    EXPECT_EQ(params.mirrorDstCount_, 0u);
 
-    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
-    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
-    mainNode->renderDrawable_ = std::make_shared<ScreenTestDrawableAdapterMock>(mainNode);
-    auto& nodeMap = rsContext->GetMutableNodeMap();
-    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+    params.SetHasMirrorScreen(true);
+    EXPECT_EQ(params.mirrorDstCount_, 1u);
+    EXPECT_TRUE(params.HasMirrorScreen());
+    EXPECT_TRUE(params.NeedSync());
+
+    params.SetNeedSync(false);
+    params.SetHasMirrorScreen(true);
+    EXPECT_EQ(params.mirrorDstCount_, 2u);
+    EXPECT_FALSE(params.NeedSync());
+    EXPECT_TRUE(params.HasMirrorScreen());
+
+    params.SetHasMirrorScreen(false);
+    EXPECT_EQ(params.mirrorDstCount_, 1u);
+    EXPECT_TRUE(params.HasMirrorScreen());
+    EXPECT_FALSE(params.NeedSync());
+
+    params.SetHasMirrorScreen(false);
+    EXPECT_EQ(params.mirrorDstCount_, 0u);
+    EXPECT_FALSE(params.HasMirrorScreen());
+    EXPECT_TRUE(params.NeedSync());
+
+    params.SetNeedSync(false);
+    params.SetHasMirrorScreen(false);
+    EXPECT_EQ(params.mirrorDstCount_, 0u);
+    EXPECT_FALSE(params.HasMirrorScreen());
+    EXPECT_FALSE(params.NeedSync());
+}
+
+/**
+ * @tc.name: ScreenMirrorSourceSharingBalancesCountAndTeardown
+ * @tc.desc: Background destruction of a screen node performs no shared-source accounting; only the
+ * explicit main-thread release decrements the source.
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSScreenRenderNodeTest, ScreenMirrorSourceSharingBalancesCountAndTeardown, TestSize.Level1)
+{
+    constexpr NodeId sourceNodeId = 7611;
+    auto rsContext = std::make_shared<RSContext>();
+    auto sourceScreen = std::make_shared<RSScreenRenderNode>(sourceNodeId, 7610, rsContext);
+    sourceScreen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(sourceNodeId);
+    auto sourceParams = static_cast<RSScreenRenderParams*>(sourceScreen->stagingRenderParams_.get());
+    ASSERT_NE(sourceParams, nullptr);
+
+    auto survivingOutput = std::make_shared<RSScreenRenderNode>(7616, 7617, rsContext);
+    survivingOutput->SetIsMirrorScreen(true);
+    survivingOutput->SetMirrorSource(sourceScreen);
+    {
+        auto destroyedOutput = std::make_shared<RSScreenRenderNode>(7614, 7615, rsContext);
+        destroyedOutput->SetIsMirrorScreen(true);
+        destroyedOutput->SetMirrorSource(sourceScreen);
+        // RSMainThread::DestroyScreenNode() releases on the main thread before unregistering.
+        destroyedOutput->ResetMirrorSource();
+    }
+    // Destruction on the GC thread must not touch the shared source accounting.
+    EXPECT_EQ(sourceParams->mirrorDstCount_, 1u);
+    EXPECT_TRUE(sourceParams->HasMirrorScreen());
+
+    // RSMainThread::DestroyScreenNode() releases on the main thread before unregistering.
+    survivingOutput->ResetMirrorSource();
+    EXPECT_EQ(sourceParams->mirrorDstCount_, 0u);
+    EXPECT_FALSE(sourceParams->HasMirrorScreen());
+}
+
+/**
+ * @tc.name: PublishWindowRecordSourceSwitchReleasesOldScreenSource
+ * @tc.desc: Switching the record anchor moves both layers together and releases the old screen
+ * source exactly once; a repeated frame stays idempotent.
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSScreenRenderNodeTest, PublishWindowRecordSourceSwitchReleasesOldScreenSource, TestSize.Level1)
+{
+    constexpr ScreenId outputScreenId = 7660;
+    constexpr NodeId outputScreenNodeId = 7661;
+    constexpr ScreenId firstSourceScreenId = 7662;
+    constexpr NodeId firstSourceScreenNodeId = 7663;
+    constexpr NodeId displayId = 7664;
+    constexpr NodeId firstAnchorDisplayId = 7665;
+    constexpr NodeId firstMainId = 7666;
+    auto rsContext = std::make_shared<RSContext>();
+    auto outputScreen = std::make_shared<RSScreenRenderNode>(outputScreenNodeId, outputScreenId, rsContext);
+    outputScreen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    auto firstSourceScreen =
+        std::make_shared<RSScreenRenderNode>(firstSourceScreenNodeId, firstSourceScreenId, rsContext);
+    firstSourceScreen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(firstSourceScreenNodeId);
+    auto firstSourceParams = static_cast<RSScreenRenderParams*>(firstSourceScreen->stagingRenderParams_.get());
+    ASSERT_NE(firstSourceParams, nullptr);
+    auto firstAnchor = CreateRecordAnchorOnScreen(
+        rsContext, firstSourceScreen, firstAnchorDisplayId, firstMainId);
+
+    RSDisplayNodeConfig outputConfig;
+    outputConfig.screenId = outputScreenId;
+    outputConfig.displayMode = DisplayMode::MIRROR;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, outputConfig, rsContext);
+    display->SetDisplayMode(DisplayMode::MIRROR);
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { firstMainId };
+    display->SetWindowRecordConfig(recordConfig);
+    outputScreen->AddChild(display);
+
+    constexpr ScreenId secondSourceScreenId = 7667;
+    constexpr NodeId secondSourceScreenNodeId = 7668;
+    constexpr NodeId secondAnchorDisplayId = 7669;
+    constexpr NodeId secondMainId = 7670;
+    auto secondSourceScreen =
+        std::make_shared<RSScreenRenderNode>(secondSourceScreenNodeId, secondSourceScreenId, rsContext);
+    secondSourceScreen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(secondSourceScreenNodeId);
+    auto secondSourceParams = static_cast<RSScreenRenderParams*>(secondSourceScreen->stagingRenderParams_.get());
+    ASSERT_NE(secondSourceParams, nullptr);
+    auto secondAnchor = CreateRecordAnchorOnScreen(
+        rsContext, secondSourceScreen, secondAnchorDisplayId, secondMainId);
+
+    outputScreen->PublishWindowRecordMirrorSource();
+    EXPECT_EQ(display->GetMirrorSource().lock(), firstAnchor);
+    ASSERT_EQ(outputScreen->GetMirrorSource().lock(), firstSourceScreen);
+    ASSERT_EQ(firstSourceParams->mirrorDstCount_, 1u);
+
+    recordConfig.surfaceNodeIds = { secondMainId };
+    display->SetWindowRecordConfig(recordConfig);
+    outputScreen->PublishWindowRecordMirrorSource();
+    EXPECT_EQ(display->GetMirrorSource().lock(), secondAnchor);
+    EXPECT_EQ(outputScreen->GetMirrorSource().lock(), secondSourceScreen);
+    EXPECT_EQ(firstSourceParams->mirrorDstCount_, 0u);
+    EXPECT_EQ(secondSourceParams->mirrorDstCount_, 1u);
+
+    // Same-source frame: both identities and counts stay stable.
+    outputScreen->PublishWindowRecordMirrorSource();
+    EXPECT_EQ(outputScreen->GetMirrorSource().lock(), secondSourceScreen);
+    EXPECT_EQ(firstSourceParams->mirrorDstCount_, 0u);
+    EXPECT_EQ(secondSourceParams->mirrorDstCount_, 1u);
+}
+
+/**
+ * @tc.name: PublishWindowRecordDmsRecoverySyncsScreenRelation
+ * @tc.desc: An inactive single-display virtual MIRROR output republishes the display's explicit DMS
+ * source on the output screen in the same early step.
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSScreenRenderNodeTest, PublishWindowRecordDmsRecoverySyncsScreenRelation, TestSize.Level1)
+{
+    constexpr ScreenId outputScreenId = 7680;
+    constexpr NodeId outputScreenNodeId = 7681;
+    constexpr ScreenId dmsScreenId = 7682;
+    constexpr NodeId dmsScreenNodeId = 7683;
+    constexpr NodeId displayId = 7684;
+    constexpr NodeId dmsDisplayId = 7685;
+    auto rsContext = std::make_shared<RSContext>();
+    auto outputScreen = std::make_shared<RSScreenRenderNode>(outputScreenNodeId, outputScreenId, rsContext);
+    outputScreen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    auto dmsScreen = std::make_shared<RSScreenRenderNode>(dmsScreenNodeId, dmsScreenId, rsContext);
+    dmsScreen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(dmsScreenNodeId);
+    auto dmsParams = static_cast<RSScreenRenderParams*>(dmsScreen->stagingRenderParams_.get());
+    ASSERT_NE(dmsParams, nullptr);
 
     RSDisplayNodeConfig displayConfig;
-    displayConfig.screenId = testScreenId;
-    RSWindowRecordConfig recordConfig;
-    recordConfig.surfaceNodeIds = { mainId };
+    displayConfig.screenId = outputScreenId;
+    displayConfig.displayMode = DisplayMode::MIRROR;
     auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
-    display->SetWindowRecordConfig(recordConfig);
-    screen->AddChild(display);
-    auto mirrorScreen = std::make_shared<RSScreenRenderNode>(7204, 7205, rsContext);
-    mirrorScreen->renderDrawable_ = std::make_shared<ScreenTestDrawableAdapterMock>(mirrorScreen);
-    screen->isMirroredScreen_ = true;
-    screen->SetMirrorSource(mirrorScreen);
-    ASSERT_NE(screen->GetMirrorSource().lock(), nullptr);
+    RSDisplayNodeConfig dmsDisplayConfig;
+    dmsDisplayConfig.screenId = dmsScreenId;
+    dmsDisplayConfig.displayMode = DisplayMode::MIRROR;
+    auto dmsDisplay = std::make_shared<RSLogicalDisplayRenderNode>(dmsDisplayId, dmsDisplayConfig, rsContext);
+    dmsScreen->AddChild(dmsDisplay);
+    display->SetDisplayMode(DisplayMode::MIRROR);
+    display->SetMirrorSource(dmsDisplay);
+    outputScreen->AddChild(display);
 
-    screen->UpdateRenderParams();
-    auto screenParams = static_cast<RSScreenRenderParams*>(screen->stagingRenderParams_.get());
-    ASSERT_NE(screenParams, nullptr);
-    EXPECT_TRUE(screenParams->HasWindowRecordDisplay());
-    EXPECT_TRUE(screenParams->GetMirrorSourceDrawable().expired());
-
-    display->ClearWindowRecordSession();
-    screen->UpdateRenderParams();
-    EXPECT_FALSE(screenParams->HasWindowRecordDisplay());
-    auto mirrorDrawable = screenParams->GetMirrorSourceDrawable().lock();
-    ASSERT_NE(mirrorDrawable, nullptr);
-    EXPECT_EQ(mirrorDrawable, mirrorScreen->renderDrawable_);
+    // No active record session: the single-display MIRROR source is synchronized to the screen.
+    outputScreen->PublishWindowRecordMirrorSource();
+    EXPECT_FALSE(display->IsWindowRecordActive());
+    EXPECT_TRUE(outputScreen->IsMirrorScreen());
+    EXPECT_EQ(outputScreen->GetMirrorSource().lock(), dmsScreen);
+    EXPECT_EQ(dmsParams->mirrorDstCount_, 1u);
 }
 
 /**

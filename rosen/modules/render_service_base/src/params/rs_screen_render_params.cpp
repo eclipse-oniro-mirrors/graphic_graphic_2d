@@ -338,15 +338,21 @@ void RSScreenRenderParams::SetHasMirrorScreen(bool hasMirrorScreen)
 {
     if (hasMirrorScreen) {
         mirrorDstCount_++;
+    } else if (mirrorDstCount_ == 0) {
+        // A shared source can receive a duplicate release after its last real owner; never let the
+        // unsigned count wrap and report a phantom mirror screen.
+        RS_LOGE("RSScreenRenderParams::%{public}s release without a mirror destination reference", __func__);
+        return;
     } else {
         mirrorDstCount_--;
     }
+    // hasMirrorScreen_ is derived from the balanced per-relationship count.
     bool ret = (mirrorDstCount_ != 0);
     if (hasMirrorScreen_ == ret) {
         return;
     }
     needSync_ = true;
-    hasMirrorScreen_ = hasMirrorScreen;
+    hasMirrorScreen_ = ret;
 }
 
 bool RSScreenRenderParams::HasMirrorScreen() const

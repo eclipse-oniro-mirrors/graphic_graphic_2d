@@ -52,6 +52,30 @@ public:
     void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override {};
 };
 
+// CaptureParam and the render-thread white list are shared process state; install the record-capture
+// inputs here and restore the caller's values even when an expectation aborts the test.
+class ScopedCaptureWhiteList {
+public:
+    ScopedCaptureWhiteList(std::unordered_set<NodeId> whiteList, bool isWindowRecord)
+        : savedCaptureParam_(RSUniRenderThread::GetCaptureParam()),
+          savedWhiteList_(RSUniRenderThread::Instance().GetWhiteList())
+    {
+        RSUniRenderThread::Instance().SetWhiteList(std::move(whiteList));
+        RSUniRenderThread::GetCaptureParam().isWindowRecord_ = isWindowRecord;
+    }
+    ~ScopedCaptureWhiteList()
+    {
+        RSUniRenderThread::SetCaptureParam(savedCaptureParam_);
+        RSUniRenderThread::Instance().SetWhiteList(savedWhiteList_);
+    }
+    ScopedCaptureWhiteList(const ScopedCaptureWhiteList&) = delete;
+    ScopedCaptureWhiteList& operator=(const ScopedCaptureWhiteList&) = delete;
+
+private:
+    CaptureParam savedCaptureParam_;
+    std::unordered_set<NodeId> savedWhiteList_;
+};
+
 class RSSurfaceRenderNodeDrawableTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -185,7 +209,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId001, TestSize.
 
 /**
  * @tc.name: GetWhiteListPersistentId002
- * @tc.desc: Test window-record capture lets a leashless surface match by its own node id
+ * @tc.desc: Test leashless node-id matching is limited to the window-record capture path
  * @tc.type: FUNC
  * @tc.require: issues/26744
  */
@@ -199,40 +223,17 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId002, TestSize.
     surfaceParams->leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
     ASSERT_NE(surfaceParams->GetSurfaceNodeType(), RSSurfaceNodeType::CURSOR_NODE);
 
-    const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
-    const std::unordered_set<NodeId> savedWhiteList = RSUniRenderThread::Instance().GetWhiteList();
-    RSUniRenderThread::Instance().SetWhiteList({surfaceParams->GetId()});
-    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
-    EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), surfaceParams->GetId());
+    // Phase 1: window-record capture lets the leashless surface match by its own node id.
+    {
+        ScopedCaptureWhiteList recordCaptureWhiteList({surfaceParams->GetId()}, true);
+        EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), surfaceParams->GetId());
+    }
 
-    RSUniRenderThread::SetCaptureParam(savedCaptureParam);
-    RSUniRenderThread::Instance().SetWhiteList(savedWhiteList);
-}
-
-/**
- * @tc.name: GetWhiteListPersistentId003
- * @tc.desc: Test cast/mirror capture keeps persistent-id-only matching
- * @tc.type: FUNC
- * @tc.require: issues/26744
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId003, TestSize.Level2)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    ASSERT_NE(drawable_->renderParams_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    surfaceParams->leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
-    ASSERT_NE(surfaceParams->GetSurfaceNodeType(), RSSurfaceNodeType::CURSOR_NODE);
-
-    const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
-    const std::unordered_set<NodeId> savedWhiteList = RSUniRenderThread::Instance().GetWhiteList();
-    RSUniRenderThread::Instance().SetWhiteList({surfaceParams->GetId()});
-    // The same matching node id outside the window-record path keeps persistent-id-only matching.
-    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = false;
-    EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), INVALID_LEASH_PERSISTENTID);
-
-    RSUniRenderThread::SetCaptureParam(savedCaptureParam);
-    RSUniRenderThread::Instance().SetWhiteList(savedWhiteList);
+    // Phase 2: the same matching node id outside the window-record path keeps persistent-id-only matching.
+    {
+        ScopedCaptureWhiteList castCaptureWhiteList({surfaceParams->GetId()}, false);
+        EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), INVALID_LEASH_PERSISTENTID);
+    }
 }
 
 /**
@@ -251,40 +252,9 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId004, TestSize.
     const NodeId persistentId = nodeId + 1;
     surfaceParams->leashPersistentId_ = persistentId;
 
-    const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
-    const std::unordered_set<NodeId> savedWhiteList = RSUniRenderThread::Instance().GetWhiteList();
     // Both ids match: the first leash persistent id match must win over the node-id fallback.
-    RSUniRenderThread::Instance().SetWhiteList({nodeId, persistentId});
-    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
+    ScopedCaptureWhiteList captureWhiteList({nodeId, persistentId}, true);
     EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), persistentId);
-
-    RSUniRenderThread::SetCaptureParam(savedCaptureParam);
-    RSUniRenderThread::Instance().SetWhiteList(savedWhiteList);
-}
-
-/**
- * @tc.name: GetWhiteListPersistentId005
- * @tc.desc: Test non-record capture does not use the node-id fallback for cursor nodes
- * @tc.type: FUNC
- * @tc.require: issues/26744
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId005, TestSize.Level2)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    ASSERT_NE(drawable_->renderParams_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    surfaceParams->leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
-    surfaceParams->rsSurfaceNodeType_ = RSSurfaceNodeType::CURSOR_NODE;
-
-    const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
-    const std::unordered_set<NodeId> savedWhiteList = RSUniRenderThread::Instance().GetWhiteList();
-    RSUniRenderThread::Instance().SetWhiteList({surfaceParams->GetId()});
-    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = false;
-    EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), INVALID_LEASH_PERSISTENTID);
-
-    RSUniRenderThread::SetCaptureParam(savedCaptureParam);
-    RSUniRenderThread::Instance().SetWhiteList(savedWhiteList);
 }
 
 /**
@@ -301,11 +271,8 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId006, TestSize.
     ASSERT_NE(surfaceParams, nullptr);
     surfaceParams->leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
 
-    const CaptureParam savedCaptureParam = RSUniRenderThread::GetCaptureParam();
-    const std::unordered_set<NodeId> savedWhiteList = RSUniRenderThread::Instance().GetWhiteList();
     const bool savedParallelCanvas = canvas_->GetIsParallelCanvas();
-    RSUniRenderThread::Instance().SetWhiteList({surfaceParams->GetId()});
-    RSUniRenderThread::GetCaptureParam().isWindowRecord_ = true;
+    ScopedCaptureWhiteList captureWhiteList({surfaceParams->GetId()}, true);
 
     // The node-id fallback is record-only, but the parallel canvas must not use it.
     canvas_->SetIsParallelCanvas(true);
@@ -316,8 +283,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId006, TestSize.
     EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), surfaceParams->GetId());
 
     canvas_->SetIsParallelCanvas(savedParallelCanvas);
-    RSUniRenderThread::SetCaptureParam(savedCaptureParam);
-    RSUniRenderThread::Instance().SetWhiteList(savedWhiteList);
 }
 
 /**

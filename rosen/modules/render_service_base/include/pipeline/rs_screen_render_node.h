@@ -567,6 +567,18 @@ public:
 
     void SetHasMirrorScreen(bool hasMirrorScreen);
 
+    // Main thread only, after commands/tree updates and before animation/HWC/visitor construction.
+    // Validates the single-display record topology, normalizes ownership, resolves the record anchor
+    // once, and publishes both the display and this output-screen mirror relation in one step so
+    // LPP and the visitor observe the same source pair. On an inactive single-display virtual MIRROR
+    // output it synchronizes the screen from the display's current source (DMS recovery / paused).
+    void PublishWindowRecordMirrorSource();
+
+    // Main thread only. Publishes or resets this output screen's relation from an
+    // already-selected source display; the caller never asks this helper to reselect a window.
+    // EndWindowRecordSession() passes nullptr to release the relation together with the display's.
+    void PublishRecordScreenMirrorSource(const std::shared_ptr<RSLogicalDisplayRenderNode>& sourceDisplay);
+
     void SetTargetSurfaceRenderNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable);
 
     // Enable HWCompose
@@ -613,9 +625,13 @@ protected:
 private:
     void InitRenderParams() override;
     void CollectHdrStatusMap(NodeId id, HdrStatus hdrStatus);
-    // Selects the single record owner among the display children, clearing later record-active ones
-    // before child prepare so they cannot publish. UpdateRenderParams() reuses the same selection.
+    // Selects the single record owner among the display children. A multi-display screen rejects
+    // every record session before publication so a sibling cannot reset the selected relation or
+    // its shared-source accounting. UpdateRenderParams() reuses the same selection.
     std::shared_ptr<RSLogicalDisplayRenderNode> NormalizeWindowRecordDisplays();
+    // Inactive virtual MIRROR output: derives the screen relation from the single display's current
+    // source so DMS recovery and the paused empty+no-source state are visible before the visitor.
+    void SynchronizeSingleDisplayMirrorSource();
     void ScaleSyncDirtyManagerForRogIfNeed(const std::shared_ptr<RSDirtyRegionManager>& syncDirtyManager) const;
 
     bool hasChildCrossNode_ = false;

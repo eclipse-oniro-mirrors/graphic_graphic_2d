@@ -543,6 +543,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnDrawTestWindowRecordMissingPr
     renderParams->shouldPaint_ = true;
     renderParams->contentEmpty_ = false;
     renderParams->SetOnVirtualScreen(true);
+    renderParams->displayMode_ = DisplayMode::MIRROR;
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = {DEFAULT_ID};
     renderParams->SetWindowRecordConfig(recordConfig);
@@ -573,6 +574,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnDrawTestWindowRecordWrongProc
     renderParams->shouldPaint_ = true;
     renderParams->contentEmpty_ = false;
     renderParams->SetOnVirtualScreen(true);
+    renderParams->displayMode_ = DisplayMode::MIRROR;
     RSWindowRecordConfig recordConfig;
     recordConfig.surfaceNodeIds = {DEFAULT_ID};
     renderParams->SetWindowRecordConfig(recordConfig);

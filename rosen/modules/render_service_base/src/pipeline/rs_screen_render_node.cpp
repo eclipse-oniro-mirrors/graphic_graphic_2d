@@ -20,6 +20,7 @@
 #include "common/rs_special_layer_manager.h"
 #include "display_engine/rs_display_effect_swing_control.h"
 #include "feature/hdr/rs_colorspace_util.h"
+#include "params/rs_logical_display_render_params.h"
 #include "params/rs_screen_render_params.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_render_node.h"
@@ -49,6 +50,9 @@ RSScreenRenderNode::RSScreenRenderNode(
 RSScreenRenderNode::~RSScreenRenderNode()
 {
     RS_LOGI("RSScreen RSScreenRenderNode dtor id:%{public}" PRIu64 ", screenId:%{public}" PRIu64, GetId(), screenId_);
+    // Screen nodes can be released by the background GC thread, so mirror accounting must not run
+    // here: it touches the source screen's render params and pending-sync list. The owning
+    // RSMainThread::DestroyScreenNode() releases the relation on the main thread before unregister.
     MemoryTrack::Instance().RemoveNodeRecord(GetId());
     MemoryTrack::Instance().UnRegisterNodeMem(ExtractPid(GetId()),
         sizeof(*this), MEMORY_TYPE::MEM_RENDER_NODE);
@@ -70,25 +74,93 @@ std::shared_ptr<RSLogicalDisplayRenderNode> RSScreenRenderNode::NormalizeWindowR
     if (!screenProperty_.IsVirtual()) {
         return nullptr;
     }
-    std::shared_ptr<RSLogicalDisplayRenderNode> recordDisplayNode = nullptr;
     auto children = GetChildren();
     if (children == nullptr) {
-        return recordDisplayNode;
+        return nullptr;
     }
+    size_t displayCount = 0;
+    std::vector<std::shared_ptr<RSLogicalDisplayRenderNode>> recordDisplays;
     for (const auto& child : *children) {
         auto displayNode = child ? child->ReinterpretCastTo<RSLogicalDisplayRenderNode>() : nullptr;
-        if (displayNode == nullptr || !displayNode->IsWindowRecordActive()) {
+        if (displayNode == nullptr) {
             continue;
         }
-        if (recordDisplayNode != nullptr) {
-            RS_LOGW("RSScreenRenderNode::%{public}s multiple record displays, keep first, "
-                    "clear id[%{public}" PRIu64 "]", __func__, displayNode->GetId());
-            displayNode->ClearWindowRecordSession();
-            continue;
+        ++displayCount;
+        if (displayNode->IsWindowRecordActive()) {
+            recordDisplays.emplace_back(std::move(displayNode));
         }
-        recordDisplayNode = std::move(displayNode);
     }
-    return recordDisplayNode;
+    if (recordDisplays.empty()) {
+        return nullptr;
+    }
+    if (displayCount != 1) {
+        // Window record supports exactly one output display. Reject before publication so no
+        // sibling can clobber the selected relation or the shared source-screen accounting.
+        for (auto& displayNode : recordDisplays) {
+            displayNode->EndWindowRecordSession();
+        }
+        RS_LOGW("RSScreenRenderNode::%{public}s multi-display record rejected, cleared %{public}zu session(s)",
+            __func__, recordDisplays.size());
+        return nullptr;
+    }
+    return recordDisplays.front();
+}
+
+void RSScreenRenderNode::PublishRecordScreenMirrorSource(
+    const std::shared_ptr<RSLogicalDisplayRenderNode>& sourceDisplay)
+{
+    auto sourceScreenNode = sourceDisplay != nullptr ?
+        RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(sourceDisplay->GetParent().lock()) : nullptr;
+    if (sourceScreenNode == nullptr) {
+        // Both layers empty: a record session without an anchor, or the paused empty+no-source
+        // virtual MIRROR output. Reset before LPP/visitor construction reads the relation.
+        SetIsMirrorScreen(false);
+        ResetMirrorSource();
+        return;
+    }
+    // Set the mode flag before the relation: SetMirrorSource only binds on a mirror screen.
+    SetIsMirrorScreen(true);
+    SetMirrorSource(sourceScreenNode);
+}
+
+void RSScreenRenderNode::SynchronizeSingleDisplayMirrorSource()
+{
+    if (!screenProperty_.IsVirtual()) {
+        return;
+    }
+    auto children = GetChildren();
+    if (children == nullptr) {
+        return;
+    }
+    if (children->empty()) {
+        // A virtual screen without a display cannot own a source: release any relation left by a
+        // detached display so the shared source reference is not retained.
+        PublishRecordScreenMirrorSource(nullptr);
+        return;
+    }
+    if (children->size() != 1) {
+        // Ordinary multi-display behavior is left to the visitor's existing per-display prepare.
+        return;
+    }
+    auto child = children->front();
+    auto displayNode = child ? child->ReinterpretCastTo<RSLogicalDisplayRenderNode>() : nullptr;
+    if (displayNode == nullptr || !displayNode->IsMirrorDisplay()) {
+        return;
+    }
+    PublishRecordScreenMirrorSource(displayNode->GetMirrorSource().lock());
+}
+
+void RSScreenRenderNode::PublishWindowRecordMirrorSource()
+{
+    auto recordDisplayNode = NormalizeWindowRecordDisplays();
+    if (recordDisplayNode != nullptr) {
+        recordDisplayNode->PublishWindowRecordMirrorSource();
+        // Consume the just-published display anchor; reselecting here could diverge the two layers.
+        PublishRecordScreenMirrorSource(recordDisplayNode->GetMirrorSource().lock());
+        return;
+    }
+    // No record owner: keep a single-display virtual MIRROR output in sync (DMS recovery, paused).
+    SynchronizeSingleDisplayMirrorSource();
 }
 
 void RSScreenRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor,
@@ -102,8 +174,8 @@ void RSScreenRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visi
     SetScreenInfo(screenInfo);
     ApplyModifiers();
 #ifdef RS_ENABLE_GPU
-    // The screen prepares before its children: pick the record owner now so a later record-active
-    // child is cleared before it can publish.
+    // The screen prepares before its children: reject a multi-display record topology now so no
+    // record session can survive into child prepare or publication.
     NormalizeWindowRecordDisplays();
 #endif
     visitor->QuickPrepareScreenRenderNode(*this, isParentPrepareInReverseOrder);
@@ -259,21 +331,28 @@ void RSScreenRenderNode::UpdateRenderParams()
         RS_LOGE("RSScreenRenderNode::UpdateRenderParams ScreenParams is null");
         return;
     }
-    auto mirroredNode = GetMirrorSource().lock();
+    // Normalize first: a rejected multi-display record topology resets the relation here, so the
+    // params below must not retain the pre-reset source drawable.
     auto recordDisplayNode = NormalizeWindowRecordDisplays();
+    auto mirroredNode = GetMirrorSource().lock();
     bool hasWindowRecordChild = recordDisplayNode != nullptr;
-    if (mirroredNode && !hasWindowRecordChild) {
-        screenParams->mirrorSourceDrawable_ = mirroredNode->GetRenderDrawable();
-    } else {
-        screenParams->mirrorSourceDrawable_.reset();
-    }
+    // The record source is published through the ordinary mirror relation; record routing still
+    // takes precedence on the render thread, while HDR/LPP/special-layer consumers follow the
+    // whole source screen.
+    screenParams->mirrorSourceDrawable_ = mirroredNode ? mirroredNode->GetRenderDrawable() : nullptr;
     screenParams->hasWindowRecordDisplay_ = hasWindowRecordChild;
-    // Either/or, never merged: the first record-active display owns its mixed id list (later ones
-    // were cleared), otherwise the screen property white list applies. The special-layer state
-    // checks read this one list.
-    std::unordered_set<NodeId> effectiveWhiteList = recordDisplayNode != nullptr
-        ? recordDisplayNode->BuildEffectiveRecordWhiteListIds()
-        : screenProperty_.GetWhiteList();
+    // Either/or, never merged: a single-display record-active child owns its mixed id list
+    // (multi-display record topologies were rejected), otherwise the screen property white list
+    // applies. The special-layer state checks read this one list.
+    std::unordered_set<NodeId> effectiveWhiteList;
+    if (recordDisplayNode != nullptr) {
+        // Rebuild from the current node map: the staging list is only fresh for the config it was
+        // built from and cannot observe a node-map registration/type change until a real frame
+        // token exists.
+        effectiveWhiteList = recordDisplayNode->BuildEffectiveRecordWhiteListIds();
+    } else {
+        effectiveWhiteList = screenProperty_.GetWhiteList();
+    }
     screenParams->SetEffectiveWhiteList(effectiveWhiteList);
     // Keep the main-thread special-layer registry in sync for the visitor's allWhiteList_ query
     // and virtual-screen occlusion culling (IsValidInVirtualScreen), so record-active screens
