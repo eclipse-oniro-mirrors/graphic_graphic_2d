@@ -18,23 +18,19 @@
 #ifndef UIEFFECT_STICKER_EMBOSS_FILTER_PARA_H
 #define UIEFFECT_STICKER_EMBOSS_FILTER_PARA_H
 
-#include <vector>
-
-#include "common/rs_macros.h"
 #include "common/rs_vector2.h"
-#include "common/rs_vector3.h"
-#include "common/rs_vector4.h"
 #include "filter_para.h"
 #include "pixel_map.h"
 
 namespace OHOS {
 namespace Rosen {
 
-class RSC_EXPORT StickerEmbossPara : public FilterPara {
+// Client-side parameter holder only: the emboss filter reaches RenderService through
+// the ngEffect framework IPC, so no custom FilterPara marshalling is provided here
+class StickerEmbossPara : public FilterPara {
 public:
     StickerEmbossPara() { type_ = FilterPara::ParaType::STICKER_EMBOSS_FILTER; }
     ~StickerEmbossPara() override = default;
-    StickerEmbossPara(const StickerEmbossPara& other);
 
     void SetSticker(std::shared_ptr<Media::PixelMap> sticker)
     {
@@ -125,12 +121,6 @@ public:
     {
         return specIntensity_;
     }
-
-    bool Marshalling(Parcel& parcel) const override;
-    static void RegisterUnmarshallingCallback();
-    [[nodiscard]] static bool OnUnmarshalling(Parcel& parcel,
-        std::shared_ptr<FilterPara>& val);
-    std::shared_ptr<FilterPara> Clone() const override;
 
 private:
     std::shared_ptr<Media::PixelMap> sticker_;

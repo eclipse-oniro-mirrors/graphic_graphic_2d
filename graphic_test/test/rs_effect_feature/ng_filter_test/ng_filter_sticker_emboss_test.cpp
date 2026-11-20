@@ -19,6 +19,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include "pixel_map.h"
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_img.h"
 #include "ui_effect/property/include/rs_ui_filter_base.h"
@@ -31,6 +32,9 @@ namespace OHOS::Rosen {
 
 namespace {
 const std::string TEST_IMAGE_PATH = "/data/local/tmp/Images/backGroundImage.jpg";
+// prebuilt cutout with transparent surroundings: the emboss effect needs a real
+// sticker alpha profile instead of an opaque background image
+const std::string STICKER_IMAGE_PATH = "/data/local/tmp/Images/clockImage.png";
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
 
@@ -49,54 +53,6 @@ const std::array specIntensityValues = {0.0f, 1.0f, 10.0f, 50.0f};
 const size_t COMBINATION_COUNT = std::max({ outlineWidthValues.size(), refractionRateValues.size(),
     dirIntensityValues.size(), edgeLightWidthValues.size(), edgeLightFeatherRateValues.size(),
     spotLightIntensityValues.size(), specPowValues.size(), specIntensityValues.size() });
-
-// shared constants for the sticker pixel map generator and filter init helpers
-constexpr int32_t STICKER_PIXEL_BYTES = 4; // RGBA_8888
-constexpr int32_t STICKER_GREEN_CHANNEL = 1; // channel offset inside an RGBA_8888 pixel
-constexpr int32_t STICKER_BLUE_CHANNEL = 2;
-constexpr int32_t STICKER_ALPHA_CHANNEL = 3;
-constexpr int32_t STICKER_CELL_SIZE = 64;  // checkerboard cell size in px
-constexpr int32_t STICKER_CHECKER_PARITY = 2;
-constexpr uint8_t STICKER_COLOR_MAX = 255;
-constexpr int32_t STICKER_DEFAULT_SIZE = 512;
-
-void FillCheckerboardPixels(std::unique_ptr<uint8_t[]>& data, int32_t width, int32_t height)
-{
-    constexpr int32_t cellSize = STICKER_CELL_SIZE; // checkerboard cell size in px
-    for (int32_t y = 0; y < height; y++) {
-        for (int32_t x = 0; x < width; x++) {
-            const size_t idx = (static_cast<size_t>(y) * width + x) * STICKER_PIXEL_BYTES;
-            const uint8_t v = (((x / cellSize) + (y / cellSize)) % STICKER_CHECKER_PARITY == 0) ?
-                STICKER_COLOR_MAX : 0;
-            data[idx] = v;
-            data[idx + STICKER_GREEN_CHANNEL] = v;
-            data[idx + STICKER_BLUE_CHANNEL] = v;
-            data[idx + STICKER_ALPHA_CHANNEL] = STICKER_COLOR_MAX;
-        }
-    }
-}
-
-std::shared_ptr<Media::PixelMap> CreateStickerPixelMap(int32_t width, int32_t height)
-{
-    if (width <= 0 || height <= 0) {
-        return nullptr;
-    }
-    constexpr int32_t pixelBytes = STICKER_PIXEL_BYTES; // RGBA_8888
-    auto data = std::make_unique<uint8_t[]>(static_cast<size_t>(width) * height * pixelBytes);
-    FillCheckerboardPixels(data, width, height);
-    Media::InitializationOptions opts;
-    opts.size.width = width;
-    opts.size.height = height;
-    opts.pixelFormat = Media::PixelFormat::RGBA_8888;
-    opts.alphaType = OHOS::Media::AlphaType::IMAGE_ALPHA_TYPE_OPAQUE;
-    opts.editable = true;
-    auto pixelmap = Media::PixelMap::Create(reinterpret_cast<const uint32_t*>(data.get()),
-        static_cast<size_t>(width) * height * pixelBytes, opts);
-    if (pixelmap == nullptr) {
-        return nullptr;
-    }
-    return pixelmap;
-}
 
 void SetStickerEmbossUniforms(std::shared_ptr<RSNGStickerEmbossFilter>& stickerEmbossFilter)
 {
@@ -117,7 +73,7 @@ void InitStickerEmbossFilter(std::shared_ptr<RSNGStickerEmbossFilter>& stickerEm
     if (!stickerEmbossFilter) {
         return;
     }
-    auto sticker = CreateStickerPixelMap(STICKER_DEFAULT_SIZE, STICKER_DEFAULT_SIZE);
+    auto sticker = DecodePixelMap(STICKER_IMAGE_PATH, Media::AllocatorType::SHARE_MEM_ALLOC);
     if (sticker != nullptr) {
         stickerEmbossFilter->Setter<StickerEmbossStickerTag>(sticker);
     }

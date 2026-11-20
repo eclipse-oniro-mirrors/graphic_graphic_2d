@@ -1557,11 +1557,13 @@ napi_value EffectNapi::CreateIridescence(napi_env env, napi_callback_info info)
     UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && (realArgc >= NUM_2 && realArgc <= maxArgc), nullptr,
         UIEFFECT_LOG_E("EffectNapi CreateIridescence parsing input fail"));
 
+    // Param problems skip the effect and keep returning the VisualEffect itself,
+    // following the mapColorByBrightness convention
     if (!UIEffectNapiUtils::CheckNullOrUndefined(env, argv[NUM_0], "picture")) {
-        return nullptr;
+        return thisVar;
     }
     if (!UIEffectNapiUtils::CheckNullOrUndefined(env, argv[NUM_1], "iridescenceParam")) {
-        return nullptr;
+        return thisVar;
     }
 
     auto para = std::make_shared<StickerLaserShaderEffectPara>();
@@ -1572,28 +1574,26 @@ napi_value EffectNapi::CreateIridescence(napi_env env, napi_callback_info info)
     std::shared_ptr<Media::PixelMap> picture = nullptr;
     if (!ParsePixelMap(env, argv[NUM_0], picture)) {
         UIEFFECT_LOG_E("EffectNapi CreateIridescence parse picture failed");
-        return nullptr;
+        return thisVar;
     }
     para->SetSticker(picture);
 
     // Parse iridescenceParam (required)
-    UIEFFECT_NAPI_CHECK_RET_D(FillIridescenceParams(env, argv[NUM_1], para), nullptr,
+    UIEFFECT_NAPI_CHECK_RET_D(FillIridescenceParams(env, argv[NUM_1], para), thisVar,
         UIEFFECT_LOG_E("EffectNapi CreateIridescence parse iridescenceParam failed"));
 
-    // Parse outlineWidth (optional)
+    // Parse outlineWidth (optional); invalid widths keep the documented 0 default
     float outlineWidth = 0.0f;
     if (realArgc > NUM_2 && UIEffectNapiUtils::GetType(env, argv[NUM_2]) == napi_number) {
-        outlineWidth = GetSpecialValue(env, argv[NUM_2]);
+        outlineWidth = std::max(GetSpecialValue(env, argv[NUM_2]), 0.0f);
     }
     para->SetOutlineWidth(outlineWidth);
 
-    // Parse shadowOptions (optional); both omitting it and passing {} disable the
-    // shadow (radius 0 skips the shadow branch), overriding the para's initial 10px
+    // Parse shadowOptions (optional); omitting it keeps the para's documented defaults
+    // (shadow off, black at alpha 26/255), same as passing {}
     if (realArgc > NUM_3 && UIEffectNapiUtils::GetType(env, argv[NUM_3]) == napi_object) {
-        UIEFFECT_NAPI_CHECK_RET_D(FillShadowOptions(env, argv[NUM_3], para), nullptr,
+        UIEFFECT_NAPI_CHECK_RET_D(FillShadowOptions(env, argv[NUM_3], para), thisVar,
             UIEFFECT_LOG_E("EffectNapi CreateIridescence parse shadowOptions failed"));
-    } else {
-        para->SetElevationShadowRadius(0.0f);
     }
 
     VisualEffect* visualEffectObj = nullptr;

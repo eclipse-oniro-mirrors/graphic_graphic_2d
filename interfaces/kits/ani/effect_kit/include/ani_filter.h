@@ -54,8 +54,6 @@ public:
     static ani_object Halftone(ani_env* env, ani_object obj, ani_object halftoneParam,
         ani_double outlineWidth, ani_object shadowOptions);
     static ani_object Emboss(ani_env* env, ani_object obj, ani_double outlineWidth, ani_object embossParam);
-    static ani_object Iridescence(ani_env* env, ani_object obj, ani_object iridescenceParam);
-    static ani_object Iridescence(ani_env* env, ani_object obj, ani_object iridescenceParam, ani_double outlineWidth);
     static ani_object Iridescence(ani_env* env, ani_object obj, ani_object iridescenceParam, ani_double outlineWidth,
         ani_object shadowOptions);
     static ani_object GetPixelMap(ani_env* env, ani_object obj);

@@ -595,10 +595,6 @@ namespace effectKit {
 
     public native embossNative(outlineWidth: double, embossParam: EmbossParam): Filter;
 
-    public native iridescenceNative(iridescenceParam: IridescenceParam): Filter;
-
-    public native iridescenceNative(iridescenceParam: IridescenceParam, outlineWidth: double): Filter;
-
     public native iridescenceNative(iridescenceParam: IridescenceParam, outlineWidth: double,
       shadowOptions: ShadowOptions): Filter;
 
@@ -669,14 +665,8 @@ namespace effectKit {
       return this.embossNative(outlineWidth, embossParam);
     }
     public iridescence(iridescenceParam: IridescenceParam, outlineWidth?: double, shadowOptions?: ShadowOptions): Filter {
-      if (shadowOptions !== undefined) {
-        let width: double = (outlineWidth !== undefined) ? outlineWidth : 0.0;
-        return this.iridescenceNative(iridescenceParam, width, shadowOptions);
-      }
-      if (outlineWidth !== undefined) {
-        return this.iridescenceNative(iridescenceParam, outlineWidth);
-      }
-      return this.iridescenceNative(iridescenceParam);
+      let width: double = outlineWidth !== undefined ? outlineWidth : 0.0;
+      return this.iridescenceNative(iridescenceParam, width, shadowOptions ?? ({} as ShadowOptions));
     }
     public getPixelMap(): image.PixelMap {
       return this.getPixelMapNative();

@@ -557,29 +557,35 @@ napi_value FilterNapi::Blur(napi_env env, napi_callback_info info)
     return _this;
 }
 
-static bool ParseFloatFromJsObject(napi_env env, napi_value jsObject, const char* name, float& out)
+// Shared parse helpers defined further below in this file
+static bool GetObjectProperty(napi_env env, napi_value obj, const char* name, napi_value& value);
+static void ParsePoint(napi_env env, napi_value val, Drawing::PointF& point);
+static void ParseColor(napi_env env, napi_value val, Drawing::Color& color);
+static uint32_t ParseShadowOptions(napi_env env, napi_value val, ShadowOptions& shadowOptions);
+
+// Numeric fields are declared double in ETS; parse double and cast once at assignment.
+// Every consumer narrows to float, so values beyond the float range are rejected as well
+static bool GetDoubleProperty(napi_env env, napi_value obj, const char* name, double& value)
 {
-    napi_value value = nullptr;
-    if (napi_get_named_property(env, jsObject, name, &value) != napi_ok ||
-        EffectKitNapiUtils::GetInstance().GetType(env, value) != napi_number) {
+    napi_value prop = nullptr;
+    if (napi_get_named_property(env, obj, name, &prop) != napi_ok ||
+        EffectKitNapiUtils::GetInstance().GetType(env, prop) != napi_number) {
         return false;
     }
-    double number = 0.0;
-    if (napi_get_value_double(env, value, &number) != napi_ok || !std::isfinite(number)) {
+    if (napi_get_value_double(env, prop, &value) != napi_ok || !std::isfinite(value) ||
+        std::abs(value) > static_cast<double>(std::numeric_limits<float>::max())) {
         return false;
     }
-    out = static_cast<float>(number);
     return true;
 }
 
+// common2D.Point object with optional x/y: an absent coordinate defaults to 0
 static bool ParsePointFromJsObject(napi_env env, napi_value jsObject, const char* name, Vector2f& out)
 {
     napi_value value = nullptr;
-    if (napi_get_named_property(env, jsObject, name, &value) != napi_ok ||
-        EffectKitNapiUtils::GetInstance().GetType(env, value) != napi_object) {
+    if (!GetObjectProperty(env, jsObject, name, value)) {
         return false;
     }
-    // ETS Point.x/y are optional: an absent coordinate defaults to 0
     auto getCoordinate = [env](napi_value coordValue, double& coord) {
         if (EffectKitNapiUtils::GetInstance().GetType(env, coordValue) == napi_undefined) {
             coord = 0.0;
@@ -600,59 +606,6 @@ static bool ParsePointFromJsObject(napi_env env, napi_value jsObject, const char
     return true;
 }
 
-// ShadowOptions declares lightDirection/color as number arrays in ETS, matching
-// the ANI parsing: lightDirection [x, y]; color [red, green, blue, alpha] in 0-255
-static bool ParsePointArrayFromJsObject(napi_env env, napi_value jsObject, const char* name, Vector2f& out)
-{
-    napi_value value = nullptr;
-    bool isArray = false;
-    uint32_t length = 0;
-    if (napi_get_named_property(env, jsObject, name, &value) != napi_ok ||
-        napi_is_array(env, value, &isArray) != napi_ok || !isArray ||
-        napi_get_array_length(env, value, &length) != napi_ok || length != NUM_2) {
-        return false;
-    }
-    double coords[NUM_2] = { 0.0, 0.0 };
-    for (uint32_t idx = 0; idx < NUM_2; idx++) {
-        napi_value element = nullptr;
-        if (napi_get_element(env, value, idx, &element) != napi_ok ||
-            EffectKitNapiUtils::GetInstance().GetType(env, element) != napi_number ||
-            napi_get_value_double(env, element, &coords[idx]) != napi_ok || !std::isfinite(coords[idx])) {
-            return false;
-        }
-    }
-    out = Vector2f(static_cast<float>(coords[NUM_0]), static_cast<float>(coords[NUM_1]));
-    return true;
-}
-
-static bool ParseColorArrayFromJsObject(napi_env env, napi_value jsObject, const char* name, Vector4f& out)
-{
-    constexpr double rgbaColorMax = 255.0;
-    napi_value value = nullptr;
-    bool isArray = false;
-    uint32_t length = 0;
-    if (napi_get_named_property(env, jsObject, name, &value) != napi_ok ||
-        napi_is_array(env, value, &isArray) != napi_ok || !isArray ||
-        napi_get_array_length(env, value, &length) != napi_ok || length != NUM_4) {
-        return false;
-    }
-    double channels[NUM_4] = { 0.0, 0.0, 0.0, 0.0 };
-    for (uint32_t idx = 0; idx < NUM_4; idx++) {
-        napi_value element = nullptr;
-        if (napi_get_element(env, value, idx, &element) != napi_ok ||
-            EffectKitNapiUtils::GetInstance().GetType(env, element) != napi_number ||
-            napi_get_value_double(env, element, &channels[idx]) != napi_ok || !std::isfinite(channels[idx])) {
-            return false;
-        }
-        channels[idx] = std::clamp(std::round(channels[idx]), 0.0, rgbaColorMax);
-    }
-    out = Vector4f(static_cast<float>(channels[NUM_0]) / rgbaColorMax,
-        static_cast<float>(channels[NUM_1]) / rgbaColorMax,
-        static_cast<float>(channels[NUM_2]) / rgbaColorMax,
-        static_cast<float>(channels[NUM_3]) / rgbaColorMax);
-    return true;
-}
-
 napi_value FilterNapi::Emboss(napi_env env, napi_callback_info info)
 {
     // Signature: emboss(outlineWidth, embossParam)
@@ -670,7 +623,7 @@ napi_value FilterNapi::Emboss(napi_env env, napi_callback_info info)
     //                   specIntensity        : float - required
     size_t argc = NUM_2;
     napi_value argv[NUM_2];
-    napi_value _this;
+    napi_value _this = nullptr;
     napi_status status;
     EFFECT_JS_ARGS(env, info, status, argc, argv, _this);
     EFFECT_NAPI_CHECK_RET_D(status == napi_ok && argc == NUM_2 &&
@@ -691,22 +644,37 @@ napi_value FilterNapi::Emboss(napi_env env, napi_callback_info info)
     params->outlineWidth = static_cast<float>(outlineWidth);
 
     // API-level edgeLightIntensity + edgeDarkIntensity are packed into the Vector2f pair
-    float edgeLightIntensity = 0.0f;
-    float edgeDarkIntensity = 0.0f;
-    if (!ParseFloatFromJsObject(env, argv[NUM_1], "refractionRate", params->refractionRate) ||
-        !ParseFloatFromJsObject(env, argv[NUM_1], "dirIntensity", params->dirIntensity) ||
-        !ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightWidth", params->edgeLightWidth) ||
-        !ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightFeatherRate", params->edgeLightFeatherRate) ||
-        !ParseFloatFromJsObject(env, argv[NUM_1], "edgeLightIntensity", edgeLightIntensity) ||
-        !ParseFloatFromJsObject(env, argv[NUM_1], "edgeDarkIntensity", edgeDarkIntensity) ||
+    double refractionRate = 0.0;
+    double dirIntensity = 0.0;
+    double edgeLightWidth = 0.0;
+    double edgeLightFeatherRate = 0.0;
+    double edgeLightIntensity = 0.0;
+    double edgeDarkIntensity = 0.0;
+    double spotLightIntensity = 0.0;
+    double specPow = 0.0;
+    double specIntensity = 0.0;
+    if (!GetDoubleProperty(env, argv[NUM_1], "refractionRate", refractionRate) ||
+        !GetDoubleProperty(env, argv[NUM_1], "dirIntensity", dirIntensity) ||
+        !GetDoubleProperty(env, argv[NUM_1], "edgeLightWidth", edgeLightWidth) ||
+        !GetDoubleProperty(env, argv[NUM_1], "edgeLightFeatherRate", edgeLightFeatherRate) ||
+        !GetDoubleProperty(env, argv[NUM_1], "edgeLightIntensity", edgeLightIntensity) ||
+        !GetDoubleProperty(env, argv[NUM_1], "edgeDarkIntensity", edgeDarkIntensity) ||
         !ParsePointFromJsObject(env, argv[NUM_1], "spotLightCenter", params->spotLightCenter) ||
-        !ParseFloatFromJsObject(env, argv[NUM_1], "spotLightIntensity", params->spotLightIntensity) ||
-        !ParseFloatFromJsObject(env, argv[NUM_1], "specPow", params->specPow) ||
-        !ParseFloatFromJsObject(env, argv[NUM_1], "specIntensity", params->specIntensity)) {
+        !GetDoubleProperty(env, argv[NUM_1], "spotLightIntensity", spotLightIntensity) ||
+        !GetDoubleProperty(env, argv[NUM_1], "specPow", specPow) ||
+        !GetDoubleProperty(env, argv[NUM_1], "specIntensity", specIntensity)) {
         EFFECT_LOG_E("FilterNapi Emboss parse embossParam fail, skip this filter");
         return _this;
     }
-    params->edgeLightIntensity = Vector2f(edgeLightIntensity, edgeDarkIntensity);
+    params->refractionRate = static_cast<float>(refractionRate);
+    params->dirIntensity = static_cast<float>(dirIntensity);
+    params->edgeLightWidth = static_cast<float>(edgeLightWidth);
+    params->edgeLightFeatherRate = static_cast<float>(edgeLightFeatherRate);
+    params->spotLightIntensity = static_cast<float>(spotLightIntensity);
+    params->specPow = static_cast<float>(specPow);
+    params->specIntensity = static_cast<float>(specIntensity);
+    params->edgeLightIntensity = Vector2f(static_cast<float>(edgeLightIntensity),
+        static_cast<float>(edgeDarkIntensity));
 
     FilterNapi* thisFilter = nullptr;
     status = napi_unwrap_s(env, _this, &FilterNapi::NAPI_TYPE_TAG, reinterpret_cast<void**>(&thisFilter));
@@ -736,56 +704,57 @@ napi_value FilterNapi::Iridescence(napi_env env, napi_callback_info info)
     //                   color          : common2D.Color - optional, default black {0, 0, 0, 26}
     size_t argc = NUM_3;
     napi_value argv[NUM_3];
-    napi_value _this;
+    napi_value _this = nullptr;
     napi_status status;
     EFFECT_JS_ARGS(env, info, status, argc, argv, _this);
     EFFECT_NAPI_CHECK_RET_D(status == napi_ok && argc >= NUM_1 && argc <= NUM_3 &&
-        EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_0]) == napi_object, nullptr,
+        EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_0]) == napi_object, _this,
         EFFECT_LOG_E("FilterNapi Iridescence parsing input fail"));
 
     auto params = std::make_shared<Drawing::GEStickerLaserShaderParams>();
-    EFFECT_NAPI_CHECK_RET_D(params != nullptr, nullptr,
+    EFFECT_NAPI_CHECK_RET_D(params != nullptr, _this,
         EFFECT_LOG_E("FilterNapi Iridescence params is nullptr"));
 
+    double frequency = 0.0;
+    double progress = 0.0;
     EFFECT_NAPI_CHECK_RET_D(
-        ParseFloatFromJsObject(env, argv[NUM_0], "frequency", params->frequency) &&
+        GetDoubleProperty(env, argv[NUM_0], "frequency", frequency) &&
         ParsePointFromJsObject(env, argv[NUM_0], "direction", params->direction) &&
-        ParseFloatFromJsObject(env, argv[NUM_0], "progress", params->progress), nullptr,
+        GetDoubleProperty(env, argv[NUM_0], "progress", progress), _this,
         EFFECT_LOG_E("FilterNapi Iridescence parse iridescenceParam fail"));
+    params->frequency = static_cast<float>(frequency);
+    params->progress = static_cast<float>(progress);
 
     if (argc > NUM_1 && EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_1]) == napi_number) {
         double outlineWidth = 0.0;
-        if (napi_get_value_double(env, argv[NUM_1], &outlineWidth) == napi_ok) {
+        if (napi_get_value_double(env, argv[NUM_1], &outlineWidth) == napi_ok &&
+            std::isfinite(outlineWidth) && outlineWidth >= 0.0) {
             params->outlineWidth = static_cast<float>(outlineWidth);
         }
     }
 
-    // defaults follow ShadowOptions: a shadow with zero radius covers nothing
+    // reuse the outline/halftone shadow parsing: same clamps, same ShadowOptions defaults
     if (argc > NUM_2 && EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_2]) == napi_object) {
-        float shadowRadius = 0.0f;
-        float shadowDistance = 0.0f;
-        if (ParseFloatFromJsObject(env, argv[NUM_2], "radius", shadowRadius)) {
-            params->elevationShadowRadius = shadowRadius;
-        }
-        if (!ParsePointArrayFromJsObject(env, argv[NUM_2], "lightDirection", params->lightDir)) {
-            params->lightDir = Vector2f(0.0f, 0.0f);
-        }
-        if (ParseFloatFromJsObject(env, argv[NUM_2], "shadowDistance", shadowDistance)) {
-            params->shadowDistance = shadowDistance;
-        }
-        if (!ParseColorArrayFromJsObject(env, argv[NUM_2], "color", params->elevationShadowColor)) {
-            params->elevationShadowColor = Vector4f(0.0f, 0.0f, 0.0f, 26.0f / 255.0f);
+        ShadowOptions options;
+        if (ParseShadowOptions(env, argv[NUM_2], options) == SUCCESS) {
+            constexpr float rgbaColorMax = 255.0f;
+            params->elevationShadowRadius = options.radius;
+            params->shadowDistance = options.shadowDistance;
+            params->lightDir = Vector2f(options.lightDirection.GetX(), options.lightDirection.GetY());
+            params->elevationShadowColor = Vector4f(options.color.GetRed() / rgbaColorMax,
+                options.color.GetGreen() / rgbaColorMax, options.color.GetBlue() / rgbaColorMax,
+                options.color.GetAlpha() / rgbaColorMax);
         }
     }
 
     FilterNapi* thisFilter = nullptr;
     status = napi_unwrap_s(env, _this, &FilterNapi::NAPI_TYPE_TAG, reinterpret_cast<void**>(&thisFilter));
-    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && thisFilter != nullptr, nullptr,
+    EFFECT_NAPI_CHECK_RET_D(status == napi_ok && thisFilter != nullptr, _this,
         EFFECT_LOG_E("FilterNapi Iridescence napi_unwrap fail"));
 
     // the sticker is the effect chain input image, supplied by EffectImageChain on apply
     auto iridescence = EffectImageFilter::StickerLaserShader(params);
-    EFFECT_NAPI_CHECK_RET_D(iridescence != nullptr, nullptr,
+    EFFECT_NAPI_CHECK_RET_D(iridescence != nullptr, _this,
         EFFECT_LOG_E("FilterNapi Iridescence create filter fail"));
     thisFilter->AddEffectFilter(iridescence);
     return _this;

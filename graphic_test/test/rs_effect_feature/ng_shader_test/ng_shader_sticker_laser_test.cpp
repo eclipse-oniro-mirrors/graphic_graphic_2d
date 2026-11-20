@@ -32,6 +32,9 @@ namespace OHOS::Rosen {
 
 namespace {
 const std::string TEST_IMAGE_PATH = "/data/local/tmp/Images/backGroundImage.jpg";
+// prebuilt cutout with transparent surroundings: the laser shader needs a real
+// sticker alpha profile instead of an opaque background image
+const std::string STICKER_IMAGE_PATH = "/data/local/tmp/Images/clockImage.png";
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
 }
@@ -41,7 +44,7 @@ void InitStickerLaserShader(std::shared_ptr<RSNGStickerLaserShader>& stickerLase
     if (!stickerLaserShader) {
         return;
     }
-    auto sticker = DecodePixelMap(TEST_IMAGE_PATH, Media::AllocatorType::SHARE_MEM_ALLOC);
+    auto sticker = DecodePixelMap(STICKER_IMAGE_PATH, Media::AllocatorType::SHARE_MEM_ALLOC);
     if (sticker != nullptr) {
         stickerLaserShader->Setter<StickerLaserShaderStickerTag>(sticker);
     }

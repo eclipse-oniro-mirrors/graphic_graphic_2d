@@ -16,7 +16,6 @@
 #ifndef NG_FILTER_TEST_UTILS_H
 #define NG_FILTER_TEST_UTILS_H
 
-#include "pixel_map.h"
 #include "ui_effect/property/include/rs_ui_filter_base.h"
 #include "ui_effect/property/include/rs_ui_mask_base.h"
 #include "ui_effect/property/include/rs_ui_color_gradient_filter.h"

@@ -256,7 +256,6 @@ template("render_service_client_source_set") {
       "core/ui_effect/property/src/rs_ui_shape_base.cpp",
       "core/ui_effect/property/src/rs_ui_dot_matrix_shader.cpp",
       "core/ui_effect/property/src/rs_ui_shader_base.cpp",
-      "core/ui_effect/filter/src/filter_sticker_emboss_para.cpp",
     ]
 
     if (is_cross_platform) {

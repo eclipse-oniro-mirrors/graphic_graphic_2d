@@ -125,14 +125,15 @@ public:
 
 private:
     std::shared_ptr<Media::PixelMap> sticker_;
-    float outlineWidth_ = 2.0f;
+    float outlineWidth_ = 0.0f;
     float frequency_ = 0.005f;
     Vector2f direction_ = Vector2f(1.0f, 0.0f);
     float progress_ = 0.0f;
     Vector2f lightDir_ = Vector2f(0.0f, 0.0f);
-    Vector4f elevationShadowColor_ = Vector4f(0.0f, 0.0f, 0.0f, 0.2f);
-    float elevationShadowRadius_ = 10.0f;
-    float shadowDistance_ = 10.0f;
+    // defaults follow the ShadowOptions interface doc: shadow off, black at alpha 26/255
+    Vector4f elevationShadowColor_ = Vector4f(0.0f, 0.0f, 0.0f, 26.0f / 255.0f);
+    float elevationShadowRadius_ = 0.0f;
+    float shadowDistance_ = 0.0f;
 };
 
 } // namespace Rosen

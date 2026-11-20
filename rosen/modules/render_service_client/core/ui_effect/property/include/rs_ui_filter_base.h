@@ -36,7 +36,7 @@ public:
 
     RSC_EXPORT static std::shared_ptr<RSNGFilterBase> Create(RSNGEffectType type);
 
-    RSC_EXPORT static std::shared_ptr<RSNGFilterBase> Create(std::shared_ptr<FilterPara> filterPara);
+    static std::shared_ptr<RSNGFilterBase> Create(std::shared_ptr<FilterPara> filterPara);
 };
 
 template<RSNGEffectType Type, typename... PropertyTags>

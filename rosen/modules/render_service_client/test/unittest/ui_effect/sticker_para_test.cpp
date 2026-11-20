@@ -135,145 +135,18 @@ HWTEST_F(RSStickerParaTest, StickerEmbossParaSetterGetter001, TestSize.Level1)
 }
 
 /**
- * @tc.name: StickerEmbossParaClone001
- * @tc.desc: Verify StickerEmbossPara clone keeps all fields
+ * @tc.name: StickerEmbossParaMarshallingUnsupported001
+ * @tc.desc: The emboss para is client-side only; base Marshalling/Clone report unsupported
  * @tc.type: FUNC
  */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaClone001, TestSize.Level1)
-{
-    auto para = std::make_shared<StickerEmbossPara>();
-    ASSERT_NE(para, nullptr);
-    auto sticker = MakeStickerPixelMap();
-    ASSERT_NE(sticker, nullptr);
-    SetAllEmbossFields(para, sticker);
-
-    auto clone = para->Clone();
-    ASSERT_NE(clone, nullptr);
-    auto embossClone = std::static_pointer_cast<StickerEmbossPara>(clone);
-    EXPECT_EQ(embossClone->GetSticker(), sticker);
-    EXPECT_FLOAT_EQ(embossClone->GetOutlineWidth(), para->GetOutlineWidth());
-    EXPECT_FLOAT_EQ(embossClone->GetRefractionRate(), para->GetRefractionRate());
-    EXPECT_FLOAT_EQ(embossClone->GetDirIntensity(), para->GetDirIntensity());
-    EXPECT_FLOAT_EQ(embossClone->GetEdgeLightWidth(), para->GetEdgeLightWidth());
-    EXPECT_FLOAT_EQ(embossClone->GetEdgeLightFeatherRate(), para->GetEdgeLightFeatherRate());
-    EXPECT_FLOAT_EQ(embossClone->GetEdgeLightIntensity().x_, para->GetEdgeLightIntensity().x_);
-    EXPECT_FLOAT_EQ(embossClone->GetEdgeLightIntensity().y_, para->GetEdgeLightIntensity().y_);
-    EXPECT_FLOAT_EQ(embossClone->GetSpotLightCenter().x_, para->GetSpotLightCenter().x_);
-    EXPECT_FLOAT_EQ(embossClone->GetSpotLightCenter().y_, para->GetSpotLightCenter().y_);
-    EXPECT_FLOAT_EQ(embossClone->GetSpotLightIntensity(), para->GetSpotLightIntensity());
-    EXPECT_FLOAT_EQ(embossClone->GetSpecPow(), para->GetSpecPow());
-    EXPECT_FLOAT_EQ(embossClone->GetSpecIntensity(), para->GetSpecIntensity());
-}
-
-/**
- * @tc.name: StickerEmbossParaMarshallingNoSticker001
- * @tc.desc: Verify Marshalling fails without a sticker pixelmap
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaMarshallingNoSticker001, TestSize.Level1)
+HWTEST_F(RSStickerParaTest, StickerEmbossParaMarshallingUnsupported001, TestSize.Level1)
 {
     auto para = std::make_shared<StickerEmbossPara>();
     ASSERT_NE(para, nullptr);
     Parcel parcel;
     EXPECT_FALSE(para->Marshalling(parcel));
-}
-
-/**
- * @tc.name: StickerEmbossParaMarshallingRoundTrip001
- * @tc.desc: Verify Marshalling/Unmarshalling round trip through the dispatcher
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaMarshallingRoundTrip001, TestSize.Level1)
-{
-    auto para = std::make_shared<StickerEmbossPara>();
-    ASSERT_NE(para, nullptr);
-    auto sticker = MakeStickerPixelMap();
-    ASSERT_NE(sticker, nullptr);
-    SetAllEmbossFields(para, sticker);
-
-    Parcel parcel;
-    EXPECT_TRUE(para->Marshalling(parcel));
-    StickerEmbossPara::RegisterUnmarshallingCallback();
-    std::shared_ptr<FilterPara> val = nullptr;
-    EXPECT_TRUE(FilterPara::Unmarshalling(parcel, val));
-    ASSERT_NE(val, nullptr);
-    EXPECT_EQ(val->type_, FilterPara::ParaType::STICKER_EMBOSS_FILTER);
-    auto recovered = std::static_pointer_cast<StickerEmbossPara>(val);
-    EXPECT_NE(recovered->GetSticker(), nullptr);
-    EXPECT_FLOAT_EQ(recovered->GetOutlineWidth(), 2.0f);
-    EXPECT_FLOAT_EQ(recovered->GetRefractionRate(), 0.4f);
-    EXPECT_FLOAT_EQ(recovered->GetDirIntensity(), 0.7f);
-    EXPECT_FLOAT_EQ(recovered->GetEdgeLightWidth(), 5.0f);
-    EXPECT_FLOAT_EQ(recovered->GetEdgeLightFeatherRate(), 0.6f);
-    EXPECT_FLOAT_EQ(recovered->GetEdgeLightIntensity().x_, 0.8f);
-    EXPECT_FLOAT_EQ(recovered->GetEdgeLightIntensity().y_, 0.3f);
-    EXPECT_FLOAT_EQ(recovered->GetSpotLightCenter().x_, 0.25f);
-    EXPECT_FLOAT_EQ(recovered->GetSpotLightCenter().y_, 0.75f);
-    EXPECT_FLOAT_EQ(recovered->GetSpotLightIntensity(), 1.2f);
-    EXPECT_FLOAT_EQ(recovered->GetSpecPow(), 8.0f);
-    EXPECT_FLOAT_EQ(recovered->GetSpecIntensity(), 0.9f);
-}
-
-/**
- * @tc.name: StickerEmbossParaOnUnmarshallingBadType001
- * @tc.desc: Verify OnUnmarshalling rejects a mismatched type
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaOnUnmarshallingBadType001, TestSize.Level1)
-{
-    Parcel parcel;
-    parcel.WriteUint16(static_cast<uint16_t>(FilterPara::ParaType::NONE));
-    std::shared_ptr<FilterPara> val = nullptr;
-    EXPECT_FALSE(StickerEmbossPara::OnUnmarshalling(parcel, val));
-    EXPECT_EQ(val, nullptr);
-}
-
-/**
- * @tc.name: StickerEmbossParaOnUnmarshallingEmpty001
- * @tc.desc: Verify OnUnmarshalling fails on an empty parcel
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaOnUnmarshallingEmpty001, TestSize.Level1)
-{
-    Parcel parcel;
-    std::shared_ptr<FilterPara> val = nullptr;
-    EXPECT_FALSE(StickerEmbossPara::OnUnmarshalling(parcel, val));
-    EXPECT_EQ(val, nullptr);
-}
-
-/**
- * @tc.name: StickerEmbossParaOnUnmarshallingBadSticker001
- * @tc.desc: Verify OnUnmarshalling fails when the sticker pixelmap payload is missing
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaOnUnmarshallingBadSticker001, TestSize.Level1)
-{
-    Parcel parcel;
-    uint16_t type = static_cast<uint16_t>(FilterPara::ParaType::STICKER_EMBOSS_FILTER);
-    parcel.WriteUint16(type);
-    parcel.WriteUint16(type);
-    std::shared_ptr<FilterPara> val = nullptr;
-    EXPECT_FALSE(StickerEmbossPara::OnUnmarshalling(parcel, val));
-    EXPECT_EQ(val, nullptr);
-}
-
-/**
- * @tc.name: StickerEmbossParaOnUnmarshallingBadParams001
- * @tc.desc: Verify OnUnmarshalling fails when float params are truncated
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaOnUnmarshallingBadParams001, TestSize.Level1)
-{
-    Parcel parcel;
-    uint16_t type = static_cast<uint16_t>(FilterPara::ParaType::STICKER_EMBOSS_FILTER);
-    parcel.WriteUint16(type);
-    parcel.WriteUint16(type);
-    auto sticker = MakeStickerPixelMap();
-    ASSERT_NE(sticker, nullptr);
-    EXPECT_TRUE(sticker->Marshalling(parcel));
-    std::shared_ptr<FilterPara> val = nullptr;
-    EXPECT_FALSE(StickerEmbossPara::OnUnmarshalling(parcel, val));
-    EXPECT_EQ(val, nullptr);
+    EXPECT_EQ(para->Clone(), nullptr);
+    EXPECT_FALSE(FilterPara::IsWhitelistPara(static_cast<uint16_t>(FilterPara::ParaType::STICKER_EMBOSS_FILTER)));
 }
 
 /**
@@ -339,7 +212,7 @@ HWTEST_F(RSStickerParaTest, StickerLaserShaderParaDefaultValues001, TestSize.Lev
     auto para = std::make_shared<StickerLaserShaderEffectPara>();
     ASSERT_NE(para, nullptr);
     EXPECT_EQ(para->GetSticker(), nullptr);
-    EXPECT_FLOAT_EQ(para->GetOutlineWidth(), 2.0f);
+    EXPECT_FLOAT_EQ(para->GetOutlineWidth(), 0.0f);
     EXPECT_FLOAT_EQ(para->GetFrequency(), 0.005f);
     EXPECT_FLOAT_EQ(para->GetDirection().x_, 1.0f);
     EXPECT_FLOAT_EQ(para->GetDirection().y_, 0.0f);
@@ -349,9 +222,9 @@ HWTEST_F(RSStickerParaTest, StickerLaserShaderParaDefaultValues001, TestSize.Lev
     EXPECT_FLOAT_EQ(para->GetElevationShadowColor().x_, 0.0f);
     EXPECT_FLOAT_EQ(para->GetElevationShadowColor().y_, 0.0f);
     EXPECT_FLOAT_EQ(para->GetElevationShadowColor().z_, 0.0f);
-    EXPECT_FLOAT_EQ(para->GetElevationShadowColor().w_, 0.2f);
-    EXPECT_FLOAT_EQ(para->GetElevationShadowRadius(), 10.0f);
-    EXPECT_FLOAT_EQ(para->GetElevationShadowDistance(), 10.0f);
+    EXPECT_FLOAT_EQ(para->GetElevationShadowColor().w_, 26.0f / 255.0f);
+    EXPECT_FLOAT_EQ(para->GetElevationShadowRadius(), 0.0f);
+    EXPECT_FLOAT_EQ(para->GetElevationShadowDistance(), 0.0f);
 }
 
 /**
@@ -447,175 +320,6 @@ HWTEST_F(RSStickerParaTest, StickerLaserShaderParaMarshallingUnsupported001, Tes
     Parcel parcel;
     EXPECT_FALSE(para->Marshalling(parcel));
     EXPECT_EQ(para->Clone(), nullptr);
-}
-
-/**
- * @tc.name: StickerEmbossParaIsWhitelistPara001
- * @tc.desc: Verify the emboss para is whitelisted for cross-process marshalling
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaIsWhitelistPara001, TestSize.Level1)
-{
-    EXPECT_TRUE(FilterPara::IsWhitelistPara(static_cast<uint16_t>(FilterPara::ParaType::STICKER_EMBOSS_FILTER)));
-    EXPECT_FALSE(FilterPara::IsWhitelistPara(static_cast<uint16_t>(FilterPara::ParaType::NONE)));
-}
-
-/**
- * @tc.name: StickerEmbossParaCopyConstructor001
- * @tc.desc: Verify the copy constructor keeps every field of the emboss para
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaCopyConstructor001, TestSize.Level1)
-{
-    auto para = std::make_shared<StickerEmbossPara>();
-    ASSERT_NE(para, nullptr);
-    auto sticker = MakeStickerPixelMap();
-    ASSERT_NE(sticker, nullptr);
-    SetAllEmbossFields(para, sticker);
-
-    StickerEmbossPara copy(*para);
-    EXPECT_EQ(copy.type_, FilterPara::ParaType::STICKER_EMBOSS_FILTER);
-    EXPECT_EQ(copy.GetSticker(), sticker);
-    EXPECT_FLOAT_EQ(copy.GetOutlineWidth(), para->GetOutlineWidth());
-    EXPECT_FLOAT_EQ(copy.GetRefractionRate(), para->GetRefractionRate());
-    EXPECT_FLOAT_EQ(copy.GetDirIntensity(), para->GetDirIntensity());
-    EXPECT_FLOAT_EQ(copy.GetEdgeLightWidth(), para->GetEdgeLightWidth());
-    EXPECT_FLOAT_EQ(copy.GetEdgeLightFeatherRate(), para->GetEdgeLightFeatherRate());
-    EXPECT_FLOAT_EQ(copy.GetEdgeLightIntensity().x_, para->GetEdgeLightIntensity().x_);
-    EXPECT_FLOAT_EQ(copy.GetEdgeLightIntensity().y_, para->GetEdgeLightIntensity().y_);
-    EXPECT_FLOAT_EQ(copy.GetSpotLightCenter().x_, para->GetSpotLightCenter().x_);
-    EXPECT_FLOAT_EQ(copy.GetSpotLightCenter().y_, para->GetSpotLightCenter().y_);
-    EXPECT_FLOAT_EQ(copy.GetSpotLightIntensity(), para->GetSpotLightIntensity());
-    EXPECT_FLOAT_EQ(copy.GetSpecPow(), para->GetSpecPow());
-    EXPECT_FLOAT_EQ(copy.GetSpecIntensity(), para->GetSpecIntensity());
-}
-
-/**
- * @tc.name: FilterMarshallingRoundTrip001
- * @tc.desc: Verify a Filter container holding an emboss para survives a Marshalling round trip
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, FilterMarshallingRoundTrip001, TestSize.Level1)
-{
-    auto para = std::make_shared<StickerEmbossPara>();
-    ASSERT_NE(para, nullptr);
-    auto sticker = MakeStickerPixelMap();
-    ASSERT_NE(sticker, nullptr);
-    SetAllEmbossFields(para, sticker);
-    auto filter = std::make_shared<Filter>();
-    ASSERT_NE(filter, nullptr);
-    filter->AddPara(para);
-
-    Parcel parcel;
-    EXPECT_TRUE(filter->Marshalling(parcel));
-    StickerEmbossPara::RegisterUnmarshallingCallback();
-    std::shared_ptr<Filter> val = nullptr;
-    EXPECT_TRUE(Filter::Unmarshalling(parcel, val));
-    ASSERT_NE(val, nullptr);
-
-    const auto& paras = val->GetAllPara();
-    ASSERT_EQ(paras.size(), 1u);
-    EXPECT_EQ(paras[0]->type_, FilterPara::ParaType::STICKER_EMBOSS_FILTER);
-    auto recovered = std::static_pointer_cast<StickerEmbossPara>(paras[0]);
-    EXPECT_NE(recovered->GetSticker(), nullptr);
-    EXPECT_FLOAT_EQ(recovered->GetOutlineWidth(), 2.0f);
-    EXPECT_FLOAT_EQ(recovered->GetSpecIntensity(), 0.9f);
-}
-
-/**
- * @tc.name: StickerEmbossParaMarshallingTypeWriteFail001
- * @tc.desc: Verify Marshalling fails when the parcel cannot hold the type header
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaMarshallingTypeWriteFail001, TestSize.Level1)
-{
-    auto para = std::make_shared<StickerEmbossPara>();
-    ASSERT_NE(para, nullptr);
-    auto sticker = MakeStickerPixelMap();
-    ASSERT_NE(sticker, nullptr);
-    SetAllEmbossFields(para, sticker);
-
-    // SetMaxCapacity cannot lower the parcel default, so exhaust the capacity by
-    // pre-filling: with no headroom left the type header write fails
-    Parcel parcel;
-    const size_t capacity = 200 * 1024; // 200K, equal to the parcel default capacity
-    ASSERT_TRUE(parcel.SetMaxCapacity(capacity));
-    const std::vector<uint8_t> filler(capacity, 0xFF);
-    ASSERT_TRUE(parcel.WriteBuffer(filler.data(), filler.size()));
-    EXPECT_FALSE(para->Marshalling(parcel));
-}
-
-/**
- * @tc.name: StickerEmbossParaMarshallingParaWriteFail001
- * @tc.desc: Verify Marshalling fails when the parcel runs out mid-way through the float block
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaMarshallingParaWriteFail001, TestSize.Level1)
-{
-    auto para = std::make_shared<StickerEmbossPara>();
-    ASSERT_NE(para, nullptr);
-    auto sticker = MakeStickerPixelMap();
-    ASSERT_NE(sticker, nullptr);
-    SetAllEmbossFields(para, sticker);
-
-    Parcel scratch;
-    ASSERT_TRUE(para->Marshalling(scratch));
-    const size_t fullSize = scratch.GetDataSize();
-
-    // SetMaxCapacity cannot lower the parcel default, so pre-fill instead: leave
-    // headroom for everything except the final float write. The filler stays
-    // 4-byte aligned, so at most 3 spare bytes remain - never a full float.
-    Parcel parcel;
-    const size_t capacity = 200 * 1024; // 200K, equal to the parcel default capacity
-    ASSERT_TRUE(parcel.SetMaxCapacity(capacity));
-    const size_t desiredHeadroom = fullSize - sizeof(float);
-    ASSERT_TRUE(desiredHeadroom > 0 && desiredHeadroom < capacity);
-    const size_t fillerSize = (capacity - desiredHeadroom) & ~static_cast<size_t>(0x3);
-    const std::vector<uint8_t> filler(fillerSize, 0xFF);
-    ASSERT_TRUE(parcel.WriteBuffer(filler.data(), filler.size()));
-    EXPECT_FALSE(para->Marshalling(parcel));
-}
-
-/**
- * @tc.name: StickerEmbossParaOnUnmarshallingLightIncomplete001
- * @tc.desc: Verify OnUnmarshalling fails when only 9 of 12 floats are present
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaOnUnmarshallingLightIncomplete001, TestSize.Level1)
-{
-    Parcel parcel;
-    uint16_t type = static_cast<uint16_t>(FilterPara::ParaType::STICKER_EMBOSS_FILTER);
-    ASSERT_TRUE(parcel.WriteUint16(type));
-    auto sticker = MakeStickerPixelMap();
-    ASSERT_NE(sticker, nullptr);
-    ASSERT_TRUE(sticker->Marshalling(parcel));
-    for (int i = 0; i < 9; ++i) {
-        ASSERT_TRUE(parcel.WriteFloat(0.5f));
-    }
-    std::shared_ptr<FilterPara> val = nullptr;
-    EXPECT_FALSE(StickerEmbossPara::OnUnmarshalling(parcel, val));
-    EXPECT_EQ(val, nullptr);
-}
-
-/**
- * @tc.name: StickerEmbossParaOnUnmarshallingBaseTruncated001
- * @tc.desc: Verify OnUnmarshalling fails when only 3 of 12 floats are present
- * @tc.type: FUNC
- */
-HWTEST_F(RSStickerParaTest, StickerEmbossParaOnUnmarshallingBaseTruncated001, TestSize.Level1)
-{
-    Parcel parcel;
-    uint16_t type = static_cast<uint16_t>(FilterPara::ParaType::STICKER_EMBOSS_FILTER);
-    ASSERT_TRUE(parcel.WriteUint16(type));
-    auto sticker = MakeStickerPixelMap();
-    ASSERT_NE(sticker, nullptr);
-    ASSERT_TRUE(sticker->Marshalling(parcel));
-    for (int i = 0; i < 3; ++i) {
-        ASSERT_TRUE(parcel.WriteFloat(0.5f));
-    }
-    std::shared_ptr<FilterPara> val = nullptr;
-    EXPECT_FALSE(StickerEmbossPara::OnUnmarshalling(parcel, val));
-    EXPECT_EQ(val, nullptr);
 }
 } // namespace Rosen
 } // namespace OHOS
