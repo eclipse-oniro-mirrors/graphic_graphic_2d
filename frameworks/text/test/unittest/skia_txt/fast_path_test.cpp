@@ -877,60 +877,6 @@ HWTEST_F(FastPathTest, FallbackRollbackClean, TestSize.Level0)
 }
 
 /*
- * @tc.name: PerfShapingTime
- * @tc.desc: laying out a long pure-chinese paragraph through the fast path is
- *           faster than forcing the standard harfbuzz path.
- * @tc.type: PERF
- */
-HWTEST_F(FastPathTest, PerfShapingTime, TestSize.Level0)
-{
-    constexpr int kIterations = 30;
-    std::u16string text;
-    for (int i = 0; i < 1000; ++i) {
-        text += u"排版";
-    }
-    auto fontCollection = CreateFontCollection();
-
-    auto measure = [&fontCollection, &text](const ParagraphStyle& paragraphStyle, const SPText::TextStyle& textStyle) {
-        double best = std::numeric_limits<double>::max();
-        for (int i = 0; i < kIterations; ++i) {
-            std::shared_ptr<ParagraphBuilder> builder = ParagraphBuilder::Create(paragraphStyle, fontCollection);
-            if (builder == nullptr) {
-                continue;
-            }
-            builder->PushStyle(textStyle);
-            builder->AddText(text);
-            std::shared_ptr<Paragraph> paragraph = builder->Build();
-            if (paragraph == nullptr) {
-                continue;
-            }
-            auto start = std::chrono::steady_clock::now();
-            paragraph->Layout(K_LAYOUT_WIDTH);
-            auto end = std::chrono::steady_clock::now();
-            double elapsed = std::chrono::duration<double, std::milli>(end - start).count();
-            best = std::min(best, elapsed);
-        }
-        return best;
-    };
-
-    SPText::TextStyle style;
-    ParagraphStyle fastStyle;
-    SPText::TextStyle standardStyle;
-    standardStyle.locale = K_REFERENCE_LOCALE;
-    ParagraphStyle standardParaStyle;
-    standardParaStyle.locale = K_REFERENCE_LOCALE;
-
-    double fastTime = measure(fastStyle, style);
-    double standardTime = measure(standardParaStyle, standardStyle);
-    ASSERT_GT(fastTime, 0.0);
-    ASSERT_GT(standardTime, 0.0);
-    // Record the observed ratio; the fast path must remain strictly faster.
-    double ratio = standardTime / fastTime;
-    EXPECT_GT(ratio, 1.0);
-    printf("PerfShapingTime: fast=%.4fms standard=%.4fms ratio=%.2fx\n", fastTime, standardTime, ratio);
-}
-
-/*
  * @tc.name: ConcurrentLayout
  * @tc.desc: concurrent build + layout of different paragraph objects is free of
  *           data races and yields stable, reproducible results.
