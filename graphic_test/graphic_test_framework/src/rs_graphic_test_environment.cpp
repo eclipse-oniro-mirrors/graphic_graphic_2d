@@ -44,7 +44,10 @@ bool ProbeDisplayEnvironment(DisplayEnvironmentInfo& info, std::string& error)
 
 bool ValidateEmulatorProduct(const DisplayEnvironmentInfo& info, std::string& error)
 {
-    if (info.product != EMULATOR_PRODUCT_NAME) {
+    // Stock x86_64_virt images keep const.product.name at the base default ("OpenHarmony 3.2");
+    // fall back to the boot hardware so prebuilt images pass the identity check.
+    const std::string bootHardware = system::GetParameter("ohos.boot.hardware", "");
+    if (info.product != EMULATOR_PRODUCT_NAME && bootHardware != "virt") {
         error = "unexpected product identity: " + info.product;
         return false;
     }

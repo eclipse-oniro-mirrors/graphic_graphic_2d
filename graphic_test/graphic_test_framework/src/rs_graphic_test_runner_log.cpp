@@ -17,6 +17,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
+#include <cstdlib>
 #include <map>
 #include <sstream>
 
@@ -25,6 +27,21 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
+
+// The framework is built with -fno-exceptions; parse numbers via strtoull instead of std::stoull.
+uint64_t SafeStoull(const std::string& value, uint64_t fallback = 0)
+{
+    if (value.empty()) {
+        return fallback;
+    }
+    errno = 0;
+    char* end = nullptr;
+    const unsigned long long parsed = std::strtoull(value.c_str(), &end, 10);
+    if (errno != 0 || end == value.c_str()) {
+        return fallback;
+    }
+    return static_cast<uint64_t>(parsed);
+}
 
 std::string Trim(const std::string& value)
 {
@@ -58,11 +75,7 @@ uint64_t ParseDuration(const std::string& payload)
     if (open == std::string::npos || close == std::string::npos || close <= open) {
         return 0;
     }
-    try {
-        return std::stoull(payload.substr(open + 1, close - open - 1));
-    } catch (...) {
-        return 0;
-    }
+    return SafeStoull(payload.substr(open + 1, close - open - 1));
 }
 
 void ParseStatusLine(const std::string& line, ParsedLog& parsed)
@@ -130,13 +143,9 @@ void ParseReadyLine(const std::string& line, CaseProgress& progress)
     if (line.find("status=unstable") != std::string::npos) {
         progress.captureUnstable = true;
     }
-    try {
-        const unsigned long parsed = std::stoul(value);
-        if (parsed <= std::numeric_limits<uint32_t>::max()) {
-            progress.readyRetries = static_cast<uint32_t>(parsed);
-        }
-    } catch (...) {
-        // A malformed diagnostic line must not hide the case's gtest result.
+    const uint64_t parsed = SafeStoull(Trim(value));
+    if (parsed <= std::numeric_limits<uint32_t>::max()) {
+        progress.readyRetries = static_cast<uint32_t>(parsed);
     }
 }
 
@@ -149,13 +158,12 @@ void ParseExpectedCaptureLine(const std::string& line, CaseProgress& progress)
         std::string width;
         std::string height;
         fields >> width >> height;
-        try {
-            progress.expectedWidth = static_cast<uint32_t>(std::stoul(width.substr(6)));
-            progress.expectedHeight = static_cast<uint32_t>(std::stoul(height.substr(7)));
-        } catch (...) {
-            progress.expectedWidth = 0;
-            progress.expectedHeight = 0;
-        }
+        const uint64_t widthValue = SafeStoull(width.substr(6));
+        const uint64_t heightValue = SafeStoull(height.substr(7));
+        progress.expectedWidth = widthValue <= std::numeric_limits<uint32_t>::max() ?
+            static_cast<uint32_t>(widthValue) : 0;
+        progress.expectedHeight = heightValue <= std::numeric_limits<uint32_t>::max() ?
+            static_cast<uint32_t>(heightValue) : 0;
         return;
     }
     if (line.compare(0, std::char_traits<char>::length(CROP_PREFIX), CROP_PREFIX) == 0) {
@@ -179,14 +187,10 @@ void ParseTimingLine(const std::string& line, ParsedLog& parsed)
             if (field.compare(0, prefix.size(), prefix) != 0) {
                 continue;
             }
-            try {
-                const uint64_t value = std::stoull(field.substr(prefix.size()));
-                uint64_t& total = parsed.phaseDurationsMs[phase];
-                if (value <= std::numeric_limits<uint64_t>::max() - total) {
-                    total += value;
-                }
-            } catch (...) {
-                // Timing diagnostics are optional and never override gtest progress.
+            const uint64_t value = SafeStoull(field.substr(prefix.size()));
+            uint64_t& total = parsed.phaseDurationsMs[phase];
+            if (value <= std::numeric_limits<uint64_t>::max() - total) {
+                total += value;
             }
         }
     }
