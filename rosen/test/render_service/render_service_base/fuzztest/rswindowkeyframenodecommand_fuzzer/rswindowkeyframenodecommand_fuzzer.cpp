@@ -70,7 +70,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size, RSContext
     g_pos = 0;
     NodeId nodeId = (static_cast<NodeId>(g_pid) << 32) | GetData<uint32_t>();
     NodeId linkNodeId = (static_cast<NodeId>(g_pid) << 32) | GetData<uint32_t>();
-    RSWindowKeyFrameNodeCommandHelper::Create(rsContext, nodeId, GetData<bool>());
+    RSWindowKeyFrameNodeCommandHelper::Create(rsContext, nodeId, GetData<bool>(), GetData<uint64_t>());
     RSWindowKeyFrameNodeCommandHelper::LinkNode(rsContext, nodeId, linkNodeId);
     rsContext.GetMutableNodeMap().FilterNodeByPid(g_pid, true);
     RSRenderNodeGC::Instance().ReleaseNodeMemory(true);

@@ -32,8 +32,9 @@ bool DoUnionNodeCommand(FuzzedDataProvider& fdp)
     RSContext context;
     NodeId id = fdp.ConsumeIntegral<NodeId>();
     bool isTextureExportNode = fdp.ConsumeBool();
+    uint64_t token = fdp.ConsumeIntegral<uint64_t>();
 
-    UnionNodeCommandHelper::Create(context, id, isTextureExportNode);
+    UnionNodeCommandHelper::Create(context, id, isTextureExportNode, token);
     context.GetMutableNodeMap().FilterNodeByPid(getpid(), true);
     RSRenderNodeGC::Instance().ReleaseNodeMemory(true);
     // Node destruction is posted to RSBackgroundThread asynchronously. Wait for the queue to be
