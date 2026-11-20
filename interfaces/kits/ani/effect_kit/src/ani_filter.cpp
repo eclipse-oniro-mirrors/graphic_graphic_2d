@@ -63,12 +63,32 @@ std::shared_ptr<Media::PixelMap> AniFilter::GetSrcPixelMap()
 DrawingError AniFilter::Render(bool forceCPU)
 {
     EffectImageRender imageRender;
-    return imageRender.Render(srcPixelMap_, effectFilters_, forceCPU, dstPixelMap_);
+    const std::string& tagName = customTagName_.empty() ? GetDefaultTagName() : customTagName_;
+    return imageRender.Render(srcPixelMap_, effectFilters_, forceCPU, dstPixelMap_,
+        customTagId_, tagName, &gpuMemoryStatistics_);
 }
 
-void AniFilter::AddNextFilter(std::shared_ptr<EffectImageFilter> filter)
+void AniFilter::AddNextFilter(std::shared_ptr<EffectImageFilter> filter, const std::string& filterType)
 {
     effectFilters_.emplace_back(filter);
+    if (std::find(filterTypeNames_.begin(), filterTypeNames_.end(), filterType) == filterTypeNames_.end()) {
+        filterTypeNames_.emplace_back(filterType);
+    }
+}
+
+std::string AniFilter::GetDefaultTagName() const
+{
+    if (filterTypeNames_.empty()) {
+        return "";
+    }
+    std::string tagName;
+    for (const auto& type : filterTypeNames_) {
+        if (!tagName.empty()) {
+            tagName += "+";
+        }
+        tagName += type;
+    }
+    return tagName;
 }
 
 ani_object AniFilter::Blur(ani_env* env, ani_object obj, ani_double param)
@@ -84,7 +104,7 @@ ani_object AniFilter::Blur(ani_env* env, ani_object obj, ani_double param)
         radius = static_cast<float>(param);
     }
     auto blur = EffectImageFilter::Blur(radius, tileMode);
-    aniFilter->AddNextFilter(blur);
+    aniFilter->AddNextFilter(blur, "blur");
 
     return AniEffectKitUtils::CreateAniObject(
         env, ANI_CLASS_FILTER.c_str(), "l:", reinterpret_cast<ani_long>(aniFilter));
@@ -98,7 +118,7 @@ ani_object AniFilter::Grayscale(ani_env* env, ani_object obj)
         return AniEffectKitUtils::CreateAniUndefined(env);
     }
     auto grayscale = EffectImageFilter::Grayscale();
-    aniFilter->AddNextFilter(grayscale);
+    aniFilter->AddNextFilter(grayscale, "grayscale");
 
     return AniEffectKitUtils::CreateAniObject(
         env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
@@ -157,7 +177,7 @@ ani_object AniFilter::Blur(ani_env* env, ani_object obj, ani_double param, ani_e
     Drawing::TileMode tileMode = static_cast<Drawing::TileMode>(enumIndex);
 
     auto blur = EffectImageFilter::Blur(radius, tileMode);
-    aniFilter->AddNextFilter(blur);
+    aniFilter->AddNextFilter(blur, "blur");
 
     return AniEffectKitUtils::CreateAniObject(env, ANI_CLASS_FILTER.c_str(), nullptr,
         reinterpret_cast<ani_long>(aniFilter));
@@ -177,7 +197,7 @@ ani_object AniFilter::Brightness(ani_env* env, ani_object obj, ani_double param)
     }
 
     auto brightness = EffectImageFilter::Brightness(bright);
-    aniFilter->AddNextFilter(brightness);
+    aniFilter->AddNextFilter(brightness, "brightness");
 
     return AniEffectKitUtils::CreateAniObject(
         env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
@@ -192,7 +212,7 @@ ani_object AniFilter::Invert(ani_env* env, ani_object obj)
     }
 
     auto invert = EffectImageFilter::Invert();
-    aniFilter->AddNextFilter(invert);
+    aniFilter->AddNextFilter(invert, "invert");
 
     return AniEffectKitUtils::CreateAniObject(
         env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
@@ -228,7 +248,7 @@ ani_object AniFilter::SetColorMatrix(ani_env* env, ani_object obj, ani_object ar
     colorMatrix.SetArray(matrix);
 
     auto applyColorMatrix = EffectImageFilter::ApplyColorMatrix(colorMatrix);
-    aniFilter->AddNextFilter(applyColorMatrix);
+    aniFilter->AddNextFilter(applyColorMatrix, "setColorMatrix");
 
     return AniEffectKitUtils::CreateAniObject(
         env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
@@ -412,7 +432,7 @@ ani_object AniFilter::Outline(ani_env* env, ani_object obj, ani_double outlineWi
     ShadowOptions options = ParseShadowOptions(env, shadowOptions);
     auto outline = EffectImageFilter::Outline(width, options);
     if (outline != nullptr) {
-        aniFilter->AddNextFilter(outline);
+        aniFilter->AddNextFilter(outline, "outline");
     }
     return AniEffectKitUtils::CreateAniObject(
         env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
@@ -438,7 +458,7 @@ ani_object AniFilter::Halftone(ani_env* env, ani_object obj, ani_object halftone
     ShadowOptions options = ParseShadowOptions(env, shadowOptions);
     auto halftone = EffectImageFilter::Halftone(params, width, options);
     if (halftone != nullptr) {
-        aniFilter->AddNextFilter(halftone);
+        aniFilter->AddNextFilter(halftone, "halftone");
     }
     return AniEffectKitUtils::CreateAniObject(
         env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
@@ -457,6 +477,51 @@ ani_object AniFilter::GetPixelMap(ani_env* env, ani_object obj)
         return AniEffectKitUtils::CreateAniUndefined(env);
     }
     return Media::PixelMapTaiheAni::CreateEtsPixelMap(env, thisFilter->GetDstPixelMap());
+}
+
+ani_object AniFilter::SetGpuResourceTag(ani_env* env, ani_object obj, ani_int tagId, ani_string tagName)
+{
+    AniFilter* aniFilter = AniEffectKitUtils::GetFilterFromEnv(env, obj);
+    if (aniFilter == nullptr) {
+        EFFECT_LOG_E("GetFilterFromEnv failed");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+
+    static constexpr size_t MAX_CUSTOM_TAG_NAME_LEN = 64;
+    std::string name;
+    if (tagName != nullptr) {
+        ani_size len = 0;
+        if (env->String_GetUTF8Size(tagName, &len) == ANI_OK && len > 0) {
+            std::vector<char> buf(len + 1);
+            ani_size realLen = 0;
+            if (env->String_GetUTF8(tagName, buf.data(), len + 1, &realLen) == ANI_OK) {
+                buf[realLen] = '\0';
+                name = std::string(buf.data(), realLen);
+            } else {
+                EFFECT_LOG_E("SetGpuResourceTag String_GetUTF8 failed");
+            }
+        }
+    }
+    aniFilter->customTagId_ = static_cast<uint32_t>(tagId);
+    aniFilter->customTagName_ = name.substr(0, MAX_CUSTOM_TAG_NAME_LEN);
+    return obj;
+}
+
+ani_string AniFilter::GetGpuMemoryStatistics(ani_env* env, ani_object obj)
+{
+    AniFilter* aniFilter = AniEffectKitUtils::GetFilterFromEnv(env, obj);
+    if (aniFilter == nullptr) {
+        EFFECT_LOG_E("GetFilterFromEnv failed");
+        return ani_string{};
+    }
+
+    ani_string result{};
+    if (env->String_NewUTF8(aniFilter->gpuMemoryStatistics_.c_str(),
+        aniFilter->gpuMemoryStatistics_.size(), &result) != ANI_OK) {
+        EFFECT_LOG_E("GetGpuMemoryStatistics String_NewUTF8 failed");
+        return ani_string{};
+    }
+    return result;
 }
 
 ani_object AniFilter::CreateEffectFromPtr(ani_env* env, std::shared_ptr<Media::PixelMap> pixelMap)
@@ -564,6 +629,11 @@ ani_status AniFilter::Init(ani_env* env)
             ani_object)>(&OHOS::Rosen::AniFilter::Halftone)) },
         ani_native_function { "getPixelMapNative", ":C{@ohos.multimedia.image.image.PixelMap}",
             reinterpret_cast<void*>(OHOS::Rosen::AniFilter::GetPixelMap) },
+        ani_native_function { "setGpuResourceTagNative",
+            "iC{std.core.String}:C{@ohos.effectKit.effectKit.Filter}",
+            reinterpret_cast<void*>(OHOS::Rosen::AniFilter::SetGpuResourceTag) },
+        ani_native_function { "getGpuMemoryStatisticsNative", ":C{std.core.String}",
+            reinterpret_cast<void*>(OHOS::Rosen::AniFilter::GetGpuMemoryStatistics) },
     };
     ani_status ret = env->Class_BindNativeMethods(cls, methods.data(), methods.size());
     if (ret != ANI_OK) {

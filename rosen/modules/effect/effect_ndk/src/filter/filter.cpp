@@ -15,10 +15,15 @@
 
 #include "filter.h"
 
+#include <algorithm>
+
 #include "utils/log.h"
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr size_t MAX_CUSTOM_TAG_NAME_LEN = 64;
+}
 Filter::Filter(std::shared_ptr<OHOS::Media::PixelMap> pixelMap) : srcPixelMap_(pixelMap)
 {}
 
@@ -33,8 +38,24 @@ bool Filter::Render(bool forceCPU)
         return false;
     }
     EffectImageRender imageRender;
-    auto error = imageRender.Render(srcPixelMap_, effectFilters_, forceCPU, dstPixelMap_);
+    std::string tagName = customTagName_;
+    if (tagName.empty()) {
+        tagName = GetDefaultTagName();
+    }
+    auto error = imageRender.Render(srcPixelMap_, effectFilters_, forceCPU, dstPixelMap_,
+        customTagId_, tagName, &gpuMemoryStatistics_);
     return error == DrawingError::ERR_OK;
+}
+
+void Filter::SetGpuResourceTag(uint32_t customTagId, const std::string& customTagName)
+{
+    customTagId_ = customTagId;
+    customTagName_ = customTagName.substr(0, MAX_CUSTOM_TAG_NAME_LEN);
+}
+
+std::string Filter::GetGpuMemoryStatistics() const
+{
+    return gpuMemoryStatistics_;
 }
 
 bool Filter::RenderNativeBuffer(
@@ -47,15 +68,34 @@ bool Filter::RenderNativeBuffer(
         return false;
     }
     EffectImageRender imageRender;
+    std::string tagName = customTagName_;
+    if (tagName.empty()) {
+        tagName = GetDefaultTagName();
+    }
     auto dstNativeBufferSharedPtr = std::shared_ptr<OH_NativeBuffer>(dstNativeBuffer, [](OH_NativeBuffer* p) {});
-    auto error = imageRender.RenderNativeBuffer(
-        srcPixelMap_, dstNativeBufferSharedPtr, effectFilters_, syncFenceFd, releaseGpuContext);
+    auto error = imageRender.RenderNativeBuffer(srcPixelMap_, dstNativeBufferSharedPtr, effectFilters_, syncFenceFd,
+        releaseGpuContext, customTagId_, tagName, &gpuMemoryStatistics_);
     return error == DrawingError::ERR_OK;
 }
 
-void Filter::AddNextFilter(std::shared_ptr<EffectImageFilter> filter)
+void Filter::AddNextFilter(std::shared_ptr<EffectImageFilter> filter, const std::string& filterType)
 {
     effectFilters_.emplace_back(filter);
+    if (std::find(filterTypeNames_.begin(), filterTypeNames_.end(), filterType) == filterTypeNames_.end()) {
+        filterTypeNames_.emplace_back(filterType);
+    }
+}
+
+std::string Filter::GetDefaultTagName() const
+{
+    std::string name;
+    for (const auto& filterType : filterTypeNames_) {
+        if (!name.empty()) {
+            name += "+";
+        }
+        name += filterType;
+    }
+    return name;
 }
 
 std::shared_ptr<OHOS::Media::PixelMap> Filter::GetPixelMap(bool useCpuRender)
@@ -72,7 +112,7 @@ bool Filter::Blur(float radius, Drawing::TileMode tileMode)
     if (!blur) {
         return false;
     }
-    AddNextFilter(blur);
+    AddNextFilter(blur, "blur");
     return true;
 }
 
@@ -82,7 +122,7 @@ bool Filter::Blur(float radius, float angle, Drawing::TileMode tileMode)
     if (!blur) {
         return false;
     }
-    AddNextFilter(blur);
+    AddNextFilter(blur, "blur");
     return true;
 }
 
@@ -92,7 +132,7 @@ bool Filter::Brightness(float brightness)
     if (!bright) {
         return false;
     }
-    AddNextFilter(bright);
+    AddNextFilter(bright, "brightness");
     return true;
 }
 
@@ -102,7 +142,7 @@ bool Filter::Scale(float scaleX, float scaleY, Drawing::FilterMode filterMode, D
     if (!scale) {
         return false;
     }
-    AddNextFilter(scale);
+    AddNextFilter(scale, "scale");
     return true;
 }
 
@@ -112,7 +152,7 @@ bool Filter::Grayscale()
     if (!grayscale) {
         return false;
     }
-    AddNextFilter(grayscale);
+    AddNextFilter(grayscale, "grayscale");
     return true;
 }
 
@@ -122,7 +162,7 @@ bool Filter::Invert()
     if (!invert) {
         return false;
     }
-    AddNextFilter(invert);
+    AddNextFilter(invert, "invert");
     return true;
 }
 
@@ -132,7 +172,7 @@ bool Filter::MapColorByBrightness(const std::vector<Vector4f>& colors, const std
     if (!filter) {
         return false;
     }
-    AddNextFilter(filter);
+    AddNextFilter(filter, "mapColorByBrightness");
     return true;
 }
 
@@ -142,7 +182,7 @@ bool Filter::GammaCorrection(float gamma)
     if (!filter) {
         return false;
     }
-    AddNextFilter(filter);
+    AddNextFilter(filter, "gammaCorrection");
     return true;
 }
 
@@ -152,14 +192,14 @@ bool Filter::SetColorMatrix(const Drawing::ColorMatrix& matrix)
     if (!applyColorMatrix) {
         return false;
     }
-    AddNextFilter(applyColorMatrix);
+    AddNextFilter(applyColorMatrix, "setColorMatrix");
     return true;
 }
 
 bool Filter::WaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& params)
 {
     auto glass = EffectImageFilter::WaterGlass(params);
-    AddNextFilter(glass);
+    AddNextFilter(glass, "waterGlass");
 
     return true;
 }
@@ -168,7 +208,7 @@ bool Filter::ReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>
 {
     auto glass = EffectImageFilter::ReededGlass(params);
 
-    AddNextFilter(glass);
+    AddNextFilter(glass, "reededGlass");
 
     return true;
 }
@@ -180,7 +220,7 @@ bool Filter::MaskTransition(const std::shared_ptr<OHOS::Media::PixelMap>& topLay
     if (!filter) {
         return false;
     }
-    AddNextFilter(filter);
+    AddNextFilter(filter, "maskTransition");
     return true;
 }
  
@@ -191,7 +231,7 @@ bool Filter::WaterDropletTransition(const std::shared_ptr<OHOS::Media::PixelMap>
     if (!filter) {
         return false;
     }
-    AddNextFilter(filter);
+    AddNextFilter(filter, "waterDropletTransition");
     return true;
 }
 

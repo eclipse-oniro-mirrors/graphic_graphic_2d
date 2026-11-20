@@ -15,10 +15,14 @@
 
 #include "effect_filter.h"
 
+#include <cstdlib>
+#include <cstring>
+
 #include "filter/filter.h"
 #include "common/rs_common_def.h"
 #include "ge_linear_gradient_shader_mask.h"
 #include "ge_radial_gradient_shader_mask.h"
+#include "securec.h"
 
 #include "utils/log.h"
 
@@ -173,6 +177,47 @@ EffectErrorCode OH_Filter_GammaCorrection(OH_Filter* filter, float gamma)
     if (!filter || !(CastToFilter(filter)->GammaCorrection(gamma))) {
         return EFFECT_BAD_PARAMETER;
     }
+    return EFFECT_SUCCESS;
+}
+
+EffectErrorCode OH_Filter_SetGpuResourceTag(OH_Filter* filter,
+    uint32_t customTagId, const char* customTagName)
+{
+    if (filter == nullptr) {
+        return EFFECT_BAD_PARAMETER;
+    }
+    auto* nativeFilter = CastToFilter(filter);
+    if (nativeFilter == nullptr) {
+        return EFFECT_BAD_PARAMETER;
+    }
+    std::string name = (customTagName != nullptr) ? customTagName : "";
+    nativeFilter->SetGpuResourceTag(customTagId, name);
+    return EFFECT_SUCCESS;
+}
+
+EffectErrorCode OH_Filter_GetGpuMemoryStatistics(OH_Filter* filter, char** gpuMemoryStatistics)
+{
+    if (filter == nullptr || gpuMemoryStatistics == nullptr) {
+        return EFFECT_BAD_PARAMETER;
+    }
+    auto* nativeFilter = CastToFilter(filter);
+    if (nativeFilter == nullptr) {
+        return EFFECT_BAD_PARAMETER;
+    }
+    std::string statistics = nativeFilter->GetGpuMemoryStatistics();
+    char* result = static_cast<char*>(malloc(statistics.size() + 1));
+    if (result == nullptr) {
+        return EFFECT_UNKNOWN_ERROR;
+    }
+    if (!statistics.empty()) {
+        errno_t ret = memcpy_s(result, statistics.size() + 1, statistics.c_str(), statistics.size());
+        if (ret != EOK) {
+            free(result);
+            return EFFECT_UNKNOWN_ERROR;
+        }
+    }
+    result[statistics.size()] = '\0';
+    *gpuMemoryStatistics = result;
     return EFFECT_SUCCESS;
 }
 

@@ -21,6 +21,7 @@
 #include "effect_image_render.h"
 #include <memory>
 #include <mutex>
+#include <string>
 #include "pixel_map_taihe_ani.h"
 #include <vector>
 
@@ -53,16 +54,23 @@ public:
     static ani_object Halftone(ani_env* env, ani_object obj, ani_object halftoneParam,
         ani_double outlineWidth, ani_object shadowOptions);
     static ani_object GetPixelMap(ani_env* env, ani_object obj);
+    static ani_object SetGpuResourceTag(ani_env* env, ani_object obj, ani_int tagId, ani_string tagName);
+    static ani_string GetGpuMemoryStatistics(ani_env* env, ani_object obj);
     static ani_object CreateEffectFromPtr(ani_env* env, std::shared_ptr<Media::PixelMap> pixelMap);
     static ani_object KitTransferStaticEffect(ani_env* env, ani_class cls, ani_object obj);
     static ani_object kitTransferDynamicEffect(ani_env* env, ani_class cls, ani_long obj);
 
 private:
-    void AddNextFilter(std::shared_ptr<EffectImageFilter> filter);
+    void AddNextFilter(std::shared_ptr<EffectImageFilter> filter, const std::string& filterType);
+    std::string GetDefaultTagName() const;
     DrawingError Render(bool forceCPU);
     std::vector<std::shared_ptr<EffectImageFilter> > effectFilters_;
     std::shared_ptr<Media::PixelMap> srcPixelMap_ = nullptr;
     std::shared_ptr<Media::PixelMap> dstPixelMap_ = nullptr;
+    uint32_t customTagId_ = 0;
+    std::string customTagName_;
+    std::vector<std::string> filterTypeNames_;
+    std::string gpuMemoryStatistics_;
 };
 } // namespace Rosen
 } // namespace OHOS

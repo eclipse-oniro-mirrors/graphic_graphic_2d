@@ -15,6 +15,10 @@
 
 #include "effect_filter_unittest.h"
 
+#include <cstdlib>
+#include <cstring>
+#include <unistd.h>
+
 #include "effect_filter.h"
 #include "image/pixelmap_native.h"
 #include "surface_buffer.h"
@@ -24,6 +28,23 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
+
+class SyncFenceFdGuard {
+public:
+    explicit SyncFenceFdGuard(int32_t *fd) : fd_(fd) {}
+    ~SyncFenceFdGuard()
+    {
+        if (fd_ != nullptr && *fd_ >= 0) {
+            close(*fd_);
+            *fd_ = -1;
+        }
+    }
+    SyncFenceFdGuard(const SyncFenceFdGuard &) = delete;
+    SyncFenceFdGuard &operator=(const SyncFenceFdGuard &) = delete;
+
+private:
+    int32_t *fd_;
+};
 
 static void CreatePixelMap(OH_PixelmapNative*** pixelmap)
 {
@@ -1016,10 +1037,15 @@ HWTEST_F(EffectFilterUnittest, OH_Filter_GetEffectNativeBuffer003, TestSize.Leve
     ASSERT_TRUE(OH_Filter_Invert(filter) == EFFECT_SUCCESS);
 
     int32_t syncFenceFd = -1;
+    SyncFenceFdGuard syncFenceFdGuard(&syncFenceFd);
     OH_NativeBuffer *buffer = CreateNativeBuffer(4, 4, GRAPHIC_PIXEL_FMT_RGBA_8888);
     ASSERT_TRUE(buffer != nullptr);
     ASSERT_TRUE(OH_Filter_GetEffectNativeBuffer(filter, buffer, &syncFenceFd, false)
         == EFFECT_SUCCESS);
+    if (syncFenceFd >= 0) {
+        close(syncFenceFd);
+        syncFenceFd = -1;
+    }
     ASSERT_TRUE(OH_Filter_GetEffectNativeBuffer(filter, buffer, &syncFenceFd, true)
         == EFFECT_SUCCESS);
 
@@ -1028,6 +1054,145 @@ HWTEST_F(EffectFilterUnittest, OH_Filter_GetEffectNativeBuffer003, TestSize.Leve
     OH_PixelmapNative_Release(*pixMap);
 
     GTEST_LOG_(INFO) << "EffectFilterUnittest OH_Filter_GetEffectNativeBuffer003 end";
+}
+
+/**
+ * @tc.name: OH_Filter_SetGpuResourceTag001
+ * @tc.desc: Test SetGpuResourceTag with valid and invalid parameters.
+ * @tc.type: FUNC
+ */
+HWTEST_F(EffectFilterUnittest, OH_Filter_SetGpuResourceTag001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "EffectFilterUnittest OH_Filter_SetGpuResourceTag001 start";
+    OH_PixelmapNative* pixmap = nullptr;
+    OH_PixelmapNative** pixMap = &pixmap;
+    CreatePixelMap(&pixMap);
+    ASSERT_TRUE(*pixMap != nullptr);
+
+    ASSERT_TRUE(OH_Filter_SetGpuResourceTag(nullptr, 1, "scene") == EFFECT_BAD_PARAMETER);
+
+    OH_Filter* filter = nullptr;
+    ASSERT_TRUE(OH_Filter_CreateEffect(*pixMap, &filter) == EFFECT_SUCCESS);
+    ASSERT_TRUE(OH_Filter_SetGpuResourceTag(filter, 1, "scene") == EFFECT_SUCCESS);
+    ASSERT_TRUE(OH_Filter_SetGpuResourceTag(filter, 2, nullptr) == EFFECT_SUCCESS);
+
+    ASSERT_TRUE(OH_Filter_Release(filter) == EFFECT_SUCCESS);
+    OH_PixelmapNative_Release(*pixMap);
+    GTEST_LOG_(INFO) << "EffectFilterUnittest OH_Filter_SetGpuResourceTag001 end";
+}
+
+/**
+ * @tc.name: OH_Filter_GetGpuMemoryStatistics001
+ * @tc.desc: Test GetGpuMemoryStatistics with invalid parameters and without rendering.
+ * @tc.type: FUNC
+ */
+HWTEST_F(EffectFilterUnittest, OH_Filter_GetGpuMemoryStatistics001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "EffectFilterUnittest OH_Filter_GetGpuMemoryStatistics001 start";
+    OH_PixelmapNative* pixmap = nullptr;
+    OH_PixelmapNative** pixMap = &pixmap;
+    CreatePixelMap(&pixMap);
+    ASSERT_TRUE(*pixMap != nullptr);
+
+    OH_Filter* filter = nullptr;
+    ASSERT_TRUE(OH_Filter_CreateEffect(*pixMap, &filter) == EFFECT_SUCCESS);
+
+    char* statistics = nullptr;
+    ASSERT_TRUE(OH_Filter_GetGpuMemoryStatistics(nullptr, &statistics) == EFFECT_BAD_PARAMETER);
+    ASSERT_TRUE(OH_Filter_GetGpuMemoryStatistics(filter, nullptr) == EFFECT_BAD_PARAMETER);
+
+    ASSERT_TRUE(OH_Filter_GetGpuMemoryStatistics(filter, &statistics) == EFFECT_SUCCESS);
+    ASSERT_TRUE(statistics != nullptr);
+    EXPECT_EQ(strlen(statistics), 0u);
+    free(statistics);
+
+    ASSERT_TRUE(OH_Filter_Release(filter) == EFFECT_SUCCESS);
+    OH_PixelmapNative_Release(*pixMap);
+    GTEST_LOG_(INFO) << "EffectFilterUnittest OH_Filter_GetGpuMemoryStatistics001 end";
+}
+
+/**
+ * @tc.name: OH_Filter_GetGpuMemoryStatistics002
+ * @tc.desc: Test GetGpuMemoryStatistics after a GPU rendering with the default tag.
+ * @tc.type: FUNC
+ */
+HWTEST_F(EffectFilterUnittest, OH_Filter_GetGpuMemoryStatistics002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "EffectFilterUnittest OH_Filter_GetGpuMemoryStatistics002 start";
+    OH_PixelmapNative* pixmap = nullptr;
+    OH_PixelmapNative** pixMap = &pixmap;
+    CreatePixelMap(&pixMap);
+    ASSERT_TRUE(*pixMap != nullptr);
+
+    OH_Filter* filter = nullptr;
+    ASSERT_TRUE(OH_Filter_CreateEffect(*pixMap, &filter) == EFFECT_SUCCESS);
+    ASSERT_TRUE(OH_Filter_Invert(filter) == EFFECT_SUCCESS);
+
+    int32_t syncFenceFd = -1;
+    SyncFenceFdGuard syncFenceFdGuard(&syncFenceFd);
+    OH_NativeBuffer* buffer = CreateNativeBuffer(4, 4, GRAPHIC_PIXEL_FMT_RGBA_8888);
+    ASSERT_TRUE(buffer != nullptr);
+    ASSERT_TRUE(OH_Filter_GetEffectNativeBuffer(filter, buffer, &syncFenceFd, false) == EFFECT_SUCCESS);
+
+    char* statistics = nullptr;
+    ASSERT_TRUE(OH_Filter_GetGpuMemoryStatistics(filter, &statistics) == EFFECT_SUCCESS);
+    ASSERT_TRUE(statistics != nullptr);
+    EXPECT_TRUE(strlen(statistics) > 0);
+    EXPECT_TRUE(strstr(statistics, "invert") != nullptr);
+    free(statistics);
+
+    ASSERT_TRUE(OH_Filter_Release(filter) == EFFECT_SUCCESS);
+    OH_NativeBuffer_Unreference(buffer);
+    OH_PixelmapNative_Release(*pixMap);
+    GTEST_LOG_(INFO) << "EffectFilterUnittest OH_Filter_GetGpuMemoryStatistics002 end";
+}
+
+/**
+ * @tc.name: OH_Filter_SetGpuResourceTagAndGetStatistics001
+ * @tc.desc: Test the full flow: set a custom tag, render and get statistics.
+ * @tc.type: FUNC
+ */
+HWTEST_F(EffectFilterUnittest, OH_Filter_SetGpuResourceTagAndGetStatistics001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "EffectFilterUnittest OH_Filter_SetGpuResourceTagAndGetStatistics001 start";
+    OH_PixelmapNative* pixmap = nullptr;
+    OH_PixelmapNative** pixMap = &pixmap;
+    CreatePixelMap(&pixMap);
+    ASSERT_TRUE(*pixMap != nullptr);
+
+    OH_Filter* filter = nullptr;
+    ASSERT_TRUE(OH_Filter_CreateEffect(*pixMap, &filter) == EFFECT_SUCCESS);
+    ASSERT_TRUE(OH_Filter_Invert(filter) == EFFECT_SUCCESS);
+    ASSERT_TRUE(OH_Filter_SetGpuResourceTag(filter, 99, "ndkScene") == EFFECT_SUCCESS);
+
+    int32_t syncFenceFd = -1;
+    SyncFenceFdGuard syncFenceFdGuard(&syncFenceFd);
+    OH_NativeBuffer* buffer = CreateNativeBuffer(4, 4, GRAPHIC_PIXEL_FMT_RGBA_8888);
+    ASSERT_TRUE(buffer != nullptr);
+    ASSERT_TRUE(OH_Filter_GetEffectNativeBuffer(filter, buffer, &syncFenceFd, false) == EFFECT_SUCCESS);
+    if (syncFenceFd >= 0) {
+        close(syncFenceFd);
+        syncFenceFd = -1;
+    }
+
+    char* statistics = nullptr;
+    ASSERT_TRUE(OH_Filter_GetGpuMemoryStatistics(filter, &statistics) == EFFECT_SUCCESS);
+    ASSERT_TRUE(statistics != nullptr);
+    EXPECT_TRUE(strlen(statistics) > 0);
+    EXPECT_TRUE(strstr(statistics, "ndkScene") != nullptr);
+    free(statistics);
+
+    ASSERT_TRUE(OH_Filter_SetGpuResourceTag(filter, 0, "nameOnlyScene") == EFFECT_SUCCESS);
+    ASSERT_TRUE(OH_Filter_GetEffectNativeBuffer(filter, buffer, &syncFenceFd, false) == EFFECT_SUCCESS);
+
+    OH_PixelmapNative* pixelMapWithTag = nullptr;
+    ASSERT_TRUE(OH_Filter_GetEffectPixelMap(filter, &pixelMapWithTag) == EFFECT_SUCCESS);
+    OH_PixelmapNative_Release(pixelMapWithTag);
+
+    ASSERT_TRUE(OH_Filter_Release(filter) == EFFECT_SUCCESS);
+    OH_NativeBuffer_Unreference(buffer);
+    OH_PixelmapNative_Release(*pixMap);
+    GTEST_LOG_(INFO) << "EffectFilterUnittest OH_Filter_SetGpuResourceTagAndGetStatistics001 end";
 }
 } // namespace Rosen
 } // namespace OHOS

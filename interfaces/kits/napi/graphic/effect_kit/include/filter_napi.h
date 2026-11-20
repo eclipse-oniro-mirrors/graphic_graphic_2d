@@ -61,13 +61,20 @@ private:
     static napi_value SetColorMatrix(napi_env env, napi_callback_info info);
     static napi_value Outline(napi_env env, napi_callback_info info);
     static napi_value Halftone(napi_env env, napi_callback_info info);
+    static napi_value SetGpuResourceTag(napi_env env, napi_callback_info info);
+    static napi_value GetGpuMemoryStatistics(napi_env env, napi_callback_info info);
 
-    void AddEffectFilter(std::shared_ptr<EffectImageFilter> filter);
+    void AddEffectFilter(std::shared_ptr<EffectImageFilter> filter, const std::string& filterType);
     DrawingError Render(bool forceCPU);
+    std::string GetDefaultTagName() const;
 
     std::vector<std::shared_ptr<EffectImageFilter>> effectFilters_;
     std::shared_ptr<Media::PixelMap> srcPixelMap_ = nullptr;
     std::shared_ptr<Media::PixelMap> dstPixelMap_ = nullptr;
+    uint32_t customTagId_ = 0;
+    std::string customTagName_;
+    std::vector<std::string> filterTypeNames_;
+    std::string gpuMemoryStatistics_;
     napi_env env_ = nullptr;
     napi_ref wrapper_ = nullptr;
 };

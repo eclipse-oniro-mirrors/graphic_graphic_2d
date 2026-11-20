@@ -126,6 +126,7 @@ if (is_arkui_x) {
     sources = [
       "src/effect_image_chain.cpp",
       "src/effect_image_render.cpp",
+      "src/effect_tag_tracker.cpp",
     ]
 
     configs = [ ":effect_SKeffectChian_config" ]
@@ -176,6 +177,7 @@ external_deps = [
     sources = [
       "src/effect_image_chain.cpp",
       "src/effect_image_render.cpp",
+      "src/effect_tag_tracker.cpp",
     ]
 
     configs = [ ":effect_SKeffectChian_config" ]
