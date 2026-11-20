@@ -34,6 +34,7 @@ class HdiOutputTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
+    static void ResetFenceState();
 
     static inline std::shared_ptr<HdiOutput> hdiOutput_;
     static inline Mock::HdiDeviceMock* hdiDeviceMock_;
@@ -51,6 +52,13 @@ void HdiOutputTest::SetUpTestCase()
 }
 
 void HdiOutputTest::TearDownTestCase() {}
+
+void HdiOutputTest::ResetFenceState()
+{
+    hdiOutput_->historicalPresentfences_.clear();
+    hdiOutput_->thirdFrameAheadPresentFence_ = SyncFence::InvalidFence();
+    hdiOutput_->presentFenceIndex_ = 0;
+}
 
 namespace {
 
@@ -2059,6 +2067,7 @@ HWTEST_F(HdiOutputTest, Repaint003, Function | MediumTest | Level1)
     EXPECT_CALL(*hdiDeviceMock_, SetDisplayReadBackSmq(_, true))
         .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     HdiOutputTest::hdiOutput_->Repaint();
+    HdiOutputTest::ResetFenceState();
 }
 
 /**
@@ -2098,6 +2107,7 @@ HWTEST_F(HdiOutputTest, Repaint004, Function | MediumTest | Level1)
     EXPECT_CALL(*hdiDeviceMock_, SetDisplayReadBackSmq(_, false))
         .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     HdiOutputTest::hdiOutput_->Repaint();
+    HdiOutputTest::ResetFenceState();
 }
 
 /**
@@ -2135,6 +2145,9 @@ HWTEST_F(HdiOutputTest, Repaint005, Function | MediumTest | Level1)
     HdiOutputTest::hdiOutput_->device_ = nullptr;
     HdiOutputTest::hdiOutput_->SetReadBackDisable(true);
     HdiOutputTest::hdiOutput_->Repaint();
+    HdiOutputTest::hdiOutput_->device_ = hdiDeviceMock_;
+    HdiOutputTest::hdiOutput_->SetReadBackDisable(false);
+    HdiOutputTest::ResetFenceState();
 }
 
 /**

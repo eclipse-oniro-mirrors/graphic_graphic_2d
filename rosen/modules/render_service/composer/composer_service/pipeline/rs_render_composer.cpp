@@ -347,11 +347,6 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
 #ifdef RS_ENABLE_TV_PQ_METADATA
         RSTvMetadataUtil::CombineMetadataForAllLayers(layers);
 #endif
-        if (hdiOutput_->GetReadBackDisabled() != pipelineParam.hasPrivacyLayer) {
-            HLOGI("SetReadBackDisable changed, screenId:%{public}" PRIu64 ", readBackDisabled:%{public}d",
-                screenId_, pipelineParam.hasPrivacyLayer);
-            hdiOutput_->SetReadBackDisable(pipelineParam.hasPrivacyLayer);
-        }
         hdiOutput_->Repaint();
         RecordTimestamp(pipelineParam.vsyncId);
     }
@@ -1455,6 +1450,7 @@ void RSRenderComposer::UpdateTransactionData(std::shared_ptr<RSLayerTransactionD
 
     composerScreenInfo_ = transactionData->GetComposerScreenInfo();
     UpdateForSurfaceFps(transactionData->GetPipelineParam());
+    UpdateReadBackDisable(transactionData->GetPipelineParam());
 }
 
 void RSRenderComposer::UpdateForSurfaceFps(const PipelineParam& pipelineParam)
@@ -1484,6 +1480,15 @@ void RSRenderComposer::UpdateForSurfaceFps(const PipelineParam& pipelineParam)
                 pipelineParam.SurfaceFpsOpList[i].uniqueId);
             RSSurfaceFpsManager::GetInstance().UnregisterSurfaceFps(pipelineParam.SurfaceFpsOpList[i].surfaceNodeId);
         }
+    }
+}
+
+void RSRenderComposer::UpdateReadBackDisable(const PipelineParam& pipelineParam)
+{
+    if (hdiOutput_->GetReadBackDisabled() != pipelineParam.hasPrivacyLayer) {
+        HLOGI("SetReadBackDisable changed, screenId:%{public}" PRIu64 ", readBackDisabled:%{public}d -> %{public}d",
+            screenId_, hdiOutput_->GetReadBackDisabled(), pipelineParam.hasPrivacyLayer);
+        hdiOutput_->SetReadBackDisable(pipelineParam.hasPrivacyLayer);
     }
 }
 
