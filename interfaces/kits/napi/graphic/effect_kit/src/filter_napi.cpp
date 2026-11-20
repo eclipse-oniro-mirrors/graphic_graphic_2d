@@ -606,21 +606,55 @@ static bool ParsePointFromJsObject(napi_env env, napi_value jsObject, const char
     return true;
 }
 
+// embossParam fields are required; edgeLightIntensity + edgeDarkIntensity are packed
+// into the Vector2f pair and numeric fields parse double per the ETS declarations
+static uint32_t ParseEmbossParam(napi_env env, napi_value val, Drawing::GEStickerEmbossFilterParams& params)
+{
+    napi_valuetype type = EffectKitNapiUtils::GetInstance().GetType(env, val);
+    if (type != napi_object) {
+        EFFECT_LOG_E("FilterNapi ParseEmbossParam is not an object");
+        return ERR_INVALID_PARAM;
+    }
+
+    double refractionRate = 0.0;
+    double dirIntensity = 0.0;
+    double edgeLightWidth = 0.0;
+    double edgeLightFeatherRate = 0.0;
+    double edgeLightIntensity = 0.0;
+    double edgeDarkIntensity = 0.0;
+    double spotLightIntensity = 0.0;
+    double specPow = 0.0;
+    double specIntensity = 0.0;
+    if (!GetDoubleProperty(env, val, "refractionRate", refractionRate) ||
+        !GetDoubleProperty(env, val, "dirIntensity", dirIntensity) ||
+        !GetDoubleProperty(env, val, "edgeLightWidth", edgeLightWidth) ||
+        !GetDoubleProperty(env, val, "edgeLightFeatherRate", edgeLightFeatherRate) ||
+        !GetDoubleProperty(env, val, "edgeLightIntensity", edgeLightIntensity) ||
+        !GetDoubleProperty(env, val, "edgeDarkIntensity", edgeDarkIntensity) ||
+        !ParsePointFromJsObject(env, val, "spotLightCenter", params.spotLightCenter) ||
+        !GetDoubleProperty(env, val, "spotLightIntensity", spotLightIntensity) ||
+        !GetDoubleProperty(env, val, "specPow", specPow) ||
+        !GetDoubleProperty(env, val, "specIntensity", specIntensity)) {
+        EFFECT_LOG_E("FilterNapi ParseEmbossParam missing required field");
+        return ERR_INVALID_PARAM;
+    }
+    params.refractionRate = static_cast<float>(refractionRate);
+    params.dirIntensity = static_cast<float>(dirIntensity);
+    params.edgeLightWidth = static_cast<float>(edgeLightWidth);
+    params.edgeLightFeatherRate = static_cast<float>(edgeLightFeatherRate);
+    params.spotLightIntensity = static_cast<float>(spotLightIntensity);
+    params.specPow = static_cast<float>(specPow);
+    params.specIntensity = static_cast<float>(specIntensity);
+    params.edgeLightIntensity = Vector2f(static_cast<float>(edgeLightIntensity),
+        static_cast<float>(edgeDarkIntensity));
+    return SUCCESS;
+}
+
 napi_value FilterNapi::Emboss(napi_env env, napi_callback_info info)
 {
     // Signature: emboss(outlineWidth, embossParam)
     // argv[0] = outlineWidth (required, number)
-    // argv[1] = embossParam (required, EmbossParam)
-    //           Fields: refractionRate       : float - required
-    //                   dirIntensity         : float - required
-    //                   edgeLightWidth       : float - required
-    //                   edgeLightFeatherRate : float - required
-    //                   edgeLightIntensity   : float - required (light part)
-    //                   edgeDarkIntensity    : float - required (dark part)
-    //                   spotLightCenter      : common2D.Point - required
-    //                   spotLightIntensity   : float - required
-    //                   specPow              : float - required
-    //                   specIntensity        : float - required
+    // argv[1] = embossParam (required, EmbossParam with 10 required fields)
     size_t argc = NUM_2;
     napi_value argv[NUM_2];
     napi_value _this = nullptr;
@@ -642,39 +676,9 @@ napi_value FilterNapi::Emboss(napi_env env, napi_callback_info info)
     EFFECT_NAPI_CHECK_RET_D(params != nullptr, _this,
         EFFECT_LOG_E("FilterNapi Emboss params is nullptr"));
     params->outlineWidth = static_cast<float>(outlineWidth);
-
-    // API-level edgeLightIntensity + edgeDarkIntensity are packed into the Vector2f pair
-    double refractionRate = 0.0;
-    double dirIntensity = 0.0;
-    double edgeLightWidth = 0.0;
-    double edgeLightFeatherRate = 0.0;
-    double edgeLightIntensity = 0.0;
-    double edgeDarkIntensity = 0.0;
-    double spotLightIntensity = 0.0;
-    double specPow = 0.0;
-    double specIntensity = 0.0;
-    if (!GetDoubleProperty(env, argv[NUM_1], "refractionRate", refractionRate) ||
-        !GetDoubleProperty(env, argv[NUM_1], "dirIntensity", dirIntensity) ||
-        !GetDoubleProperty(env, argv[NUM_1], "edgeLightWidth", edgeLightWidth) ||
-        !GetDoubleProperty(env, argv[NUM_1], "edgeLightFeatherRate", edgeLightFeatherRate) ||
-        !GetDoubleProperty(env, argv[NUM_1], "edgeLightIntensity", edgeLightIntensity) ||
-        !GetDoubleProperty(env, argv[NUM_1], "edgeDarkIntensity", edgeDarkIntensity) ||
-        !ParsePointFromJsObject(env, argv[NUM_1], "spotLightCenter", params->spotLightCenter) ||
-        !GetDoubleProperty(env, argv[NUM_1], "spotLightIntensity", spotLightIntensity) ||
-        !GetDoubleProperty(env, argv[NUM_1], "specPow", specPow) ||
-        !GetDoubleProperty(env, argv[NUM_1], "specIntensity", specIntensity)) {
-        EFFECT_LOG_E("FilterNapi Emboss parse embossParam fail, skip this filter");
-        return _this;
-    }
-    params->refractionRate = static_cast<float>(refractionRate);
-    params->dirIntensity = static_cast<float>(dirIntensity);
-    params->edgeLightWidth = static_cast<float>(edgeLightWidth);
-    params->edgeLightFeatherRate = static_cast<float>(edgeLightFeatherRate);
-    params->spotLightIntensity = static_cast<float>(spotLightIntensity);
-    params->specPow = static_cast<float>(specPow);
-    params->specIntensity = static_cast<float>(specIntensity);
-    params->edgeLightIntensity = Vector2f(static_cast<float>(edgeLightIntensity),
-        static_cast<float>(edgeDarkIntensity));
+    uint32_t res = ParseEmbossParam(env, argv[NUM_1], *params);
+    EFFECT_NAPI_CHECK_RET_D(res == SUCCESS, _this,
+        EFFECT_LOG_E("FilterNapi Emboss parse embossParam fail, skip this filter"));
 
     FilterNapi* thisFilter = nullptr;
     status = napi_unwrap_s(env, _this, &FilterNapi::NAPI_TYPE_TAG, reinterpret_cast<void**>(&thisFilter));
@@ -687,6 +691,19 @@ napi_value FilterNapi::Emboss(napi_env env, napi_callback_info info)
         EFFECT_LOG_E("FilterNapi Emboss create filter fail"));
     thisFilter->AddEffectFilter(emboss);
     return _this;
+}
+
+// map the parsed ShadowOptions onto the sticker laser shader params, normalizing the
+// 0-255 color channels into 0-1
+static void FillLaserShadowParams(const ShadowOptions& options, Drawing::GEStickerLaserShaderParams& params)
+{
+    constexpr float rgbaColorMax = 255.0f;
+    params.elevationShadowRadius = options.radius;
+    params.shadowDistance = options.shadowDistance;
+    params.lightDir = Vector2f(options.lightDirection.GetX(), options.lightDirection.GetY());
+    params.elevationShadowColor = Vector4f(options.color.GetRed() / rgbaColorMax,
+        options.color.GetGreen() / rgbaColorMax, options.color.GetBlue() / rgbaColorMax,
+        options.color.GetAlpha() / rgbaColorMax);
 }
 
 napi_value FilterNapi::Iridescence(napi_env env, napi_callback_info info)
@@ -737,13 +754,7 @@ napi_value FilterNapi::Iridescence(napi_env env, napi_callback_info info)
     if (argc > NUM_2 && EffectKitNapiUtils::GetInstance().GetType(env, argv[NUM_2]) == napi_object) {
         ShadowOptions options;
         if (ParseShadowOptions(env, argv[NUM_2], options) == SUCCESS) {
-            constexpr float rgbaColorMax = 255.0f;
-            params->elevationShadowRadius = options.radius;
-            params->shadowDistance = options.shadowDistance;
-            params->lightDir = Vector2f(options.lightDirection.GetX(), options.lightDirection.GetY());
-            params->elevationShadowColor = Vector4f(options.color.GetRed() / rgbaColorMax,
-                options.color.GetGreen() / rgbaColorMax, options.color.GetBlue() / rgbaColorMax,
-                options.color.GetAlpha() / rgbaColorMax);
+            FillLaserShadowParams(options, *params);
         }
     }
 
