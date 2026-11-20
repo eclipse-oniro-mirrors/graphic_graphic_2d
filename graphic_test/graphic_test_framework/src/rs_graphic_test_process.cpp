@@ -375,12 +375,10 @@ void ReapAfterKill(pid_t pid, ProcessResult& result)
 
 void KillAndReap(pid_t pid, ProcessResult& result)
 {
-    // pgroup == child pid. The group belongs to this child; never signal the runner's own process group.
-    if (kill(-pid, SIGKILL) != 0 && errno != ESRCH) {
+    // The child leads its own group (POSIX_SPAWN_SETPGROUP, pgid == pid), which exists until the child is reaped;
+    // never signal the runner's own process group.
+    if (killpg(pid, SIGKILL) != 0 && errno != ESRCH) {
         AppendError(result, "cannot kill child process group", errno);
-        if (kill(pid, SIGKILL) != 0 && errno != ESRCH) {
-            AppendError(result, "cannot kill child process", errno);
-        }
     }
     // Only the direct child is waitable here. Descendants remain group-kill targets, not owned waitpid subjects.
     ReapAfterKill(pid, result);

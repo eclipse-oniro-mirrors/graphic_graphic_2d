@@ -61,7 +61,7 @@ bool IsKnownType(const std::string& type)
     return std::find(std::begin(TEST_TYPE_NAMES), std::end(TEST_TYPE_NAMES), type) != std::end(TEST_TYPE_NAMES);
 }
 
-bool ValidateAndSort(std::vector<GraphicTestCaseInfo>& cases, std::string& error)
+bool ValidateAndSort(std::string& error, std::vector<GraphicTestCaseInfo>& cases)
 {
     for (auto& info : cases) {
         if (!IsValidName(info.suite) || !IsValidName(info.name)) {
@@ -93,7 +93,7 @@ bool TestCatalog::FromRegistry(TestCatalog& catalog, std::string& error)
             GraphicCaseModeFromTestMode(static_cast<uint8_t>(info->testMode)), info->isMultiple, info->filePath };
         result.cases_.push_back(std::move(item));
     }
-    if (!ValidateAndSort(result.cases_, error)) {
+    if (!ValidateAndSort(error, result.cases_)) {
         return false;
     }
     catalog = std::move(result);
@@ -107,7 +107,7 @@ TestCatalog TestCatalog::FromCases(const std::vector<GraphicTestCaseInfo>& cases
 {
     TestCatalog catalog;
     catalog.cases_ = cases;
-    ValidateAndSort(catalog.cases_, error);
+    ValidateAndSort(error, catalog.cases_);
     return catalog;
 }
 
