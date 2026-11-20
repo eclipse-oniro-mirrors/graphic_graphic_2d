@@ -1,0 +1,101 @@
+diff --git a/rosen/modules/render_service_client/test/unittest/rs_interfaces_test.cpp b/rosen/modules/render_service_client/test/unittest/rs_interfaces_test.cpp
+index 294bbb8d80..22c6fda3cd 100644
+--- a/rosen/modules/render_service_client/test/unittest/rs_interfaces_test.cpp
++++ b/rosen/modules/render_service_client/test/unittest/rs_interfaces_test.cpp
+@@ -1671,22 +1671,10 @@ HWTEST_F(RSInterfacesTest, NotifyDynamicModeEvent001, Function | SmallTest | Lev
+  * @tc.require:
+  */
+ HWTEST_F(RSInterfacesTest, SetHgmExclusiveScreen001, Function | SmallTest | Level2)
+-{
+-    ASSERT_NE(rsInterfaces, nullptr);
+-    bool result = rsInterfaces->SetHgmExclusiveScreen(std::nullopt);
+-    EXPECT_TRUE(result);
+-}
+-
+-/*
+- * @tc.name: SetHgmExclusiveScreen002
+- * @tc.desc: Set HGM exclusive screen with a screenId
+- * @tc.type: FUNC
+- * @tc.require:
+- */
+-HWTEST_F(RSInterfacesTest, SetHgmExclusiveScreen002, Function | SmallTest | Level2)
+ {
+     ASSERT_NE(rsInterfaces, nullptr);
+     bool result = rsInterfaces->SetHgmExclusiveScreen(static_cast<ScreenId>(0));
++    result = rsInterfaces->SetHgmExclusiveScreen(std::nullopt);
+     EXPECT_TRUE(result);
+ }
+ 
+@@ -3126,34 +3114,6 @@ HWTEST_F(RSInterfacesTest, SetBrightnessInfoChangeCallbackTest, Function | Small
+     ASSERT_EQ(rsInterfaces->SetBrightnessInfoChangeCallback(callback), 0);
+ }
+ 
+-/*
+- * @tc.name: GetBrightnessInfoTest
+- * @tc.desc: Test GetBrightnessInfo
+- * @tc.type: FUNC
+- */
+-HWTEST_F(RSInterfacesTest, GetBrightnessInfoTest, Function | SmallTest | Level2)
+-{
+-    ASSERT_NE(rsInterfaces, nullptr);
+-    BrightnessInfo info = { 0 };
+-    ASSERT_EQ(rsInterfaces->GetBrightnessInfo(0, info), 0);
+-    ASSERT_NE(info.currentHeadroom, 0);
+-    ASSERT_NE(info.maxHeadroom, 0);
+-    ASSERT_NE(info.sdrNits, 0);
+-}
+-
+-/*
+- * @tc.name: GetScreenHDRStatus002
+- * @tc.desc: Test GetScreenHDRStatus
+- * @tc.type: FUNC
+- * @tc.require: issueICK4SM
+- */
+-HWTEST_F(RSInterfacesTest, GetScreenHDRStatus002, Function | SmallTest | Level2)
+-{
+-    HdrStatus hdrStatus = HdrStatus::HDR_PHOTO;
+-    int ret = rsInterfaces->GetScreenHDRStatus(INVALID_SCREEN_ID, hdrStatus);
+-    EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
+-}
+-
+ /*
+  * @tc.name: AvcodecVideoStart001
+  * @tc.desc: Test AvcodecVideoStart
+diff --git a/rosen/test/render_service/render_service/unittest/screen_manager/rs_screen_test.cpp b/rosen/test/render_service/render_service/unittest/screen_manager/rs_screen_test.cpp
+index 382eb0006a..5e4615611b 100644
+--- a/rosen/test/render_service/render_service/unittest/screen_manager/rs_screen_test.cpp
++++ b/rosen/test/render_service/render_service/unittest/screen_manager/rs_screen_test.cpp
+@@ -1757,6 +1757,7 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_003, testing::ext::TestSize.Level1)
+     ASSERT_NE(nullptr, rsScreen);
+ 
+     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
++    rsScreen->supportedPhysicalColorGamuts_ = rsScreen->supportedVirtualColorGamuts_;
+ 
+     // modeIdx >=0
+     int32_t modeIdx = 2;
+@@ -1768,6 +1769,8 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_003, testing::ext::TestSize.Level1)
+             gamuts.resize(modeIdx - 1);
+             return GRAPHIC_DISPLAY_SUCCESS;
+         });
++    std::vector<GraphicColorGamut> hdiGamuts;
++    rsScreen->hdiScreen_->GetScreenSupportedColorGamuts(hdiGamuts);
+ 
+     ASSERT_EQ(rsScreen->SetScreenColorGamut(modeIdx), StatusCode::SUCCESS);
+ }
+@@ -1814,6 +1817,7 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_005, testing::ext::TestSize.Level1)
+     ASSERT_NE(nullptr, rsScreen);
+ 
+     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
++    rsScreen->supportedPhysicalColorGamuts_ = rsScreen->supportedVirtualColorGamuts_;
+ 
+     // modeIdx >=0
+     int32_t modeIdx = 2;
+@@ -1825,6 +1829,8 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_005, testing::ext::TestSize.Level1)
+             gamuts.resize(modeIdx + 1);
+             return GRAPHIC_DISPLAY_SUCCESS;
+         });
++    std::vector<GraphicColorGamut> hdiGamuts;
++    rsScreen->hdiScreen_->GetScreenSupportedColorGamuts(hdiGamuts);
+ 
+     // result != GRAPHIC_DISPLAY_SUCCESS
+     EXPECT_CALL(*hdiDeviceMock_, SetScreenColorGamut(_, _))

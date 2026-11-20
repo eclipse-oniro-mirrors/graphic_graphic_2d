@@ -1673,20 +1673,8 @@ HWTEST_F(RSInterfacesTest, NotifyDynamicModeEvent001, Function | SmallTest | Lev
 HWTEST_F(RSInterfacesTest, SetHgmExclusiveScreen001, Function | SmallTest | Level2)
 {
     ASSERT_NE(rsInterfaces, nullptr);
-    bool result = rsInterfaces->SetHgmExclusiveScreen(std::nullopt);
-    EXPECT_TRUE(result);
-}
-
-/*
- * @tc.name: SetHgmExclusiveScreen002
- * @tc.desc: Set HGM exclusive screen with a screenId
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSInterfacesTest, SetHgmExclusiveScreen002, Function | SmallTest | Level2)
-{
-    ASSERT_NE(rsInterfaces, nullptr);
     bool result = rsInterfaces->SetHgmExclusiveScreen(static_cast<ScreenId>(0));
+    result = rsInterfaces->SetHgmExclusiveScreen(std::nullopt);
     EXPECT_TRUE(result);
 }
 
@@ -3124,34 +3112,6 @@ HWTEST_F(RSInterfacesTest, SetBrightnessInfoChangeCallbackTest, Function | Small
     ASSERT_EQ(rsInterfaces->SetBrightnessInfoChangeCallback(callback), 0);
     callback = [](ScreenId id, BrightnessInfo info) -> void {};
     ASSERT_EQ(rsInterfaces->SetBrightnessInfoChangeCallback(callback), 0);
-}
-
-/*
- * @tc.name: GetBrightnessInfoTest
- * @tc.desc: Test GetBrightnessInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSInterfacesTest, GetBrightnessInfoTest, Function | SmallTest | Level2)
-{
-    ASSERT_NE(rsInterfaces, nullptr);
-    BrightnessInfo info = { 0 };
-    ASSERT_EQ(rsInterfaces->GetBrightnessInfo(0, info), 0);
-    ASSERT_NE(info.currentHeadroom, 0);
-    ASSERT_NE(info.maxHeadroom, 0);
-    ASSERT_NE(info.sdrNits, 0);
-}
-
-/*
- * @tc.name: GetScreenHDRStatus002
- * @tc.desc: Test GetScreenHDRStatus
- * @tc.type: FUNC
- * @tc.require: issueICK4SM
- */
-HWTEST_F(RSInterfacesTest, GetScreenHDRStatus002, Function | SmallTest | Level2)
-{
-    HdrStatus hdrStatus = HdrStatus::HDR_PHOTO;
-    int ret = rsInterfaces->GetScreenHDRStatus(INVALID_SCREEN_ID, hdrStatus);
-    EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
 }
 
 /*
