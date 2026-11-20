@@ -45,6 +45,7 @@
 #endif
 #include "parameters.h"
 #include "platform/common/rs_hisysevent.h"
+#include "common/rs_samgr_retry.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "platform/ohos/backend/rs_surface_ohos_gl.h"
@@ -347,11 +348,6 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
 #ifdef RS_ENABLE_TV_PQ_METADATA
         RSTvMetadataUtil::CombineMetadataForAllLayers(layers);
 #endif
-        if (hdiOutput_->GetReadBackDisabled() != pipelineParam.hasPrivacyLayer) {
-            HLOGI("SetReadBackDisable changed, screenId:%{public}" PRIu64 ", readBackDisabled:%{public}d",
-                screenId_, pipelineParam.hasPrivacyLayer);
-            hdiOutput_->SetReadBackDisable(pipelineParam.hasPrivacyLayer);
-        }
         hdiOutput_->Repaint();
         RecordTimestamp(pipelineParam.vsyncId);
     }
@@ -1075,21 +1071,21 @@ void RSRenderComposer::Redraw(const sptr<Surface>& surface, const std::vector<st
 void RSRenderComposer::SubScribeSystemAbility()
 {
     RS_LOGI("%{public}s", __func__);
-    sptr<ISystemAbilityManager> systemAbilityManager =
-        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (!systemAbilityManager) {
-        RS_LOGE("%{public}s failed to get system ability manager client", __func__);
-        return;
-    }
     std::string threadName = "CompThread_" + std::to_string(screenId_);
     std::string strUid = std::to_string(getuid());
     std::string strPid = std::to_string(getpid());
     std::string strTid = std::to_string(gettid());
 
     saStatusChangeListener_ = new (std::nothrow)VSyncSystemAbilityListener(threadName, strUid, strPid, strTid);
-    int32_t ret = systemAbilityManager->SubscribeSystemAbility(RES_SCHED_SYS_ABILITY_ID, saStatusChangeListener_);
-    if (ret != ERR_OK) {
-        RS_LOGE("%{public}s subscribe system ability %{public}d failed.", __func__, RES_SCHED_SYS_ABILITY_ID);
+    if (saStatusChangeListener_ == nullptr) {
+        RS_LOGE("%{public}s saStatusChangeListener_ is nullptr", __func__);
+        return;
+    }
+    if (!RetrySamgrCall(__func__, [listener = saStatusChangeListener_](
+        const sptr<ISystemAbilityManager>& samgr) {
+        return samgr->SubscribeSystemAbility(RES_SCHED_SYS_ABILITY_ID, listener);
+    })) {
+        // subscription failure is not fatal; resched qos features stay unavailable for this thread
         saStatusChangeListener_ = nullptr;
     }
 }
@@ -1455,6 +1451,7 @@ void RSRenderComposer::UpdateTransactionData(std::shared_ptr<RSLayerTransactionD
 
     composerScreenInfo_ = transactionData->GetComposerScreenInfo();
     UpdateForSurfaceFps(transactionData->GetPipelineParam());
+    UpdateReadBackDisable(transactionData->GetPipelineParam());
 }
 
 void RSRenderComposer::UpdateForSurfaceFps(const PipelineParam& pipelineParam)
@@ -1484,6 +1481,15 @@ void RSRenderComposer::UpdateForSurfaceFps(const PipelineParam& pipelineParam)
                 pipelineParam.SurfaceFpsOpList[i].uniqueId);
             RSSurfaceFpsManager::GetInstance().UnregisterSurfaceFps(pipelineParam.SurfaceFpsOpList[i].surfaceNodeId);
         }
+    }
+}
+
+void RSRenderComposer::UpdateReadBackDisable(const PipelineParam& pipelineParam)
+{
+    if (hdiOutput_->GetReadBackDisabled() != pipelineParam.hasPrivacyLayer) {
+        HLOGI("SetReadBackDisable changed, screenId:%{public}" PRIu64 ", readBackDisabled:%{public}d -> %{public}d",
+            screenId_, hdiOutput_->GetReadBackDisabled(), pipelineParam.hasPrivacyLayer);
+        hdiOutput_->SetReadBackDisable(pipelineParam.hasPrivacyLayer);
     }
 }
 

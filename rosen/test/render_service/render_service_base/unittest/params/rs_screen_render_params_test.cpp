@@ -495,4 +495,22 @@ HWTEST_F(RSScreenRenderParamsTest, WindowRecordFieldsOnSync, TestSize.Level1)
     EXPECT_TRUE(targetParams->HasWindowRecordDisplay());
     EXPECT_EQ(targetParams->GetEffectiveWhiteList(), source.GetEffectiveWhiteList());
 }
+
+/**
+ * @tc.name: OnSyncHasPrivacyLayer
+ * @tc.desc: test OnSync syncs hasPrivacyLayer_ to target
+ * @tc.type: FUNC
+ * @tc.require: issue26721
+ */
+HWTEST_F(RSScreenRenderParamsTest, OnSyncHasPrivacyLayer, TestSize.Level1)
+{
+    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
+    RSScreenRenderParams params(id);
+    params.SetHasPrivacyLayer(true);
+    std::unique_ptr<RSRenderParams> target = std::make_unique<RSScreenRenderParams>(id);
+    ASSERT_NE(target, nullptr);
+    EXPECT_FALSE(static_cast<RSScreenRenderParams*>(target.get())->GetHasPrivacyLayer());
+    params.OnSync(target);
+    EXPECT_TRUE(static_cast<RSScreenRenderParams*>(target.get())->GetHasPrivacyLayer());
+}
 } // namespace OHOS::Rosen

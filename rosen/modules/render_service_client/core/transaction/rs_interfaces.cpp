@@ -26,6 +26,7 @@
 #include "feature/ui_capture/rs_divided_ui_capture.h"
 #include "pipeline/rs_render_thread.h"
 #include "ui/rs_proxy_node.h"
+#include "ui/rs_ui_director.h"
 #include "platform/common/rs_log.h"
 #include "render/rs_typeface_cache.h"
 #include "utils/typeface_map.h"
@@ -894,6 +895,17 @@ int32_t RSInterfaces::RegisterFirstFrameCommitCallback(const FirstFrameCommitCal
 int32_t RSInterfaces::UnRegisterFirstFrameCommitCallback()
 {
     return renderServiceClient_->RegisterFirstFrameCommitCallback(nullptr);
+}
+
+void RSInterfaces::RegisterUIContextMessageCallbacks(
+    const UIContextMessageCallback& messageReceivedCallback, const UIContextMessageCallback& messageProcessedCallback)
+{
+    RSUIDirector::SetUIContextMessageCallbacks(messageReceivedCallback, messageProcessedCallback);
+}
+
+void RSInterfaces::UnRegisterUIContextMessageCallbacks()
+{
+    RSUIDirector::ClearUIContextMessageCallbacks();
 }
 
 int32_t RSInterfaces::RegisterExposedEventCallback(

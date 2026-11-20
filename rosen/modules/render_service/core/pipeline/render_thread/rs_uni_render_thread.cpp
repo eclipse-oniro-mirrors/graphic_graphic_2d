@@ -17,6 +17,7 @@
 #include <fstream>
 #include <malloc.h>
 #include <memory>
+#include <unistd.h>
 #include <parameters.h>
 
 #include "common/rs_background_thread.h"
@@ -43,6 +44,7 @@
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
+#include "common/rs_samgr_retry.h"
 #include "pipeline/render_thread/rs_virtual_screen_parallel_manager.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_surface_handler.h"
@@ -599,12 +601,6 @@ std::vector<SurfaceFpsOp> RSUniRenderThread::GetSurfaceFpsOpList() const
 void RSUniRenderThread::SubScribeSystemAbility()
 {
     RS_LOGD_IF(DEBUG_PIPELINE, "%{public}s", __func__);
-    sptr<ISystemAbilityManager> systemAbilityManager =
-        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (!systemAbilityManager) {
-        RS_LOGE("%{public}s failed to get system ability manager client", __func__);
-        return;
-    }
     std::string threadName = "RSHardwareThread";
     std::string strUid = std::to_string(getuid());
     std::string strPid = std::to_string(getpid());
@@ -615,9 +611,11 @@ void RSUniRenderThread::SubScribeSystemAbility()
         RS_LOGE("RSUniRenderThread::SubScribeSystemAbility saStatusChangeListener_ is nullptr");
         return;
     }
-    int32_t ret = systemAbilityManager->SubscribeSystemAbility(RES_SCHED_SYS_ABILITY_ID, saStatusChangeListener_);
-    if (ret != ERR_OK) {
-        RS_LOGE("%{public}s subscribe system ability %{public}d failed.", __func__, RES_SCHED_SYS_ABILITY_ID);
+    if (!RetrySamgrCall(__func__, [listener = saStatusChangeListener_](
+        const sptr<ISystemAbilityManager>& samgr) {
+        return samgr->SubscribeSystemAbility(RES_SCHED_SYS_ABILITY_ID, listener);
+    })) {
+        // subscription failure is not fatal; resched qos features stay unavailable for this thread
         saStatusChangeListener_ = nullptr;
     }
 }

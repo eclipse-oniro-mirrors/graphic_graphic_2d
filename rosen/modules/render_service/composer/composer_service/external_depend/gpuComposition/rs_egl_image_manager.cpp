@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "feature/uifirst/rs_sub_thread_manager.h"
+#include "gpuComposition/rs_fence_wait_dfx.h"
 #include <native_window.h>
 #include <platform/common/rs_log.h>
 #include "sync_fence.h"
@@ -235,12 +236,19 @@ std::unique_ptr<EglImageResource> EglImageResource::Create(
     return imageCache;
 }
 
-void RSEglImageManager::WaitAcquireFence(const sptr<SyncFence>& acquireFence)
+void RSEglImageManager::WaitAcquireFence(const sptr<SyncFence>& acquireFence, uint64_t bufferId, uint32_t seqNum)
 {
-    if (acquireFence == nullptr) {
+    // nullptr or an invalid fence (fd < 0) has nothing to wait for: SyncFence::Wait would
+    // return -1 immediately, which must not be reported as a timeout
+    if (acquireFence == nullptr || !acquireFence->IsValid()) {
         return;
     }
-    acquireFence->Wait(3000); // 3000ms
+    int32_t ret = acquireFence->Wait(FenceWaitDfx::FENCE_WAIT_TIMEOUT_MS);
+    if (ret == 0) {
+        FenceWaitDfx::ResetFenceWaitTimeoutCount(bufferId);
+        return;
+    }
+    FenceWaitDfx::ReportFenceWaitTimeout("RSEglImageManager::WaitAcquireFence", bufferId, seqNum, ret);
 }
 
 GLuint RSEglImageManager::CreateEglImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
@@ -271,12 +279,13 @@ GLuint RSEglImageManager::CreateEglImageCacheFromBuffer(const sptr<OHOS::Surface
 GLuint RSEglImageManager::MapEglImageFromSurfaceBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
     const sptr<SyncFence>& acquireFence, pid_t threadIndex)
 {
-    WaitAcquireFence(acquireFence);
     if (buffer == nullptr) {
         RS_LOGE("RSEglImageManager::MapEglImageFromSurfaceBuffer: buffer is null.");
+        WaitAcquireFence(acquireFence, 0, 0);
         return 0;
     }
     auto bufferId = buffer->GetBufferId();
+    WaitAcquireFence(acquireFence, bufferId, buffer->GetSeqNum());
     RS_OPTIONAL_TRACE_NAME_FMT("MapEglImage seqNum: %" PRIu64 "", bufferId);
     RS_LOGD_IF(DEBUG_COMPOSER, "RSEglImageManager::MapEglImageFromSurfaceBuffer: %{public}" PRIu64 "", bufferId);
     {

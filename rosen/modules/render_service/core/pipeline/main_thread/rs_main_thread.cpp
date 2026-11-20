@@ -230,6 +230,11 @@ constexpr int32_t PERF_MULTI_WINDOW_REQUESTED_CODE = 10026;
 constexpr uint64_t PERF_PERIOD = 250000000;
 constexpr uint64_t CLEAN_CACHE_FREQ = 60;
 constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
+// request next vsync after a transaction-index hole has been waited for half of the skip limit,
+// so the skip timeout can still trigger when no other vsync source is active
+constexpr uint64_t REQUEST_VSYNC_AFTER_WAIT_FRAMES = 15;
+// missing-index error log interval (frames), to avoid per-vsync log flooding
+constexpr uint64_t MISSING_INDEX_LOG_INTERVAL_FRAMES = 30;
 constexpr uint64_t PERF_PERIOD_BLUR = 480000000;
 constexpr uint64_t PERF_PERIOD_BLUR_TIMEOUT = 80000000;
 constexpr uint64_t MAX_DYNAMIC_STATUS_TIME = 5000000000;
@@ -1667,6 +1672,16 @@ void RSMainThread::RequestNextVsyncForCachedCommand(std::string& transactionFlag
 #endif
 }
 
+void RSMainThread::RequestNextVsyncForPendingTransaction(pid_t pid)
+{
+    RS_TRACE_NAME_FMT("RSMainThread::CheckAndUpdateTransactionIndex KeepAlive pid:%d", pid);
+    if (rsVsyncManagerAgent_ != nullptr && rsVsyncManagerAgent_->IsUiDvsyncOn()) {
+        RequestNextVSync("fromRsMainCommand", 0);
+    } else {
+        RequestNextVSync("UI", 0);
+    }
+}
+
 bool RSMainThread::NeedConsumeMultiCommand(int32_t& dvsyncPid)
 {
     if (rsVsyncManagerAgent_ == nullptr) {
@@ -1699,6 +1714,40 @@ bool RSMainThread::NeedConsumeDVSyncCommand(uint32_t& endIndex,
             return true;
         }
         lastTime = curTime;
+    }
+    return false;
+}
+
+bool RSMainThread::HandleTransactionIndexHole(pid_t pid, uint64_t curIndex, uint64_t& lastIndex,
+    size_t pendingCount, std::string& transactionFlags)
+{
+    if (transactionDataLastWaitTime_[pid] == 0) {
+        transactionDataLastWaitTime_[pid] = timestamp_;
+    }
+    uint64_t waitedFrames = (timestamp_ - transactionDataLastWaitTime_[pid]) / REFRESH_PERIOD;
+    if (waitedFrames > SKIP_COMMAND_FREQ_LIMIT) {
+        transactionDataLastWaitTime_[pid] = 0;
+        transactionDataLastLogTime_[pid] = 0;
+        uint64_t holeDepth = (curIndex > lastIndex + 1) ? curIndex - lastIndex - 1 : 0;
+        RS_TRACE_NAME_FMT("TransactionIndexSkip pid:%d, lastIndex:%" PRIu64 ", curIndex:%" PRIu64
+            ", hole:%" PRIu64, pid, lastIndex, curIndex, holeDepth);
+        RS_LOGE("%{public}s skip to index:%{public}" PRIu64 ", pid:%{public}d, lastIndex:%{public}" PRIu64
+            ", holeDepth:%{public}" PRIu64 ", pendingCount:%{public}zu",
+            __FUNCTION__, curIndex, pid, lastIndex, holeDepth, pendingCount);
+        lastIndex = curIndex;
+        transactionFlags += " skip to[" + std::to_string(pid) + "," + std::to_string(curIndex) + "]";
+        return true;
+    }
+    bool isLogAllowed = transactionDataLastLogTime_[pid] == 0 ||
+        (timestamp_ - transactionDataLastLogTime_[pid]) / REFRESH_PERIOD >= MISSING_INDEX_LOG_INTERVAL_FRAMES;
+    if (isLogAllowed) {
+        transactionDataLastLogTime_[pid] = timestamp_;
+        RS_LOGE("%{public}s wait curIndex:%{public}" PRIu64 ", lastIndex:%{public}" PRIu64 ", pid:%{public}d"
+            ", waitedFrames:%{public}" PRIu64 ", pendingCount:%{public}zu",
+            __FUNCTION__, curIndex, lastIndex, pid, waitedFrames, pendingCount);
+    }
+    if (waitedFrames >= REQUEST_VSYNC_AFTER_WAIT_FRAMES) {
+        RequestNextVsyncForPendingTransaction(pid);
     }
     return false;
 }
@@ -1738,21 +1787,13 @@ void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDat
                 }
                 if (transactionDataLastWaitTime_[pid] != 0) {
                     transactionDataLastWaitTime_[pid] = 0;
+                    transactionDataLastLogTime_[pid] = 0;
                 }
                 ++lastIndex;
                 transactionFlags += " [" + std::to_string(pid) + "," + std::to_string(curIndex) + "]";
             } else {
-                RS_LOGE("%{public}s wait curIndex:%{public}" PRIu64 ", lastIndex:%{public}" PRIu64 ", pid:%{public}d",
-                    __FUNCTION__, curIndex, lastIndex, pid);
-                if (transactionDataLastWaitTime_[pid] == 0) {
-                    transactionDataLastWaitTime_[pid] = timestamp_;
-                }
-                if ((timestamp_ - transactionDataLastWaitTime_[pid]) / REFRESH_PERIOD > SKIP_COMMAND_FREQ_LIMIT) {
-                    transactionDataLastWaitTime_[pid] = 0;
-                    lastIndex = curIndex;
-                    transactionFlags += " skip to[" + std::to_string(pid) + "," + std::to_string(curIndex) + "]";
-                    RS_LOGE("%{public}s skip to index:%{public}" PRIu64 ", pid:%{public}d",
-                        __FUNCTION__, curIndex, pid);
+                if (HandleTransactionIndexHole(pid, curIndex, lastIndex, transactionVec.size(),
+                    transactionFlags)) {
                     continue;
                 }
                 break;
@@ -5127,6 +5168,7 @@ void RSMainThread::ClearTransactionDataPidInfo(pid_t remotePid, bool forRefresh)
         }
     }
     transactionDataLastWaitTime_.erase(remotePid);
+    transactionDataLastLogTime_.erase(remotePid);
 
     if (forRefresh) {
         return;

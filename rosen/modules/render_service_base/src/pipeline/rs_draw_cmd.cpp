@@ -1358,6 +1358,14 @@ namespace {
     std::function<void(const DrawSurfaceBufferAfterAcquireCbData&)> surfaceBufferAfterAcquireCb;
     std::function<NodeId()> getRootNodeIdForRT;
     bool contextIsUniRender = true;
+
+    void LogWaitFenceTimeout(const char* caller, const DrawingSurfaceBufferInfo& bufferInfo, int32_t res)
+    {
+        auto bufferId = bufferInfo.surfaceBuffer_ != nullptr ? bufferInfo.surfaceBuffer_->GetBufferId() : 0;
+        auto seqNum = bufferInfo.surfaceBuffer_ != nullptr ? bufferInfo.surfaceBuffer_->GetSeqNum() : 0;
+        LOGW("%{public}s waitfence timeout, pid:%{public}d, bufferId:%{public}" PRIu64
+            ", seqNum:%{public}u, res:%{public}d", caller, bufferInfo.pid_, bufferId, seqNum, res);
+    }
 }
 /* DrawSurfaceBufferOpItem */
 UNMARSHALLING_REGISTER(DrawSurfaceBuffer, DrawOpItem::SURFACEBUFFER_OPITEM,
@@ -1726,7 +1734,7 @@ void DrawSurfaceBufferOpItem::DrawWithVulkan(Canvas* canvas)
         RS_TRACE_NAME_FMT("DrawSurfaceBufferOpItem::DrawWithVulkan waitfence");
         int res = surfaceBufferInfo_.acquireFence_->Wait(FENCE_WAIT_TIME);
         if (res < 0) {
-            LOGW("DrawSurfaceBufferOpItem::DrawWithVulkan waitfence timeout");
+            LogWaitFenceTimeout("DrawSurfaceBufferOpItem::DrawWithVulkan", surfaceBufferInfo_, res);
         } else {
             OnAfterAcquireBuffer();
         }
@@ -1775,7 +1783,7 @@ void DrawSurfaceBufferOpItem::DrawWithGles(Canvas* canvas)
         RS_TRACE_NAME_FMT("DrawSurfaceBufferOpItem::DrawWithGles waitfence");
         int res = surfaceBufferInfo_.acquireFence_->Wait(FENCE_WAIT_TIME);
         if (res < 0) {
-            LOGW("DrawSurfaceBufferOpItem::DrawWithGles waitfence timeout");
+            LogWaitFenceTimeout("DrawSurfaceBufferOpItem::DrawWithGles", surfaceBufferInfo_, res);
         } else {
             OnAfterAcquireBuffer();
         }

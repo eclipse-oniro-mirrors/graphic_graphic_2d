@@ -396,10 +396,7 @@ bool RSSpecialLayerUtils::IsSpecialLayerEnable()
         return false;
     }
     bool isVirtual = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(uniParam->GetRSProcessor()) != nullptr;
-    // Window record filtering is scoped to its own capture and does not depend on the real output
-    // security state; security, mute and exemption still follow the actual output/source properties.
-    return (isVirtual || uniParam->IsMirrorScreen()) &&
-        (uniParam->IsSecurityDisplay() || captureParam.isWindowRecord_);
+    return (isVirtual || uniParam->IsMirrorScreen()) && uniParam->IsSecurityDisplay();
 }
 
 bool RSSpecialLayerUtils::IsSurfaceInBlackList(const RSSurfaceRenderParams& surfaceParams)
@@ -452,7 +449,7 @@ bool RSSpecialLayerUtils::IsWhiteListNode()
 bool RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(
     const RSSurfaceRenderParams& surfaceParams, const RSPaintFilterCanvas& canvas)
 {
-    if (!IsSpecialLayerEnable()) {
+    if (!IsSpecialLayerEnable() && !RSUniRenderThread::GetCaptureParam().isWindowRecord_) {
         return false;
     }
     // Rule priority: id blackList > cursorMode > id whiteList.

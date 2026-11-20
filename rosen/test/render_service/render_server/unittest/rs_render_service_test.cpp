@@ -16,6 +16,10 @@
 #include "gtest/gtest.h"
 
 #include <parameters.h>
+#include <iservice_registry.h>
+#include <system_ability_definition.h>
+#include "hdi_backend.h"
+#include "mock_hdi_device.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "rs_render_service.h"
 #include "rs_render_process_manager.h"
@@ -72,8 +76,11 @@ void RSRenderServiceTest::SetUpTestCase()
 void RSRenderServiceTest::TearDownTestCase()
 {
     if (RSSystemProperties::IsUseVulkan()) {
-        RSUniRenderThread::Instance().uniRenderEngine_->skContext_ = nullptr;
-        RSUniRenderThread::Instance().uniRenderEngine_.reset();
+        auto& uniRenderEngine = RSUniRenderThread::Instance().uniRenderEngine_;
+        if (uniRenderEngine != nullptr) {
+            uniRenderEngine->skContext_ = nullptr;
+        }
+        uniRenderEngine.reset();
     }
     screenManager_ = nullptr;
     vsyncManager_ = nullptr;
@@ -169,13 +176,58 @@ HWTEST_F(RSRenderServiceTest, SAMgrRegister001, TestSize.Level1)
     ASSERT_FALSE(result);
 }
 
+/**
+ * @tc.name: RenderProcessManagerInit002
+ * @tc.desc: Test RenderProcessManagerInit when all HDI registrations succeed, must return true
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSRenderServiceTest, RenderProcessManagerInit002, TestSize.Level1)
+{
+    auto renderService = sptr<RSRenderService>::MakeSptr();
+    ASSERT_NE(renderService, nullptr);
+    auto runner = AppExecFwk::EventRunner::Create(false);
+    renderService->handler_ = std::make_shared<AppExecFwk::EventHandler>(runner);
+    renderService->screenManager_ = sptr<RSScreenManager>::MakeSptr();
+    renderService->vsyncManager_ = sptr<RSVsyncManager>::MakeSptr();
+    renderService->vsyncManager_->init(renderService->screenManager_);
+    renderService->InitRenderServerConfig();
+    renderService->rsRenderComposerManager_ = std::make_shared<RSRenderComposerManager>(renderService->handler_);
+    auto hdiDeviceMock = Mock::HdiDeviceMock::GetInstance();
+    ASSERT_NE(hdiDeviceMock, nullptr);
+    auto backend = HdiBackend::GetInstance();
+    ASSERT_NE(backend, nullptr);
+    auto origDevice = backend->device_;
+    backend->device_ = hdiDeviceMock;
+    EXPECT_CALL(*hdiDeviceMock, RegHotPlugCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegRefreshCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegHwcDeadCallback(_, _)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*hdiDeviceMock, RegHwcEventCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock, RegScreenVBlankIdleCallback(_, _)).WillOnce(testing::Return(0));
+    EXPECT_TRUE(renderService->RenderProcessManagerInit());
+    backend->device_ = origDevice;
+}
+
 HWTEST_F(RSRenderServiceTest, SAMgrRegister002, TestSize.Level1)
 {
     auto renderService = sptr<RSRenderService>::MakeSptr();
     ASSERT_NE(renderService, nullptr);
     OHOS::system::SetParameter("bootevent.samgr.ready", "true");
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(samgr, nullptr);
+    bool alreadyRegistered = samgr->CheckSystemAbility(RENDER_SERVICE) != nullptr;
     bool result = renderService->SAMgrRegister();
-    ASSERT_TRUE(result);
+    // tolerate the tiny window where the real render_service finishes its own registration
+    // between our CheckSystemAbility and AddSystemAbility calls
+    bool registeredAfter = samgr->CheckSystemAbility(RENDER_SERVICE) != nullptr;
+    if (result) {
+        // registration succeeded: the ability must be visible now
+        EXPECT_TRUE(registeredAfter);
+    } else {
+        // failure is acceptable only when the ability was already registered
+        // (before or during the call); the bounded retries must not return false otherwise
+        EXPECT_TRUE(alreadyRegistered || registeredAfter);
+    }
 }
 
 HWTEST_F(RSRenderServiceTest, Run001, TestSize.Level1)

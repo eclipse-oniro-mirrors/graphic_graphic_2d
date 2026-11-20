@@ -182,6 +182,15 @@ public:
      */
     void SetVirtualScreenMuteStatus(bool virtualScreenMuteStatus);
 
+    /**
+     * @brief Sets the window-record configuration for this display.
+     *
+     * The configuration selects the windows to record and their fitting mode. An empty window list stops the
+     * current record session. Requests containing more than MAX_WINDOW_RECORD_SURFACE_NUM window ids are rejected
+     * locally without sending a transaction.
+     *
+     * @param config Indicates the window-record windows and fitting mode.
+     */
     void SetWindowRecordConfig(const RSWindowRecordConfig& config);
 
 protected:

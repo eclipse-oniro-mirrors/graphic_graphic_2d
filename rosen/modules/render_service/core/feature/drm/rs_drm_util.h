@@ -30,6 +30,18 @@ public:
     static void ClearDrmNodes();
     static void AddDrmCloneCrossNode(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         DrawablesVec& hardwareEnabledDrawables);
+    static bool CalcCrossNodeLayerConversion(const RSSurfaceRenderNode& sourceNode,
+        const RSSurfaceRenderNode& cloneNode, const RSScreenRenderNode& screenNode, Drawing::Matrix& conversion);
+    static void UpdateDrmCrossNodeConversion(const RSSurfaceRenderNode& crossNode, NodeId screenNodeId,
+        const Drawing::Matrix& conversion);
+    static void RecordDstRectDisplay(RSSurfaceRenderNode& node,
+        const std::shared_ptr<RSScreenRenderNode>& screenNode);
+    static bool ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, NodeId screenNodeId,
+        RSLayerInfo& layerInfo);
+    // The layer info of a cross node keeps the geometry of the whole surface, which may cross the screen boundary, so
+    // the source rect is cropped by the same proportion as the destination rect, following its transform.
+    static void CropCrossNodeLayerInfo(const Drawing::Rect& composedDstRect, const Drawing::Rect& screenRect,
+        RSLayerInfo& layerInfo);
     static void DRMCreateLayer(std::shared_ptr<RSProcessor> processor, Drawing::Matrix hwcMatrix);
     static void MarkBlurIntersectWithDRM(const std::shared_ptr<RSRenderNode>& node,
         const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes,
@@ -50,6 +62,8 @@ private:
     static bool GetDarkColorMode(const std::shared_ptr<RSRenderNode>& node,
         const std::shared_ptr<RSSurfaceRenderNode>& appWindowNode);
     static void CollectDrmNodes(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
+    // Whether the node is one of the drm nodes collected for this frame, only those take part in the layer conversion.
+    static bool IsDrmNode(const RSRenderNode& node);
     static void PreAllocProtectedFrameBuffers(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         const sptr<SurfaceBuffer>& buffer, const std::shared_ptr<RSComposerClientManager>& clientManager);
     inline static std::unordered_map<NodeId, // map<first level node ID, drm surface node>

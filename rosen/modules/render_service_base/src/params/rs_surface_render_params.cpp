@@ -748,6 +748,8 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->hasSubSurfaceNodes_ = hasSubSurfaceNodes_;
     targetSurfaceParams->allSubSurfaceNodeIds_ = allSubSurfaceNodeIds_;
     targetSurfaceParams->crossNodeSkipDisplayConversionMatrices_ = crossNodeSkipDisplayConversionMatrices_;
+    targetSurfaceParams->crossNodeLayerConversionMatrices_ = crossNodeLayerConversionMatrices_;
+    targetSurfaceParams->layerDstDisplayNodeId_ = layerDstDisplayNodeId_;
     targetSurfaceParams->apiCompatibleVersion_ = apiCompatibleVersion_;
     targetSurfaceParams->isOcclusionCullingOn_ = isOcclusionCullingOn_;
     targetSurfaceParams->culledNodes_ = std::move(culledNodes_);

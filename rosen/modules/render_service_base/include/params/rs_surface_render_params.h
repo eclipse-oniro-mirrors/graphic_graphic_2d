@@ -786,6 +786,34 @@ public:
     {
         return crossNodeSkipDisplayConversionMatrices_;
     }
+    // Conversion of the layer info towards each composing display, see RSSurfaceRenderNode for its frame.
+    const std::unordered_map<NodeId, Drawing::Matrix>& GetCrossNodeLayerConversionMatrices() const
+    {
+        return crossNodeLayerConversionMatrices_;
+    }
+    // Records the layer conversion of one display on the params, for the case where the matrix is produced after the
+    // params were filled by the node, for example the drm nodes of a cross node composed on another display.
+    void SetCrossNodeLayerConversionMatrix(NodeId displayId, const Drawing::Matrix& matrix)
+    {
+        auto it = crossNodeLayerConversionMatrices_.find(displayId);
+        if (it != crossNodeLayerConversionMatrices_.end() && it->second == matrix) {
+            return;
+        }
+        crossNodeLayerConversionMatrices_[displayId] = matrix;
+        needSync_ = true;
+    }
+    void SetLayerDstDisplay(NodeId displayNodeId)
+    {
+        if (layerDstDisplayNodeId_ == displayNodeId) {
+            return;
+        }
+        layerDstDisplayNodeId_ = displayNodeId;
+        needSync_ = true;
+    }
+    NodeId GetLayerDstDisplayNodeId() const
+    {
+        return layerDstDisplayNodeId_;
+    }
 
     void SetApiCompatibleVersion(uint32_t apiCompatibleVersion)
     {
@@ -1128,6 +1156,8 @@ private:
     bool hasSubSurfaceNodes_ = false;
     std::unordered_set<NodeId> allSubSurfaceNodeIds_ = {};
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
+    std::unordered_map<NodeId, Drawing::Matrix> crossNodeLayerConversionMatrices_ = {};
+    NodeId layerDstDisplayNodeId_ = INVALID_NODEID;
 
     uint32_t apiCompatibleVersion_ = 0;
 

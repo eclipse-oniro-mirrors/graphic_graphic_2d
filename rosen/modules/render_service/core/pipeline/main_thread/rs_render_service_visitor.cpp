@@ -84,7 +84,7 @@ bool RSRenderServiceVisitor::IsUnsupportedWindowRecordOutput(const RSLogicalDisp
 void RSRenderServiceVisitor::PrepareScreenRenderNode(RSScreenRenderNode& node)
 {
     if (HasUnsupportedWindowRecordOutput(node)) {
-        RS_LOGW("RSRenderServiceVisitor::%{public}s legacy renderer cannot prepare window record display",
+        RS_LOGD("RSRenderServiceVisitor::%{public}s legacy renderer cannot prepare window record display",
             __func__);
         // A previous prepare may have left the surface vector populated; the legacy renderer must
         // not expose surfaces for an output it rejects.
@@ -114,7 +114,7 @@ void RSRenderServiceVisitor::PrepareScreenRenderNode(RSScreenRenderNode& node)
 void RSRenderServiceVisitor::PrepareLogicalDisplayRenderNode(RSLogicalDisplayRenderNode& node)
 {
     if (IsUnsupportedWindowRecordOutput(node)) {
-        RS_LOGW("RSRenderServiceVisitor::%{public}s legacy renderer cannot prepare record display %{public}"
+        RS_LOGD("RSRenderServiceVisitor::%{public}s legacy renderer cannot prepare record display %{public}"
             PRIu64, __func__, node.GetId());
         return;
     }
@@ -156,7 +156,7 @@ void RSRenderServiceVisitor::PrepareLogicalDisplayRenderNode(RSLogicalDisplayRen
 void RSRenderServiceVisitor::ProcessScreenRenderNode(RSScreenRenderNode& node)
 {
     if (HasUnsupportedWindowRecordOutput(node)) {
-        RS_LOGW("RSRenderServiceVisitor::%{public}s legacy renderer skips window record output", __func__);
+        RS_LOGD("RSRenderServiceVisitor::%{public}s legacy renderer skips window record output", __func__);
         return;
     }
     // need reset isSecurityDisplay_ on ProcessScreenRenderNode
@@ -189,7 +189,7 @@ void RSRenderServiceVisitor::ProcessScreenRenderNode(RSScreenRenderNode& node)
 void RSRenderServiceVisitor::ProcessLogicalDisplayRenderNode(RSLogicalDisplayRenderNode& node)
 {
     if (IsUnsupportedWindowRecordOutput(node)) {
-        RS_LOGW("RSRenderServiceVisitor::%{public}s legacy renderer skips record display %{public}" PRIu64,
+        RS_LOGD("RSRenderServiceVisitor::%{public}s legacy renderer skips record display %{public}" PRIu64,
             __func__, node.GetId());
         return;
     }

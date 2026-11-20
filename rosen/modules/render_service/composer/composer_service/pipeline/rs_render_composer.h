@@ -142,6 +142,7 @@ private:
     bool IsDropDirtyFrame(const std::vector<std::shared_ptr<RSLayer>>& layers);
     void RecordTimestamp(uint64_t vsyncId);
     void ProcessComposerFrame(uint32_t currentRate, const PipelineParam& pipelineParam);
+    void UpdateReadBackDisable(const PipelineParam& pipelineParam);
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
     {
