@@ -344,7 +344,9 @@ bool RSMultiScreenUtil::HandleMirrorScreen(
     }
     // A null source is only the record-mask case: the mask needs no source-dependent geometry and
     // the display drawable resolves mute before any source lookup. Ordinary mirror always has one.
-    if (mirrorSourceParams != nullptr) {
+    // Window record owns independent bbox/gravity/rotation geometry and keeps the output offset it
+    // enters with, so the source-screen offset is applied for ordinary mirror outputs only.
+    if (!isWindowRecord && mirrorSourceParams != nullptr) {
         RSMultiScreenUtil::ApplyMirrorSourceGeometry(drawable, *mirrorSourceParams, screenProperty);
     }
 
@@ -928,23 +930,27 @@ void RSMultiScreenUtil::DrawVirtualMirrorFromCache(
 }
 
 // Runs only on the render thread. Restores the non-offset entry state after either a mirror or
-// record source capture, including when the caller adds more content before leaving the scope. It
-// also applies the source-screen offset as part of the unified mirror behavior; that offset
-// intentionally stays in effect after the capture instead of restoring stale entry offsets. The
+// record source capture, including when the caller adds more content before leaving the scope.
+// Ordinary mirror captures with the source-screen offset and intentionally leaves it in effect
+// instead of restoring stale entry offsets. Window record keeps the output/entry offset it was
+// given and opts out of the source-screen write, matching its independent record geometry. The
 // inherited static source offsets belong to RSRenderNodeDrawable, so only an authorized caller may
 // hand them in.
 namespace {
 class SourceDisplayCaptureGuard final {
 public:
     SourceDisplayCaptureGuard(RSPaintFilterCanvas& canvas, RSLogicalDisplayRenderParams& sourceParams,
-        RSRenderThreadParams& uniParam, const CaptureParam& captureParam, int32_t& offsetX, int32_t& offsetY)
+        RSRenderThreadParams& uniParam, const CaptureParam& captureParam, int32_t& offsetX, int32_t& offsetY,
+        bool applySourceOffset)
         : canvas_(canvas), uniParam_(uniParam),
           previousCaptureParam_(RSUniRenderThread::GetCaptureParam()),
           previousParentSurfaceMatrix_(RSRenderParams::GetParentSurfaceMatrix()),
           previousOpDropped_(uniParam.IsOpDropped()),
           previousOffscreenMirror_(canvas.GetIsDrawingOffscreenMirror())
     {
-        SetSourceScreenOffset(sourceParams, offsetX, offsetY);
+        if (applySourceOffset) {
+            SetSourceScreenOffset(sourceParams, offsetX, offsetY);
+        }
         RSUniRenderThread::SetCaptureParam(captureParam);
         RSRenderParams::SetParentSurfaceMatrix(canvas_.GetTotalMatrix());
         uniParam_.SetOpDropped(false);
@@ -1113,7 +1119,7 @@ void RSMultiScreenUtil::DrawVirtualMirrorRebuild(
     captureParam.virtualScreenId_ = params.GetScreenId();
     {
         SourceDisplayCaptureGuard sourceCaptureGuard(*curCanvas, *mirrorSourceDisplayParams, uniParam,
-            captureParam, drawable.offsetX_, drawable.offsetY_);
+            captureParam, drawable.offsetX_, drawable.offsetY_, true);
 #ifdef RS_PROFILER_ENABLED
         float width = static_cast<float>(curCanvas->GetWidth());
         float height = static_cast<float>(curCanvas->GetHeight());
@@ -1643,8 +1649,10 @@ bool RSMultiScreenUtil::CaptureWindowRecordSurfaces(RSPaintFilterCanvas& canvas,
     CaptureParam captureParam(false, false, true);
     captureParam.virtualScreenId_ = params.GetScreenId();
     captureParam.isWindowRecord_ = true;
+    // Record capture keeps the output/entry offset: record geometry is independent of the source
+    // screen, and adopting the source offset misplaces the recorded content.
     SourceDisplayCaptureGuard sourceCaptureGuard(canvas, sourceParams, *uniParam, captureParam,
-        offsetX, offsetY);
+        offsetX, offsetY, false);
     sourceDrawable.RSRenderNodeDrawable::OnCapture(canvas);
     RS_TRACE_NAME_FMT("RSMultiScreenUtil::%s surfaces[%zu] fit[%d]", __func__,
         config.surfaceNodeIds.size(), static_cast<int>(config.renderFit));
