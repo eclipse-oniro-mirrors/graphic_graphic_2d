@@ -77,6 +77,8 @@ public:
 private:
     void InitProfilerThread();
     void NotifyAnimationFrameCallbacks();
+    std::shared_ptr<Media::PixelMap> TakeScreenCaptureOnce(int ms, bool isScreenShot);
+    std::shared_ptr<Media::PixelMap> TakeStableScreenCapture(int ms, bool isScreenShot);
 
     ScreenId screenId_ = 0;
     RectF screenBounds_;

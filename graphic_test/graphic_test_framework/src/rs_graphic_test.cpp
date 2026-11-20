@@ -13,14 +13,13 @@
  * limitations under the License.
  */
 
-#include "accesstoken_kit.h"
-#include "nativetoken_kit.h"
+#include "display_manager.h"
+#include "rs_graphic_test_capture.h"
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
 #include "rs_graphic_test_utils.h"
 #include "rs_parameter_parse.h"
 #include "rs_trace.h"
-#include "token_setproc.h"
 #include "transaction/rs_interfaces.h"
 #include "ui/rs_root_node.h"
 #include "ui/rs_surface_node.h"
@@ -37,6 +36,21 @@ namespace {
 constexpr uint32_t SURFACE_COLOR = 0xffffffff;
 constexpr int64_t LOAD_TREE_WAIT_TIME = 3;
 constexpr int PLAYBACK_PREPARE_WAIT_TIME = 5000;
+
+void ReportEmulatorCaptureFailure(const std::string& message)
+{
+    LOGE("%{public}s", message.c_str());
+    if (IsEmulatorCaptureModeEnabled()) {
+        ADD_FAILURE() << message;
+    }
+}
+
+void CheckFlushResultForEmulator(bool success, const char* stage)
+{
+    if (IsEmulatorCaptureModeEnabled()) {
+        EXPECT_TRUE(success) << "RSGraphicTest flush timed out at " << stage;
+    }
+}
 
 bool ShouldRunCurrentTest()
 {
@@ -86,7 +100,7 @@ UIPoint RSGraphicTest::GetScreenCapacity(const string testCase)
     int rl = ceil(static_cast<double>(testCnt) / cl);
     return {cl, rl};
 }
-      
+
 UIPoint RSGraphicTest::GetPos(int id, int cl)
 {
     if (cl > 0) {
@@ -104,6 +118,10 @@ void RSGraphicTest::SetUp()
     if (!shouldRunTest_) {
         GTEST_SKIP();
         return;
+    }
+
+    if (IsDisplayCaptureFallbackEnabled()) {
+        SetGraphicTestCaptureNativeToken();
     }
 
     RSSurfaceNodeConfig config;
@@ -188,36 +206,103 @@ void RSGraphicTest::TestCaseCapture(bool isScreenshot)
         return;
     }
 
-    bool useDisplayCapture = isScreenshot ||
+    const bool useDisplayCapture = isScreenshot ||
         (captureScope_ == CaptureScope::FULL_DISPLAY) ||
         GetRootNode()->HasSubWindows();
+    const int64_t captureStart = EmulatorMonotonicTimeMs();
     auto pixelMap = RSGraphicTestDirector::Instance().TakeScreenCaptureAndWait(
         RSParameterParse::Instance().surfaceCaptureWaitTime, useDisplayCapture);
-    if (pixelMap) {
+    LogEmulatorTiming("capture", captureStart);
+    if (!pixelMap) {
+        if (IsEmulatorCaptureModeEnabled()) {
+            ReportEmulatorCaptureFailure("RSGraphicTest capture returned no PixelMap");
+        } else {
+            std::cout << "png TakeScreenCaptureAndWait failed" << std::endl;
+        }
+        return;
+    }
+    if (hasCaptureCrop_) {
+        const uint32_t cropResult = pixelMap->crop({
+            static_cast<int32_t>(captureCrop_.x_), static_cast<int32_t>(captureCrop_.y_),
+            static_cast<int32_t>(captureCrop_.z_), static_cast<int32_t>(captureCrop_.w_)});
+        if (cropResult != 0 && IsEmulatorCaptureModeEnabled()) {
+            ReportEmulatorCaptureFailure("RSGraphicTest capture crop failed");
+            return;
+        }
+    }
+    WriteCaptureFile(testInfo, extInfo, *pixelMap, useDisplayCapture);
+}
+
+std::pair<uint32_t, uint32_t> RSGraphicTest::GetExpectedCaptureSize(bool useDisplayCapture) const
+{
+    if (hasCaptureCrop_) {
+        return {static_cast<uint32_t>(captureCrop_.z_), static_cast<uint32_t>(captureCrop_.w_)};
+    }
+    if (useDisplayCapture) {
+        const auto display = DisplayManager::GetInstance().GetDefaultDisplay();
+        if (display) {
+            return {static_cast<uint32_t>(display->GetWidth()), static_cast<uint32_t>(display->GetHeight())};
+        }
+    }
+    const auto rootNode = GetRootNode();
+    if (rootNode && rootNode->screenSurfaceNode_) {
+        const auto bounds = rootNode->screenSurfaceNode_->GetStagingProperties().GetBounds();
+        if (bounds.z_ > 0 && bounds.w_ > 0) {
+            return {static_cast<uint32_t>(bounds.z_), static_cast<uint32_t>(bounds.w_)};
+        }
+    }
+    return {0, 0};
+}
+
+void RSGraphicTest::WriteCaptureFile(const ::testing::TestInfo* testInfo, const TestDefInfo* extInfo,
+    Media::PixelMap& pixelMap, bool useDisplayCapture)
+{
+    std::string filename = GetImageSavePath(extInfo->filePath);
+    if (filename.empty()) {
+        ReportEmulatorCaptureFailure("RSGraphicTest invalid image save path");
+        return;
+    }
+    filename += testInfo->test_case_name();
+    if (!extInfo->isMultiple) {
+        filename += std::string("_") + testInfo->name();
+    }
+    filename += std::string(".png");
+    if (std::filesystem::exists(filename)) {
+        LOGW("RSGraphicTest file exists %{public}s", filename.c_str());
+    }
+    uint32_t expectedWidth = 0;
+    uint32_t expectedHeight = 0;
+    if (IsEmulatorCaptureModeEnabled()) {
+        const auto expected = GetExpectedCaptureSize(useDisplayCapture);
+        expectedWidth = expected.first;
+        expectedHeight = expected.second;
+        if (expectedWidth == 0 || expectedHeight == 0) {
+            ReportEmulatorCaptureFailure("RSGraphicTest cannot determine expected capture size");
+            return;
+        }
+        std::cout << "RS_GRAPHIC_TEST_EXPECT_SIZE width=" << expectedWidth << " height=" << expectedHeight << std::endl;
         if (hasCaptureCrop_) {
-            pixelMap->crop({
-                static_cast<int32_t>(captureCrop_.x_),
-                static_cast<int32_t>(captureCrop_.y_),
-                static_cast<int32_t>(captureCrop_.z_),
-                static_cast<int32_t>(captureCrop_.w_)
-            });
+            std::cout << "RS_GRAPHIC_TEST_CROP rect=" << captureCrop_.x_ << "," << captureCrop_.y_ << "," <<
+                captureCrop_.z_ << "," << captureCrop_.w_ << std::endl;
+        } else {
+            std::cout << "RS_GRAPHIC_TEST_CROP rect=none" << std::endl;
         }
-        std::string filename = GetImageSavePath(extInfo->filePath);
-        filename += testInfo->test_case_name();
-        if (!extInfo->isMultiple) {
-            filename += std::string("_") + testInfo->name();
+    }
+    const int64_t writeStart = EmulatorMonotonicTimeMs();
+    const bool writeSuccess = IsEmulatorCaptureModeEnabled() ?
+        WriteToPngWithPixelMapAtomic(filename, pixelMap, expectedWidth, expectedHeight) :
+        WriteToPngWithPixelMap(filename, pixelMap);
+    LogEmulatorTiming("write", writeStart);
+    if (!writeSuccess) {
+        if (IsEmulatorCaptureModeEnabled()) {
+            ReportEmulatorCaptureFailure("RSGraphicTest write image failed: " + filename);
+            return;
         }
-        filename += std::string(".png");
-        if (std::filesystem::exists(filename)) {
-            LOGW("RSGraphicTest file exists %{public}s", filename.c_str());
-        }
-        if (!WriteToPngWithPixelMap(filename, *pixelMap)) {
-            LOGE("RSGraphicTest::TearDown write image failed %{public}s-%{public}s",
-                testInfo->test_case_name(), testInfo->name());
-        }
+        LOGE("RSGraphicTest::TearDown write image failed %{public}s-%{public}s",
+            testInfo->test_case_name(), testInfo->name());
+    }
+    if (!IsEmulatorCaptureModeEnabled() || writeSuccess) {
         std::cout << "png write to " << filename << std::endl;
-    } else {
-        std::cout << "png TakeScreenCaptureAndWait failed" << std::endl;
     }
 }
 
@@ -240,7 +325,9 @@ void RSGraphicTest::TearDown()
     }
 
     StartUIAnimation();
-    RSGraphicTestDirector::Instance().FlushMessageAndWait(RSParameterParse::Instance().testCaseWaitTime);
+    const bool captureFlushFinished = RSGraphicTestDirector::Instance().FlushMessageAndWait(
+        RSParameterParse::Instance().testCaseWaitTime);
+    CheckFlushResultForEmulator(captureFlushFinished, "before capture");
     WaitTimeout(RSParameterParse::Instance().normalWaitTime);
 
     bool isManualTest = false;
@@ -269,7 +356,9 @@ void RSGraphicTest::TearDown()
     GetRootNode()->ResetTestSurface();
     nodes_.clear();
     RSGraphicTestDirector::Instance().SendProfilerCommand("rssubtree_clear");
-    RSGraphicTestDirector::Instance().FlushMessageAndWait(RSParameterParse::Instance().testCaseWaitTime);
+    const bool cleanupFlushFinished = RSGraphicTestDirector::Instance().FlushMessageAndWait(
+        RSParameterParse::Instance().testCaseWaitTime);
+    CheckFlushResultForEmulator(cleanupFlushFinished, "during cleanup");
     WaitTimeout(RSParameterParse::Instance().normalWaitTime);
 }
 
@@ -360,23 +449,38 @@ bool RSGraphicTest::IsSingleTest()
 
 std::string RSGraphicTest::GetImageSavePath(const std::string path)
 {
-    std::string imagePath = "/data/local/graphic_test";
-    size_t preCnt = path.find("/");
-    size_t posCnt = path.rfind("/");
-    std::string subPath = path.substr(preCnt, posCnt - preCnt + 1);
-    imagePath.append(subPath);
+    const size_t firstSlash = path.find('/');
+    const size_t lastSlash = path.rfind('/');
+    if (path.empty() || firstSlash == std::string::npos || lastSlash == std::string::npos ||
+        lastSlash < firstSlash || lastSlash + 1 >= path.size()) {
+        LOGE("RSGraphicTest invalid source path %{public}s", path.c_str());
+        return {};
+    }
+    std::string imagePath = IsEmulatorCaptureModeEnabled() ? GetEmulatorCaptureConfig().outputDirectory :
+        "/data/local/graphic_test";
+    if (imagePath.empty()) {
+        LOGE("RSGraphicTest image save root is empty");
+        return {};
+    }
+    if (imagePath.back() != '/') {
+        imagePath.push_back('/');
+    }
+    imagePath.append(path.substr(firstSlash + 1, lastSlash - firstSlash));
 
     namespace fs = std::filesystem;
-    if (!fs::exists(imagePath)) {
-        if (!fs::create_directories(imagePath)) {
-            LOGE("RSGraphicTestDirector create dir failed");
-        }
-    } else {
-        if (!fs::is_directory(imagePath)) {
-            LOGE("RSGraphicTestDirector path is not dir");
-        }
+    std::error_code errorCode;
+    fs::create_directories(imagePath, errorCode);
+    if (errorCode) {
+        LOGE("RSGraphicTest create dir failed %{public}s, error=%{public}d",
+            imagePath.c_str(), errorCode.value());
+        return {};
     }
-
+    const bool isDirectory = fs::is_directory(imagePath, errorCode);
+    if (errorCode || !isDirectory) {
+        LOGE("RSGraphicTest path is not dir %{public}s, error=%{public}d",
+            imagePath.c_str(), errorCode.value());
+        return {};
+    }
     return imagePath;
 }
 
@@ -450,24 +554,7 @@ void RSGraphicTest::ClearCaptureCrop()
 
 void RSGraphicTest::SetCaptureScreenNativeToken()
 {
-    const char* perms[2];
-    perms[0] = "ohos.permission.CAPTURE_SCREEN";
-    perms[1] = "ohos.permission.MANAGE_DISPLAY_MANAGER";
-    const char* acls[1];
-    acls[0] = "ohos.permission.CAPTURE_SCREEN";
-    NativeTokenInfoParams infoInstance = {
-        .dcapsNum = 0,
-        .permsNum = 2,
-        .aclsNum = 1,
-        .dcaps = NULL,
-        .perms = perms,
-        .acls = acls,
-        .processName = "foundation",
-        .aplStr = "system_basic",
-    };
-    uint64_t tokenId = GetAccessTokenId(&infoInstance);
-    SetSelfTokenID(tokenId);
-    Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    SetGraphicTestCaptureNativeToken();
 }
 } // namespace Rosen
 } // namespace OHOS

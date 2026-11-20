@@ -14,12 +14,15 @@
  */
 
 #include "rs_graphic_test.h"
+#include "rs_graphic_test_capture.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_emulator.h"
 #include "rs_graphic_test_profiler.h"
 #include "rs_parameter_parse.h"
 #include "rs_graphic_test_ext.h"
 #include "rs_graphic_errors.h"
 
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -121,6 +124,63 @@ static int DisplayAllCaseInfo(int argc, char **argv)
     return 0;
 }
 
+static std::string TrimExcludedCase(std::string value)
+{
+    const size_t first = value.find_first_not_of(" \t");
+    if (first == std::string::npos) {
+        return "";
+    }
+    const size_t last = value.find_last_not_of(" \t\r");
+    return value.substr(first, last - first + 1);
+}
+
+static bool AppendExcludedCases(const std::string& path, const std::string& suite, std::string& filter)
+{
+    if (path.empty()) {
+        return true;
+    }
+    std::ifstream input(path);
+    if (!input) {
+        std::cerr << "cannot open excluded cases file: " << path << std::endl;
+        return false;
+    }
+    std::string line;
+    std::string exclusions;
+    while (std::getline(input, line)) {
+        line = TrimExcludedCase(line);
+        if (line.empty() || line.front() == '#') {
+            continue;
+        }
+        if (line.find_first_of("/\\") != std::string::npos) {
+            std::cerr << "invalid excluded case: " << line << std::endl;
+            return false;
+        }
+        exclusions += (exclusions.empty() ? "" : ":") + (line.find('.') == std::string::npos ?
+            suite + "." + line : line);
+    }
+    if (!exclusions.empty()) {
+        filter += "-" + exclusions;
+    }
+    return true;
+}
+
+static int RunUnitWithFilter(const std::string& unitName, const std::string& caseName,
+    const std::string& programName, const std::string& excludeCasesFile = "")
+{
+    int argcTemp = ARGS_TWO;
+    std::string filter = "--gtest_filter=";
+    filter.append(unitName).append(".").append(caseName);
+    if (!AppendExcludedCases(excludeCasesFile, unitName, filter)) {
+        return 2;
+    }
+    char* arguments[] = {const_cast<char*>(programName.c_str()), filter.data()};
+    const int64_t startupStart = EmulatorMonotonicTimeMs();
+    RSGraphicTestDirector::Instance().Run();
+    LogEmulatorTiming("startup", startupStart);
+    testing::InitGoogleTest(&argcTemp, arguments);
+    return RUN_ALL_TESTS();
+}
+
 static int FilterTestUnit(int argc, char **argv)
 {
     string unitName;
@@ -138,14 +198,27 @@ static int FilterTestUnit(int argc, char **argv)
             cout << "format fail [-unit unitName [caseName]]" << endl;
             return 0;
     }
+    return RunUnitWithFilter(unitName, caseName, argv[0]);
+}
 
-    int argcTemp = ARGS_TWO;
-    string filter = "--gtest_filter=";
-    filter.append(unitName).append(".").append(caseName);
-    argv[ARGS_ONE] = filter.data();
-    RSGraphicTestDirector::Instance().Run();
-    testing::InitGoogleTest(&argcTemp, argv);
-    return RUN_ALL_TESTS();
+static int RunEmulatorUnit(const EmulatorOptions& options)
+{
+    EmulatorCaptureConfig config;
+    config.enabled = true;
+    config.displayFallback = options.displayFallback;
+    config.outputDirectory = options.outputDir;
+    config.readyMaxRetries = static_cast<uint32_t>(options.readyMaxRetries);
+    config.readyDelayMs = static_cast<uint32_t>(options.readyDelayMs);
+    std::string error;
+    if (!ConfigureEmulatorCapture(config, error)) {
+        std::cerr << error << std::endl;
+        return 2;
+    }
+    if (!options.caseName.empty()) {
+        RSGraphicTestDirector::Instance().SetSingleTest(true);
+    }
+    return RunUnitWithFilter(options.suite, options.caseName.empty() ? "*" : options.caseName,
+        options.testBinary, options.excludeCasesFile);
 }
 
 static int RunAllTest(int argc, char **argv)
@@ -236,6 +309,19 @@ static int RunDummyPassTest(char* programName)
 
 int main(int argc, char **argv)
 {
+    if (argc >= ARGS_TWO && IsEmulatorCommand(argv[ARGS_ONE])) {
+        EmulatorOptions options;
+        std::string error;
+        if (!ParseEmulatorOptions(argc, argv, options, error)) {
+            std::cerr << error << std::endl;
+            return 2;
+        }
+        if (options.command == EmulatorCommand::UNIT) {
+            return RunEmulatorUnit(options);
+        }
+        return RunEmulatorCommand(options);
+    }
+
     GraphicTestCommandTb funcTbl[] = {
         { "-list", DisplayAllCaseInfo },
         { "-unit", FilterTestUnit },
