@@ -17,31 +17,9 @@
 #define PIXEL_MAP_FROM_SURFACE_UTILS_H
 
 #include <cstdint>
-#include "surface_type.h"
 
 namespace OHOS {
 namespace Rosen {
-struct BufferLayoutInfo {
-    int32_t format = GRAPHIC_PIXEL_FMT_BUTT;
-    int32_t width = 0;
-    int32_t height = 0;
-    int32_t stride = 0; // bytes per row of the first plane
-    int32_t size = 0;
-};
-
-struct PixelFormatLayout {
-    int32_t bytesPerPixel = 0; // 0 means the format is not supported
-    bool hasHalfHeightChroma = false; // YUV420: chroma adds ceil(height / 2) rows of stride bytes
-};
-
-PixelFormatLayout GetPixelFormatLayout(int32_t format);
-
-// Returns the real size of the memory behind fd, or -1 on failure.
-int64_t GetFdAllocationSize(int fd);
-
-// Checks stride >= width * bytesPerPixel and minimum layout of format <= size <= allocationSize.
-bool IsBufferLayoutWithinSize(const BufferLayoutInfo& info, int64_t allocationSize);
-
 template<typename RectType>
 inline bool IsSrcRectValid(int32_t bufferWidth, int32_t bufferHeight, const RectType& srcRect)
 {

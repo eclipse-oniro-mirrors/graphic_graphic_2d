@@ -21,8 +21,6 @@
 
 #include "pixel_map_from_surface.h"
 #include "pixel_map_from_surface_utils.h"
-#include <cerrno>
-#include <cinttypes>
 #include <scoped_bytrace.h>
 #include <string>
 #include "common/rs_background_thread.h"
@@ -76,36 +74,6 @@ using namespace OHOS::Media;
 constexpr Drawing::scalar ROTATE_90 = 90.0f;
 constexpr Drawing::scalar ROTATE_180 = 180.0f;
 constexpr Drawing::scalar ROTATE_270 = 270.0f;
-
-// Must run before any GPU import: the GL/VK image is sized from the BufferHandle, so a handle
-// claiming more memory than the dma-buf holds would make the GPU sample past the allocation.
-// The handle is this process's own copy and dma-buf size is fixed once exported, so the result
-// cannot change between this check and the import.
-static bool IsSurfaceBufferIntegrityValid(const sptr<SurfaceBuffer>& surfaceBuffer)
-{
-    // catches handle fields changed after allocation, e.g. through OH_NativeWindow_GetBufferHandleFromNative
-    if (!surfaceBuffer->CheckBufferHandleFields()) {
-        RS_LOGE("[PixelMapFromSurface] SurfaceBuffer handle fields are inconsistent, seq=%{public}u",
-            surfaceBuffer->GetSeqNum());
-        return false;
-    }
-    // CheckBufferHandleFields compares against values sent by the producer and is skipped when
-    // they are absent, so the real allocation size is the check the producer cannot forge
-    const BufferHandle* handle = surfaceBuffer->GetBufferHandle();
-    if (handle == nullptr) {
-        RS_LOGE("[PixelMapFromSurface] SurfaceBuffer handle is nullptr");
-        return false;
-    }
-    BufferLayoutInfo layoutInfo = { handle->format, handle->width, handle->height, handle->stride, handle->size };
-    int64_t allocationSize = GetFdAllocationSize(handle->fd);
-    if (!IsBufferLayoutWithinSize(layoutInfo, allocationSize)) {
-        RS_LOGE("[PixelMapFromSurface] SurfaceBuffer layout invalid: format=%{public}d w=%{public}d h=%{public}d "
-            "stride=%{public}d size=%{public}d allocation=%{public}" PRId64 " errno=%{public}d", handle->format,
-            handle->width, handle->height, handle->stride, handle->size, allocationSize, errno);
-        return false;
-    }
-    return true;
-}
 
 // LCOV_EXCL_START
 static sptr<SurfaceBuffer> LocalDmaMemAlloc(const uint32_t &width, const uint32_t &height,
@@ -274,8 +242,6 @@ private:
         const Drawing::Rect &srcDrawRect, const Drawing::Rect &dstRect, std::shared_ptr<Drawing::Canvas> &canvas);
     bool CanvasDrawImage(const std::shared_ptr<Drawing::Image> &drawingImage, const OHOS::Media::Rect &srcRect,
         std::shared_ptr<Drawing::Canvas> &canvas);
-    void CanvasDrawImageByShader(const std::shared_ptr<Drawing::Image> &drawingImage,
-        const Drawing::Rect &srcDrawRect, const Drawing::Rect &dstRect, std::shared_ptr<Drawing::Canvas> &canvas);
     void CreateMatrixBySurface(Drawing::Matrix& matrix, const OHOS::Media::Rect &srcRect);
     void ResetRotation90(Drawing::Matrix& matrix, const OHOS::Media::Rect &srcRect);
     void ResetRotation180(Drawing::Matrix& matrix, const OHOS::Media::Rect &srcRect);
@@ -367,9 +333,6 @@ static Drawing::ColorType GetColorTypeFromVKFormat(VkFormat vkFormat)
             return Drawing::COLORTYPE_RGBA_F16;
         case VK_FORMAT_R5G6B5_UNORM_PACK16:
             return Drawing::COLORTYPE_RGB_565;
-        // RGBA_1010102 buffers import as this format; Skia rejects it when wrapped as RGBA_8888
-        case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
-            return Drawing::COLORTYPE_RGBA_1010102;
         default:
             return Drawing::COLORTYPE_RGBA_8888;
     }
@@ -488,43 +451,6 @@ void PixelMapFromSurface::CanvasDrawImageRect(const Drawing::Paint& paint,
 #endif
 }
 
-// Draws P010/RGBA_1010102 content through an image shader so it can be converted to sRGB. The shader
-// matrix only maps srcDrawRect to dstRect; the surface transform is already on the canvas.
-void PixelMapFromSurface::CanvasDrawImageByShader(const std::shared_ptr<Drawing::Image> &drawingImage,
-    const Drawing::Rect &srcDrawRect, const Drawing::Rect &dstRect, std::shared_ptr<Drawing::Canvas> &canvas)
-{
-#if defined(RS_ENABLE_VK)
-    Drawing::Paint paint;
-    paint.SetStyle(Drawing::Paint::PaintStyle::PAINT_FILL);
-    auto sx = dstRect.GetWidth() / srcDrawRect.GetWidth();
-    auto sy = dstRect.GetHeight() / srcDrawRect.GetHeight();
-    auto tx = dstRect.GetLeft() - srcDrawRect.GetLeft() * sx;
-    auto ty = dstRect.GetTop() - srcDrawRect.GetTop() * sy;
-    Drawing::Matrix shaderMatrix;
-    shaderMatrix.SetScaleTranslate(sx, sy, tx, ty);
-
-    auto imageShader = Drawing::ShaderEffect::CreateImageShader(*drawingImage, Drawing::TileMode::CLAMP,
-        Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::NEAREST), shaderMatrix);
-    if (!imageShader) {
-        RS_LOGE("[PixelMapFromSurface] CanvasDrawImage CreateImageShader fail");
-        CanvasDrawImageRect(paint, drawingImage, srcDrawRect, dstRect, canvas);
-        return;
-    }
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-    sptr<SurfaceBuffer> sfBuffer(surfaceBuffer_);
-    auto targetColorSpace = GRAPHIC_COLOR_GAMUT_SRGB;
-    if (!RSColorSpaceConvert::Instance().ColorSpaceConvertor(imageShader, sfBuffer, paint, targetColorSpace, 0,
-        DynamicRangeMode::STANDARD)) {
-        RS_LOGE("[PixelMapFromSurface] CanvasDrawImage ColorSpaceConvertor fail");
-        CanvasDrawImageRect(paint, drawingImage, srcDrawRect, dstRect, canvas);
-        return;
-    }
-#endif // USE_VIDEO_PROCESSING_ENGINE
-    canvas->AttachPaint(paint);
-    canvas->DrawRect(dstRect);
-#endif
-}
-
 bool PixelMapFromSurface::CanvasDrawImage(const std::shared_ptr<Drawing::Image> &drawingImage,
     const OHOS::Media::Rect &srcRect, std::shared_ptr<Drawing::Canvas> &canvas)
 {
@@ -534,24 +460,50 @@ bool PixelMapFromSurface::CanvasDrawImage(const std::shared_ptr<Drawing::Image> 
     RS_LOGD("canvas width: %{public}d, height: %{public}d",
         canvas->GetWidth(), canvas->GetHeight());
 
+    Drawing::Paint paint;
+    paint.SetStyle(Drawing::Paint::PaintStyle::PAINT_FILL);
+
     Drawing::Rect srcDrawRect = Drawing::Rect(srcRect.left, srcRect.top, srcRect.width, srcRect.height);
     Drawing::Rect dstRect = Drawing::Rect(0, 0, srcRect.width, srcRect.height);
 
-    // the surface transform (rotation/flip) applies to every format, including the shader path below
     Drawing::Matrix matrix;
     CreateMatrixBySurface(matrix, srcRect);
-    canvas->ConcatMatrix(matrix);
     GraphicPixelFormat pixelFormat = static_cast<GraphicPixelFormat>(surfaceBuffer_->GetFormat());
     if (pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010 ||
         pixelFormat == GRAPHIC_PIXEL_FMT_RGBA_1010102) {
-        if (ROSEN_LE(srcDrawRect.GetWidth(), 0.0f) || ROSEN_LE(srcDrawRect.GetHeight(), 0.0f)) {
+        auto srcWidth = srcDrawRect.GetWidth();
+        auto srcHeight = srcDrawRect.GetHeight();
+        if (ROSEN_LE(srcWidth, 0.0f) || ROSEN_LE(srcHeight, 0.0f)) {
             RS_LOGE("[PixelMapFromSurface] CanvasDrawImage srcRect width or height is invalid");
             return false;
         }
-        CanvasDrawImageByShader(drawingImage, srcDrawRect, dstRect, canvas);
+        auto sx = dstRect.GetWidth() / srcWidth;
+        auto sy = dstRect.GetHeight() / srcHeight;
+        auto tx = dstRect.GetLeft() - srcDrawRect.GetLeft() * sx;
+        auto ty = dstRect.GetTop() - srcDrawRect.GetTop() * sy;
+        matrix.SetScaleTranslate(sx, sy, tx, ty);
+
+        auto imageShader = Drawing::ShaderEffect::CreateImageShader(*drawingImage, Drawing::TileMode::CLAMP,
+            Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::NEAREST), matrix);
+        if (!imageShader) {
+            RS_LOGE("[PixelMapFromSurface] CanvasDrawImage CreateImageShader fail");
+            CanvasDrawImageRect(paint, drawingImage, srcDrawRect, dstRect, canvas);
+            return true;
+        }
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        sptr<SurfaceBuffer> sfBuffer(surfaceBuffer_);
+        auto targetColorSpace = GRAPHIC_COLOR_GAMUT_SRGB;
+        if (!RSColorSpaceConvert::Instance().ColorSpaceConvertor(imageShader, sfBuffer, paint, targetColorSpace, 0,
+            DynamicRangeMode::STANDARD)) {
+            RS_LOGE("[PixelMapFromSurface] CanvasDrawImage ColorSpaceConvertor fail");
+            CanvasDrawImageRect(paint, drawingImage, srcDrawRect, dstRect, canvas);
+            return true;
+        }
+#endif // USE_VIDEO_PROCESSING_ENGINE
+        canvas->AttachPaint(paint);
+        canvas->DrawRect(dstRect);
     } else {
-        Drawing::Paint paint;
-        paint.SetStyle(Drawing::Paint::PaintStyle::PAINT_FILL);
+        canvas->ConcatMatrix(matrix);
         CanvasDrawImageRect(paint, drawingImage, srcDrawRect, dstRect, canvas);
     }
     return true;
@@ -752,9 +704,6 @@ OHNativeWindowBuffer *PixelMapFromSurface::GetNativeWindowBufferFromSurface(
         RS_LOGE("GetLastFlushedBuffer fail, ret = %{public}d", ret);
         return nullptr;
     }
-    if (!IsSurfaceBufferIntegrityValid(surfaceBuffer)) {
-        return nullptr;
-    }
 
     int32_t bufferWidth = surfaceBuffer->GetWidth();
     int32_t bufferHeight = surfaceBuffer->GetHeight();
@@ -929,9 +878,6 @@ std::unique_ptr<PixelMap> PixelMapFromSurface::Create(
     ScopedBytrace trace(__func__);
     if (surfaceBuffer == nullptr) {
         RS_LOGE("surfaceBuffer invalid argument: surfaceBuffer is nullptr");
-        return nullptr;
-    }
-    if (!IsSurfaceBufferIntegrityValid(surfaceBuffer)) {
         return nullptr;
     }
     int32_t bufferWidth = surfaceBuffer->GetWidth();
