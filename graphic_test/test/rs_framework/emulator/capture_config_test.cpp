@@ -50,7 +50,21 @@ TEST_F(CaptureConfigTest, DefaultPathIsNotEmulatorMode)
 {
     EXPECT_FALSE(IsEmulatorCaptureModeEnabled());
     EXPECT_FALSE(IsDisplayCaptureFallbackEnabled());
+    EXPECT_EQ(GetEmulatorFlushSettleMs(), 0U);
     EXPECT_TRUE(GetEmulatorCaptureConfig().outputDirectory.empty());
+}
+
+TEST_F(CaptureConfigTest, FlushSettleMsFollowsConfiguration)
+{
+    EXPECT_EQ(GetEmulatorFlushSettleMs(), 0U);
+    auto config = MakeConfig();
+    config.flushSettleMs = 100;
+    std::string error;
+    ASSERT_TRUE(ConfigureEmulatorCapture(config, error)) << error;
+    EXPECT_EQ(GetEmulatorFlushSettleMs(), 100U);
+    EXPECT_EQ(GetEmulatorCaptureConfig().flushSettleMs, 100U);
+    ResetEmulatorCaptureConfigForTest();
+    EXPECT_EQ(GetEmulatorFlushSettleMs(), 0U);
 }
 
 TEST_F(CaptureConfigTest, ExplicitConfigurationEnablesOnlyRequestedFeatures)

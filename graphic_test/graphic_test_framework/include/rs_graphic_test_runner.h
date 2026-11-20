@@ -109,6 +109,7 @@ struct EmulatorRunConfig {
     uint64_t maxPngBytes = 10 * 1024 * 1024;
     uint32_t readyMaxRetries = 3;
     uint32_t readyDelayMs = 0;
+    uint32_t flushSettleMs = 100;
     bool resume = false;
     bool displayFallback = false;
     bool skipDisplayCheck = false;

@@ -79,6 +79,7 @@ const OptionSpec* FindOption(const std::string& name)
         { "--max-png-bytes", RUN_UNIT, nullptr, &EmulatorOptions::maxPngBytes, nullptr, 1, MAX_U64 },
         { "--ready-max-retries", RUN_UNIT, nullptr, &EmulatorOptions::readyMaxRetries, nullptr, 1, MAX_U32 },
         { "--ready-delay-ms", RUN_UNIT, nullptr, &EmulatorOptions::readyDelayMs, nullptr, 0, MAX_U64 },
+        { "--flush-settle-ms", RUN_UNIT, nullptr, &EmulatorOptions::flushSettleMs, nullptr, 0, MAX_U32 },
         { "--resume", RUN, nullptr, nullptr, &EmulatorOptions::resume },
         { "--display-fallback", RUN_UNIT, nullptr, nullptr, &EmulatorOptions::displayFallback },
         { "--skip-display-check", RUN_PREFLIGHT, nullptr, nullptr, &EmulatorOptions::skipDisplayCheck },

@@ -209,6 +209,7 @@ static int RunEmulatorUnit(const EmulatorOptions& options)
     config.outputDirectory = options.outputDir;
     config.readyMaxRetries = static_cast<uint32_t>(options.readyMaxRetries);
     config.readyDelayMs = static_cast<uint32_t>(options.readyDelayMs);
+    config.flushSettleMs = static_cast<uint32_t>(options.flushSettleMs);
     std::string error;
     if (!ConfigureEmulatorCapture(config, error)) {
         std::cerr << error << std::endl;

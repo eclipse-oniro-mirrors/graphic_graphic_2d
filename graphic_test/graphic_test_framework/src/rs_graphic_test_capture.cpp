@@ -100,6 +100,12 @@ bool IsDisplayCaptureFallbackEnabled()
     return g_captureConfig.enabled && g_captureConfig.displayFallback;
 }
 
+uint32_t GetEmulatorFlushSettleMs()
+{
+    std::lock_guard lock(g_captureConfigMutex);
+    return g_captureConfig.enabled ? g_captureConfig.flushSettleMs : 0;
+}
+
 void ResetEmulatorCaptureConfigForTest()
 {
     std::lock_guard lock(g_captureConfigMutex);

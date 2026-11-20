@@ -52,6 +52,21 @@ void CheckFlushResultForEmulator(bool success, const char* stage)
     }
 }
 
+// Divided-render emulators never receive the transaction-data callback, so with a configured
+// settle value send commands and wait briefly instead of blocking on the callback timeout.
+bool FlushForStage(const char* stage)
+{
+    const uint32_t settleMs = GetEmulatorFlushSettleMs();
+    if (settleMs > 0) {
+        RSGraphicTestDirector::Instance().FlushMessageAndSettle(static_cast<int>(settleMs));
+        return true;
+    }
+    const bool finished = RSGraphicTestDirector::Instance().FlushMessageAndWait(
+        RSParameterParse::Instance().testCaseWaitTime);
+    CheckFlushResultForEmulator(finished, stage);
+    return finished;
+}
+
 bool ShouldRunCurrentTest()
 {
     const ::testing::TestInfo* const testInfo =
@@ -325,9 +340,7 @@ void RSGraphicTest::TearDown()
     }
 
     StartUIAnimation();
-    const bool captureFlushFinished = RSGraphicTestDirector::Instance().FlushMessageAndWait(
-        RSParameterParse::Instance().testCaseWaitTime);
-    CheckFlushResultForEmulator(captureFlushFinished, "before capture");
+    FlushForStage("before capture");
     WaitTimeout(RSParameterParse::Instance().normalWaitTime);
 
     bool isManualTest = false;
@@ -356,9 +369,7 @@ void RSGraphicTest::TearDown()
     GetRootNode()->ResetTestSurface();
     nodes_.clear();
     RSGraphicTestDirector::Instance().SendProfilerCommand("rssubtree_clear");
-    const bool cleanupFlushFinished = RSGraphicTestDirector::Instance().FlushMessageAndWait(
-        RSParameterParse::Instance().testCaseWaitTime);
-    CheckFlushResultForEmulator(cleanupFlushFinished, "during cleanup");
+    FlushForStage("during cleanup");
     WaitTimeout(RSParameterParse::Instance().normalWaitTime);
 }
 

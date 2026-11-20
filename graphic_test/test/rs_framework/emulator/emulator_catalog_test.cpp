@@ -198,6 +198,32 @@ TEST(EmulatorOptionsTest, EnforcesNumericRangesAndCompleteValues)
         "--ready-max-retries", "0" }).success);
 }
 
+TEST(EmulatorOptionsTest, ParsesFlushSettleOption)
+{
+    const auto run = Parse({ "-emulator-run", "--flush-settle-ms", "100" });
+    EXPECT_TRUE(run.success);
+    EXPECT_EQ(run.options.flushSettleMs, 100U);
+    const auto unit = Parse({ "-emulator-unit", "--suite", "Alpha", "--output-dir", "/tmp/u",
+        "--flush-settle-ms", "50" });
+    EXPECT_TRUE(unit.success);
+    EXPECT_EQ(unit.options.flushSettleMs, 50U);
+    // 0 keeps the legacy callback wait and stays valid.
+    EXPECT_TRUE(Parse({ "-emulator-unit", "--suite", "Alpha", "--output-dir", "/tmp/u",
+        "--flush-settle-ms", "0" }).success);
+}
+
+TEST(EmulatorOptionsTest, RejectsFlushSettleOutsideUnitScope)
+{
+    EXPECT_FALSE(Parse({ "-preflight", "--test-binary", "/tmp/t",
+        "--flush-settle-ms", "100" }).success);
+    EXPECT_FALSE(Parse({ "-emulator-run", "--flush-settle-ms", "1x" }).success);
+    EXPECT_FALSE(Parse({ "-emulator-run", "--flush-settle-ms", "4294967296" }).success);
+    // Unset keeps the legacy value at option level; run-level default applies in MakeRunConfig.
+    const auto run = Parse({ "-emulator-run" });
+    EXPECT_TRUE(run.success);
+    EXPECT_EQ(run.options.flushSettleMs, 0U);
+}
+
 } // namespace
 } // namespace Rosen
 } // namespace OHOS

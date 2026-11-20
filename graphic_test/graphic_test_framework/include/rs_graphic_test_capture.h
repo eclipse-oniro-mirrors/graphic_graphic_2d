@@ -28,12 +28,14 @@ struct EmulatorCaptureConfig {
     std::string outputDirectory;
     uint32_t readyMaxRetries = 3;
     uint32_t readyDelayMs = 0;
+    uint32_t flushSettleMs = 0;
 };
 
 bool ConfigureEmulatorCapture(const EmulatorCaptureConfig& config, std::string& error);
 EmulatorCaptureConfig GetEmulatorCaptureConfig();
 bool IsEmulatorCaptureModeEnabled();
 bool IsDisplayCaptureFallbackEnabled();
+uint32_t GetEmulatorFlushSettleMs();
 void ResetEmulatorCaptureConfigForTest();
 
 void SetGraphicTestCaptureNativeToken();

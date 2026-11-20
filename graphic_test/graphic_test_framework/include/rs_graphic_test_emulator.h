@@ -36,6 +36,7 @@ struct EmulatorOptions {
     static constexpr uint32_t DEFAULT_WIDTH = 1200;
     static constexpr uint32_t DEFAULT_HEIGHT = 2000;
     static constexpr uint64_t DEFAULT_READY_MAX_RETRIES = 3;
+    static constexpr uint64_t DEFAULT_FLUSH_SETTLE_MS = 100;
 
     EmulatorCommand command = EmulatorCommand::NONE;
     std::string outputRoot = "/data/local/graphic_test_emulator";
@@ -53,6 +54,7 @@ struct EmulatorOptions {
     uint64_t maxPngBytes = DEFAULT_MAX_PNG_BYTES;
     uint64_t readyMaxRetries = DEFAULT_READY_MAX_RETRIES;
     uint64_t readyDelayMs = 0;
+    uint64_t flushSettleMs = 0;
     bool resume = false;
     bool displayFallback = false;
     bool skipDisplayCheck = false;

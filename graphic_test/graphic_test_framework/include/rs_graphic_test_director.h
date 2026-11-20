@@ -41,6 +41,7 @@ public:
     void Run();
     void FlushMessage();
     bool FlushMessageAndWait(int timeoutMs);
+    void FlushMessageAndSettle(int settleMs);
     std::shared_ptr<Media::PixelMap> TakeScreenCaptureAndWait(int ms, bool isScreenShot = false);
     void ResetImagePath();
 

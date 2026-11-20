@@ -278,6 +278,34 @@ TEST_F(EmulatorRunnerTest, RunsSuitesSeriallyWithExplicitArgumentsAndPngMetadata
     EXPECT_EQ(Case(state, "Other", 1).attempts.back().fallbackReason, "null_pixelmap");
 }
 
+TEST_F(EmulatorRunnerTest, PassesFlushSettleMsToChildProcess)
+{
+    SetCatalog({ "Alpha.Good" });
+    config_.flushSettleMs = 100;
+    fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, Passed(spec, "Alpha", "Good")); });
+    EmulatorRunState state;
+    ASSERT_TRUE(Run(state)) << error_;
+    ASSERT_EQ(fake_.specs.size(), 1U);
+    EXPECT_EQ(Arg(fake_.specs[0], "--flush-settle-ms"), "100");
+    EXPECT_NE(state.identity.executionPolicy.find("flushSettleMs=100"), std::string::npos);
+}
+
+TEST_F(EmulatorRunnerTest, ResumeWithDifferentFlushSettleUsesUnusedDirectory)
+{
+    SetCatalog({ "Alpha.Good" });
+    fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, Passed(spec, "Alpha", "Good")); });
+    EmulatorRunState initial;
+    config_.flushSettleMs = 100;
+    ASSERT_TRUE(Run(initial)) << error_;
+    EmulatorRunState replacement;
+    config_.resume = true;
+    config_.flushSettleMs = 200;
+    fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, Passed(spec, "Alpha", "Good")); });
+    ASSERT_TRUE(Run(replacement)) << error_;
+    EXPECT_EQ(replacement.runId, "run-r1");
+    EXPECT_NE(replacement.identity.executionPolicy, initial.identity.executionPolicy);
+}
+
 TEST_F(EmulatorRunnerTest, AssertionFailureIsDataAndDoesNotTriggerRecovery)
 {
     SetCatalog({ "Alpha.Good", "Alpha.Boom" });

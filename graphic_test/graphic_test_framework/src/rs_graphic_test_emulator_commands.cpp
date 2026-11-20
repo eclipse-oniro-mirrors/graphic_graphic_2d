@@ -194,6 +194,9 @@ EmulatorRunConfig MakeRunConfig(const EmulatorOptions& options)
     config.maxPngBytes = options.maxPngBytes;
     config.readyMaxRetries = static_cast<uint32_t>(options.readyMaxRetries);
     config.readyDelayMs = static_cast<uint32_t>(options.readyDelayMs);
+    // 0 keeps the legacy callback wait; run-level unset falls back to the default settle value.
+    config.flushSettleMs = static_cast<uint32_t>(
+        options.flushSettleMs > 0 ? options.flushSettleMs : EmulatorOptions::DEFAULT_FLUSH_SETTLE_MS);
     config.resume = options.resume;
     config.displayFallback = options.displayFallback;
     config.skipDisplayCheck = options.skipDisplayCheck;

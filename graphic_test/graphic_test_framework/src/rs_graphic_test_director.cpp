@@ -324,6 +324,17 @@ bool RSGraphicTestDirector::FlushMessageAndWait(int timeoutMs)
     return finished;
 }
 
+void RSGraphicTestDirector::FlushMessageAndSettle(int settleMs)
+{
+    RS_TRACE_NAME("RSGraphicTestDirector::FlushMessageAndSettle");
+    const int64_t flushStart = EmulatorMonotonicTimeMs();
+    // Divided render never invokes the transaction-data callback; send commands only and
+    // settle for a fixed short period instead of waiting for the full callback timeout.
+    rsUiDirector_->SendMessages();
+    WaitTimeout(settleMs);
+    LogEmulatorTiming("flush", flushStart);
+}
+
 std::shared_ptr<Media::PixelMap> RSGraphicTestDirector::TakeScreenCaptureOnce(int ms, bool isScreenShot)
 {
     RS_TRACE_NAME("RSGraphicTestDirector::TakeScreenCaptureAndWait");

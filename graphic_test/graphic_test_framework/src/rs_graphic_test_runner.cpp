@@ -118,6 +118,7 @@ std::string MakeExecutionPolicy(const EmulatorRunConfig& config)
         ";readyDelayMs=" << config.readyDelayMs << ";displayFallback=" << config.displayFallback <<
         ";includeManual=" << config.includeManual <<
         ";skipDisplayCheck=" << config.skipDisplayCheck << ";workingDirectory=" << config.workingDirectory <<
+        ";flushSettleMs=" << config.flushSettleMs <<
         ";suites=";
     for (const auto& suite : config.suites) {
         policy << suite << ',';
@@ -375,6 +376,7 @@ ProcessSpec MakeProcessSpec(const Session& session, const SuiteRunRecord& suite,
         "--max-png-bytes", std::to_string(session.config.maxPngBytes),
         "--ready-max-retries", std::to_string(session.config.readyMaxRetries),
         "--ready-delay-ms", std::to_string(session.config.readyDelayMs),
+        "--flush-settle-ms", std::to_string(session.config.flushSettleMs),
         "--exclude-cases-file", excludePath };
     if (!diagnosticCase.empty()) {
         spec.args.insert(spec.args.end(), { "--case", diagnosticCase });
