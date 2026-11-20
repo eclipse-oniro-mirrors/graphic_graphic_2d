@@ -80,7 +80,7 @@ private:
     void ReleaseResource();
 
     void CommitTransaction(std::shared_ptr<RSCanvasModifiersDrawAgent> canvasModifiersDrawAgent,
-        std::shared_ptr<RSRenderPipelineClient> renderPiplineClient,
+        std::shared_ptr<RSRenderPipelineClient> renderPipelineClient,
         std::unique_ptr<RSTransactionData>& transactionData, std::atomic<uint32_t>& transactionDataIndex);
 
     // Thread-related members

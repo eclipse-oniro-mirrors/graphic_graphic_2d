@@ -33,7 +33,7 @@ public:
 
 private:
     void CommitTransaction(std::shared_ptr<RSUIContext> uiContext,
-        std::shared_ptr<RSRenderPipelineClient> renderPiplineClient,
+        std::shared_ptr<RSRenderPipelineClient> renderPipelineClient,
         std::unique_ptr<RSTransactionData>& transactionData, std::atomic<uint32_t>& transactionDataIndex,
         uint32_t commitIndex);
 

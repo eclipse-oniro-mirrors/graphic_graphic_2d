@@ -900,7 +900,7 @@ HWTEST_F(RSCanvasDrawingNodeTest, GetBitmap_HybridEnabledGetBitmapSuccess001, Te
 
 /**
  * @tc.name: Create_SceneBoardDisablesHybridEnabled
- * @tc.desc: Test Create() forces hybridEnabled_ to false when the RSUIContext is a scene board
+ * @tc.desc: Test Create() forces hybridEnabled_ to false once the process is marked as a scene board
  * @tc.type: FUNC
  */
 HWTEST_F(RSCanvasDrawingNodeTest, Create_SceneBoardDisablesHybridEnabled, TestSize.Level1)
@@ -908,6 +908,7 @@ HWTEST_F(RSCanvasDrawingNodeTest, Create_SceneBoardDisablesHybridEnabled, TestSi
     ASSERT_NE(RSCanvasDrawingNode::Create(true, true), nullptr);
     bool savedHybrid = RSCanvasDrawingNode::globalHybridEnabled_;
     bool savedDma = RSCanvasDrawingNode::preAllocateDmaCcm_;
+    bool savedSceneBoard = RSCanvasDrawingNode::isSceneBoard_;
     RSCanvasDrawingNode::globalHybridEnabled_ = true;
     RSCanvasDrawingNode::preAllocateDmaCcm_ = false;
     auto screenId = RSInterfaces::GetInstance().GetDefaultScreenId();
@@ -920,6 +921,7 @@ HWTEST_F(RSCanvasDrawingNodeTest, Create_SceneBoardDisablesHybridEnabled, TestSi
     bool hybridEnabled = node->hybridEnabled_;
     node = nullptr;
     ctx->isSceneBoard_ = false;
+    RSCanvasDrawingNode::isSceneBoard_ = savedSceneBoard;
     RSCanvasDrawingNode::globalHybridEnabled_ = savedHybrid;
     RSCanvasDrawingNode::preAllocateDmaCcm_ = savedDma;
     RSUIContextManager::MutableInstance().DestroyContext(ctx->GetToken());
