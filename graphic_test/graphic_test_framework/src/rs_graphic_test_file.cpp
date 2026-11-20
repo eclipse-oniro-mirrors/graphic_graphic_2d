@@ -281,8 +281,9 @@ bool CheckSpaceBudget(
         error = "statvfs failed for " + statPath.string() + ": " + std::strerror(errno);
         return false;
     }
-    if (!MultiplyUint64(static_cast<uint64_t>(filesystemInfo.f_bavail), static_cast<uint64_t>(filesystemInfo.f_frsize),
-            current.availableBytes)) {
+    const auto availableBlocks = static_cast<uint64_t>(filesystemInfo.f_bavail);
+    const auto blockSize = static_cast<uint64_t>(filesystemInfo.f_frsize);
+    if (!MultiplyUint64(availableBlocks, blockSize, current.availableBytes)) {
         error = "available space calculation overflow";
         return false;
     }

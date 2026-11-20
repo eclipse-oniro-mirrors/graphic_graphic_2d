@@ -35,28 +35,42 @@ constexpr size_t PNG_BIT_DEPTH_OFFSET = 24;
 constexpr size_t PNG_COLOR_TYPE_OFFSET = 25;
 constexpr size_t PNG_INTERLACE_OFFSET = 28;
 constexpr unsigned char PNG_SIGNATURE[] = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
+constexpr size_t PNG_CHUNK_TYPE_OFFSET = 12;
+constexpr size_t PNG_CHUNK_TYPE_SIZE = 4;
+constexpr unsigned char PNG_SUPPORTED_BIT_DEPTH = 8;
+constexpr unsigned char PNG_COLOR_TYPE_RGB = 2;
+constexpr unsigned char PNG_COLOR_TYPE_RGBA = 6;
+constexpr uint32_t PNG_RGB_CHANNELS = 3;
+constexpr uint32_t PNG_RGBA_CHANNELS = 4;
+constexpr size_t BIG_ENDIAN_U32_BYTES = 4;
+constexpr uint32_t BITS_PER_BYTE = 8;
 
 uint32_t ReadBigEndian(const std::array<unsigned char, PNG_HEADER_SIZE>& data, size_t offset)
 {
-    return (static_cast<uint32_t>(data[offset]) << 24) | (static_cast<uint32_t>(data[offset + 1]) << 16) |
-        (static_cast<uint32_t>(data[offset + 2]) << 8) | static_cast<uint32_t>(data[offset + 3]);
+    uint32_t value = 0;
+    for (size_t index = 0; index < BIG_ENDIAN_U32_BYTES; index++) {
+        value = (value << BITS_PER_BYTE) | static_cast<uint32_t>(data[offset + index]);
+    }
+    return value;
 }
 
 bool ValidateHeader(const std::array<unsigned char, PNG_HEADER_SIZE>& data, PngFileInfo& info, std::string& error)
 {
     if (!std::equal(std::begin(PNG_SIGNATURE), std::end(PNG_SIGNATURE), data.begin()) ||
-        std::string(reinterpret_cast<const char*>(data.data() + 12), 4) != "IHDR") {
+        std::string(reinterpret_cast<const char*>(data.data() + PNG_CHUNK_TYPE_OFFSET), PNG_CHUNK_TYPE_SIZE) !=
+        "IHDR") {
         error = "invalid PNG signature or IHDR";
         return false;
     }
-    if (data[PNG_BIT_DEPTH_OFFSET] != 8 || (data[PNG_COLOR_TYPE_OFFSET] != 2 && data[PNG_COLOR_TYPE_OFFSET] != 6) ||
-        data[PNG_INTERLACE_OFFSET] != 0) {
+    const unsigned char colorType = data[PNG_COLOR_TYPE_OFFSET];
+    if (data[PNG_BIT_DEPTH_OFFSET] != PNG_SUPPORTED_BIT_DEPTH ||
+        (colorType != PNG_COLOR_TYPE_RGB && colorType != PNG_COLOR_TYPE_RGBA) || data[PNG_INTERLACE_OFFSET] != 0) {
         error = "only non-interlaced 8-bit RGB/RGBA PNG headers are supported";
         return false;
     }
     info.width = ReadBigEndian(data, PNG_WIDTH_OFFSET);
     info.height = ReadBigEndian(data, PNG_HEIGHT_OFFSET);
-    info.channels = data[PNG_COLOR_TYPE_OFFSET] == 6 ? 4 : 3;
+    info.channels = colorType == PNG_COLOR_TYPE_RGBA ? PNG_RGBA_CHANNELS : PNG_RGB_CHANNELS;
     if (info.width == 0 || info.height == 0) {
         error = "PNG dimensions must be positive";
         return false;

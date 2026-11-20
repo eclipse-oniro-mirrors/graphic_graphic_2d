@@ -17,8 +17,8 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <climits>
 #include <cstring>
-#include <limits.h>
 #include <set>
 #include <sstream>
 #include <sys/stat.h>

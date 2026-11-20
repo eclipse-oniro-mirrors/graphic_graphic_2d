@@ -407,7 +407,7 @@ std::shared_ptr<Media::PixelMap> RSGraphicTestDirector::TakeStableScreenCapture(
             std::cout << "RS_GRAPHIC_TEST_READY status=stable retries=" << retry << std::endl;
             return latest;
         }
-        std::cout << "RS_GRAPHIC_TEST_READY status=retry retries=" << retry + 1 << std::endl;
+        std::cout << "RS_GRAPHIC_TEST_READY status=retry retries=" << (retry + 1) << std::endl;
     }
     std::cout << "RS_GRAPHIC_TEST_READY status=unstable retries=" << config.readyMaxRetries << std::endl;
     return latest;

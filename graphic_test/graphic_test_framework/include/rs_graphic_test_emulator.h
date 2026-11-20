@@ -23,6 +23,11 @@
 namespace OHOS {
 namespace Rosen {
 
+// Exit codes of the emulator entry points, as listed in EMULATOR.md.
+constexpr int EMULATOR_EXIT_SUCCESS = 0;
+constexpr int EMULATOR_EXIT_FAILURE = 1;
+constexpr int EMULATOR_EXIT_INFRA_ERROR = 2;
+
 enum class EmulatorCommand : uint8_t {
     NONE,
     PREFLIGHT,

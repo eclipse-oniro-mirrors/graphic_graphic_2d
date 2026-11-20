@@ -14,10 +14,10 @@
  */
 
 #include <cerrno>
+#include <csignal>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <iterator>
-#include <signal.h>
 #include <string>
 #include <unistd.h>
 

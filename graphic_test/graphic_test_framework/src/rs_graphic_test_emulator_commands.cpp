@@ -130,7 +130,7 @@ int RunPreflight(const EmulatorOptions& options)
     }
     const bool passed = resourcesValid && binaryValid && environmentValid && spaceValid;
     std::cout << (passed ? "PASSED" : "FAILED") << std::endl;
-    return passed ? 0 : 2;
+    return passed ? EMULATOR_EXIT_SUCCESS : EMULATOR_EXIT_INFRA_ERROR;
 }
 
 std::string MakeRunId()
@@ -221,29 +221,29 @@ int RunEmulatorRun(const EmulatorOptions& options)
     std::string error;
     if (!ValidateRunEnvironment(options, error)) {
         std::cerr << error << std::endl;
-        return 2;
+        return EMULATOR_EXIT_INFRA_ERROR;
     }
     TestCatalog catalog;
     if (!TestCatalog::FromRegistry(catalog, error)) {
         // A failed registry read leaves the catalog unusable; do not hand it to the runner.
         std::cerr << error << std::endl;
-        return 2;
+        return EMULATOR_EXIT_INFRA_ERROR;
     }
     auto config = MakeRunConfig(options);
     if (!ValidateRunResources(BuiltinResourceEntries(), error)) {
         std::cerr << error << std::endl;
-        return 2;
+        return EMULATOR_EXIT_INFRA_ERROR;
     }
     PosixProcessController processController;
     EmulatorRunner runner(processController);
     EmulatorRunState state;
     if (!runner.Run(config, catalog, state, error)) {
         std::cerr << error << std::endl;
-        return 2;
+        return EMULATOR_EXIT_INFRA_ERROR;
     }
     std::cout << "run completed: " << state.runId << ", output: " << state.outputRoot << "/" << state.runId <<
         std::endl;
-    return StateHasFailures(state) ? 1 : 0;
+    return StateHasFailures(state) ? EMULATOR_EXIT_FAILURE : EMULATOR_EXIT_SUCCESS;
 }
 
 } // namespace
@@ -257,7 +257,7 @@ int RunEmulatorCommand(const EmulatorOptions& options)
             return RunEmulatorRun(options);
         default:
             std::cerr << "invalid emulator command" << std::endl;
-            return 2;
+            return EMULATOR_EXIT_INFRA_ERROR;
     }
 }
 

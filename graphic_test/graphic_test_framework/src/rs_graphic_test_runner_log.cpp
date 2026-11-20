@@ -114,32 +114,61 @@ void ParseStatusLine(const std::string& line, ParsedLog& parsed)
     }
 }
 
+// Prefixes of the marker lines the child process prints, and keys inside them.
+constexpr const char CAPTURE_PREFIX[] = "RS_GRAPHIC_TEST_CAPTURE ";
+constexpr const char READY_PREFIX[] = "RS_GRAPHIC_TEST_READY ";
+constexpr const char EXPECT_SIZE_PREFIX[] = "RS_GRAPHIC_TEST_EXPECT_SIZE ";
+constexpr const char CROP_PREFIX[] = "RS_GRAPHIC_TEST_CROP ";
+constexpr const char TIMING_PREFIX[] = "RS_GRAPHIC_TEST_TIMING ";
+constexpr const char PNG_WRITE_PREFIX[] = "png write to ";
+constexpr const char MODE_KEY[] = "mode=";
+constexpr const char REASON_KEY[] = "reason=";
+constexpr const char RETRIES_KEY[] = "retries=";
+constexpr const char WIDTH_KEY[] = "width=";
+constexpr const char HEIGHT_KEY[] = "height=";
+constexpr const char RECT_KEY[] = "rect=";
+constexpr const char* TIMING_PHASES[] = { "startup", "flush", "capture", "write" };
+
+bool StartsWith(const std::string& text, const char* prefix)
+{
+    return text.compare(0, std::char_traits<char>::length(prefix), prefix) == 0;
+}
+
+// Text after the first strlen(prefix) characters; empty when the text is shorter.
+std::string SkipPrefix(const std::string& text, const char* prefix)
+{
+    const size_t length = std::char_traits<char>::length(prefix);
+    return text.size() >= length ? text.substr(length) : std::string();
+}
+
+uint32_t ToUint32OrZero(uint64_t value)
+{
+    return value <= std::numeric_limits<uint32_t>::max() ? static_cast<uint32_t>(value) : 0;
+}
+
 void ParseCaptureLine(const std::string& line, CaseProgress& progress)
 {
-    constexpr const char* PREFIX = "RS_GRAPHIC_TEST_CAPTURE ";
-    if (line.compare(0, std::char_traits<char>::length(PREFIX), PREFIX) != 0) {
+    if (!StartsWith(line, CAPTURE_PREFIX)) {
         return;
     }
-    std::istringstream fields(line.substr(std::char_traits<char>::length(PREFIX)));
+    std::istringstream fields(SkipPrefix(line, CAPTURE_PREFIX));
     std::string field;
     while (fields >> field) {
-        if (field.compare(0, 5, "mode=") == 0) {
-            progress.captureMode = field.substr(5);
-        } else if (field.compare(0, 7, "reason=") == 0) {
-            progress.fallbackReason = field.substr(7);
+        if (StartsWith(field, MODE_KEY)) {
+            progress.captureMode = SkipPrefix(field, MODE_KEY);
+        } else if (StartsWith(field, REASON_KEY)) {
+            progress.fallbackReason = SkipPrefix(field, REASON_KEY);
         }
     }
 }
 
 void ParseReadyLine(const std::string& line, CaseProgress& progress)
 {
-    constexpr const char* PREFIX = "RS_GRAPHIC_TEST_READY ";
-    constexpr const char* RETRIES = "retries=";
-    const size_t marker = line.find(RETRIES);
-    if (line.compare(0, std::char_traits<char>::length(PREFIX), PREFIX) != 0 || marker == std::string::npos) {
+    const size_t marker = line.find(RETRIES_KEY);
+    if (!StartsWith(line, READY_PREFIX) || marker == std::string::npos) {
         return;
     }
-    const std::string value = line.substr(marker + std::char_traits<char>::length(RETRIES));
+    const std::string value = SkipPrefix(line.substr(marker), RETRIES_KEY);
     if (line.find("status=unstable") != std::string::npos) {
         progress.captureUnstable = true;
     }
@@ -151,38 +180,30 @@ void ParseReadyLine(const std::string& line, CaseProgress& progress)
 
 void ParseExpectedCaptureLine(const std::string& line, CaseProgress& progress)
 {
-    constexpr const char* SIZE_PREFIX = "RS_GRAPHIC_TEST_EXPECT_SIZE ";
-    constexpr const char* CROP_PREFIX = "RS_GRAPHIC_TEST_CROP ";
-    if (line.compare(0, std::char_traits<char>::length(SIZE_PREFIX), SIZE_PREFIX) == 0) {
-        std::istringstream fields(line.substr(std::char_traits<char>::length(SIZE_PREFIX)));
+    if (StartsWith(line, EXPECT_SIZE_PREFIX)) {
+        std::istringstream fields(SkipPrefix(line, EXPECT_SIZE_PREFIX));
         std::string width;
         std::string height;
         fields >> width >> height;
-        const uint64_t widthValue = SafeStoull(width.substr(6));
-        const uint64_t heightValue = SafeStoull(height.substr(7));
-        progress.expectedWidth = widthValue <= std::numeric_limits<uint32_t>::max() ?
-            static_cast<uint32_t>(widthValue) : 0;
-        progress.expectedHeight = heightValue <= std::numeric_limits<uint32_t>::max() ?
-            static_cast<uint32_t>(heightValue) : 0;
+        progress.expectedWidth = ToUint32OrZero(SafeStoull(SkipPrefix(width, WIDTH_KEY)));
+        progress.expectedHeight = ToUint32OrZero(SafeStoull(SkipPrefix(height, HEIGHT_KEY)));
         return;
     }
-    if (line.compare(0, std::char_traits<char>::length(CROP_PREFIX), CROP_PREFIX) == 0) {
-        const std::string payload = Trim(line.substr(std::char_traits<char>::length(CROP_PREFIX)));
-        progress.cropRect = payload == "rect=none" ? "" : payload.substr(std::char_traits<char>::length("rect="));
+    if (StartsWith(line, CROP_PREFIX)) {
+        const std::string payload = Trim(SkipPrefix(line, CROP_PREFIX));
+        progress.cropRect = payload == "rect=none" ? "" : SkipPrefix(payload, RECT_KEY);
     }
 }
 
 void ParseTimingLine(const std::string& line, ParsedLog& parsed)
 {
-    constexpr const char* PREFIX = "RS_GRAPHIC_TEST_TIMING ";
-    if (line.compare(0, std::char_traits<char>::length(PREFIX), PREFIX) != 0) {
+    if (!StartsWith(line, TIMING_PREFIX)) {
         return;
     }
-    static constexpr const char* PHASES[] = { "startup", "flush", "capture", "write" };
-    std::istringstream fields(line.substr(std::char_traits<char>::length(PREFIX)));
+    std::istringstream fields(SkipPrefix(line, TIMING_PREFIX));
     std::string field;
     while (fields >> field) {
-        for (const char* phase : PHASES) {
+        for (const char* phase : TIMING_PHASES) {
             const std::string prefix = std::string(phase) + "_ms=";
             if (field.compare(0, prefix.size(), prefix) != 0) {
                 continue;
@@ -216,9 +237,8 @@ ParsedLog ParseLog(const std::string& text)
         ParseCaptureLine(line, current);
         ParseReadyLine(line, current);
         ParseExpectedCaptureLine(line, current);
-        constexpr const char* PNG_PREFIX = "png write to ";
-        if (line.compare(0, std::char_traits<char>::length(PNG_PREFIX), PNG_PREFIX) == 0) {
-            current.pngPath = Trim(line.substr(std::char_traits<char>::length(PNG_PREFIX)));
+        if (StartsWith(line, PNG_WRITE_PREFIX)) {
+            current.pngPath = Trim(SkipPrefix(line, PNG_WRITE_PREFIX));
         }
     }
     return parsed;

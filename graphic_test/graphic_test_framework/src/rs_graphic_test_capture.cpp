@@ -27,17 +27,23 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 
+// Shortest valid directory is "/x"; a path must not end with the parent-directory component "/..".
+constexpr size_t MIN_OUTPUT_DIRECTORY_LENGTH = 2;
+constexpr const char PARENT_SUFFIX[] = "/..";
+constexpr size_t PARENT_SUFFIX_LENGTH = sizeof(PARENT_SUFFIX) - 1;
+
 std::mutex g_captureConfigMutex;
 EmulatorCaptureConfig g_captureConfig;
 
 bool IsValidOutputDirectory(const std::string& path)
 {
-    if (path.size() < 2 || path.front() != '/') {
+    if (path.size() < MIN_OUTPUT_DIRECTORY_LENGTH || path.front() != '/') {
         return false;
     }
     if (path.find('\n') != std::string::npos || path.find('\r') != std::string::npos ||
         path.find('\0') != std::string::npos || path.find("/../") != std::string::npos ||
-        (path.size() >= 3 && path.compare(path.size() - 3, 3, "/..") == 0)) {
+        (path.size() >= PARENT_SUFFIX_LENGTH &&
+        path.compare(path.size() - PARENT_SUFFIX_LENGTH, PARENT_SUFFIX_LENGTH, PARENT_SUFFIX) == 0)) {
         return false;
     }
     return true;

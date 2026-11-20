@@ -70,7 +70,8 @@ protected:
 
     std::filesystem::path WriteLocal(const std::string& relativePath, const std::string& content)
     {
-        std::filesystem::path path = root_ / relativePath;
+        std::filesystem::path path = root_;
+        path.append(relativePath);
         std::string error;
         EXPECT_TRUE(EnsureDirectory(path.parent_path().string(), &error)) << error;
         EXPECT_TRUE(WriteTextFileAtomic(path.string(), content, &error)) << error;

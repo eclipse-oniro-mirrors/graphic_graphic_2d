@@ -171,7 +171,7 @@ static int RunUnitWithFilter(const std::string& unitName, const std::string& cas
     std::string filter = "--gtest_filter=";
     filter.append(unitName).append(".").append(caseName);
     if (!AppendExcludedCases(excludeCasesFile, unitName, filter)) {
-        return 2;
+        return EMULATOR_EXIT_INFRA_ERROR;
     }
     char* arguments[] = {const_cast<char*>(programName.c_str()), filter.data()};
     const int64_t startupStart = EmulatorMonotonicTimeMs();
@@ -213,7 +213,7 @@ static int RunEmulatorUnit(const EmulatorOptions& options)
     std::string error;
     if (!ConfigureEmulatorCapture(config, error)) {
         std::cerr << error << std::endl;
-        return 2;
+        return EMULATOR_EXIT_INFRA_ERROR;
     }
     if (!options.caseName.empty()) {
         RSGraphicTestDirector::Instance().SetSingleTest(true);
@@ -308,19 +308,24 @@ static int RunDummyPassTest(char* programName)
     return RUN_ALL_TESTS();
 }
 
+static int RunEmulatorEntry(int argc, char** argv)
+{
+    EmulatorOptions options;
+    std::string error;
+    if (!ParseEmulatorOptions(argc, argv, options, error)) {
+        std::cerr << error << std::endl;
+        return EMULATOR_EXIT_INFRA_ERROR;
+    }
+    if (options.command == EmulatorCommand::UNIT) {
+        return RunEmulatorUnit(options);
+    }
+    return RunEmulatorCommand(options);
+}
+
 int main(int argc, char **argv)
 {
     if (argc >= ARGS_TWO && IsEmulatorCommand(argv[ARGS_ONE])) {
-        EmulatorOptions options;
-        std::string error;
-        if (!ParseEmulatorOptions(argc, argv, options, error)) {
-            std::cerr << error << std::endl;
-            return 2;
-        }
-        if (options.command == EmulatorCommand::UNIT) {
-            return RunEmulatorUnit(options);
-        }
-        return RunEmulatorCommand(options);
+        return RunEmulatorEntry(argc, argv);
     }
 
     GraphicTestCommandTb funcTbl[] = {

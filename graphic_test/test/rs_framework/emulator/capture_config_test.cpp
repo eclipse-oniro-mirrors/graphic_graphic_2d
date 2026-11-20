@@ -23,6 +23,9 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 
+constexpr uint32_t READY_MAX_RETRIES = 3;
+constexpr uint32_t FLUSH_SETTLE_MS = 100;
+
 class CaptureConfigTest : public testing::Test {
 protected:
     void SetUp() override
@@ -42,7 +45,7 @@ EmulatorCaptureConfig MakeConfig()
     config.enabled = true;
     config.displayFallback = true;
     config.outputDirectory = "/data/local/tmp/graphic-test-output";
-    config.readyMaxRetries = 3;
+    config.readyMaxRetries = READY_MAX_RETRIES;
     return config;
 }
 
@@ -58,11 +61,11 @@ TEST_F(CaptureConfigTest, FlushSettleMsFollowsConfiguration)
 {
     EXPECT_EQ(GetEmulatorFlushSettleMs(), 0U);
     auto config = MakeConfig();
-    config.flushSettleMs = 100;
+    config.flushSettleMs = FLUSH_SETTLE_MS;
     std::string error;
     ASSERT_TRUE(ConfigureEmulatorCapture(config, error)) << error;
-    EXPECT_EQ(GetEmulatorFlushSettleMs(), 100U);
-    EXPECT_EQ(GetEmulatorCaptureConfig().flushSettleMs, 100U);
+    EXPECT_EQ(GetEmulatorFlushSettleMs(), FLUSH_SETTLE_MS);
+    EXPECT_EQ(GetEmulatorCaptureConfig().flushSettleMs, FLUSH_SETTLE_MS);
     ResetEmulatorCaptureConfigForTest();
     EXPECT_EQ(GetEmulatorFlushSettleMs(), 0U);
 }

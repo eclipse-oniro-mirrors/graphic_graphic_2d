@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <array>
 #include <cerrno>
+#include <csignal>
 #include <deque>
 #include <filesystem>
 #include <functional>
@@ -36,6 +37,29 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
+
+constexpr uint64_t FAKE_DURATION_MS = 17;
+constexpr int CHILD_INFRA_EXIT_CODE = 2;
+constexpr uint32_t FLUSH_SETTLE_MS = 100;
+constexpr uint32_t OTHER_FLUSH_SETTLE_MS = 200;
+// SmallPng() is 1x1, so any other expected size is a mismatch.
+constexpr uint32_t MISMATCHED_EXPECTED_SIZE = 2;
+// Minimal 1x1 RGBA PNG header: signature, IHDR chunk type, big-endian width/height, bit depth, color type.
+constexpr size_t PNG_HEADER_SIZE = 33;
+constexpr size_t CHUNK_TYPE_OFFSET = 12;
+constexpr size_t WIDTH_LOW_BYTE_OFFSET = 19;
+constexpr size_t HEIGHT_LOW_BYTE_OFFSET = 23;
+constexpr size_t BIT_DEPTH_OFFSET = 24;
+constexpr size_t COLOR_TYPE_OFFSET = 25;
+constexpr unsigned char BIT_DEPTH_8 = 8;
+constexpr unsigned char COLOR_TYPE_RGBA = 6;
+// Field values of the fully populated attempt used by the persistence round-trip tests.
+constexpr uint32_t FULL_ATTEMPT_NUMBER = 2;
+constexpr uint64_t FULL_DURATION_MS = 99;
+constexpr uint32_t FULL_WIDTH = 10;
+constexpr uint32_t FULL_HEIGHT = 20;
+constexpr uint64_t FULL_PNG_SIZE = 1234;
+constexpr uint32_t FULL_READY_RETRIES = 3;
 
 using Action = std::function<ProcessResult(const ProcessSpec&)>;
 
@@ -92,7 +116,7 @@ ProcessResult MakeResult(int exitCode = 0, int signal = 0, bool timedOut = false
     ProcessResult result;
     result.exitCode = exitCode;
     result.termSignal = signal;
-    result.durationMs = 17;
+    result.durationMs = FAKE_DURATION_MS;
     result.timedOut = timedOut;
     result.spawnError = spawnError;
     if (spawnError != 0) {
@@ -115,15 +139,13 @@ std::string RunLine(const std::string& suite, const std::string& name)
 
 std::string SmallPng()
 {
-    std::array<unsigned char, 33> bytes { 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n' };
-    bytes[12] = 'I';
-    bytes[13] = 'H';
-    bytes[14] = 'D';
-    bytes[15] = 'R';
-    bytes[19] = 1;
-    bytes[23] = 1;
-    bytes[24] = 8;
-    bytes[25] = 6;
+    std::array<unsigned char, PNG_HEADER_SIZE> bytes { 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n' };
+    const std::string chunkType = "IHDR";
+    std::copy(chunkType.begin(), chunkType.end(), bytes.begin() + CHUNK_TYPE_OFFSET);
+    bytes[WIDTH_LOW_BYTE_OFFSET] = 1;
+    bytes[HEIGHT_LOW_BYTE_OFFSET] = 1;
+    bytes[BIT_DEPTH_OFFSET] = BIT_DEPTH_8;
+    bytes[COLOR_TYPE_OFFSET] = COLOR_TYPE_RGBA;
     return std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size());
 }
 
@@ -281,7 +303,7 @@ TEST_F(EmulatorRunnerTest, RunsSuitesSeriallyWithExplicitArgumentsAndPngMetadata
 TEST_F(EmulatorRunnerTest, PassesFlushSettleMsToChildProcess)
 {
     SetCatalog({ "Alpha.Good" });
-    config_.flushSettleMs = 100;
+    config_.flushSettleMs = FLUSH_SETTLE_MS;
     fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, Passed(spec, "Alpha", "Good")); });
     EmulatorRunState state;
     ASSERT_TRUE(Run(state)) << error_;
@@ -295,11 +317,11 @@ TEST_F(EmulatorRunnerTest, ResumeWithDifferentFlushSettleUsesUnusedDirectory)
     SetCatalog({ "Alpha.Good" });
     fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, Passed(spec, "Alpha", "Good")); });
     EmulatorRunState initial;
-    config_.flushSettleMs = 100;
+    config_.flushSettleMs = FLUSH_SETTLE_MS;
     ASSERT_TRUE(Run(initial)) << error_;
     EmulatorRunState replacement;
     config_.resume = true;
-    config_.flushSettleMs = 200;
+    config_.flushSettleMs = OTHER_FLUSH_SETTLE_MS;
     fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, Passed(spec, "Alpha", "Good")); });
     ASSERT_TRUE(Run(replacement)) << error_;
     EXPECT_EQ(replacement.runId, "run-r1");
@@ -362,10 +384,10 @@ TEST_F(EmulatorRunnerTest, DiagnosticNoProgressKeepsCrashAndRunsRemainingOnce)
     SetCatalog({ "Alpha.Good", "Alpha.Boom", "Alpha.Later" });
     // Main: Good passes, Boom is killed by a signal mid-run, Later unreported -> diagnostic on Boom.
     fake_.Push([](const ProcessSpec& spec) {
-        return LogResult(spec, Passed(spec, "Alpha", "Good") + RunLine("Alpha", "Boom"), MakeResult(-1, 11));
+        return LogResult(spec, Passed(spec, "Alpha", "Good") + RunLine("Alpha", "Boom"), MakeResult(-1, SIGSEGV));
     });
     // Diagnostic on Boom dies before any [RUN]: no progress, must not rewrite Boom's CRASH.
-    fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, "", MakeResult(2)); });
+    fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, "", MakeResult(CHILD_INFRA_EXIT_CODE)); });
     // Continuation runs the remaining Later exactly once.
     fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, Passed(spec, "Alpha", "Later")); });
     EmulatorRunState state;
@@ -382,13 +404,15 @@ TEST_F(EmulatorRunnerTest, DiagnosticNoProgressKeepsCrashAndRunsRemainingOnce)
 TEST_F(EmulatorRunnerTest, SignalDiagnosticTurningGreenIsFlaky)
 {
     SetCatalog({ "Alpha.Boom" });
-    fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, RunLine("Alpha", "Boom"), MakeResult(-1, 11)); });
+    fake_.Push([](const ProcessSpec& spec) {
+        return LogResult(spec, RunLine("Alpha", "Boom"), MakeResult(-1, SIGSEGV));
+    });
     fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, Passed(spec, "Alpha", "Boom")); });
     EmulatorRunState state;
     ASSERT_TRUE(Run(state)) << error_;
     ASSERT_EQ(Case(state, "Boom").attempts.size(), 2U);
     EXPECT_EQ(Case(state, "Boom").attempts[0].status, ExecutionStatus::CRASH);
-    EXPECT_EQ(Case(state, "Boom").attempts[0].termSignal, 11);
+    EXPECT_EQ(Case(state, "Boom").attempts[0].termSignal, SIGSEGV);
     EXPECT_EQ(Case(state, "Boom").finalStatus, ExecutionStatus::PASSED);
     EXPECT_TRUE(Case(state, "Boom").flaky);
     EXPECT_TRUE(Case(state, "Boom").attempts[1].diagnostic);
@@ -397,8 +421,8 @@ TEST_F(EmulatorRunnerTest, SignalDiagnosticTurningGreenIsFlaky)
 TEST_F(EmulatorRunnerTest, PngDimensionMismatchIsReportedAsMissing)
 {
     SetCatalog({ "Alpha.Good" });
-    config_.expectedWidth = 2;
-    config_.expectedHeight = 2;
+    config_.expectedWidth = MISMATCHED_EXPECTED_SIZE;
+    config_.expectedHeight = MISMATCHED_EXPECTED_SIZE;
     fake_.Push([](const ProcessSpec& spec) { return LogResult(spec, Passed(spec, "Alpha", "Good")); });
     EmulatorRunState state;
     ASSERT_TRUE(Run(state)) << error_;
@@ -565,7 +589,7 @@ TEST_F(EmulatorRunnerTest, ChildExitWithoutProgressMarksInfraAndStops)
 {
     SetCatalog({ "Alpha.Good" });
     fake_.Push([](const ProcessSpec& spec) {
-        return LogResult(spec, "", MakeResult(2));
+        return LogResult(spec, "", MakeResult(CHILD_INFRA_EXIT_CODE));
     });
     EmulatorRunState state;
     ASSERT_TRUE(Run(state)) << error_;
@@ -612,25 +636,25 @@ TEST_F(EmulatorRunnerTest, HealthFailurePersistsStateAndStopsBeforeSpawn)
 AttemptRecord MakeFullAttempt()
 {
     AttemptRecord attempt;
-    attempt.attempt = 2;
+    attempt.attempt = FULL_ATTEMPT_NUMBER;
     attempt.status = ExecutionStatus::PASSED;
     attempt.diagnostic = true;
     attempt.exitCode = 0;
-    attempt.termSignal = 11;
-    attempt.durationMs = 99;
+    attempt.termSignal = SIGSEGV;
+    attempt.durationMs = FULL_DURATION_MS;
     attempt.logPath = "log";
     attempt.error = "recovered";
     attempt.requestedCaptureMode = "surface";
     attempt.actualCaptureMode = "display_fallback";
     attempt.fallbackReason = "timeout";
     attempt.cropRect = "0,0,10,20";
-    attempt.expectedWidth = 10;
-    attempt.expectedHeight = 20;
+    attempt.expectedWidth = FULL_WIDTH;
+    attempt.expectedHeight = FULL_HEIGHT;
     attempt.pngRelativePath = "image.png";
-    attempt.pngSize = 1234;
-    attempt.pngWidth = 10;
-    attempt.pngHeight = 20;
-    attempt.readyRetries = 3;
+    attempt.pngSize = FULL_PNG_SIZE;
+    attempt.pngWidth = FULL_WIDTH;
+    attempt.pngHeight = FULL_HEIGHT;
+    attempt.readyRetries = FULL_READY_RETRIES;
     attempt.captureUnstable = true;
     return attempt;
 }

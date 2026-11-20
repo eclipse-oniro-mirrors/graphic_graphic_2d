@@ -75,7 +75,7 @@ bool Fail(std::string& error, const std::string& message)
 
 std::string JoinPath(const std::string& left, const std::string& right)
 {
-    return (std::filesystem::path(left) / right).string();
+    return std::filesystem::path(left).append(right).string();
 }
 
 bool IsAbsoluteSafePath(const std::string& path)
@@ -621,9 +621,10 @@ std::vector<CaseRunRecord*> AttemptCases(SuiteRunRecord& suite, bool continuatio
 {
     auto eligible = EligibleCases(suite, continuation);
     if (!diagnosticCase.empty()) {
-        eligible.erase(std::remove_if(eligible.begin(), eligible.end(), [&diagnosticCase](const CaseRunRecord* item) {
+        auto isOtherCase = [&diagnosticCase](const CaseRunRecord* item) {
             return item->info.name != diagnosticCase;
-        }), eligible.end());
+        };
+        eligible.erase(std::remove_if(eligible.begin(), eligible.end(), isOtherCase), eligible.end());
     }
     return eligible;
 }
@@ -727,8 +728,6 @@ AttemptOutcome ExecuteAttempt(Session& session, SuiteRunRecord& suite, uint32_t 
     }
     return RunChildAndApply(session, suite, eligible, spec, number, directory, diagnosticCase, snapshot);
 }
-
-
 
 uint32_t NextAttemptNumber(const Session& session, const SuiteRunRecord& suite)
 {

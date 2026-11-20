@@ -139,7 +139,7 @@ public:
     explicit EmulatorRunner(IProcessController& processController, IEmulatorHealthProbe* healthProbe = nullptr);
 
     // Test failures are data. False is reserved for invalid configuration or persistence/health failures.
-    // An incompatible resume starts a new <runId>-rN directory without changing the old one.
+    // An incompatible resume starts a new <runId>-r1, <runId>-r2, ... directory without changing the old one.
     bool Run(const EmulatorRunConfig& config, const TestCatalog& catalog, EmulatorRunState& state,
         std::string& error);
 

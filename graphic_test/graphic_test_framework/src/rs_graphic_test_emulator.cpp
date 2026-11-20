@@ -27,6 +27,9 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 
+// argv[0] is the program, argv[1] the emulator command; options follow.
+constexpr int COMMAND_INDEX = 1;
+
 using StringMember = std::string EmulatorOptions::*;
 using NumberMember = uint64_t EmulatorOptions::*;
 using BoolMember = bool EmulatorOptions::*;
@@ -63,7 +66,7 @@ bool Fail(std::string& error, const std::string& message)
 
 const OptionSpec* FindOption(const std::string& name)
 {
-    static const OptionSpec SPECS[] = {
+    static const OptionSpec specs[] = {
         { "--output-root", RUN, &EmulatorOptions::outputRoot },
         { "--output-dir", UNIT, &EmulatorOptions::outputDir },
         { "--run-id", RUN, &EmulatorOptions::runId },
@@ -85,10 +88,10 @@ const OptionSpec* FindOption(const std::string& name)
         { "--skip-display-check", RUN_PREFLIGHT, nullptr, nullptr, &EmulatorOptions::skipDisplayCheck },
         { "--include-manual", RUN_UNIT, nullptr, nullptr, &EmulatorOptions::includeManual },
     };
-    const auto it = std::find_if(std::begin(SPECS), std::end(SPECS), [&name](const auto& spec) {
+    const auto it = std::find_if(std::begin(specs), std::end(specs), [&name](const auto& spec) {
         return name == spec.name;
     });
-    return it == std::end(SPECS) ? nullptr : it;
+    return it == std::end(specs) ? nullptr : it;
 }
 
 bool ParseCommand(const std::string& name, EmulatorCommand& command)
@@ -187,16 +190,17 @@ bool IsEmulatorCommand(const std::string& command)
 
 bool ParseEmulatorOptions(int argc, const char* const argv[], EmulatorOptions& options, std::string& error)
 {
-    if (argc < 2 || argv == nullptr || argv[1] == nullptr) {
+    if (argc <= COMMAND_INDEX || argv == nullptr || argv[COMMAND_INDEX] == nullptr) {
         return Fail(error, "one emulator command is required");
     }
     EmulatorOptions result;
-    if (!ParseCommand(argv[1], result.command)) {
-        return Fail(error, std::string("unsupported emulator command: ") + argv[1]);
+    if (!ParseCommand(argv[COMMAND_INDEX], result.command)) {
+        return Fail(error, std::string("unsupported emulator command: ") + argv[COMMAND_INDEX]);
     }
     const uint32_t commandMask = CommandMask(result.command);
     std::set<std::string> seen;
-    for (int index = 2; index < argc; ++index) {
+    int index = COMMAND_INDEX + 1;
+    while (index < argc) {
         if (argv[index] == nullptr) {
             return Fail(error, "null emulator option");
         }
@@ -207,20 +211,20 @@ bool ParseEmulatorOptions(int argc, const char* const argv[], EmulatorOptions& o
         if (!seen.insert(spec->name).second) {
             return Fail(error, std::string("duplicate option: ") + spec->name);
         }
-        std::string value;
-        if (NeedsValue(*spec)) {
-            if (index + 1 >= argc || argv[index + 1] == nullptr || argv[index + 1][0] == '\0' ||
-                argv[index + 1][0] == '-') {
-                return Fail(error, std::string("missing value for ") + spec->name);
-            }
-            value = argv[++index];
-        } else {
+        if (!NeedsValue(*spec)) {
             result.*(spec->boolValue) = true;
+            index += 1;
             continue;
         }
-        if (!ApplyOption(result, *spec, value, error)) {
+        const int valueIndex = index + 1;
+        if (valueIndex >= argc || argv[valueIndex] == nullptr || argv[valueIndex][0] == '\0' ||
+            argv[valueIndex][0] == '-') {
+            return Fail(error, std::string("missing value for ") + spec->name);
+        }
+        if (!ApplyOption(result, *spec, argv[valueIndex], error)) {
             return false;
         }
+        index = valueIndex + 1;
     }
     if (!ValidateRequired(result, error)) {
         return false;

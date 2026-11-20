@@ -13,16 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "rs_graphic_test_process.h"
 
 #include <cerrno>
+#include <csignal>
 #include <ctime>
 #include <fcntl.h>
-#include <signal.h>
 #include <spawn.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -30,7 +26,6 @@
 #include <unistd.h>
 #include <utility>
 
-extern char** environ;
 
 namespace OHOS {
 namespace Rosen {
@@ -400,32 +395,41 @@ void SleepForPollInterval()
     }
 }
 
+// One poll of the child. Returns true once the child is reaped, killed or can no longer be waited for.
+bool PollChildOnce(pid_t pid, const ProcessSpec& spec, const timespec& start, ProcessResult& result)
+{
+    int status = 0;
+    int waitError = 0;
+    const WaitState state = PollChild(pid, status, waitError);
+    if (state == WaitState::REAPED) {
+        DecodeWaitStatus(status, result);
+        return true;
+    }
+    if (state == WaitState::ERROR) {
+        AppendError(result, "waitpid failed", waitError);
+        return true;
+    }
+    timespec now = {};
+    if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) {
+        AppendError(result, "CLOCK_MONOTONIC failed; killing child", errno);
+        KillAndReap(pid, result);
+        return true;
+    }
+    if (ElapsedMilliseconds(start, now) >= spec.timeoutMs) {
+        result.timedOut = true;
+        KillAndReap(pid, result);
+        return true;
+    }
+    return false;
+}
+
 void WaitForProcess(pid_t pid, const ProcessSpec& spec, const timespec& start, ProcessResult& result)
 {
-    for (;;) {
-        int status = 0;
-        int waitError = 0;
-        const WaitState state = PollChild(pid, status, waitError);
-        if (state == WaitState::REAPED) {
-            DecodeWaitStatus(status, result);
-            return;
-        }
-        if (state == WaitState::ERROR) {
-            AppendError(result, "waitpid failed", waitError);
-            return;
-        }
-        timespec now = {};
-        if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) {
-            AppendError(result, "CLOCK_MONOTONIC failed; killing child", errno);
-            KillAndReap(pid, result);
-            return;
-        }
-        if (ElapsedMilliseconds(start, now) >= spec.timeoutMs) {
-            result.timedOut = true;
-            KillAndReap(pid, result);
-            return;
-        }
+    // Bounded by spec.timeoutMs: PollChildOnce kills and reaps the child once the timeout is reached.
+    bool finished = PollChildOnce(pid, spec, start, result);
+    while (!finished) {
         SleepForPollInterval();
+        finished = PollChildOnce(pid, spec, start, result);
     }
 }
 
