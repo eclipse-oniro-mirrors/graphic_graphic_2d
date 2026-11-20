@@ -95,6 +95,7 @@ rs_display_effect_sources = [
   "rs_display_effect/property_display/background_image_test.cpp",
   "rs_display_effect/property_display/background_shader_test.cpp",
   "rs_display_effect/property_display/background_useeffect_test.cpp",
+  "rs_display_effect/property_display/color_matrix_test.cpp",
   "rs_display_effect/property_display/color_picker_modifier_test.cpp",
   "rs_display_effect/property_display/display_node_properties_test.cpp",
   "rs_display_effect/property_display/fg_alpha_blur_test.cpp",

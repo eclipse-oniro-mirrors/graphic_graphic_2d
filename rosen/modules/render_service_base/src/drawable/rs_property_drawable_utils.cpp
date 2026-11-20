@@ -428,7 +428,7 @@ void RSPropertyDrawableUtils::DrawForegroundFilter(RSPaintFilterCanvas& canvas,
 }
 
 void RSPropertyDrawableUtils::DrawColorFilter(
-    Drawing::Canvas* canvas, const std::shared_ptr<Drawing::ColorFilter>& colorFilter)
+    Drawing::Canvas* canvas, const std::shared_ptr<Drawing::ColorFilter>& colorFilter, bool isColorMatrixFilter)
 {
     if (canvas == nullptr) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawColorFilter canvas is null");
@@ -452,7 +452,15 @@ void RSPropertyDrawableUtils::DrawColorFilter(
     auto clipBounds = canvas->GetLocalClipBounds();
     Drawing::AutoCanvasRestore acr(*canvas, false);
     Drawing::SaveLayerOps slo(&clipBounds, &brush, Drawing::SaveLayerOps::Flags::INIT_WITH_PREVIOUS);
-    canvas->SaveLayer(slo);
+    auto* paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+    if (isColorMatrixFilter) {
+        paintFilterCanvas->SaveAlpha();
+        paintFilterCanvas->SetAlpha(1.0f);
+    }
+    paintFilterCanvas->SaveLayer(slo);
+    if (isColorMatrixFilter) {
+        paintFilterCanvas->RestoreAlpha();
+    }
 }
 
 void RSPropertyDrawableUtils::DrawPixelStretch(Drawing::Canvas* canvas,

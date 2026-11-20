@@ -47,6 +47,8 @@ ohos_fuzztest("RSEffectNodeCommandFuzzTest") {
     "hilog:libhilog",
     "opengles:libGLES",
     "zlib:libz",
+    "egl:libEGL",
+    "opengles:libGLES",
   ]
 }
 

@@ -173,6 +173,64 @@ HWTEST_F(ColorMatrixTest, SetScale002, TestSize.Level1)
     ColorMatrix colorMatrix1;
     colorMatrix->SetScale(0.5f, 1.0f, 1.5f, 0.6f);
 }
+
+/**
+ * @tc.name: OperatorEqualAndNotEqual001
+ * @tc.desc: Cover all branches of operator== / operator!=: equal arrays, first-element
+ *           mismatch (early return), last-element mismatch (full loop), identity equality
+ * @tc.type: FUNC
+ */
+HWTEST_F(ColorMatrixTest, OperatorEqualAndNotEqual001, TestSize.Level1)
+{
+    // Equal: two default-constructed matrices (constructor sets identity)
+    ColorMatrix defaultA;
+    ColorMatrix defaultB;
+    EXPECT_TRUE(defaultA == defaultB);
+    EXPECT_FALSE(defaultA != defaultB);
+ 
+    // Equal: default-constructed matrix equals an explicitly-set identity matrix
+    ColorMatrix identityA;
+    identityA.SetIdentity();
+    ColorMatrix defaultC;
+    EXPECT_TRUE(identityA == defaultC);
+    EXPECT_FALSE(identityA != defaultC);
+
+    // Not equal: two matrices built from explicitly different arrays
+    ColorMatrix baseMatrix;
+    scalar baseArray[ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    baseArray[0] = 1.0f;
+    baseMatrix.SetArray(baseArray);
+    ColorMatrix otherMatrix;
+    scalar otherArray[ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    otherArray[0] = 2.0f;
+    otherMatrix.SetArray(otherArray);
+    EXPECT_FALSE(baseMatrix == otherMatrix);
+    EXPECT_TRUE(baseMatrix != otherMatrix);
+
+    // Not equal: mismatch at the first element (early-return path)
+    ColorMatrix firstMismatch;
+    scalar firstArray[ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    identityA.GetArray(firstArray);
+    firstArray[0] += 1.0f;
+    firstMismatch.SetArray(firstArray);
+    EXPECT_FALSE(identityA == firstMismatch);
+    EXPECT_TRUE(identityA != firstMismatch);
+
+    // Not equal: mismatch at the last element (full loop traversal path)
+    ColorMatrix lastMismatch;
+    scalar lastArray[ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    identityA.GetArray(lastArray);
+    lastArray[ColorMatrix::MATRIX_SIZE - 1] += 1.0f;
+    lastMismatch.SetArray(lastArray);
+    EXPECT_FALSE(identityA == lastMismatch);
+    EXPECT_TRUE(identityA != lastMismatch);
+
+    // Equal: two identical identity matrices
+    ColorMatrix identityB;
+    identityB.SetIdentity();
+    EXPECT_TRUE(identityA == identityB);
+    EXPECT_FALSE(identityA != identityB);
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

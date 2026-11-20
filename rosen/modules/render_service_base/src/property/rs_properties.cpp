@@ -3741,6 +3741,20 @@ const std::optional<float>& RSProperties::GetGrayScale() const
     return GetEffectProperties().GetGrayScale();
 }
 
+void RSProperties::SetColorMatrix(
+    const std::optional<Drawing::ColorMatrix>& colorMatrix)
+{
+    GetEffectProperties().SetColorMatrix(colorMatrix);
+    colorFilterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+const std::optional<Drawing::ColorMatrix>& RSProperties::GetColorMatrix() const
+{
+    return GetEffectProperties().GetColorMatrix();
+}
+
 void RSProperties::NoticeLightIntensity(float lightIntensity)
 {
     if (!GetEffectProperties().SetLightIntensity(lightIntensity)) {

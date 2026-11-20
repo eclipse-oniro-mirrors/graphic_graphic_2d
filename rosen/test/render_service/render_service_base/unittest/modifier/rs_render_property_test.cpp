@@ -18,6 +18,7 @@
 #include "gtest/hwext/gtest-tag.h"
 #include "message_parcel.h"
 #include "common/rs_vector4.h"
+#include "effect/color_matrix.h"
 #include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_mask_base.h"
 #include "effect/rs_render_shader_base.h"
@@ -478,6 +479,24 @@ HWTEST_F(RSRenderPropertyTest, DepthLightParaDump, TestSize.Level1)
     std::string out;
     prop->Dump(out);
     EXPECT_EQ(out, "[direction: (0.0, 0.0, 0.0), color: (0.0, 0.0, 0.0), intensity: 0.0]");
+}
+
+/**
+ * @tc.name: ColorMatrixDump
+ * @tc.desc: Test dump for RSRenderProperty<Drawing::ColorMatrix> with a default-constructed
+ *           (identity) matrix: output starts with "ColorMatrix[", v0 is 1.00, v1 is 0.00,
+ *           and the tail keeps v18 = 1.00, v19 = 0.00
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPropertyTest, ColorMatrixDump, TestSize.Level1)
+{
+    auto prop = std::make_shared<RSRenderProperty<Drawing::ColorMatrix>>();
+    std::string out;
+    prop->Dump(out);
+    // Default-constructed ColorMatrix is the identity matrix: v0 = 1.00, v1 = 0.00
+    EXPECT_EQ(out.rfind("ColorMatrix[", 0), 0); // output starts with "ColorMatrix["
+    EXPECT_NE(out.find("1.00, 0.00,"), std::string::npos); // v0 = 1.00, v1 = 0.00
+    EXPECT_NE(out.find(", 1.00, 0.00]"), std::string::npos); // tail: v18 = 1.00, v19 = 0.00
 }
 
 /**

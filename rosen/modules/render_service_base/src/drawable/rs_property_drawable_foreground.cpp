@@ -64,6 +64,7 @@ bool RSColorFilterDrawable::OnUpdate(const RSRenderNode& node)
     needSync_ = true;
     stagingFilter_ = colorFilter;
     stagingColorNGFilter_ = colorNGFilter;
+    stagingIsColorMatrixFilter_ = node.GetRenderProperties().GetColorMatrix().has_value();
     return true;
 }
 
@@ -74,6 +75,7 @@ void RSColorFilterDrawable::OnSync()
     }
     filter_ = std::move(stagingFilter_);
     colorNGFilter_ = std::move(stagingColorNGFilter_);
+    isColorMatrixFilter_ = stagingIsColorMatrixFilter_;
     if (colorNGFilter_) {
         RSNGRenderFilterHelper::GenerateGEVisualEffect(colorNGFilter_);
         auto visualEffectContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
@@ -92,7 +94,7 @@ void RSColorFilterDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect*
         RSTagTracker::SOURCETYPE::SOURCE_RSCOLORFILTERDRAWABLE);
 #endif
     if (filter_) {
-        RSPropertyDrawableUtils::DrawColorFilter(canvas, filter_);
+        RSPropertyDrawableUtils::DrawColorFilter(canvas, filter_, isColorMatrixFilter_);
     }
     if (colorNGFilter_ && visualEffectContainer_) {
         RSEffectDrawableUtils::DrawColorNGFilter(

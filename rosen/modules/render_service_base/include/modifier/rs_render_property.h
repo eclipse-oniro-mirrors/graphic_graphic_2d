@@ -24,6 +24,7 @@
 #include "animation/rs_render_particle.h"
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
+#include "effect/color_matrix.h"
 #include "modifier/rs_animatable_arithmetic.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
 #include "pipeline/rs_draw_cmd_list.h"
@@ -138,6 +139,7 @@ enum class RSPropertyType : uint8_t {
     ATLAS_INFO,
     CLIP_SHAPE,
     RS_NG_RENDER_BLENDER_BASE,
+    COLOR_MATRIX,
 };
 
 enum class RSPropertyUnit : uint8_t {

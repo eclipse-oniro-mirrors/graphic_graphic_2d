@@ -20,12 +20,14 @@
 #include "drawable/rs_effect_drawable_utils.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "draw/surface.h"
+#include "effect/color_matrix.h"
 #include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_shape_base.h"
 #include "ge_visual_effect_container.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_depth_render_node.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "property/rs_properties.h"
 #include "property/rs_properties_painter.h"
@@ -208,6 +210,107 @@ HWTEST_F(RSPropertyDrawableUtilsTest, DrawColorFilterTest009, testing::ext::Test
     Drawing::Surface surface;
     paintFilterCanvas.surface_ = &surface;
     rsPropertyDrawableUtils->DrawColorFilter(&paintFilterCanvas, colorFilter);
+}
+
+namespace {
+class AlphaRecordPaintFilterCanvas : public RSPaintFilterCanvas {
+public:
+    explicit AlphaRecordPaintFilterCanvas(Drawing::Surface* surface)
+        : RSPaintFilterCanvas(surface) {}
+
+    void SaveLayer(const Drawing::SaveLayerOps& saveLayerOps) override
+    {
+        alphaAtSaveLayer_ = GetAlpha();
+        RSPaintFilterCanvas::SaveLayer(saveLayerOps);
+    }
+
+    // alpha observed by SaveLayer, negative when SaveLayer was not reached
+    float alphaAtSaveLayer_ = -1.0f;
+};
+} // namespace
+
+/**
+ * @tc.name: DrawColorFilterColorMatrixAlphaTest010
+ * @tc.desc: DrawColorFilter resets canvas alpha to 1.0 for the SaveLayer call when drawing a
+ *           color matrix filter and restores it afterwards; on an already opaque canvas the reset
+ *           still runs but is a no-op, and non-color-matrix filters keep the legacy behaviour
+ *           (no alpha reset)
+ * @tc.type: FUNC
+ * @tc.require:issueI9SCBR
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawColorFilterColorMatrixAlphaTest010, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    ASSERT_NE(rsPropertyDrawableUtils, nullptr);
+    auto surface = Drawing::Surface::MakeRasterN32Premul(10, 10);
+    ASSERT_NE(surface, nullptr);
+    auto colorFilter = std::make_shared<Drawing::ColorFilter>();
+    ASSERT_NE(colorFilter, nullptr);
+
+    // color matrix filter + semi-transparent canvas: alpha is reset to 1.0 only for the SaveLayer
+    // call and restored afterwards, the alpha stack stays balanced
+    {
+        AlphaRecordPaintFilterCanvas paintFilterCanvas(surface.get());
+        paintFilterCanvas.SetAlpha(0.5f);
+        const int alphaSaveCountBefore = paintFilterCanvas.GetAlphaSaveCount();
+        rsPropertyDrawableUtils->DrawColorFilter(&paintFilterCanvas, colorFilter, true);
+        EXPECT_EQ(paintFilterCanvas.alphaAtSaveLayer_, 1.0f);
+        EXPECT_EQ(paintFilterCanvas.GetAlpha(), 0.5f);
+        EXPECT_EQ(paintFilterCanvas.GetAlphaSaveCount(), alphaSaveCountBefore);
+    }
+
+    // color matrix filter + fully opaque canvas: the reset still runs but is a no-op (alpha stays 1.0)
+    {
+        AlphaRecordPaintFilterCanvas paintFilterCanvas(surface.get());
+        paintFilterCanvas.SetAlpha(1.0f);
+        const int alphaSaveCountBefore = paintFilterCanvas.GetAlphaSaveCount();
+        rsPropertyDrawableUtils->DrawColorFilter(&paintFilterCanvas, colorFilter, true);
+        EXPECT_EQ(paintFilterCanvas.alphaAtSaveLayer_, 1.0f);
+        EXPECT_EQ(paintFilterCanvas.GetAlpha(), 1.0f);
+        EXPECT_EQ(paintFilterCanvas.GetAlphaSaveCount(), alphaSaveCountBefore);
+    }
+
+    // non-color-matrix filter + semi-transparent canvas: legacy path, SaveLayer still observes
+    // the canvas alpha and no reset happens
+    {
+        AlphaRecordPaintFilterCanvas paintFilterCanvas(surface.get());
+        paintFilterCanvas.SetAlpha(0.5f);
+        const int alphaSaveCountBefore = paintFilterCanvas.GetAlphaSaveCount();
+        rsPropertyDrawableUtils->DrawColorFilter(&paintFilterCanvas, colorFilter, false);
+        EXPECT_EQ(paintFilterCanvas.alphaAtSaveLayer_, 0.5f);
+        EXPECT_EQ(paintFilterCanvas.GetAlpha(), 0.5f);
+        EXPECT_EQ(paintFilterCanvas.GetAlphaSaveCount(), alphaSaveCountBefore);
+    }
+}
+
+/**
+ * @tc.name: DrawColorFilterColorMatrixInvalidArgsTest011
+ * @tc.desc: DrawColorFilter returns early on null canvas / null filter / null surface and never
+ *           reaches SaveLayer, the canvas alpha is left untouched
+ * @tc.type: FUNC
+ * @tc.require:issueI9SCBR
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawColorFilterColorMatrixInvalidArgsTest011, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    ASSERT_NE(rsPropertyDrawableUtils, nullptr);
+    auto colorFilter = std::make_shared<Drawing::ColorFilter>();
+    ASSERT_NE(colorFilter, nullptr);
+    auto surface = Drawing::Surface::MakeRasterN32Premul(10, 10);
+    ASSERT_NE(surface, nullptr);
+
+    // null canvas / null filter: early return, no crash
+    rsPropertyDrawableUtils->DrawColorFilter(nullptr, colorFilter, true);
+    rsPropertyDrawableUtils->DrawColorFilter(nullptr, nullptr, true);
+
+    // null surface: early return before SaveLayer, alpha untouched
+    Drawing::Canvas canvasTest;
+    AlphaRecordPaintFilterCanvas paintFilterCanvas(surface.get());
+    paintFilterCanvas.surface_ = nullptr;
+    paintFilterCanvas.SetAlpha(0.5f);
+    rsPropertyDrawableUtils->DrawColorFilter(&paintFilterCanvas, colorFilter, true);
+    EXPECT_EQ(paintFilterCanvas.alphaAtSaveLayer_, -1.0f);
+    EXPECT_EQ(paintFilterCanvas.GetAlpha(), 0.5f);
 }
 
 /**

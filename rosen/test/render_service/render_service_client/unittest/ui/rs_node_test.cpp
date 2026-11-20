@@ -42,6 +42,7 @@
 #include "modifier_ng/geometry/rs_bounds_clip_modifier.h"
 #include "render/rs_filter.h"
 #include "render/rs_material_filter.h"
+#include "effect/color_matrix.h"
 #include "render/rs_shadow.h"
 #include "ui/rs_canvas_node.h"
 #include "ui/rs_display_node.h"
@@ -10000,4 +10001,66 @@ HWTEST_F(RSNodeTest, SwapModifier002, TestSize.Level1)
     rsNode->SwapModifier(modifier, nullptr);
     EXPECT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BACKGROUND_IMAGE), nullptr);
 }
+
+/**
+ * @tc.name: SetColorMatrix001
+ * @tc.desc: After calling SetColorMatrix, the Modifier has ColorMatrix property set
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetColorMatrix001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    Drawing::ColorMatrix colorMatrix;
+    colorMatrix.SetIdentity();
+    rsNode->SetColorMatrix(colorMatrix);
+    auto gotMatrix = rsNode->GetStagingProperties().GetColorMatrix();
+    EXPECT_EQ(gotMatrix, colorMatrix);
+}
+
+/**
+ * @tc.name: SetColorMatrixZeroMatrix001
+ * @tc.desc: Passing all-zero matrix doesn't crash
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetColorMatrixZeroMatrix001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    Drawing::ColorMatrix zeroMatrix;
+    Drawing::scalar zeroArray[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    zeroMatrix.SetArray(zeroArray);
+    rsNode->SetColorMatrix(zeroMatrix);
+    auto gotMatrix = rsNode->GetStagingProperties().GetColorMatrix();
+    EXPECT_EQ(gotMatrix, zeroMatrix);
+}
+
+/**
+ * @tc.name: SetColorMatrixNullopt001
+ * @tc.desc: Cover both nullopt branches of SetColorMatrix: nullopt without a prior value is a
+ *           no-op; nullopt after a value detaches COLOR_MATRIX and restores the default
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetColorMatrixNullopt001, TestSize.Level1)
+{
+    Drawing::ColorMatrix defaultMatrix;
+ 
+    // Branch: nullopt without a prior value (no modifier created) is a no-op
+    auto emptyNode = CreateCanvasNode();
+    ASSERT_NE(emptyNode, nullptr);
+    emptyNode->SetColorMatrix(std::nullopt);
+    EXPECT_EQ(emptyNode->GetStagingProperties().GetColorMatrix(), defaultMatrix);
+
+    // Branch: nullopt after a value detaches COLOR_MATRIX and restores the default
+    auto rsNode = CreateCanvasNode();
+    ASSERT_NE(rsNode, nullptr);
+    Drawing::ColorMatrix colorMatrix;
+    colorMatrix.SetIdentity();
+    rsNode->SetColorMatrix(colorMatrix);
+    ASSERT_EQ(rsNode->GetStagingProperties().GetColorMatrix(), colorMatrix);
+
+    rsNode->SetColorMatrix(std::nullopt);
+    EXPECT_EQ(rsNode->GetStagingProperties().GetColorMatrix(), defaultMatrix);
+}
+
 } // namespace OHOS::Rosen

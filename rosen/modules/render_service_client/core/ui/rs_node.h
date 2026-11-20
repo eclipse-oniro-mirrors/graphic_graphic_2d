@@ -1896,6 +1896,8 @@ public:
 
     void SetColorBlend(uint32_t colorValue);
 
+    void SetColorMatrix(std::optional<Drawing::ColorMatrix> colorMatrix);
+
     int32_t CalcExpectedFrameRate(const std::string& scene, float speed);
 
     void SetOutOfParent(OutOfParentType outOfParent);

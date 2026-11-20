@@ -197,6 +197,17 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::Matrix& val)
     return {};
 }
 
+// Drawing::ColorMatrix
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const Drawing::ColorMatrix& val)
+{
+    return {};
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::ColorMatrix& val)
+{
+    return {};
+}
+
 // RSLinearGradientBlurPara
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSLinearGradientBlurPara>& val)
 {
@@ -631,7 +642,8 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<Vector4f>)                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Media::PixelMap>)             \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>) \
-    EXPLICIT_INSTANTIATION(TEMPLATE, AtlasInfo)
+    EXPLICIT_INSTANTIATION(TEMPLATE, AtlasInfo)                                    \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Drawing::ColorMatrix)
 BATCH_EXPLICIT_INSTANTIATION(RSRenderProperty)
 
 #undef EXPLICIT_INSTANTIATION

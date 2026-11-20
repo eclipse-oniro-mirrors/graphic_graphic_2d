@@ -350,6 +350,7 @@ public:
             case RSPropertyType::OVERLAY_NG_SHADER: return "OverlayNGShader";
             case RSPropertyType::CLIP_SHAPE: return "ClipShape";
             case RSPropertyType::FOREGROUND_NG_BLENDER: return "ForegroundNGBlender";
+            case RSPropertyType::COLOR_MATRIX: return "ColorMatrix";
             default: return "Unknown";
         }
         return "Unknown";

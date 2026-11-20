@@ -767,6 +767,13 @@ void RSProperty<DepthLightPara>::UpdateToRender(const DepthLightPara& value, Pro
     UPDATE_TO_RENDER(RSUpdatePropertyDepthLightPara, value, type);
 }
 
+template<>
+void RSProperty<Drawing::ColorMatrix>::UpdateToRender(
+    const Drawing::ColorMatrix& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyColorMatrix, value, type);
+}
+
 // Lightweight IPC: when context fields are unchanged, send only frameIndex.
 template<>
 void RSProperty<AtlasInfo>::UpdateToRender(const AtlasInfo& value, PropertyUpdateType type) const

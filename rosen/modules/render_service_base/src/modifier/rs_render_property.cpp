@@ -706,6 +706,21 @@ void RSRenderProperty<DepthLightPara>::Dump(std::string& out) const
 }
 
 template<>
+void RSRenderProperty<Drawing::ColorMatrix>::Dump(std::string& out) const
+{
+    const auto& colorMatrix = Get();
+    float matrix[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    colorMatrix.GetArray(matrix);
+    std::stringstream ss;
+    ss << "ColorMatrix[" << std::fixed << std::setprecision(2);
+    for (size_t i = 0; i < Drawing::ColorMatrix::MATRIX_SIZE; i++) {
+        ss << (i == 0 ? "" : ", ") << matrix[i];
+    }
+    ss << "]";
+    out += ss.str();
+}
+
+template<>
 bool RSRenderAnimatableProperty<float>::IsNearEqual(
     const std::shared_ptr<RSRenderPropertyBase>& value, float zeroThreshold) const
 {
