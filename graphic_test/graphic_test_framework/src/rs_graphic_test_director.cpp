@@ -481,6 +481,7 @@ void RSGraphicTestDirector::SetSurfaceBounds(const Vector4f& bounds)
     }
     rootNode_->testSurfaceNodes_.back()->SetBounds(bounds);
     rootNode_->testSurfaceNodes_.back()->SetFrame(bounds);
+    rootNode_->SyncTestSurfaceBounds(bounds);
 }
 
 void RSGraphicTestDirector::SetScreenSurfaceBounds(const Vector4f& bounds)
@@ -500,6 +501,23 @@ void RSGraphicTestDirector::SetSurfaceColor(const RSColor& color)
         return;
     }
     rootNode_->testSurfaceNodes_.back()->SetBackgroundColor(color.AsRgbaInt());
+    rootNode_->SyncTestSurfaceColor(color.AsRgbaInt());
+}
+
+void RSGraphicTestDirector::BindRootToSurface(
+    const std::shared_ptr<RSSurfaceNode>& surface, const std::shared_ptr<RSRootNode>& root)
+{
+    // RSRootNode::AttachRSSurfaceNode is reachable only through RSUIDirector. Each call attaches the new
+    // pair in the client render thread; pairs bound earlier keep drawing, so several windows may coexist.
+    if (!rsUiDirector_ || !surface || !root) {
+        LOGE("RSGraphicTestDirector::BindRootToSurface invalid director, surface or root");
+        return;
+    }
+    // SetRSSurfaceNode re-attaches the director's current root to the new surface, which would move the
+    // previous window's tree onto it. Clear the root first so only the new pair gets attached.
+    rsUiDirector_->SetRSRootNode(nullptr);
+    rsUiDirector_->SetRSSurfaceNode(surface);
+    rsUiDirector_->SetRSRootNode(root);
 }
 
 void RSGraphicTestDirector::StartRunUIAnimation()

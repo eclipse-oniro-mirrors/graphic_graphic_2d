@@ -36,7 +36,9 @@ struct EmulatorOptions {
     static constexpr uint32_t DEFAULT_WIDTH = 1200;
     static constexpr uint32_t DEFAULT_HEIGHT = 2000;
     static constexpr uint64_t DEFAULT_READY_MAX_RETRIES = 3;
-    static constexpr uint64_t DEFAULT_FLUSH_SETTLE_MS = 100;
+    // Under divided render the client render thread compiles shaders with Mesa software rendering on the
+    // first frame; 100 ms left most filter cases capturing the desktop, 1000 ms covered them in practice.
+    static constexpr uint64_t DEFAULT_FLUSH_SETTLE_MS = 1000;
 
     EmulatorCommand command = EmulatorCommand::NONE;
     std::string outputRoot = "/data/local/graphic_test_emulator";

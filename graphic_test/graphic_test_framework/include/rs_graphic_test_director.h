@@ -50,6 +50,8 @@ public:
     void SetSurfaceBounds(const Vector4f& bounds);
     void SetScreenSurfaceBounds(const Vector4f& bounds);
     void SetSurfaceColor(const RSColor& color);
+    // Divided render only: binds a window surface to the root node whose tree the client draws into it.
+    void BindRootToSurface(const std::shared_ptr<RSSurfaceNode>& surface, const std::shared_ptr<RSRootNode>& root);
     void SetScreenSize(float width, float height);
     bool IsSingleTest();
     void SetSingleTest(bool IsSingleTest);

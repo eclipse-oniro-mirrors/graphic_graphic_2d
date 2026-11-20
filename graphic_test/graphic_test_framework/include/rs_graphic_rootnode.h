@@ -24,6 +24,7 @@
 
 namespace OHOS {
 namespace Rosen {
+class RSRootNode;
 using SubWindowId = uint32_t;
 constexpr SubWindowId INVALID_SUB_WINDOW_ID = std::numeric_limits<SubWindowId>::max();
 
@@ -43,6 +44,8 @@ struct SubWindowOptions {
 struct SubWindowEntry {
     std::shared_ptr<RSSurfaceNode> leashNode;
     std::shared_ptr<RSSurfaceNode> contentNode;
+    // Divided render only: draws the content node's children into its buffer. Null under uni render.
+    std::shared_ptr<RSRootNode> contentRoot;
 };
 
 class RSGraphicRootNode final {
@@ -72,12 +75,21 @@ private:
     void ResetTestSurface();
     std::shared_ptr<RSSurfaceNode> CreateContentNode(
         SubWindowId id, const SubWindowOptions& options);
+    // Under divided render the client render thread only draws trees hanging from an RSRootNode that is
+    // bound to a window surface, so every test window gets one; under uni render these are no-ops.
+    std::shared_ptr<RSRootNode> BindDividedRenderRoot(const std::shared_ptr<RSSurfaceNode>& surface);
+    std::shared_ptr<RSNode> GetMainDrawParent() const;
+    void SyncTestSurfaceBounds(const Vector4f& bounds);
+    void SyncTestSurfaceColor(uint32_t color);
 
     std::shared_ptr<OHOS::Rosen::RSSurfaceNode> screenSurfaceNode_;
     std::shared_ptr<OHOS::Rosen::RSSurfaceNode> testSurfaceNode_;
 
     std::vector<std::shared_ptr<OHOS::Rosen::RSSurfaceNode>> testSurfaceNodes_;
+    // Divided render only, parallel to testSurfaceNodes_. Stays empty under uni render.
+    std::vector<std::shared_ptr<RSRootNode>> testRootNodes_;
     std::vector<std::shared_ptr<RSNode>> nodes_;
+    bool isDividedRender_ = false;
 
     std::unordered_map<SubWindowId, SubWindowEntry> subWindows_;
     SubWindowId nextSubWindowId_ = 0;
