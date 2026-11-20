@@ -60,8 +60,8 @@ struct VoteInfo {
     std::string ToSimpleString() const
     {
         char buf[STRING_BUFFER_MAX_SIZE] = { 0 };
-        int len = ::snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%s %u %s %d.",
-            voterName.c_str(), max, extInfo.c_str(), pid);
+        int len = ::snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%s %u %s",
+            voterName.c_str(), max, extInfo.c_str());
         if (len <= 0) {
             HGM_LOGE("failed to execute snprintf.");
         }
