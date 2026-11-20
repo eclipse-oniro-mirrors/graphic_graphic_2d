@@ -188,11 +188,9 @@ void OH_Drawing_CanvasSaveLayer(OH_Drawing_Canvas*, const OH_Drawing_Rect*, cons
  *     of the layer. It may be nullptr, in which case the bounds of the layer are the current clip.
  * @param brush [in] Indicates the pointer to an <b>OH_Drawing_Brush</b> object that is attached when
  *     the layer is restored. It may be nullptr, in which case no brush is attached.
- * @param saveLayerFlags [in] Indicates how the layer is initialized. Only the following values are
- *     supported:
- *     0: The layer is initialized as empty. This is the default behavior.
- *     2: The layer is initialized with the previous contents.
- *     Other values are invalid.
+ * @param saveLayerFlags [in] Indicates how the layer is initialized. The value must be 0 (the
+ *     layer is initialized as empty, the default) or 2 (the layer is initialized with the previous
+ *     contents). Other values are invalid.
  * @return <ul>
  *         <li>{@link OH_DRAWING_SUCCESS} if the operation is successful.</li>
  *         <li>{@link OH_DRAWING_ERROR_INCORRECT_PARAMETER} if canvas is nullptr.</li>
