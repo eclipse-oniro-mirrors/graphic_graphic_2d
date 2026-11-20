@@ -551,7 +551,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnDrawTestWindowRecordMissingPr
 
     auto uniParams = std::make_unique<RSRenderThreadParams>();
     RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     ASSERT_NE(uniParam, nullptr);
     ASSERT_EQ(uniParam->GetRSProcessor(), nullptr);
 
@@ -585,7 +585,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnDrawTestWindowRecordWrongProc
     auto uniParams = std::make_unique<RSRenderThreadParams>();
     uniParams->SetRSProcessor(processor);
     RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     ASSERT_NE(uniParam, nullptr);
     ASSERT_EQ(uniParam->GetRSProcessor(), processor);
 

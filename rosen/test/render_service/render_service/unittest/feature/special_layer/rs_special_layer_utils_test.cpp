@@ -2002,7 +2002,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, CheckSurfaceSkipSecurityDisplayGate001, TestSi
     auto& params = filterState.Params();
     auto screenNode = std::make_shared<RSScreenRenderNode>(screenNodeId, screenId);
     screenNode->InitRenderParams();
-    auto screenDrawable = std::static_pointer_cast<RSScreenRenderNodeDrawable>(screenNode->GetRenderDrawable());
+    auto screenDrawable =
+        std::static_pointer_cast<DrawableV2::RSScreenRenderNodeDrawable>(screenNode->GetRenderDrawable());
     ASSERT_NE(screenDrawable, nullptr);
     auto* screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
     ASSERT_NE(screenParams, nullptr);
