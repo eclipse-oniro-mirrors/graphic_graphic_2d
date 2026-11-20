@@ -277,8 +277,11 @@ OH_Drawing_ErrorCode OH_Drawing_CanvasSaveLayerWithFlag(OH_Drawing_Canvas* cCanv
 {
     Canvas* canvas = CastToCanvas(cCanvas);
     if (canvas == nullptr) {
-        g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
         return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
+    }
+
+    if (saveLayerFlags != 0 && saveLayerFlags != SaveLayerOps::INIT_WITH_PREVIOUS) {
+        return OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE;
     }
 
     SaveLayerOps slr = SaveLayerOps(reinterpret_cast<const Drawing::Rect*>(cRect),
