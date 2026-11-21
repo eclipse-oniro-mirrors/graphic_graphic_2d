@@ -1810,100 +1810,6 @@ void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDat
     }
 }
 
-void RSMainThread::UpdateZorderForDelegateMode()
-{
-    std::list<std::shared_ptr<RSSurfaceRenderNode>> delegateModeNodeList;
-    for (auto& node: hardwareEnabledNodes_) {
-        if (node && node->GetDelegateMode()) {
-            if (node->GetName() == "delegate_child_video") {
-                delegateModeNodeList.push_front(node);
-            } else {
-                delegateModeNodeList.push_back(node);
-            }
-        }
-    }
-    float globalZOrder = 0;
-    for (auto& node : delegateModeNodeList) {
-        if (node && node->GetRSSurfaceHandler()) {
-            node->GetRSSurfaceHandler()->SetGlobalZOrder(globalZOrder++);
-            auto transform = RSUniHwcComputeUtil::GetLayerTransform(*node);
-            node->UpdateHwcNodeLayerInfo(transform, false);
-        }
-    }
-}
-
-void RSMainThread::TraverseNodeForDelegateMode()
-{
-    if (!context_) {
-        return;
-    }
-
-    auto &webNodeIds = GetContext().GetWebNodeMap();
-    if (webNodeIds.size() == 0) {
-        return;
-    }
-    std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
-    if (!rootNode) {
-        return;
-    }
-
-    std::shared_ptr<RSScreenRenderNode> screenNode = nullptr;
-    auto children = rootNode->GetChildrenList();
-    if (!children.empty()) {
-        for (const auto& child : children) {
-            auto node = child.lock();
-            if (node && node->GetChildrenCount() > 0) {
-                screenNode = node->ReinterpretCastTo<RSScreenRenderNode>();
-                break;
-            }
-        }
-    }
-    if (!screenNode) {
-        RS_LOGE("RSPointerWindowManager::UpdatePointerInfo screenManager is null!");
-        return;
-    }
-    RS_TRACE_NAME("TraverseNodeForDelegateMode");
-    std::set<NodeId> quickPrepareNodeIds;
-    auto uniVisitor = std::make_shared<RSUniRenderVisitor>();
-    uniVisitor->InitForDelegateMode(*screenNode, GetRenderEngine());
-    for (const auto& nodeId : webNodeIds) {
-        UpdateNodeInfoForDelegateMode(nodeId, uniVisitor, quickPrepareNodeIds);
-    }
-    for (const auto& nodeId : quickPrepareNodeIds) {
-        auto instanceRootNode = GetContext().GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId);
-        if (instanceRootNode != nullptr) {
-            instanceRootNode->QuickPrepare(uniVisitor);
-        }
-    }
-
-    UpdateZorderForDelegateMode();
-    webNodeIds.clear();
-}
-
-void RSMainThread::UpdateNodeInfoForDelegateMode(const int64_t &rsNodeId,
-    const std::shared_ptr<RSNodeVisitor>& uniVisitor, std::set<NodeId>& quickPrepareNodeIds)
-{
-    if (rsNodeId <= 0) {
-        return;
-    }
-    auto node = GetContext().GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(rsNodeId);
-    if (node == nullptr) {
-        return;
-    }
-    auto delegateSrcRect = node->GetDelegateSrcRect();
-    auto delegateDstRect = node->GetDelegateDstRect();
-    auto& properties = node->GetMutableRenderProperties();
-    RS_TRACE_NAME_FMT("UpdateNodeInfoForDelegateMode(node:%" PRId64 ") delegateSrcRect=%s, delegateDstRect=%s",
-        rsNodeId, delegateSrcRect.ToString().c_str(), delegateDstRect.ToString().c_str());
-    properties.SetBounds({delegateDstRect.GetLeft(), delegateDstRect.GetTop(), delegateDstRect.GetWidth(),
-        delegateDstRect.GetHeight()});
-    node->SetDirty();
-    node->AddDirtyType(ModifierNG::RSModifierType::BOUNDS);
-    node->AddDirtyType(ModifierNG::RSModifierType::FRAME);
-    RSUniHwcComputeUtil::UpdateHwcNodeProperty(node);
-    quickPrepareNodeIds.emplace(node->GetInstanceRootNodeId());
-}
-
 void RSMainThread::ProcessCommandForUniRender()
 {
     std::shared_ptr<TransactionDataMap> transactionDataEffective = nullptr;
@@ -1923,8 +1829,7 @@ void RSMainThread::ProcessCommandForUniRender()
         delegateModeFlag &= UpdateDoDirectCompositionFlagForDelegateMode(transactionDataEffective);
     } else {
 #if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
-        isWebCommandOnly_ = RsDelegateCompositeCallbackManager::GetInstance().QueryAndResetCommandProcessFlag();
-        RS_OPTIONAL_TRACE_NAME_FMT("invalid TransactionDataMap, isWebCommandOnly=%d", isWebCommandOnly_);
+        UpdateDirectCompositionFlagForDelegateMode();
 #endif
     }
     RS_TRACE_NAME("RSMainThread::ProcessCommandUni" + transactionFlags);
@@ -2045,6 +1950,7 @@ bool RSMainThread::UpdateDoDirectCompositionFlagForDelegateMode(std::unique_ptr<
 void RSMainThread::ProcessDelegateCompositeCommand()
 {
 #if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
+    isWebCommandOnly_ = false;
     if (RsDelegateCompositeCallbackManager::GetInstance().ProcessDelegateCompositeCommand(GetContext())) {
         RS_TRACE_NAME("ProcessDelegateCompositeCommand request next vsync");
         RequestNextVSync();
@@ -3230,21 +3136,21 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         !pendingWindowCapTasks_.empty() || !windowCapTasks_.empty();
     bool willGoDirectComposition = doDirectComposition_ && !isDirty_ && !isAccessibilityConfigChanged_ &&
                                    !isCachedSurfaceUpdated_ && pointerSkip && !hasPendingCaptureTasks;
+    bool delegateModeSupport = true;
+#if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
+    UpdateWillGoDirectCompositionFlag(willGoDirectComposition, delegateModeSupport);
+#endif
     RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: needGoDirectComposition:[%d], isDirty:[%d], "
         "isAccessibilityConfigChanged:[%d], isCachedSurfaceUpdated:[%d], pointerSkip:[%d], "
-        "hasPendingCaptureTasks:[%d]",
+        "hasPendingCaptureTasks:[%d], delegateModeSupport:[%d]",
         willGoDirectComposition, isDirty_.load(), isAccessibilityConfigChanged_, isCachedSurfaceUpdated_,
-        pointerSkip, hasPendingCaptureTasks);
+        pointerSkip, hasPendingCaptureTasks, delegateModeSupport);
     if (willGoDirectComposition) {
         doDirectComposition_ = isHardwareEnabledBufferUpdated_;
         if (!doDirectComposition_) {
             AddDisableReason("buffer not updated");
         }
         if (isHardwareEnabledBufferUpdated_) {
-            if (isWebCommandOnly_) {
-                TraverseNodeForDelegateMode();
-                isWebCommandOnly_ = false;
-            }
             needTraverseNodeTree = !DoDirectComposition(rootNode);
         } else if (forceUpdateUniRenderFlag_) {
             RS_TRACE_NAME("RSMainThread::UniRender ForceUpdateUniRender");
@@ -3369,6 +3275,9 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         RSTunnelRouteArbiter::RefreshGlobalTriggerSnapshot();
         RsFrameReport::DirectRenderEnd();
     }
+#if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
+    DoDirectCompositionForDelegateModeIfNeed(rootNode);
+#endif
 
     PrepareSyncCaptureTasks(uniVisitor);
     if (screenPowerOnChanged_) {
@@ -6756,6 +6665,55 @@ void RSMainThread::RemoveBundleNameFromCache(pid_t pid)
 {
     std::lock_guard<std::mutex> lock(pidToBundleMutex_);
     pidToBundleName_.erase(pid);
+}
+
+void RSMainThread::DoDirectCompositionForDelegateModeIfNeed(std::shared_ptr<RSBaseRenderNode>& rootNode)
+{
+    std::optional<bool> ret =
+        RsDelegateCompositeCallbackManager::GetInstance().GetDoDirectCompositionSupportByHwcEnable();
+    if (!ret.has_value()) {
+        return;
+    }
+    doDirectComposition_ = ret.value();
+    if (doDirectComposition_) {
+        RS_TRACE_NAME("DoDirectComposition for delegateMode");
+        if (!DoDirectComposition(rootNode)) {
+            RS_TRACE_NAME("DoDirectComposition for delegateMode fail");
+            doDirectComposition_ = false;
+        } else {
+            directComposeHelper_.lastFrameDidGpuRender_ = false;
+            RSTunnelRouteArbiter::RefreshGlobalTriggerSnapshot();
+            RsFrameReport::DirectRenderEnd();
+        }
+    }
+}
+
+void RSMainThread::UpdateWillGoDirectCompositionFlag(bool& willGoDirectComposition, bool& delegateModeSupport)
+{
+    delegateModeSupport =
+        (!isWebCommandOnly_ || (isWebCommandOnly_ && GetContext().GetOnlyDelegateModeSetBufferCmdFlag()));
+    if (!willGoDirectComposition) {
+        RsDelegateCompositeCallbackManager::GetInstance().SetCollectHwcNodesInfoFlag(false);
+        return;
+    }
+    willGoDirectComposition = willGoDirectComposition && delegateModeSupport;
+    RsDelegateCompositeCallbackManager::GetInstance().SetCollectHwcNodesInfoFlag(
+        doDirectComposition_ && !willGoDirectComposition && isWebCommandOnly_);
+}
+
+void RSMainThread::UpdateDirectCompositionFlagForDelegateMode()
+{
+    bool hasCommandProcess = false;
+    bool doDirectCompositionSupport = false;
+    RsDelegateCompositeCallbackManager::GetInstance().QueryAndResetCommandProcessFlag(
+        hasCommandProcess, doDirectCompositionSupport);
+    isWebCommandOnly_ = hasCommandProcess;
+    if (doDirectComposition_) {
+        doDirectComposition_ = isWebCommandOnly_ ? doDirectCompositionSupport : doDirectComposition_;
+        if (!doDirectComposition_) {
+            RS_OPTIONAL_TRACE_NAME("debug: disable directComposition by delegateModeCmd not support");
+        }
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

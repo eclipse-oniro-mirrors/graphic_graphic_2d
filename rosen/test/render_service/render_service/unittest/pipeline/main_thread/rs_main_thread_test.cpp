@@ -42,6 +42,10 @@
 #include "memory/rs_memory_track.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "engine/rs_uni_render_engine.h"
+#include "command/rs_surface_node_command.h"
+#include "command/rs_delegate_composite_command.h"
+#include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
+#include "pipeline/main_thread/rs_uni_render_visitor.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "render_server/transaction/rs_client_to_service_connection.h"
 #include "pipeline/rs_root_render_node.h"
@@ -10855,6 +10859,233 @@ HWTEST_F(RSMainThreadTest, PublishWindowRecordMirrorSourcesTest, TestSize.Level2
     EXPECT_TRUE(outputScreen->IsMirrorScreen());
     EXPECT_EQ(outputScreen->GetMirrorSource().lock(), sourceScreen);
     EXPECT_EQ(sourceParams->mirrorDstCount_, 1u);
+}
+
+/**
+ * @tc.name: UpdateWillGoDirectCompositionFlag001
+ * @tc.desc: no web command keeps delegateModeSupport true and the collect flag off
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateWillGoDirectCompositionFlag001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isWebCommandOnly_ = false;
+    mainThread->doDirectComposition_ = true;
+    mainThread->GetContext().SetOnlyDelegateModeSetBufferCmdFlag(false);
+    bool willGoDirectComposition = true;
+    bool delegateModeSupport = false;
+    mainThread->UpdateWillGoDirectCompositionFlag(willGoDirectComposition, delegateModeSupport);
+    EXPECT_TRUE(delegateModeSupport);
+    EXPECT_TRUE(willGoDirectComposition);
+    EXPECT_FALSE(RsDelegateCompositeCallbackManager::GetInstance().needCollectHwcNodesInfoFlag_);
+}
+
+/**
+ * @tc.name: UpdateWillGoDirectCompositionFlag002
+ * @tc.desc: web setBuffer only commands keep direct composition and turn the collect flag off
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateWillGoDirectCompositionFlag002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isWebCommandOnly_ = true;
+    mainThread->doDirectComposition_ = true;
+    mainThread->GetContext().SetOnlyDelegateModeSetBufferCmdFlag(true);
+    bool willGoDirectComposition = true;
+    bool delegateModeSupport = false;
+    mainThread->UpdateWillGoDirectCompositionFlag(willGoDirectComposition, delegateModeSupport);
+    EXPECT_TRUE(delegateModeSupport);
+    EXPECT_TRUE(willGoDirectComposition);
+    // doDirectComposition true && willGo true && isWebCommandOnly true -> flag stays false
+    EXPECT_FALSE(RsDelegateCompositeCallbackManager::GetInstance().needCollectHwcNodesInfoFlag_);
+    mainThread->isWebCommandOnly_ = false;
+    mainThread->GetContext().SetOnlyDelegateModeSetBufferCmdFlag(false);
+}
+
+/**
+ * @tc.name: UpdateWillGoDirectCompositionFlag003
+ * @tc.desc: non setBuffer web commands block direct composition and arm the hardware composer collect flag
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateWillGoDirectCompositionFlag003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isWebCommandOnly_ = true;
+    mainThread->doDirectComposition_ = true;
+    mainThread->GetContext().SetOnlyDelegateModeSetBufferCmdFlag(false);
+    bool willGoDirectComposition = true;
+    bool delegateModeSupport = true;
+    mainThread->UpdateWillGoDirectCompositionFlag(willGoDirectComposition, delegateModeSupport);
+    EXPECT_FALSE(delegateModeSupport);
+    EXPECT_FALSE(willGoDirectComposition);
+    // doDirectComposition true && willGo false && isWebCommandOnly true -> collect flag armed
+    EXPECT_TRUE(RsDelegateCompositeCallbackManager::GetInstance().needCollectHwcNodesInfoFlag_);
+    mainThread->isWebCommandOnly_ = false;
+}
+
+/**
+ * @tc.name: UpdateWillGoDirectCompositionFlag004
+ * @tc.desc: the collect flag is not armed when doDirectComposition is already off
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateWillGoDirectCompositionFlag004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isWebCommandOnly_ = true;
+    mainThread->doDirectComposition_ = false;
+    mainThread->GetContext().SetOnlyDelegateModeSetBufferCmdFlag(false);
+    bool willGoDirectComposition = true;
+    bool delegateModeSupport = true;
+    mainThread->UpdateWillGoDirectCompositionFlag(willGoDirectComposition, delegateModeSupport);
+    EXPECT_FALSE(delegateModeSupport);
+    EXPECT_FALSE(willGoDirectComposition);
+    EXPECT_FALSE(RsDelegateCompositeCallbackManager::GetInstance().needCollectHwcNodesInfoFlag_);
+    mainThread->isWebCommandOnly_ = false;
+}
+
+/**
+ * @tc.name: UpdateDirectCompositionFlag001
+ * @tc.desc: without commands doDirectComposition stays untouched while the flag resets
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateDirectCompositionFlag001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+
+    mainThread->isWebCommandOnly_ = true;
+    mainThread->doDirectComposition_ = false;
+    mainThread->UpdateDirectCompositionFlagForDelegateMode();
+    EXPECT_FALSE(mainThread->isWebCommandOnly_);
+    EXPECT_FALSE(mainThread->doDirectComposition_);
+
+    mainThread->doDirectComposition_ = true;
+    mainThread->UpdateDirectCompositionFlagForDelegateMode();
+    EXPECT_TRUE(mainThread->doDirectComposition_);
+    mainThread->doDirectComposition_ = false;
+}
+
+/**
+ * @tc.name: UpdateDirectCompositionFlag002
+ * @tc.desc: setBuffer only commands keep doDirectComposition when it was enabled
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateDirectCompositionFlag002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    std::vector<RSTransactionConfig> emptyConfigs;
+    queue.push(std::make_unique<TransactionBufferCommand>(emptyConfigs, static_cast<NodeId>(960001)));
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+    EXPECT_TRUE(isSetBufferCmdOnly);
+
+    mainThread->doDirectComposition_ = true;
+    RsDelegateCompositeCallbackManager::GetInstance().doDirectCompositionSupportByCmd_ =
+        doDirectCompositionSupportByCmd;
+    mainThread->UpdateDirectCompositionFlagForDelegateMode();
+    EXPECT_TRUE(mainThread->isWebCommandOnly_);
+    EXPECT_TRUE(mainThread->doDirectComposition_);
+    mainThread->isWebCommandOnly_ = false;
+    mainThread->doDirectComposition_ = false;
+}
+
+/**
+ * @tc.name: UpdateDirectCompositionFlag003
+ * @tc.desc: non setBuffer commands disable doDirectComposition when it was enabled
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateDirectCompositionFlag003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    std::vector<RSTransactionConfig> emptyConfigs;
+    queue.push(std::make_unique<TransactionBufferCommand>(emptyConfigs, static_cast<NodeId>(960002)));
+    queue.push(std::make_unique<RSSurfaceNodeSetSnapshotSkipLayer>(static_cast<NodeId>(960002), false));
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+    EXPECT_FALSE(isSetBufferCmdOnly);
+
+    mainThread->doDirectComposition_ = true;
+    mainThread->UpdateDirectCompositionFlagForDelegateMode();
+    EXPECT_TRUE(mainThread->isWebCommandOnly_);
+    EXPECT_FALSE(mainThread->doDirectComposition_);
+    mainThread->isWebCommandOnly_ = false;
+}
+
+/**
+ * @tc.name: DoDirectCompositionForDelegateMode001
+ * @tc.desc: unset hardware composer support optional leaves doDirectComposition untouched
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, DoDirectCompositionForDelegateMode001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->doDirectComposition_ = false;
+    std::shared_ptr<RSBaseRenderNode> rootNode = nullptr;
+    mainThread->DoDirectCompositionForDelegateModeIfNeed(rootNode);
+    EXPECT_FALSE(mainThread->doDirectComposition_);
+
+    mainThread->doDirectComposition_ = true;
+    mainThread->DoDirectCompositionForDelegateModeIfNeed(rootNode);
+    // early return on nullopt: the flag stays untouched
+    EXPECT_TRUE(mainThread->doDirectComposition_);
+    mainThread->doDirectComposition_ = false;
+}
+
+/**
+ * @tc.name: DoDirectCompositionForDelegateMode002
+ * @tc.desc: cached false hardware composer support turns doDirectComposition off
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, DoDirectCompositionForDelegateMode002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    // build a cached false value through the collection path
+    auto context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(960101, 9601, context);
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(static_cast<NodeId>(960102), context);
+    hwcNode->isOnTheTree_ = true;
+    hwcNode->SetHardwareForcedDisabledState(true);
+    auto handler = hwcNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetBuffer(SurfaceBuffer::Create(), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    handler->SetCurrentFrameBufferConsumed();
+    screenNode->childHwcNodes_.emplace_back(hwcNode);
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(screenNode);
+    auto support = manager.GetDoDirectCompositionSupportByHwcEnable();
+    ASSERT_EQ(support.has_value(), true);
+    ASSERT_EQ(support.value(), false);
+    manager.SetCollectHwcNodesInfoFlag(false);
+
+    mainThread->doDirectComposition_ = true;
+    auto rootNode = std::make_shared<RSBaseRenderNode>(0);
+    mainThread->DoDirectCompositionForDelegateModeIfNeed(rootNode);
+    // cached false flips doDirectComposition off before the real composition path runs
+    EXPECT_FALSE(mainThread->doDirectComposition_);
 }
 } // namespace OHOS::Rosen
 #endif
