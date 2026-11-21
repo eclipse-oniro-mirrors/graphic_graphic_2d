@@ -475,7 +475,7 @@ ADD_COMMAND(RSModifierNGAttachProperty,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, MODIFIER_NG_ATTACH_PROPERTY,
         RSNodeCommandHelper::ModifierNGAttachProperty, NodeId,
         ModifierId, ModifierNG::RSModifierType, ModifierNG::RSPropertyType, std::shared_ptr<RSRenderPropertyBase>))
-ADD_COMMAND(RSUpdatePropertyColorMatrix,
+ADD_PREFIX_COMMAND(RSUpdatePropertyColorMatrix,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_COLOR_MATRIX,
         RSNodeCommandHelper::UpdateProperty<Drawing::ColorMatrix>,
         NodeId, Drawing::ColorMatrix, PropertyId, PropertyUpdateType))
