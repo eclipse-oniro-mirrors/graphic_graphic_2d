@@ -892,16 +892,29 @@ HWTEST_F(RSEglImageManagerTest, WaitAcquireFence001, TestSize.Level1)
 
 /**
  * @tc.name: WaitAcquireFence002
- * @tc.desc: Wait acquirefence with invalid fence; nothing to wait for, returns early without
- *           reporting a timeout (verified: SyncFence::Wait returns -1 immediately for fd < 0)
+ * @tc.desc: Wait acquirefence with invalid fence; SyncFence::Wait returns -1 immediately
+ *           (fd < 0) without blocking, and the non-zero result is reported to the fence-wait DFX
  * @tc.type: FUNC
  * @tc.require: issue#26808
  */
 HWTEST_F(RSEglImageManagerTest, WaitAcquireFence002, TestSize.Level1)
 {
     ASSERT_NE(eglImageManager_, nullptr);
+    auto& dfx = FenceWaitDfx::Instance();
+    {
+        std::lock_guard<std::mutex> lock(dfx.mutex_);
+        dfx.cntMap_.clear();
+        dfx.cntMapSize_.store(0);
+        dfx.lastLogMs_ = 0;
+    }
+    constexpr uint64_t bufferId = 555;
     sptr<SyncFence> invalidFence = SyncFence::INVALID_FENCE;
-    eglImageManager_->WaitAcquireFence(invalidFence, 0, 0);
+    eglImageManager_->WaitAcquireFence(invalidFence, bufferId, 0);
+    {
+        std::lock_guard<std::mutex> lock(dfx.mutex_);
+        // same branch as a real timeout: the non-zero wait result increments the per-buffer count
+        EXPECT_EQ(dfx.cntMap_[bufferId], 1);
+    }
 }
 
 /**

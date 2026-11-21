@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include <unistd.h>
 #include "parameters.h"
 #include "gpuComposition/rs_vk_image_manager.h"
 #include "engine/rs_base_render_engine.h"
@@ -338,6 +339,25 @@ HWTEST_F(RSVKImageManagerTest, CreateImageCacheFromBuffer001, TestSize.Level1)
         new SurfaceBufferImpl(), SyncFence::INVALID_FENCE), nullptr);
 
     EXPECT_EQ(vkImageManager_->CreateImageCacheFromBuffer(nullptr, SyncFence::INVALID_FENCE), nullptr);
+}
+
+/**
+ * @tc.name: CreateImageCacheFromBufferWithSignaledFence001
+ * @tc.desc: call CreateImageCacheFromBuffer with a signaled acquire fence; SyncFence::Wait
+ *           returns 0 immediately, covering the wait-success (DFX count reset) branch
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSVKImageManagerTest, CreateImageCacheFromBufferWithSignaledFence001, TestSize.Level1)
+{
+    // a pipe read end with data available is permanently ready: SyncFence::Wait returns 0
+    // without blocking; the SyncFence destructor closes the read-end fd
+    int okPipeFds[2];
+    ASSERT_EQ(pipe(okPipeFds), 0);
+    ASSERT_EQ(write(okPipeFds[1], "x", 1), 1);
+    close(okPipeFds[1]);
+    sptr<SyncFence> signaledFence = new SyncFence(okPipeFds[0]);
+    EXPECT_NE(vkImageManager_->CreateImageCacheFromBuffer(buffer_, signaledFence), nullptr);
 }
 
 /**

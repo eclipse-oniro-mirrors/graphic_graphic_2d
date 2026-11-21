@@ -238,9 +238,7 @@ std::unique_ptr<EglImageResource> EglImageResource::Create(
 
 void RSEglImageManager::WaitAcquireFence(const sptr<SyncFence>& acquireFence, uint64_t bufferId, uint32_t seqNum)
 {
-    // nullptr or an invalid fence (fd < 0) has nothing to wait for: SyncFence::Wait would
-    // return -1 immediately, which must not be reported as a timeout
-    if (acquireFence == nullptr || !acquireFence->IsValid()) {
+    if (acquireFence == nullptr) {
         return;
     }
     int32_t ret = acquireFence->Wait(FenceWaitDfx::FENCE_WAIT_TIMEOUT_MS);

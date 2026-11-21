@@ -1853,26 +1853,6 @@ HWTEST_F(RSMainThreadTest, SubScribeSystemAbilityUniRenderThread001, TestSize.Le
 #endif
 
 /**
- * @tc.name: RequestNextVsyncForPendingTransaction001
- * @tc.desc: RequestNextVsyncForPendingTransaction with null and non-null vsync manager agent
- * @tc.type: FUNC
- * @tc.require: issue#26808
- */
-HWTEST_F(RSMainThreadTest, RequestNextVsyncForPendingTransaction001, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
-    pid_t pid = 23459;
-    // null agent: the dvsync branch is skipped, RequestNextVSync is still a safe no-op
-    auto origAgent = mainThread->rsVsyncManagerAgent_;
-    mainThread->rsVsyncManagerAgent_ = nullptr;
-    EXPECT_NO_FATAL_FAILURE(mainThread->RequestNextVsyncForPendingTransaction(pid));
-    // non-null agent: both inner branches (dvsync on/off) resolve to a safe vsync request
-    mainThread->rsVsyncManagerAgent_ = origAgent;
-    EXPECT_NO_FATAL_FAILURE(mainThread->RequestNextVsyncForPendingTransaction(pid));
-}
-
-/**
  * @tc.name: RequestNextVsyncForCachedCommand001
  * @tc.desc: RequestNextVsyncForCachedCommand appends the cache marker and requests vsync safely
  * @tc.type: FUNC

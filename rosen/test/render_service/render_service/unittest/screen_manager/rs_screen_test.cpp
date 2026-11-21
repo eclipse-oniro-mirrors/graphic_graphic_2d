@@ -3858,23 +3858,24 @@ HWTEST_F(RSScreenTest, SetIsRogResolution006, testing::ext::TestSize.Level1)
 }
 
 /**
- * @tc.name: GetDevice001
- * @tc.desc: HdiScreen::GetDevice returns the device object currently held by the HdiScreen
+ * @tc.name: IsDeviceAvailable001
+ * @tc.desc: HdiScreen::IsDeviceAvailable reflects whether the HdiScreen currently holds a device
  * @tc.type: FUNC
  * @tc.require: issue#26808
  */
-HWTEST_F(RSScreenTest, GetDevice001, testing::ext::TestSize.Level1)
+HWTEST_F(RSScreenTest, IsDeviceAvailable001, testing::ext::TestSize.Level1)
 {
     auto rsScreen = std::make_shared<RSScreen>(mockScreenId_);
     ASSERT_NE(rsScreen, nullptr);
     ASSERT_NE(rsScreen->hdiScreen_, nullptr);
-    // GetDevice reflects the device object the HdiScreen currently holds
+    // no device held: unavailable (rs_screen gives up the following HDI queries in this case)
     auto origDevice = rsScreen->hdiScreen_->device_;
-    EXPECT_EQ(rsScreen->hdiScreen_->GetDevice(), origDevice);
-    // after injecting a mock device, GetDevice returns it (rs_screen distinguishes
+    rsScreen->hdiScreen_->device_ = nullptr;
+    EXPECT_EQ(rsScreen->hdiScreen_->IsDeviceAvailable(), false);
+    // after injecting a mock device, the device is available (rs_screen distinguishes
     // "device unavailable" from "init partially failed" through this accessor)
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
-    EXPECT_EQ(rsScreen->hdiScreen_->GetDevice(), hdiDeviceMock_);
+    EXPECT_EQ(rsScreen->hdiScreen_->IsDeviceAvailable(), true);
     rsScreen->hdiScreen_->device_ = origDevice;
 }
 } // namespace OHOS::Rosen
