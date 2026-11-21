@@ -245,24 +245,27 @@ HWTEST_F(VSyncDistributorTest, RequestNextVSync005, Function | MediumTest| Level
  */
 HWTEST_F(VSyncDistributorTest, RequestNextVSync006, Function | MediumTest| Level3)
 {
+    bool isRs = vsyncDistributor->isRs_;
     {
-        auto vsyncDistributorTmp = new VSyncDistributor(vsyncController, "rs");
-        auto conn = new VSyncConnection(vsyncDistributorTmp, "rs");
-        vsyncDistributorTmp->AddConnection(conn);
-        EXPECT_EQ(vsyncDistributorTmp->RequestNextVSync(conn, "RequestNextVSync007", 0, 1000000000),
-            VSYNC_ERROR_OK);
+        vsyncDistributor->isRs_ = true;
+        sptr<VSyncConnection> conn = new VSyncConnection(vsyncDistributor, "rs");
+        vsyncDistributor->AddConnection(conn);
+        EXPECT_EQ(vsyncDistributor->RequestNextVSync(conn, "rs", 0, 1000000000), VSYNC_ERROR_OK);
         EXPECT_EQ(conn->requestVsyncTimestamp_.size(), 1);
+        EXPECT_EQ(vsyncDistributor->RemoveConnection(conn), VSYNC_ERROR_OK);
+        sleep(WAIT_SYSTEM_ABILITY_REPORT_DATA_SECONDS);
     }
 
     {
-        auto vsyncDistributorTmp = new VSyncDistributor(vsyncController, "NoRs");
-        auto conn = new VSyncConnection(vsyncDistributorTmp, "NoRs");
-        vsyncDistributorTmp->AddConnection(conn);
-        EXPECT_EQ(vsyncDistributorTmp->RequestNextVSync(conn, "RequestNextVSync007", 0, 1000000000),
-            VSYNC_ERROR_OK);
+        vsyncDistributor->isRs_ = false;
+        sptr<VSyncConnection> conn = new VSyncConnection(vsyncDistributor, "Nors");
+        vsyncDistributor->AddConnection(conn);
+        EXPECT_EQ(vsyncDistributor->RequestNextVSync(conn, "Nors", 0, 1000000000), VSYNC_ERROR_OK);
         EXPECT_EQ(conn->requestVsyncTimestamp_.size(), 0);
+        EXPECT_EQ(vsyncDistributor->RemoveConnection(conn), VSYNC_ERROR_OK);
+        sleep(WAIT_SYSTEM_ABILITY_REPORT_DATA_SECONDS);
     }
-    sleep(WAIT_SYSTEM_ABILITY_REPORT_DATA_SECONDS);
+    vsyncDistributor->isRs_ = isRs;
 }
 
 /*
