@@ -16,6 +16,7 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_MODIFIER_NG_APPEARANCE_RS_COMPOSITING_FILTER_MODIFIER_H
 #define RENDER_SERVICE_CLIENT_CORE_MODIFIER_NG_APPEARANCE_RS_COMPOSITING_FILTER_MODIFIER_H
 
+#include "effect/color_matrix.h"
 #include "modifier_ng/rs_modifier_ng.h"
 
 namespace OHOS::Rosen::ModifierNG {
@@ -49,6 +50,8 @@ public:
     std::shared_ptr<RSFilter> GetFilter() const;
     void SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para);
     std::shared_ptr<RSLinearGradientBlurPara> GetLinearGradientBlurPara() const;
+    void SetColorMatrix(const Drawing::ColorMatrix& colorMatrix);
+    Drawing::ColorMatrix GetColorMatrix() const;
     void SetForegroundBlurRadius(float radius);
     float GetForegroundBlurRadius() const;
     void SetForegroundBlurSaturation(float saturation);

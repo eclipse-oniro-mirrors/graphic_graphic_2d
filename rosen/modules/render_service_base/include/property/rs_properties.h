@@ -28,6 +28,7 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_rect.h"
 #include "common/rs_vector4.h"
+#include "effect/color_matrix.h"
 #include "property/rs_effect_properties.h"
 #include "property/rs_properties_def.h"
 #include "property/rs_spatial_effect_def.h"
@@ -663,6 +664,10 @@ public:
 
     void SetColorBlend(const std::optional<Color>& colorBlend);
     const std::optional<Color>& GetColorBlend() const;
+
+    void SetColorMatrix(
+        const std::optional<Drawing::ColorMatrix>& colorMatrix);
+    const std::optional<Drawing::ColorMatrix>& GetColorMatrix() const;
 
     // Pixel Stretch
     void SetPixelStretch(const std::optional<Vector4f>& stretchSize);

@@ -3946,6 +3946,22 @@ void RSNode::SetColorBlend(uint32_t colorValue)
         colorBlend);
 }
 
+void RSNode::SetColorMatrix(std::optional<Drawing::ColorMatrix> colorMatrix)
+{
+    if (!colorMatrix.has_value()) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::COMPOSITING_FILTER);
+        if (modifier != nullptr) {
+            modifier->DetachProperty(ModifierNG::RSPropertyType::COLOR_MATRIX);
+        }
+        return;
+    }
+    CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+    SetPropertyNG<ModifierNG::RSCompositingFilterModifier,
+        &ModifierNG::RSCompositingFilterModifier::SetColorMatrix>(colorMatrix.value());
+}
+
 void RSNode::SetLightUpEffectDegree(float lightUpEffectDegree)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));

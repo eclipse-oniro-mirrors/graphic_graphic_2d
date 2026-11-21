@@ -265,6 +265,104 @@ HWTEST_F(RSPropertyDrawableForegroundTest, OnSyncTest002, TestSize.Level1)
     EXPECT_FALSE(pixelStretchDrawable->needSync_);
     pixelStretchDrawable->OnSync();
 }
+
+namespace {
+class AlphaRecordPaintFilterCanvas : public RSPaintFilterCanvas {
+public:
+    explicit AlphaRecordPaintFilterCanvas(Drawing::Surface* surface)
+        : RSPaintFilterCanvas(surface) {}
+
+    void SaveLayer(const Drawing::SaveLayerOps& saveLayerOps) override
+    {
+        alphaAtSaveLayer_ = GetAlpha();
+        RSPaintFilterCanvas::SaveLayer(saveLayerOps);
+    }
+
+    // alpha observed by SaveLayer, negative when SaveLayer was not reached
+    float alphaAtSaveLayer_ = -1.0f;
+};
+} // namespace
+
+/**
+ * @tc.name: ColorFilterDrawableColorMatrixTest001
+ * @tc.desc: RSColorFilterDrawable records, syncs and propagates isColorMatrixFilter based on the
+ *           node color matrix property: with a color matrix the flag drives the alpha reset in
+ *           DrawColorFilter through OnDraw, without a color matrix the legacy behaviour is kept,
+ *           and a node without any color filter does not update the drawable at all
+ * @tc.type: FUNC
+ * @tc.require:issueI9SCBR
+ */
+HWTEST_F(RSPropertyDrawableForegroundTest, ColorFilterDrawableColorMatrixTest001, TestSize.Level1)
+{
+    auto surface = Drawing::Surface::MakeRasterN32Premul(10, 10);
+    ASSERT_NE(surface, nullptr);
+
+    // node with color filter + color matrix: flag is recorded, synced and propagated
+    // all the way to DrawColorFilter, resetting the canvas alpha for the SaveLayer call
+    {
+        RSRenderNode node(0);
+        std::shared_ptr<DrawableV2::RSColorFilterDrawable> colorFilterDrawable =
+            std::make_shared<DrawableV2::RSColorFilterDrawable>();
+        ASSERT_NE(colorFilterDrawable, nullptr);
+        std::shared_ptr<Drawing::ColorFilter> colorFilter = std::make_shared<Drawing::ColorFilter>();
+        ASSERT_NE(colorFilter, nullptr);
+        node.renderProperties_.GetEffectProperties().GetFilterEffect().colorFilter_ = colorFilter;
+        node.renderProperties_.SetColorMatrix(Drawing::ColorMatrix());
+
+        EXPECT_TRUE(colorFilterDrawable->OnUpdate(node));
+        EXPECT_TRUE(colorFilterDrawable->needSync_);
+        EXPECT_TRUE(colorFilterDrawable->stagingIsColorMatrixFilter_);
+
+        colorFilterDrawable->OnSync();
+        EXPECT_FALSE(colorFilterDrawable->needSync_);
+        EXPECT_TRUE(colorFilterDrawable->isColorMatrixFilter_);
+
+        AlphaRecordPaintFilterCanvas paintFilterCanvas(surface.get());
+        paintFilterCanvas.SetAlpha(0.5f);
+        colorFilterDrawable->OnDraw(&paintFilterCanvas, nullptr);
+        EXPECT_EQ(paintFilterCanvas.alphaAtSaveLayer_, 1.0f);
+        EXPECT_EQ(paintFilterCanvas.GetAlpha(), 0.5f);
+    }
+
+    // node with color filter but no color matrix: flag stays false, legacy path on OnDraw
+    {
+        RSRenderNode node(0);
+        std::shared_ptr<DrawableV2::RSColorFilterDrawable> colorFilterDrawable =
+            std::make_shared<DrawableV2::RSColorFilterDrawable>();
+        ASSERT_NE(colorFilterDrawable, nullptr);
+        std::shared_ptr<Drawing::ColorFilter> colorFilter = std::make_shared<Drawing::ColorFilter>();
+        ASSERT_NE(colorFilter, nullptr);
+        node.renderProperties_.GetEffectProperties().GetFilterEffect().colorFilter_ = colorFilter;
+
+        EXPECT_TRUE(colorFilterDrawable->OnUpdate(node));
+        EXPECT_FALSE(colorFilterDrawable->stagingIsColorMatrixFilter_);
+
+        colorFilterDrawable->OnSync();
+        EXPECT_FALSE(colorFilterDrawable->isColorMatrixFilter_);
+
+        AlphaRecordPaintFilterCanvas paintFilterCanvas(surface.get());
+        paintFilterCanvas.SetAlpha(0.5f);
+        colorFilterDrawable->OnDraw(&paintFilterCanvas, nullptr);
+        EXPECT_EQ(paintFilterCanvas.alphaAtSaveLayer_, 0.5f);
+        EXPECT_EQ(paintFilterCanvas.GetAlpha(), 0.5f);
+    }
+
+    // color matrix alone does not drive the drawable: no filter means no update, sync is a no-op
+    {
+        RSRenderNode node(0);
+        std::shared_ptr<DrawableV2::RSColorFilterDrawable> colorFilterDrawable =
+            std::make_shared<DrawableV2::RSColorFilterDrawable>();
+        ASSERT_NE(colorFilterDrawable, nullptr);
+        node.renderProperties_.GetEffectProperties().GetFilterEffect().colorFilter_ = nullptr;
+        node.renderProperties_.SetColorMatrix(Drawing::ColorMatrix());
+
+        EXPECT_FALSE(colorFilterDrawable->OnUpdate(node));
+        EXPECT_FALSE(colorFilterDrawable->stagingIsColorMatrixFilter_);
+
+        colorFilterDrawable->OnSync(); // needSync_ not set, sync is a no-op
+        EXPECT_FALSE(colorFilterDrawable->isColorMatrixFilter_);
+    }
+}
 /**
  * @tc.name: OnDrawAndRunTest001
  * @tc.desc: OnDrawAndRun test

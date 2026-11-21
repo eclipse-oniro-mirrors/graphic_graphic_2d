@@ -30,6 +30,7 @@
 #include "common/rs_vector3.h"
 #include "common/rs_vector4.h"
 #include "effect/color_filter.h"
+#include "effect/color_matrix.h"
 #include "property/rs_properties_def.h"
 #include "property/rs_spatial_effect_def.h"
 #include "render/rs_filter.h"
@@ -107,6 +108,7 @@ struct FilterEffectParams {
     std::optional<float> invert_;
     std::optional<float> hueRotate_;
     std::optional<Color> colorBlend_;
+    std::optional<Drawing::ColorMatrix> colorMatrix_;
 
     // pixel stretch
     std::unique_ptr<RSPixelStretchPara> pixelStretchPara_ = nullptr;
@@ -530,6 +532,10 @@ public:
     void SetColorBlend(const std::optional<Color>& colorBlend);
     const std::optional<Color>& GetColorBlend() const;
 
+    // colorMatrix_
+    void SetColorMatrix(const std::optional<Drawing::ColorMatrix>& colorMatrix);
+    const std::optional<Drawing::ColorMatrix>& GetColorMatrix() const;
+
     // pixelStretchPara_
     void SetPixelStretch(const std::optional<Vector4f>& stretchSize);
     void SetPixelStretchPercent(const std::optional<Vector4f>& stretchPercent);
@@ -742,6 +748,7 @@ private:
     void GenerateColorFilterByInvert();
     void GenerateColorFilterByHueRotate();
     void GenerateColorFilterByColorBlend();
+    void GenerateColorFilterByColorMatrix();
 
     // generation helpers split from the top-level generation functions
     void GenerateBackgroundFuzedBlurFilter();

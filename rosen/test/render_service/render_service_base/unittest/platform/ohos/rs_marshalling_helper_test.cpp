@@ -31,6 +31,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_matrix3.h"
 #include "common/rs_vector4.h"
+#include "effect/color_matrix.h"
 #include "effect/shader_effect_lazy.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/rs_draw_cmd.h"
@@ -2978,6 +2979,63 @@ HWTEST_F(RSMarshallingHelperTest, MarshallingMapExceedMaxSizeTest, TestSize.Leve
         val[i] = i;
     }
     EXPECT_FALSE(RSMarshallingHelper::Marshalling(parcel, val));
+}
+
+/**
+ * @tc.name: MarshallingColorMatrix001
+ * @tc.desc: Verify Drawing::ColorMatrix Marshalling succeeds and the written data can be read back
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMarshallingHelperTest, MarshallingColorMatrix001, TestSize.Level1)
+{
+    Parcel parcel;
+    Drawing::ColorMatrix val;
+    Drawing::scalar array[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    array[Drawing::ColorMatrix::SCALE_FACTOR_FOR_R] = 1.0f;
+    array[Drawing::ColorMatrix::SCALE_FACTOR_FOR_G] = 2.0f;
+    array[Drawing::ColorMatrix::SCALE_FACTOR_FOR_B] = 3.0f;
+    array[Drawing::ColorMatrix::SCALE_FACTOR_FOR_A] = 4.0f;
+    val.SetArray(array);
+
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, val));
+
+    Drawing::ColorMatrix readBack;
+    ASSERT_TRUE(RSMarshallingHelper::Unmarshalling(parcel, readBack));
+    Drawing::scalar readArray[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    readBack.GetArray(readArray);
+    for (int i = 0; i < Drawing::ColorMatrix::MATRIX_SIZE; ++i) {
+        EXPECT_FLOAT_EQ(readArray[i], array[i]);
+    }
+}
+
+/**
+ * @tc.name: UnmarshallingColorMatrix001
+ * @tc.desc: Verify Drawing::ColorMatrix Unmarshalling fails on an empty parcel (ReadUnpadBuffer
+ *           returns nullptr) and succeeds on a valid parcel
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMarshallingHelperTest, UnmarshallingColorMatrix001, TestSize.Level1)
+{
+    Drawing::ColorMatrix val;
+
+    // Branch: empty parcel, ReadUnpadBuffer returns nullptr
+    Parcel emptyParcel;
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(emptyParcel, val));
+
+    // Branch: valid parcel, round-trip succeeds
+    Parcel parcel;
+    Drawing::ColorMatrix source;
+    Drawing::scalar array[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    array[Drawing::ColorMatrix::TRANS_FOR_R] = 0.5f;
+    array[Drawing::ColorMatrix::TRANS_FOR_A] = 1.0f;
+    source.SetArray(array);
+    ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, source));
+    EXPECT_TRUE(RSMarshallingHelper::Unmarshalling(parcel, val));
+    Drawing::scalar readArray[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    val.GetArray(readArray);
+    for (int i = 0; i < Drawing::ColorMatrix::MATRIX_SIZE; ++i) {
+        EXPECT_FLOAT_EQ(readArray[i], array[i]);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

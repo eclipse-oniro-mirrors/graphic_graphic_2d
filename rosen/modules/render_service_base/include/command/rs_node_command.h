@@ -18,6 +18,7 @@
 
 #include "command/rs_command_templates.h"
 #include "common/rs_macros.h"
+#include "effect/color_matrix.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
 #include "pipeline/rs_render_node.h"
 
@@ -78,6 +79,7 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_ATLAS_FRAME_INDEX = 0x0133,
     UPDATE_MODIFIER_CLIP_SHAPE = 0x0134,
     UPDATE_MODIFIER_NG_BLENDER_BASE_PTR = 0x0135,
+    UPDATE_MODIFIER_COLOR_MATRIX = 0x0136,
 
     SET_FREEZE = 0x0200,
     SET_DRAW_REGION = 0x0201,
@@ -473,6 +475,10 @@ ADD_COMMAND(RSModifierNGAttachProperty,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, MODIFIER_NG_ATTACH_PROPERTY,
         RSNodeCommandHelper::ModifierNGAttachProperty, NodeId,
         ModifierId, ModifierNG::RSModifierType, ModifierNG::RSPropertyType, std::shared_ptr<RSRenderPropertyBase>))
+ADD_PREFIX_COMMAND(RSUpdatePropertyColorMatrix,
+    ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_COLOR_MATRIX,
+        RSNodeCommandHelper::UpdateProperty<Drawing::ColorMatrix>,
+        NodeId, Drawing::ColorMatrix, PropertyId, PropertyUpdateType))
 ADD_PREFIX_COMMAND(RSUpdatePropertyDrawCmdListNG,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, RS_NODE, UPDATE_MODIFIER_DRAW_CMD_LIST_NG,
         RSNodeCommandHelper::UpdateModifierNGDrawCmdList,

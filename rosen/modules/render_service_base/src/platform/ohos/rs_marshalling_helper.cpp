@@ -1028,6 +1028,35 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::Matrix& val)
     return true;
 }
 
+// Drawing::ColorMatrix
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const Drawing::ColorMatrix& val)
+{
+    Drawing::scalar array[Drawing::ColorMatrix::MATRIX_SIZE];
+    val.GetArray(array);
+    bool ret = parcel.WriteUnpadBuffer(array, sizeof(array));
+    if (!ret) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::ColorMatrix");
+    }
+    return ret;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::ColorMatrix& val)
+{
+    const uint8_t* buff = parcel.ReadUnpadBuffer(sizeof(Drawing::scalar) * Drawing::ColorMatrix::MATRIX_SIZE);
+    if (buff == nullptr) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling Drawing::ColorMatrix");
+        return false;
+    }
+    Drawing::scalar array[Drawing::ColorMatrix::MATRIX_SIZE];
+    auto ret = memcpy_s(array, sizeof(array), buff, sizeof(array));
+    if (ret != EOK) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling Drawing::ColorMatrix memcpy_s");
+        return false;
+    }
+    val.SetArray(array);
+    return true;
+}
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSLinearGradientBlurPara>& val)
 {
     if (!val) {
@@ -3497,7 +3526,8 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)        \
     EXPLICIT_INSTANTIATION(TEMPLATE, DepthCameraPara)                              \
     EXPLICIT_INSTANTIATION(TEMPLATE, DepthLightPara)                              \
-    EXPLICIT_INSTANTIATION(TEMPLATE, AtlasInfo)
+    EXPLICIT_INSTANTIATION(TEMPLATE, AtlasInfo)                                    \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Drawing::ColorMatrix)
 
 BATCH_EXPLICIT_INSTANTIATION(RSRenderProperty)
 

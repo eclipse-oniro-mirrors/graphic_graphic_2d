@@ -58,6 +58,7 @@ class Bitmap;
 class Typeface;
 class ColorSpace;
 class Matrix;
+class ColorMatrix;
 struct SharedTypeface;
 }
 namespace ModifierNG {
@@ -280,6 +281,7 @@ public:
     // skia types
     DECLARE_FUNCTION_OVERLOAD(Drawing::Matrix)
     DECLARE_FUNCTION_OVERLOAD(Drawing::Bitmap)
+    DECLARE_FUNCTION_OVERLOAD(Drawing::ColorMatrix)
     // RS types
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSShader>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSPath>)

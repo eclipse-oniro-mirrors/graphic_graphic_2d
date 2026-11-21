@@ -50,6 +50,8 @@ public:
 
 private:
     bool needSync_ = false;
+    bool isColorMatrixFilter_ = false;
+    bool stagingIsColorMatrixFilter_ = false;
     std::shared_ptr<Drawing::ColorFilter> filter_;
     std::shared_ptr<Drawing::ColorFilter> stagingFilter_;
     std::shared_ptr<RSNGRenderFilterBase> stagingColorNGFilter_;

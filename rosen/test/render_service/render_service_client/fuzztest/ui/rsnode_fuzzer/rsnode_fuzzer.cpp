@@ -289,6 +289,34 @@ void RSNodeFuzzTestInner06(std::shared_ptr<RSSurfaceNode> surfaceNode)
     surfaceNode->MarkLayer(isLayer);
 }
 
+/* Fuzz SetColorMatrix with fuzzed matrix values */
+void RSNodeFuzzTestColorMatrix(std::shared_ptr<RSSurfaceNode> surfaceNode)
+{
+    if (!surfaceNode) {
+        return;
+    }
+    Drawing::scalar matrixData[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    for (auto& value : matrixData) {
+        value = GetData<float>();
+    }
+    Drawing::ColorMatrix colorMatrix;
+    colorMatrix.SetArray(matrixData);
+    surfaceNode->SetColorMatrix(colorMatrix);
+
+    // Fuzz consecutive sets to test overwrite
+    for (auto& value : matrixData) {
+        value = GetData<float>();
+    }
+    colorMatrix.SetArray(matrixData);
+    surfaceNode->SetColorMatrix(colorMatrix);
+
+    // Fuzz with all-zero matrix
+    Drawing::scalar zeroData[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    Drawing::ColorMatrix zeroMatrix;
+    zeroMatrix.SetArray(zeroData);
+    surfaceNode->SetColorMatrix(zeroMatrix);
+}
+
 void RSNodeFuzzTestClipShape(std::shared_ptr<RSCanvasNode> canvasNode)
 {
     if (!canvasNode) {
@@ -410,6 +438,7 @@ bool RSNodeFuzzTest()
     RSNodeFuzzTestInner02(surfaceNode);
     RSNodeFuzzTestInner03(surfaceNode); // Test for MarkLayerPartRender
     RSNodeFuzzTestInner06(surfaceNode); // Test for MarkLayer
+    RSNodeFuzzTestColorMatrix(surfaceNode);
 
     // Fuzz SetClipShape on a canvas node
     auto canvasNode = RSCanvasNode::Create();

@@ -694,6 +694,13 @@ public:
      */
     int GetColorBlendApplyType() const;
 
+    /**
+     * @brief Gets the color matrix.
+     *
+     * @return The color matrix value, all zeros if not set.
+     */
+    Drawing::ColorMatrix GetColorMatrix() const;
+
     TransformPropertyValues GetAllTransformPropertyValues() const;
     /**
      * @brief Generates debugging information.

@@ -310,6 +310,21 @@ const std::optional<float>& RSEffectProperties::GetGrayScale() const
     return defaultValue;
 }
 
+void RSEffectProperties::SetColorMatrix(
+    const std::optional<Drawing::ColorMatrix>& colorMatrix)
+{
+    GetFilterEffect().colorMatrix_ = colorMatrix;
+}
+
+const std::optional<Drawing::ColorMatrix>& RSEffectProperties::GetColorMatrix() const
+{
+    static const RS_HIDDEN std::optional<Drawing::ColorMatrix> defaultValue = std::nullopt;
+    if (filterEffect_ != nullptr) {
+        return filterEffect_->colorMatrix_;
+    }
+    return defaultValue;
+}
+
 void RSEffectProperties::SetBrightness(const std::optional<float>& brightness)
 {
     GetFilterEffect().brightness_ = brightness;
@@ -433,7 +448,7 @@ bool RSEffectProperties::GenerateColorFilter()
 {
     WITH_FILTER_EFFECT(colorFilter_ = nullptr);
     if (!GetGrayScale() && !GetBrightness() && !GetContrast() && !GetSaturate() && !GetSepia() &&
-        !GetInvert() && !GetHueRotate() && !GetColorBlend()) {
+        !GetInvert() && !GetHueRotate() && !GetColorBlend() && !GetColorMatrix().has_value()) {
         return false;
     }
     GenerateColorFilterByGrayScale();
@@ -444,7 +459,20 @@ bool RSEffectProperties::GenerateColorFilter()
     GenerateColorFilterByInvert();
     GenerateColorFilterByHueRotate();
     GenerateColorFilterByColorBlend();
+    GenerateColorFilterByColorMatrix();
     return true;
+}
+
+void RSEffectProperties::GenerateColorFilterByColorMatrix()
+{
+    const auto& colorMatrix = GetColorMatrix();
+    if (!colorMatrix.has_value()) {
+        return;
+    }
+    float matrix[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    colorMatrix->GetArray(matrix);
+    GetFilterEffect().colorFilter_ =
+        Drawing::ColorFilter::CreateFloatColorFilter(matrix, Drawing::Clamp::NO_CLAMP);
 }
 
 void RSEffectProperties::GenerateColorFilterByGrayScale()
