@@ -43,9 +43,14 @@ public:
 
     virtual void OnCopyCachePolicyTo(RenderEffectBase& server) {}
 
-    // Cache policy accessors for SetValue comparison (default: no cache policy)
-    virtual RSFrameCacheLevel GetCacheLevel() const { return RSFrameCacheLevel::NONE; }
-    virtual RSFrameSkipPolicy GetCacheSkipPolicy() const { return {}; }
+    // Copy cache policy from another client-side effect (used by SetValue).
+    // Default no-op; overridden by RSNGShaderBase.
+    virtual void OnCopyCachePolicyFrom(const Derived& other) {}
+
+    // Check if other's staging cache policy differs from this's committed policy.
+    // If true, SetValue returns false to force GetRenderEffect.
+    // Default false (no cache policy); overridden by RSNGShaderBase.
+    virtual bool CachePolicyNeedsSync(const Derived& other) const { return false; }
 
     /**
     * @brief Append a single effect to the end of the current effect chain, enabling all
@@ -165,7 +170,7 @@ public:
                 (res->template Setter<std::decay_t<decltype(args)>>(args.value_->Get()), ...);
             },
             properties_);
-        Base::OnCopyCachePolicyTo(*res);
+        res->OnCopyCachePolicyFrom(*this);
         return res; // Implicit upcast from std::shared_ptr<RSNGEffectTemplate> to std::shared_ptr<Base>.
     }
 
@@ -196,14 +201,9 @@ public:
         if (Base::GetEffectCount() != otherDown->GetEffectCount()) {
             return false;
         }
-        // cache policy changed — force full replacement via GetRenderEffect
-        // so OnCopyCachePolicyTo propagates the new policy to server side
-        if (Base::GetCacheLevel() != other->GetCacheLevel()) {
-            return false;
-        }
-        auto thisPolicy = Base::GetCacheSkipPolicy();
-        auto otherPolicy = other->GetCacheSkipPolicy();
-        if (thisPolicy.mode != otherPolicy.mode || thisPolicy.skipInterval != otherPolicy.skipInterval) {
+        // Cache policy changed since last GetRenderEffect commit — force full
+        // replacement so GetRenderEffect propagates the new policy to server.
+        if (Base::CachePolicyNeedsSync(*otherDown)) {
             return false;
         }
         auto& otherProps = otherDown->GetProperties();
@@ -211,6 +211,8 @@ public:
                 (args.value_->Set(std::get<std::decay_t<decltype(args)>>(otherProps).value_->Get()), ...);
             },
             properties_);
+        // Copy cache policy directly — no comparison, same as properties above.
+        Base::OnCopyCachePolicyFrom(*otherDown);
 
         auto& otherNextEffect = otherDown->nextEffect_;
         if (!Base::nextEffect_ || !Base::nextEffect_->SetValue(otherNextEffect, node, modifier)) {

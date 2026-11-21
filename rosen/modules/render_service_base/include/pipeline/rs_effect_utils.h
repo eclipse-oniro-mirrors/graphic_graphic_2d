@@ -28,6 +28,9 @@ class RSRenderNodeMap;
 
 class RSB_EXPORT RSEffectUtils {
 public:
+    // One-time initialization for visual effect.
+    static void Init();
+
     static bool AccumulateFilterRenderContext(RSRenderNode& node,
         const RSRenderNode& rootNode, FilterRenderContext& context);
 

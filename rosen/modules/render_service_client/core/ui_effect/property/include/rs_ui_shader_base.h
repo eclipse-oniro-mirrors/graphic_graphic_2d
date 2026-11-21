@@ -33,29 +33,43 @@ public:
 
     void EnableCache(RSFrameCacheLevel level, const RSFrameSkipPolicy& skipPolicy)
     {
-        cacheLevel_ = level;
-        skipPolicy_ = skipPolicy;
+        stagingCacheLevel_ = level;
+        stagingSkipPolicy_ = skipPolicy;
         auto current = nextEffect_;
         while (current) {
-            current->cacheLevel_ = level;
-            current->skipPolicy_ = skipPolicy;
+            current->stagingCacheLevel_ = level;
+            current->stagingSkipPolicy_ = skipPolicy;
             current = current->nextEffect_;
         }
     }
 
-    RSFrameCacheLevel GetFrameCacheLevel() const { return cacheLevel_; }
+    RSFrameCacheLevel GetFrameCacheLevel() const { return stagingCacheLevel_; }
 
-    const RSFrameSkipPolicy& GetFrameSkipPolicy() const { return skipPolicy_; }
-
-    RSFrameCacheLevel GetCacheLevel() const override { return cacheLevel_; }
-    RSFrameSkipPolicy GetCacheSkipPolicy() const override { return skipPolicy_; }
+    const RSFrameSkipPolicy& GetFrameSkipPolicy() const { return stagingSkipPolicy_; }
 
     void OnCopyCachePolicyTo(RSNGRenderShaderBase& server) override
     {
-        server.SetCachePolicy(cacheLevel_, skipPolicy_);
+        server.SetCachePolicy(stagingCacheLevel_, stagingSkipPolicy_);
+        cacheLevel_ = stagingCacheLevel_;
+        skipPolicy_ = stagingSkipPolicy_;
+    }
+
+    void OnCopyCachePolicyFrom(const RSNGShaderBase& other) override
+    {
+        stagingCacheLevel_ = other.stagingCacheLevel_;
+        stagingSkipPolicy_ = other.stagingSkipPolicy_;
+    }
+
+    bool CachePolicyNeedsSync(const RSNGShaderBase& other) const override
+    {
+        return other.stagingCacheLevel_ != cacheLevel_ ||
+            other.stagingSkipPolicy_.mode != skipPolicy_.mode ||
+            other.stagingSkipPolicy_.skipInterval != skipPolicy_.skipInterval;
     }
 
 protected:
+    RSFrameCacheLevel stagingCacheLevel_ = RSFrameCacheLevel::NONE;
+    RSFrameSkipPolicy stagingSkipPolicy_ {};
     RSFrameCacheLevel cacheLevel_ = RSFrameCacheLevel::NONE;
     RSFrameSkipPolicy skipPolicy_ {};
 };

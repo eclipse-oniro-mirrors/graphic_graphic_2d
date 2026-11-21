@@ -89,6 +89,7 @@
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
+#include "pipeline/rs_effect_utils.h"
 #include "feature/pointer_window_manager/rs_pointer_window_manager.h"
 #include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display.h"
@@ -819,6 +820,7 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
         std::bind(&RSMainThread::ColorPickerNoticedNodeDirtyCallback, this, std::placeholders::_1));
     RSColorPickerThread::Instance().RegisterNotifyClientCallback(
         std::bind(&RSMainThread::SendColorPickerCallback, this, std::placeholders::_1, std::placeholders::_2));
+    RSEffectUtils::Init();
     rsVsyncManagerAgent_ = rsVsyncManagerAgent;
     if (isUniRender_) {
         unmarshalBarrierTask_ = [this]() {

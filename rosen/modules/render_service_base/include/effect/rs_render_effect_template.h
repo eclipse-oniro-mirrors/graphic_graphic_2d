@@ -303,7 +303,7 @@ public:
             return false;
         }
         auto current = this;
-        for (uint8_t i = 0; i < count && current; i++) {
+        for (uint32_t i = 0; i < count && current; i++) {
             uint32_t flags = current->GetTrailerFlags();
             if (!RSMarshallingHelper::Marshalling(parcel, flags)) {
                 return false;
@@ -316,23 +316,28 @@ public:
         return true;
     }
 
-    void UnmarshalTrailers(Parcel& parcel)
+    [[nodiscard]] bool UnmarshalTrailers(Parcel& parcel)
     {
-        uint8_t count = 0;
+        uint32_t count = 0;
         if (!RSMarshallingHelper::Unmarshalling(parcel, count)) {
-            return;
+            return false;
         }
         auto current = this;
-        for (uint8_t i = 0; i < count && current; i++) {
+        for (uint32_t i = 0; i < count && current; i++) {
             uint32_t flags = 0;
             if (!RSMarshallingHelper::Unmarshalling(parcel, flags)) {
-                break;
+                return false;
+            }
+            // Reject unknown trailer flags to avoid silent data corruption
+            if (flags & ~TRAILER_FLAGS_SUPPORTED) {
+                return false;
             }
             if (!current->OnUnmarshalTrailerData(parcel, flags)) {
-                break;
+                return false;
             }
             current = current->GetNext().get();
         }
+        return true;
     }
 
     bool ContainsType(RSNGEffectType type)

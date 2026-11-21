@@ -199,12 +199,16 @@ std::shared_ptr<RSNGRenderShaderBase> RSNGRenderShaderBase::Create(RSNGEffectTyp
 
         if (type == END_OF_EFFECTS) {
             val = head;
-            if (head) {
-                head->UnmarshalTrailers(parcel);
+            bool trailerFailed = head && !head->UnmarshalTrailers(parcel);
+            if (trailerFailed) {
+                ROSEN_LOGE("RSNGRenderShaderBase: UnmarshalTrailers failed");
+                return false;
             }
             // Consume final END_OF_CHAIN terminator
             RSNGEffectTypeUnderlying terminator = 0;
-            if (!RSMarshallingHelper::Unmarshalling(parcel, terminator) || terminator != END_OF_CHAIN) {
+            bool terminatorInvalid = !RSMarshallingHelper::Unmarshalling(parcel, terminator) ||
+                terminator != END_OF_CHAIN;
+            if (terminatorInvalid) {
                 ROSEN_LOGE("RSNGRenderShaderBase: expected END_OF_CHAIN after trailers, got %{public}d",
                     terminator);
                 return false;
@@ -236,17 +240,51 @@ void RSNGRenderShaderBase::ApplyCacheConfigToGEContainer(
     if (!ge) {
         return;
     }
-    if (cacheLevel_ == RSFrameCacheLevel::NONE) {
-        // Clear stale cache from a previous shader in the same slot
-        ge->GetCacheStore().ApplyCachePolicy(GEFrameCacheLevel::NONE, {}, ge->GetFilterTypes());
+    // Traverse chain: determine container-level policy and collect per-effect policies.
+    // - If any effect has CONTAINER → use CONTAINER with that effect's skip policy
+    // - If all effects are NONE → disable cache entirely
+    // - Otherwise → PER_EFFECT, each effect keeps its own skip policy
+    bool hasContainer = false;
+    bool hasAnyCache = false;
+    GEFrameSkipPolicy containerPolicy {};
+    std::vector<GEFrameSkipPolicy> perEffectPolicies;
+
+    const auto* current = this;
+    while (current) {
+        if (current->cacheLevel_ != RSFrameCacheLevel::NONE) {
+            hasAnyCache = true;
+            GEFrameSkipPolicy policy {
+                static_cast<GEFrameSkipMode>(static_cast<int32_t>(current->skipPolicy_.mode)),
+                current->skipPolicy_.skipInterval
+            };
+            perEffectPolicies.push_back(policy);
+            if (current->cacheLevel_ == RSFrameCacheLevel::CONTAINER) {
+                hasContainer = true;
+                containerPolicy = policy;
+            }
+        } else {
+            perEffectPolicies.push_back({});
+        }
+        current = current->nextEffect_.get();
+    }
+
+    if (!hasAnyCache) {
+        ge->RemoveCacheStore();
         return;
     }
-    auto geLevel = static_cast<GEFrameCacheLevel>(static_cast<int32_t>(cacheLevel_));
-    GEFrameSkipPolicy geSkipPolicy {
-        static_cast<GEFrameSkipMode>(static_cast<int32_t>(skipPolicy_.mode)),
-        skipPolicy_.skipInterval
-    };
-    ge->GetCacheStore().ApplyCachePolicy(geLevel, geSkipPolicy, ge->GetFilterTypes());
+    auto& store = ge->EnsureCacheStore();
+    if (hasContainer) {
+        store.ApplyCachePolicy(GEFrameCacheLevel::CONTAINER, containerPolicy,
+            ge->GetFilterTypes());
+        return;
+    }
+    // PER_EFFECT: set container policy to PER_EFFECT, then set each effect's own skip policy
+    store.ApplyCachePolicy(GEFrameCacheLevel::PER_EFFECT, {}, ge->GetFilterTypes());
+    const auto& filterTypes = ge->GetFilterTypes();
+    for (size_t i = 0; i < filterTypes.size() && i < perEffectPolicies.size(); i++) {
+        store.SetEffectSkipPolicy(
+            GEFrameCacheStore::MakeEffectKey(filterTypes[i], i), perEffectPolicies[i]);
+    }
 }
 
 bool RSNGRenderShaderHelper::CheckEnableEDR(std::shared_ptr<RSNGRenderShaderBase>& shader)

@@ -120,11 +120,17 @@ void RSShaderDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect
         return;
     }
     visualEffectContainer_->UpdateCornerRadius(cornerRadius_);
+    auto* paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
     // Dark scale drives the frosted glass dark-mode parameter interpolation (no-op for other
     // filters); the R channel of the picked surface contrast color encodes the dark fraction.
-    auto color = static_cast<RSPaintFilterCanvas*>(canvas)->GetColorPicked(ColorPlaceholder::SURFACE_CONTRAST);
+    auto color = paintFilterCanvas->GetColorPicked(ColorPlaceholder::SURFACE_CONTRAST);
     constexpr float COLOR_MAX = 255.0f;
     visualEffectContainer_->UpdateDarkScale(static_cast<float>(Drawing::Color::ColorQuadGetR(color)) / COLOR_MAX);
+    auto cacheStore = visualEffectContainer_->GetCacheStore();
+    if (cacheStore) {
+        cacheStore->MarkCacheIncompatible(
+            paintFilterCanvas->GetAlpha() != 1.0f || paintFilterCanvas->GetBlender() != nullptr);
+    }
     RSTagTracker tag(canvas->GetGPUContext(), RSTagTracker::TAGTYPE::TAG_SHADER_CACHE);
     geRender->DrawShaderEffect(*canvas, *visualEffectContainer_, drawRect);
 }

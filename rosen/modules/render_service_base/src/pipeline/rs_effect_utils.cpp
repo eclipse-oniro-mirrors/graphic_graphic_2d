@@ -18,12 +18,37 @@
 #include "common/rs_optional_trace.h"
 #include "drawable/rs_property_drawable.h"
 #include "feature/filter_cache_manager/rs_filter_cache_manager.h"
+#include "ge_shader_cache.h"
 #include "pipeline/rs_effect_render_node.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node_map.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
+
+// Called from RSMainThread::Init during startup. Keep lightweight to
+// avoid impacting boot time.
+void RSEffectUtils::Init()
+{
+    GEShaderCache::SetOffscreenCanvasCreator(
+        [](Drawing::Canvas& canvas, int32_t width, int32_t height) -> OffscreenCanvas {
+            auto surface = canvas.GetSurface();
+            if (!surface) {
+                RS_LOGE("OffscreenCanvasCreator surface is nullptr");
+                return {};
+            }
+            auto offscreenSurface = surface->MakeSurface(width, height);
+            if (!offscreenSurface) {
+                RS_LOGE("OffscreenCanvasCreator make surface failed, "
+                    "width:%{public}d, height: %{public}d", width, height);
+                return {};
+            }
+            auto offCanvas = std::make_shared<RSPaintFilterCanvas>(offscreenSurface.get());
+            return { offscreenSurface, offCanvas };
+        });
+}
+
 bool RSEffectUtils::AccumulateFilterRenderContext(RSRenderNode& node, const RSRenderNode& rootNode,
     FilterRenderContext& context)
 {

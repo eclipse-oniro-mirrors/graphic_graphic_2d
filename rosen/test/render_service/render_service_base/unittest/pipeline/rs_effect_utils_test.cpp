@@ -22,10 +22,12 @@
 #include "drawable/rs_property_drawable.h"
 #include "feature/filter_cache_manager/rs_filter_cache_manager.h"
 #include "feature/filter_cache_manager/rs_cache_update_manager.h"
+#include "pipeline/ge_shader_cache.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_effect_utils.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
 
 using namespace testing;
@@ -489,6 +491,78 @@ HWTEST_F(RSEffectUtilsTest, UpdateSurfaceFilterRate004, TestSize.Level1)
 
     nodeMap.UnregisterRenderNode(nodeId);
     nodeMap.surfaceNodeMap_.erase(nullEntryId);
+}
+
+/**
+ * @tc.name: Init_RegistersCreator
+ * @tc.desc: Verify Init registers a non-empty offscreen canvas creator in GEShaderCache
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectUtilsTest, Init_RegistersCreator, TestSize.Level1)
+{
+    GEShaderCache::SetOffscreenCanvasCreator(nullptr);
+    EXPECT_FALSE(GEShaderCache::offscreenCanvasCreator_);
+    RSEffectUtils::Init();
+    EXPECT_TRUE(GEShaderCache::offscreenCanvasCreator_);
+}
+
+/**
+ * @tc.name: Init_Creator_NoSurface_ReturnsNull
+ * @tc.desc: Verify the registered creator returns empty result when canvas has no surface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectUtilsTest, Init_Creator_NoSurface_ReturnsNull, TestSize.Level1)
+{
+    RSEffectUtils::Init();
+    ASSERT_TRUE(GEShaderCache::offscreenCanvasCreator_);
+
+    Drawing::Canvas canvas(100, 100);
+    EXPECT_EQ(canvas.GetSurface(), nullptr);
+
+    auto result = GEShaderCache::offscreenCanvasCreator_(canvas, 50, 50);
+    EXPECT_FALSE(result.surface);
+    EXPECT_FALSE(result.canvas);
+}
+
+/**
+ * @tc.name: Init_Creator_ZeroDimensions_ReturnsNull
+ * @tc.desc: Verify the registered creator returns empty result when MakeSurface(0,0) fails on a surface with no backend
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectUtilsTest, Init_Creator_ZeroDimensions_ReturnsNull, TestSize.Level1)
+{
+    RSEffectUtils::Init();
+    ASSERT_TRUE(GEShaderCache::offscreenCanvasCreator_);
+
+    Drawing::Canvas canvas(100, 100);
+    Drawing::Surface surface;
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    paintFilterCanvas.surface_ = &surface;
+    ASSERT_NE(paintFilterCanvas.GetSurface(), nullptr);
+
+    auto result = GEShaderCache::offscreenCanvasCreator_(paintFilterCanvas, 0, 0);
+    EXPECT_FALSE(result.surface);
+    EXPECT_FALSE(result.canvas);
+}
+
+/**
+ * @tc.name: Init_Creator_ValidSurface_ReturnsCanvas
+ * @tc.desc: Verify the registered creator returns both surface and canvas when MakeSurface succeeds
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectUtilsTest, Init_Creator_ValidSurface_ReturnsCanvas, TestSize.Level1)
+{
+    RSEffectUtils::Init();
+    ASSERT_TRUE(GEShaderCache::offscreenCanvasCreator_);
+
+    auto surface = Drawing::Surface::MakeRasterN32Premul(200, 200);
+    ASSERT_NE(surface, nullptr);
+    RSPaintFilterCanvas paintFilterCanvas(surface.get());
+    ASSERT_NE(paintFilterCanvas.GetSurface(), nullptr);
+
+    auto result = GEShaderCache::offscreenCanvasCreator_(paintFilterCanvas, 100, 100);
+    EXPECT_NE(result.surface, nullptr);
+    EXPECT_NE(result.canvas, nullptr);
 }
 } // namespace Rosen
 } // namespace OHOS
