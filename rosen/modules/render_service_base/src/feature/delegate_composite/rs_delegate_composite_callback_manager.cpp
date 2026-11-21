@@ -18,6 +18,8 @@
 #include <string>
 #include "buffer_extra_data_impl.h"
 #include "command/rs_delegate_composite_command.h"
+#include "command/rs_surface_node_command.h"
+#include "command/rs_node_command.h"
 #include "common/rs_optional_trace.h"
 #include "platform/common/rs_log.h"
 #include "transaction/rs_buffer_transaction.h"
@@ -411,16 +413,23 @@ void RsDelegateCompositeCallbackManager::GetSurfaceTransactionCmdInfoLocked(
     surfaceTransactionCmdMap_.swap(surfaceTransactionCmdInfoMap);
 }
 
-bool RsDelegateCompositeCallbackManager::QueryAndResetCommandProcessFlag()
+void RsDelegateCompositeCallbackManager::QueryAndResetCommandProcessFlag(bool& hasCommandProcess,
+    bool& doDirectCompositionSupport)
 {
-    bool ret = hasCommandProcess_;
+    hasCommandProcess = hasCommandProcess_;
+    doDirectCompositionSupport = doDirectCompositionSupportByCmd_;
+
     hasCommandProcess_ = false;
-    return ret;
+    doDirectCompositionSupportByCmd_ = false;
 }
 
 bool RsDelegateCompositeCallbackManager::ProcessDelegateCompositeCommand(RSContext& context)
 {
     hasCommandProcess_ = false;
+    doDirectCompositionSupportByCmd_ = false;
+    doDirectCompositionSupportByHwcEnable_ = std::nullopt;
+    context.SetOnlyDelegateModeSetBufferCmdFlag(false);
+    needCollectHwcNodesInfoFlag_ = false;
     std::unordered_map<pid_t, singlePidCmdMap> allPidProcessCmdMap;
     bool ret = false;
     {
@@ -456,32 +465,32 @@ bool RsDelegateCompositeCallbackManager::ProcessDelegateCompositeCommand(RSConte
             ret = true;
         }
     }
-    RS_TRACE_NAME_FMT("ProcessDelegateCompositeCommand: allPidProcessCmdMap size=%u", allPidProcessCmdMap.size());
-    for (auto it1 = allPidProcessCmdMap.begin(); it1 != allPidProcessCmdMap.end(); ++it1) {
-        auto &sendingPid = it1->first;
-        auto &sendingPidCmdMap = it1->second;
-        for (auto it2 = sendingPidCmdMap.begin(); it2 != sendingPidCmdMap.end(); ++it2) {
-            auto &index = it2->first;
-            auto &cmdqueue = it2->second;
-            RS_TRACE_NAME_FMT("ProcessDelegateCompositeCommand: [%d,%" PRIu64 "], cmdNums=%u",
-                sendingPid, index, cmdqueue.size());
-            ProcessEachCommandQueue(cmdqueue, context);
-        }
-    }
+    ProcessDelegateCompositeCommandInner(context, allPidProcessCmdMap);
     return ret;
 }
 
 void RsDelegateCompositeCallbackManager::ProcessEachCommandQueue(std::queue<std::unique_ptr<RSCommand>> &cmdqueue,
-    RSContext& context)
+    RSContext& context, bool& isSetBufferCmdOnly, bool& doDirectCompositionSupportByCmd)
 {
+    auto& nodeMap = context.GetNodeMap();
+    uint16_t cmdType = UINT16_MAX;
+    uint16_t cmdSubType = UINT16_MAX;
+    NodeId nodeId = INVALID_NODEID;
     while (!cmdqueue.empty()) {
         std::unique_ptr<RSCommand> cmd = std::move(cmdqueue.front());
         cmdqueue.pop();
         if (cmd && cmd->IsCallingPidValid()) {
+            GetRSCommandInfo(cmd, cmdType, cmdSubType, nodeId, isSetBufferCmdOnly);
+            RS_TRACE_NAME_FMT("ProcessDelegateCompositeCommand: nodeId=%" PRIu64 ", cmdType=%d(%x), cmdSubType=%d(%x)",
+                nodeId, cmdType, cmdType, cmdSubType, cmdSubType);
             cmd->Process(context);
             hasCommandProcess_ = true;
+            doDirectCompositionSupportByCmd = IsDoDirectCompositionSupportByCmd(
+                cmdType, cmdSubType, nodeMap.GetRenderNode<RSRenderNode>(nodeId)) && doDirectCompositionSupportByCmd;
         }
     }
+    RS_TRACE_NAME_FMT("isSetBufferCmdOnly=%d, doDirectCompositionSupportByCmd=%d",
+        isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
 }
 
 void RsDelegateCompositeCallbackManager::PrepareDelegateCompositeCommand(
@@ -602,7 +611,7 @@ bool RsDelegateCompositeCallbackManager::CheckIsDelegateCompositeOnly(
     if (iter == surfaceTransactionIdentityInfoMap_.end()) {
         return false;
     }
-    return true;
+    return doDirectCompositionSupportByCmd_;
 }
 
 void RsDelegateCompositeCallbackManager::UnRegisterSurfaceNodeBufferReleaseListener(pid_t pid)
@@ -754,8 +763,9 @@ bool RsDelegateCompositeCallbackManager::CleanDelegateCompositeCommand(uint64_t 
 
     auto &cmdMap = it1->second;
     for (auto it2 = cmdMap.begin(); it2 != cmdMap.end(); ++it2) {
+        auto &index = it2->first;
         auto &cmdqueue = it2->second;
-        RS_TRACE_NAME_FMT("find: pid=%d, token=%" PRIu64 ", nodeId=%" PRIu64, pid, token, nodeId);
+        RS_TRACE_NAME_FMT("find: [%d,%" PRIu64 "], token=%" PRIu64 ", nodeId=%" PRIu64, pid, index, token, nodeId);
         CleanDelegateCompositeCommandInner(nodeId, cmdqueue);
     }
     return true;
@@ -776,11 +786,13 @@ void RsDelegateCompositeCallbackManager::CleanDelegateCompositeCommandInner(Node
         if (!cmd) {
             continue;
         }
+        auto type = cmd->GetType();
+        auto subType = cmd->GetSubType();
         if (cmd->GetNodeId() == nodeId &&
-            !(cmd->GetType() == RSCommandType::DELEGATE_COMPOSITE &&
-            cmd->GetSubType() == RSDelegateCompositeCommandType::SURFACE_TRANSACTION_CMD)) {
-            RS_TRACE_NAME_FMT("cmd: NodeId=%" PRIu64 ", type=%u, subtype=%u, can clean",
-                cmd->GetNodeId(), cmd->GetType(), cmd->GetSubType());
+            !(type == RSCommandType::DELEGATE_COMPOSITE &&
+            subType == RSDelegateCompositeCommandType::SURFACE_TRANSACTION_CMD)) {
+            RS_TRACE_NAME_FMT("cmd: NodeId=%" PRIu64 ", type=%u(%x), subtype=%u(%x), can clean",
+                nodeId, type, type, subType, subType);
             continue;
         }
         unmatchedQueue.push(std::move(cmd));
@@ -818,6 +830,130 @@ void RsDelegateCompositeCallbackManager::UpdateHardWareForcedDisabledStateForDel
             hwcNodePtr->SetHardwareForcedDisabledState(true);
         }
     }
+}
+
+bool RsDelegateCompositeCallbackManager::IsDoDirectCompositionSupportByCmd(
+    uint16_t cmdType, uint16_t cmdSubType, std::shared_ptr<RSRenderNode> node)
+{
+    bool ret = false;
+    if (cmdType == RSCommandType::DELEGATE_COMPOSITE) {
+        ret = true;
+    } else if (cmdType == RSCommandType::SURFACE_NODE) {
+        ret = (cmdSubType == RSSurfaceNodeCommandType::SURFACE_NODE_UPDATE_SURFACE_SIZE);
+    } else if (cmdType == RSCommandType::RS_NODE) {
+        ret = CheckRSNodeCommandSubType(cmdSubType, node);
+    }
+    RS_TRACE_NAME_FMT("doDirectCompositionSupport=%d, cmdType=%u(%x), cmdSubType=%u(%x)",
+        ret, cmdType, cmdType, cmdSubType, cmdSubType);
+    return ret;
+}
+
+bool RsDelegateCompositeCallbackManager::CheckRSNodeCommandSubType(uint16_t cmdSubType,
+    std::shared_ptr<RSRenderNode> node)
+{
+    bool ret = false;
+    size_t setSize = 0;
+    if (cmdSubType == RSNodeCommandType::ADD_MODIFIER_NG ||
+        cmdSubType == RSNodeCommandType::REMOVE_MODIFIER_NG ||
+        cmdSubType == RSNodeCommandType::UPDATE_MODIFIER_VECTOR4F) {
+        if (!node) {
+            return ret;
+        }
+
+        auto dirtyTypes = node->GetDirtyTypes();
+        setSize = dirtyTypes.count();
+        if (setSize == 1) { // if size is 1, it must be BOUNDS or TRANSFORM
+            ret = dirtyTypes.test(static_cast<size_t>(ModifierNG::RSModifierType::BOUNDS)) ||
+                dirtyTypes.test(static_cast<size_t>(ModifierNG::RSModifierType::TRANSFORM));
+        } else if (setSize == 2) { // if size is 2, it must be BOUNDS and TRANSFORM
+            ret = dirtyTypes.test(static_cast<size_t>(ModifierNG::RSModifierType::BOUNDS)) &&
+                dirtyTypes.test(static_cast<size_t>(ModifierNG::RSModifierType::TRANSFORM));
+        }
+    }
+    return ret;
+}
+
+void RsDelegateCompositeCallbackManager::GetRSCommandInfo(std::unique_ptr<RSCommand>& cmd, uint16_t& cmdType,
+    uint16_t& cmdSubType, NodeId& nodeId, bool& isSetBufferCmdOnly)
+{
+    cmdType = cmd->GetType();
+    cmdSubType = cmd->GetSubType();
+    nodeId = cmd->GetNodeId();
+
+    if (isSetBufferCmdOnly) {
+        isSetBufferCmdOnly = cmdType == RSCommandType::DELEGATE_COMPOSITE &&
+            (cmdSubType == RSDelegateCompositeCommandType::TRANSACTION_BUFFER ||
+            cmdSubType == RSDelegateCompositeCommandType::SURFACE_TRANSACTION_CMD);
+    }
+    hasCommandProcess_ = true;
+}
+
+void RsDelegateCompositeCallbackManager::SetCollectHwcNodesInfoFlag(bool rsMainThdFlag)
+{
+    needCollectHwcNodesInfoFlag_ = rsMainThdFlag;
+}
+
+void RsDelegateCompositeCallbackManager::CollectHwcNodesHardwareForcedDisabledInfo(
+    std::shared_ptr<RSScreenRenderNode> screenNode)
+{
+    if (!needCollectHwcNodesInfoFlag_ || !screenNode) {
+        return;
+    }
+
+    if (doDirectCompositionSupportByHwcEnable_.has_value() && !doDirectCompositionSupportByHwcEnable_.value()) {
+        RS_TRACE_NAME("doDirectCompositionSupportByHwcEnable is false");
+        return;
+    }
+    const auto& hwcNodes = screenNode->GetChildHwcNodes();
+    RS_TRACE_NAME("CollectHwcNodesHardwareForcedDisabledInfo");
+    for (const auto& hwcNodeWeak : hwcNodes) {
+        auto hwcNode = hwcNodeWeak.lock();
+        if (!hwcNode || !hwcNode->IsOnTheTree()) {
+            continue;
+        }
+
+        auto surfaceHandler = hwcNode->GetRSSurfaceHandler();
+        if (!surfaceHandler || !surfaceHandler->GetBuffer()) {
+            continue;
+        }
+        RS_OPTIONAL_TRACE_FMT("name=%s, nodeId=%" PRIu64 ", hwcForcedDisable=%d, currentBufferConsumed=%d",
+            hwcNode->GetName().c_str(), hwcNode->GetId(), hwcNode->IsHardwareForcedDisabled(),
+            surfaceHandler->IsCurrentFrameBufferConsumed());
+        doDirectCompositionSupportByHwcEnable_ = true;
+        if (hwcNode->IsHardwareForcedDisabled() &&
+            (surfaceHandler->IsCurrentFrameBufferConsumed() || hwcNode->GetIsLastFrameHwcEnabled())) {
+            doDirectCompositionSupportByHwcEnable_ = false;
+            RS_OPTIONAL_TRACE_FMT("name=%s, nodeId=%" PRIu64 " is unsupport",
+                hwcNode->GetName().c_str(), hwcNode->GetId());
+            break;
+        }
+    }
+}
+
+std::optional<bool> RsDelegateCompositeCallbackManager::GetDoDirectCompositionSupportByHwcEnable()
+{
+    return doDirectCompositionSupportByHwcEnable_;
+}
+
+void RsDelegateCompositeCallbackManager::ProcessDelegateCompositeCommandInner(RSContext& context,
+    std::unordered_map<pid_t, singlePidCmdMap> &allPidProcessCmdMap)
+{
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RS_TRACE_NAME_FMT("ProcessDelegateCompositeCommand: allPidProcessCmdMap size=%u", allPidProcessCmdMap.size());
+    for (auto it1 = allPidProcessCmdMap.begin(); it1 != allPidProcessCmdMap.end(); ++it1) {
+        auto &sendingPid = it1->first;
+        auto &sendingPidCmdMap = it1->second;
+        for (auto it2 = sendingPidCmdMap.begin(); it2 != sendingPidCmdMap.end(); ++it2) {
+            auto &index = it2->first;
+            auto &cmdqueue = it2->second;
+            RS_TRACE_NAME_FMT("ProcessDelegateCompositeCommand: [%d,%" PRIu64 "], cmdNums=%u",
+                sendingPid, index, cmdqueue.size());
+            ProcessEachCommandQueue(cmdqueue, context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+        }
+    }
+    context.SetOnlyDelegateModeSetBufferCmdFlag(isSetBufferCmdOnly);
+    doDirectCompositionSupportByCmd_ = doDirectCompositionSupportByCmd;
 }
 } // namespace Rosen
 } // namespace OHOS

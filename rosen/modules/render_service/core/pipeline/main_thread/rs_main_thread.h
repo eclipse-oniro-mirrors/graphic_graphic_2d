@@ -685,11 +685,10 @@ private:
 
     bool UpdateDoDirectCompositionFlagForDelegateMode(std::shared_ptr<TransactionDataMap>& transactionDataEffective);
     bool UpdateDoDirectCompositionFlagForDelegateMode(std::unique_ptr<RSTransactionData>& transactionData);
-    void UpdateNodeInfoForDelegateMode(const int64_t &rsNodeId, const std::shared_ptr<RSNodeVisitor>& uniVisitor,
-        std::set<NodeId>& quickPrepareNodeIds);
-    void TraverseNodeForDelegateMode();
-    void UpdateZorderForDelegateMode();
     void ProcessDelegateCompositeCommand();
+    void DoDirectCompositionForDelegateModeIfNeed(std::shared_ptr<RSBaseRenderNode>& rootNode);
+    void UpdateWillGoDirectCompositionFlag(bool& willGoDirectComposition, bool& delegateModeSupport);
+    void UpdateDirectCompositionFlagForDelegateMode();
 
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
     bool needWaitUnmarshalFinished_ = true;

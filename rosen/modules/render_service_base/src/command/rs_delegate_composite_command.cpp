@@ -334,7 +334,6 @@ void TransactionBufferCommand::ProcessCmdTypeSetRect(RSContext& context)
         return;
     }
     auto& nodeMap = context.GetNodeMap();
-    auto& webNodeIds = context.GetWebNodeMap();
     if (auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(
         nodeMap.GetRenderNode<RSRenderNode>(nodeId_))) {
         if (isSrcRect_) {
@@ -342,7 +341,6 @@ void TransactionBufferCommand::ProcessCmdTypeSetRect(RSContext& context)
         } else {
             node->SetDelegateDstRect(rect_);
         }
-        webNodeIds.emplace(nodeId_);
     } else {
         ROSEN_LOGE("DelegateModeDebugTag: ProcessCmdTypeSetRect fail: node(id:%{public}" PRIu64 ") not find", nodeId_);
     }

@@ -919,6 +919,9 @@ void RSUniRenderVisitor::QuickPrepareScreenRenderNode(RSScreenRenderNode& node, 
     curScreenNode_->ResetMirroredScreenChangedFlag();
     PrepareForMultiScreenViewDisplayNode(node);
     node.ResetDirtyFlag();
+#if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
+    RsDelegateCompositeCallbackManager::GetInstance().CollectHwcNodesHardwareForcedDisabledInfo(curScreenNode_);
+#endif
     RS_TRACE_NAME_FMT("RSUniRenderVisitor::QuickPrepareScreenRenderNode childNumber: %d", rsScreenNodeChildNum_);
     if (UNLIKELY(RSFrameStatsCollection::IsLevelAtLeast(FrameStatsLevel::Full))) {
         RSFrameStatsCollection::GetInstance().IncrementBySurfaceNode(
@@ -5135,14 +5138,6 @@ RSUniRenderVisitor::RotationStatus RSUniRenderVisitor::GetRotationStatus() const
     bool rotationStatusChanged = curLogicalDisplayNode_ ?
         curLogicalDisplayNode_->GetPreRotationStatus() != curLogicalDisplayNode_->GetCurRotationStatus() : false;
     return {rotationChanged, rotationStatusChanged};
-}
-
-bool RSUniRenderVisitor::InitForDelegateMode(RSScreenRenderNode& node, std::shared_ptr<RSBaseRenderEngine> renderEngine)
-{
-    renderEngine_ = renderEngine;
-    const ScreenInfo& info = node.GetScreenInfo();
-    prepareClipRect_ = {0, 0, info.phyWidth, info.phyHeight};
-    return InitScreenInfo(node);
 }
 
 void RSUniRenderVisitor::GetScreenRotation(RSScreenRenderNode& node)

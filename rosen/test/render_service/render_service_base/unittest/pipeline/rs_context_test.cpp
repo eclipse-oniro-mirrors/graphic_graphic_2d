@@ -484,4 +484,18 @@ HWTEST_F(RSContextTest, GetAndClearDirtyDisplayNodesTest001, TestSize.Level1)
     EXPECT_TRUE(second.empty());
 }
 
+/**
+ * @tc.name: OnlyDelegateModeSetBufferCmdFlag001
+ * @tc.desc: verify the only delegate mode set buffer cmd flag setter and getter
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSContextTest, OnlyDelegateModeSetBufferCmdFlag001, TestSize.Level1)
+{
+    RSContext context;
+    EXPECT_FALSE(context.GetOnlyDelegateModeSetBufferCmdFlag());
+    context.SetOnlyDelegateModeSetBufferCmdFlag(true);
+    EXPECT_TRUE(context.GetOnlyDelegateModeSetBufferCmdFlag());
+    context.SetOnlyDelegateModeSetBufferCmdFlag(false);
+    EXPECT_FALSE(context.GetOnlyDelegateModeSetBufferCmdFlag());
+}
 } // namespace OHOS::Rosen
