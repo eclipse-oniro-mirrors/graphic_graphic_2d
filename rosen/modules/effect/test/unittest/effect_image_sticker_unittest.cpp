@@ -415,5 +415,199 @@ HWTEST_F(EffectImageStickerUnittest, StickerLaserShaderSweepsFrequencyAndProgres
     }
 }
 
+/**
+ * @tc.name: StickerEmbossGuardBranches
+ * @tc.desc: Traverse every reachable guard branch of EffectImageChain::ApplyStickerEmboss
+ */
+HWTEST_F(EffectImageStickerUnittest, StickerEmbossGuardBranches, TestSize.Level1)
+{
+    // Only guards reachable from public inputs and member state are covered here;
+    // the make_shared null checks cannot be triggered in a valid process.
+    {
+        EffectImageChain chain;
+        EXPECT_EQ(chain.ApplyStickerEmboss(MakeEmbossParams()), DrawingError::ERR_NOT_PREPARED);
+    }
+
+    {
+        EffectImageChain chain;
+        chain.prepared_ = true;
+        chain.forceCPU_ = true;
+        EXPECT_EQ(chain.ApplyStickerEmboss(MakeEmbossParams()), DrawingError::ERR_ILLEGAL_INPUT);
+    }
+
+    {
+        auto pixelMap = MakePixelMap();
+        ASSERT_NE(pixelMap, nullptr);
+        EffectImageChain chain;
+        ASSERT_EQ(chain.Prepare(pixelMap, false), DrawingError::ERR_OK);
+        EXPECT_EQ(chain.ApplyStickerEmboss(nullptr), DrawingError::ERR_ILLEGAL_INPUT);
+    }
+
+    {
+        auto pixelMap = MakePixelMap();
+        ASSERT_NE(pixelMap, nullptr);
+        EffectImageChain chain;
+        ASSERT_EQ(chain.Prepare(pixelMap, false), DrawingError::ERR_OK);
+        auto blurFilter = Drawing::ImageFilter::CreateBlurImageFilter(1, 1, Drawing::TileMode::DECAL, nullptr);
+        ASSERT_NE(blurFilter, nullptr);
+        ASSERT_EQ(chain.ApplyDrawingFilter(blurFilter), DrawingError::ERR_OK);
+        ASSERT_NE(chain.filters_, nullptr);
+        auto ret = chain.ApplyStickerEmboss(MakeEmbossParams());
+        EXPECT_NE(ret, DrawingError::ERR_NOT_PREPARED);
+        EXPECT_NE(ret, DrawingError::ERR_IMAGE_NULL);
+        EXPECT_EQ(chain.filters_, nullptr);
+    }
+
+    {
+        auto pixelMap = MakePixelMap();
+        ASSERT_NE(pixelMap, nullptr);
+        EffectImageChain chain;
+        ASSERT_EQ(chain.Prepare(pixelMap, false), DrawingError::ERR_OK);
+        chain.image_ = nullptr;
+        EXPECT_EQ(chain.ApplyStickerEmboss(MakeEmbossParams()), DrawingError::ERR_IMAGE_NULL);
+    }
+}
+
+/**
+ * @tc.name: StickerLaserShaderGuardBranches
+ * @tc.desc: Traverse every reachable guard branch of EffectImageChain::ApplyStickerLaserShader
+ */
+HWTEST_F(EffectImageStickerUnittest, StickerLaserShaderGuardBranches, TestSize.Level1)
+{
+    // Only guards reachable from public inputs and member state are covered here;
+    // the make_shared null checks cannot be triggered in a valid process.
+    {
+        EffectImageChain chain;
+        EXPECT_EQ(chain.ApplyStickerLaserShader(MakeLaserParams()), DrawingError::ERR_NOT_PREPARED);
+    }
+
+    {
+        EffectImageChain chain;
+        chain.prepared_ = true;
+        chain.forceCPU_ = true;
+        EXPECT_EQ(chain.ApplyStickerLaserShader(MakeLaserParams()), DrawingError::ERR_ILLEGAL_INPUT);
+    }
+
+    {
+        auto pixelMap = MakePixelMap();
+        ASSERT_NE(pixelMap, nullptr);
+        EffectImageChain chain;
+        ASSERT_EQ(chain.Prepare(pixelMap, false), DrawingError::ERR_OK);
+        EXPECT_EQ(chain.ApplyStickerLaserShader(nullptr), DrawingError::ERR_ILLEGAL_INPUT);
+    }
+
+    {
+        auto pixelMap = MakePixelMap();
+        ASSERT_NE(pixelMap, nullptr);
+        EffectImageChain chain;
+        ASSERT_EQ(chain.Prepare(pixelMap, false), DrawingError::ERR_OK);
+        auto blurFilter = Drawing::ImageFilter::CreateBlurImageFilter(1, 1, Drawing::TileMode::DECAL, nullptr);
+        ASSERT_NE(blurFilter, nullptr);
+        ASSERT_EQ(chain.ApplyDrawingFilter(blurFilter), DrawingError::ERR_OK);
+        ASSERT_NE(chain.filters_, nullptr);
+        auto ret = chain.ApplyStickerLaserShader(MakeLaserParams());
+        EXPECT_NE(ret, DrawingError::ERR_NOT_PREPARED);
+        EXPECT_NE(ret, DrawingError::ERR_IMAGE_NULL);
+        EXPECT_EQ(chain.filters_, nullptr);
+    }
+
+    {
+        auto pixelMap = MakePixelMap();
+        ASSERT_NE(pixelMap, nullptr);
+        EffectImageChain chain;
+        ASSERT_EQ(chain.Prepare(pixelMap, false), DrawingError::ERR_OK);
+        chain.image_ = nullptr;
+        EXPECT_EQ(chain.ApplyStickerLaserShader(MakeLaserParams()), DrawingError::ERR_IMAGE_NULL);
+    }
+}
+
+/**
+ * @tc.name: StickerEmbossFactoryNullParams
+ * @tc.desc: Verify the emboss factory keeps null params and the chain rejects them
+ */
+HWTEST_F(EffectImageStickerUnittest, StickerEmbossFactoryNullParams, TestSize.Level1)
+{
+    auto filter = EffectImageFilter::StickerEmboss(nullptr);
+    ASSERT_NE(filter, nullptr);
+    auto embossFilter = std::static_pointer_cast<EffectImageStickerEmbossFilter>(filter);
+    ASSERT_NE(embossFilter, nullptr);
+    EXPECT_EQ(embossFilter->stickerEmbossData_, nullptr);
+
+    auto pixelMap = MakePixelMap();
+    ASSERT_NE(pixelMap, nullptr);
+    auto chain = std::make_shared<EffectImageChain>();
+    ASSERT_EQ(chain->Prepare(pixelMap, false), DrawingError::ERR_OK);
+    EXPECT_EQ(filter->Apply(chain), DrawingError::ERR_ILLEGAL_INPUT);
+}
+
+/**
+ * @tc.name: StickerLaserShaderFactoryNullParams
+ * @tc.desc: Verify the laser factory keeps null params and the chain rejects them
+ */
+HWTEST_F(EffectImageStickerUnittest, StickerLaserShaderFactoryNullParams, TestSize.Level1)
+{
+    auto filter = EffectImageFilter::StickerLaserShader(nullptr);
+    ASSERT_NE(filter, nullptr);
+    auto laserFilter = std::static_pointer_cast<EffectImageStickerLaserShaderFilter>(filter);
+    ASSERT_NE(laserFilter, nullptr);
+    EXPECT_EQ(laserFilter->stickerLaserData_, nullptr);
+
+    auto pixelMap = MakePixelMap();
+    ASSERT_NE(pixelMap, nullptr);
+    auto chain = std::make_shared<EffectImageChain>();
+    ASSERT_EQ(chain->Prepare(pixelMap, false), DrawingError::ERR_OK);
+    EXPECT_EQ(filter->Apply(chain), DrawingError::ERR_ILLEGAL_INPUT);
+}
+
+/**
+ * @tc.name: StickerEmbossFilterApplyBranches
+ * @tc.desc: Verify EffectImageStickerEmbossFilter::Apply guards and delegation
+ */
+HWTEST_F(EffectImageStickerUnittest, StickerEmbossFilterApplyBranches, TestSize.Level1)
+{
+    auto nullDataFilter = EffectImageFilter::StickerEmboss(nullptr);
+    ASSERT_NE(nullDataFilter, nullptr);
+    EXPECT_EQ(nullDataFilter->Apply(nullptr), DrawingError::ERR_IMAGE_NULL);
+
+    auto validFilter = EffectImageFilter::StickerEmboss(MakeEmbossParams());
+    ASSERT_NE(validFilter, nullptr);
+    EXPECT_EQ(validFilter->Apply(nullptr), DrawingError::ERR_IMAGE_NULL);
+
+    auto pixelMap = MakePixelMap();
+    ASSERT_NE(pixelMap, nullptr);
+    auto chain = std::make_shared<EffectImageChain>();
+    ASSERT_EQ(chain->Prepare(pixelMap, false), DrawingError::ERR_OK);
+    EXPECT_EQ(nullDataFilter->Apply(chain), DrawingError::ERR_ILLEGAL_INPUT);
+
+    auto ret = validFilter->Apply(chain);
+    EXPECT_NE(ret, DrawingError::ERR_NOT_PREPARED);
+    EXPECT_NE(ret, DrawingError::ERR_IMAGE_NULL);
+}
+
+/**
+ * @tc.name: StickerLaserShaderFilterApplyBranches
+ * @tc.desc: Verify EffectImageStickerLaserShaderFilter::Apply guards and delegation
+ */
+HWTEST_F(EffectImageStickerUnittest, StickerLaserShaderFilterApplyBranches, TestSize.Level1)
+{
+    auto nullDataFilter = EffectImageFilter::StickerLaserShader(nullptr);
+    ASSERT_NE(nullDataFilter, nullptr);
+    EXPECT_EQ(nullDataFilter->Apply(nullptr), DrawingError::ERR_IMAGE_NULL);
+
+    auto validFilter = EffectImageFilter::StickerLaserShader(MakeLaserParams());
+    ASSERT_NE(validFilter, nullptr);
+    EXPECT_EQ(validFilter->Apply(nullptr), DrawingError::ERR_IMAGE_NULL);
+
+    auto pixelMap = MakePixelMap();
+    ASSERT_NE(pixelMap, nullptr);
+    auto chain = std::make_shared<EffectImageChain>();
+    ASSERT_EQ(chain->Prepare(pixelMap, false), DrawingError::ERR_OK);
+    EXPECT_EQ(nullDataFilter->Apply(chain), DrawingError::ERR_ILLEGAL_INPUT);
+
+    auto ret = validFilter->Apply(chain);
+    EXPECT_NE(ret, DrawingError::ERR_NOT_PREPARED);
+    EXPECT_NE(ret, DrawingError::ERR_IMAGE_NULL);
+}
+
 } // namespace Rosen
 } // namespace OHOS
