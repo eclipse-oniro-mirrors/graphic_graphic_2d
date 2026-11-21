@@ -138,6 +138,20 @@
 | RS_PROFILER_ENABLED 条件编译 | `BUILD.gn` 中 `defines += [ "RS_PROFILER_ENABLED" ]` | Profiler 测试仅在完整环境可用 |
 | DTK 可执行目标 | `ohos_executable("dtk")` | 独立可执行文件，可直接在设备上运行 |
 
+## 模拟器端侧运行与交付
+
+最终实施方案见 `docs/graphic-test-emulator-plan-v3.md`，实际命令和产物格式见 `graphic_test/EMULATOR.md`。
+端侧新增 `-preflight`、`-emulator-run` 和 `-emulator-unit`，不提供像素比对或视觉报告命令。
+
+关键口径：
+
+- `-emulator-run` 父进程只做调度，不初始化 RS；`-emulator-unit` 与旧 `-unit` 共用过滤和 Director 初始化。
+- 手工用例默认只列清单不执行，自动截图分母不含手工用例。
+- 新输出目录、排除列表和截图策略只通过新命令传入，旧命令不读取新增配置。
+- 必需资源缺失或空间不足为基础设施错误，不自动清理旧目录。
+- 用例清单和资源依赖都编在二进制内；宿主机只推二进制和资源图片，拉回图片目录并看退出码。
+- 端侧唯一 JSON 是 `run_state.json`，仅供 `--resume` 使用；PNG 只做临时文件改名和文件头尺寸校验。
+
 ## 待补充背景
 
 - RSGraphicTest 的截图比对算法和像素差异阈值。

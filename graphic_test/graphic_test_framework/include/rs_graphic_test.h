@@ -16,6 +16,8 @@
 #ifndef RS_GRAPHIC_TEST_H
 #define RS_GRAPHIC_TEST_H
 
+#include <utility>
+
 #include "common/rs_color.h"
 #include "common/rs_rect.h"
 #include "rs_graphic_test_director.h"
@@ -79,6 +81,9 @@ private:
     UIPoint GetPos(int id, int cl);
     bool WaitOtherTest();
     void TestCaseCapture(bool isScreenshot);
+    void WriteCaptureFile(const ::testing::TestInfo* testInfo, const TestDefInfo* extInfo,
+        Media::PixelMap& pixelMap, bool useDisplayCapture);
+    std::pair<uint32_t, uint32_t> GetExpectedCaptureSize(bool useDisplayCapture) const;
 
     bool shouldRunTest_ = true;
     Vector4f surfaceBounds_;

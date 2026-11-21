@@ -15,14 +15,23 @@
 
 #include "rs_graphic_rootnode.h"
 #include "rs_graphic_test_director.h"
+#include "platform/common/rs_system_properties.h"
 #include "transaction/rs_interfaces.h"
+#include "ui/rs_root_node.h"
 #include "rs_graphic_errors.h"
 #include "rs_graphic_log.h"
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr int BOUNDS_WIDTH_INDEX = 2;
+constexpr int BOUNDS_HEIGHT_INDEX = 3;
+} // namespace
+
 RSGraphicRootNode::RSGraphicRootNode()
 {
+    // The value is cached by RSSystemProperties after RSUIDirector::Init, so this costs no extra IPC.
+    isDividedRender_ = !RSSystemProperties::GetUniRenderEnabled();
     RSSurfaceNodeConfig config;
     config.SurfaceNodeName = "TestScreenSurface";
     screenSurfaceNode_ = RSSurfaceNode::Create(config, RSSurfaceNodeType::LEASH_WINDOW_NODE, true, false,
@@ -30,6 +39,56 @@ RSGraphicRootNode::RSGraphicRootNode()
     if (!screenSurfaceNode_) {
         LOGE("RSGraphicRootNode::RSGraphicRootNode create screen surface node failed");
     }
+}
+
+std::shared_ptr<RSRootNode> RSGraphicRootNode::BindDividedRenderRoot(const std::shared_ptr<RSSurfaceNode>& surface)
+{
+    if (!isDividedRender_ || !surface) {
+        return nullptr;
+    }
+    auto root = std::static_pointer_cast<RSRootNode>(
+        RSRootNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext()));
+    if (!root) {
+        LOGE("RSGraphicRootNode::BindDividedRenderRoot create root node failed");
+        return nullptr;
+    }
+    // The root draws in the surface's own coordinate space; it repaints the surface background because
+    // the client render thread does not draw surface node properties into the buffer.
+    const auto& properties = surface->GetStagingProperties();
+    const Vector4f bounds = properties.GetBounds();
+    root->SetBounds({0, 0, bounds[BOUNDS_WIDTH_INDEX], bounds[BOUNDS_HEIGHT_INDEX]});
+    root->SetFrame({0, 0, bounds[BOUNDS_WIDTH_INDEX], bounds[BOUNDS_HEIGHT_INDEX]});
+    root->SetBackgroundColor(properties.GetBackgroundColor().AsRgbaInt());
+    RSGraphicTestDirector::Instance().BindRootToSurface(surface, root);
+    return root;
+}
+
+std::shared_ptr<RSNode> RSGraphicRootNode::GetMainDrawParent() const
+{
+    if (isDividedRender_ && !testRootNodes_.empty() && testRootNodes_.back()) {
+        return testRootNodes_.back();
+    }
+    if (testSurfaceNodes_.empty()) {
+        return nullptr;
+    }
+    return testSurfaceNodes_.back();
+}
+
+void RSGraphicRootNode::SyncTestSurfaceBounds(const Vector4f& bounds)
+{
+    if (!isDividedRender_ || testRootNodes_.empty() || !testRootNodes_.back()) {
+        return;
+    }
+    testRootNodes_.back()->SetBounds({0, 0, bounds[BOUNDS_WIDTH_INDEX], bounds[BOUNDS_HEIGHT_INDEX]});
+    testRootNodes_.back()->SetFrame({0, 0, bounds[BOUNDS_WIDTH_INDEX], bounds[BOUNDS_HEIGHT_INDEX]});
+}
+
+void RSGraphicRootNode::SyncTestSurfaceColor(uint32_t color)
+{
+    if (!isDividedRender_ || testRootNodes_.empty() || !testRootNodes_.back()) {
+        return;
+    }
+    testRootNodes_.back()->SetBackgroundColor(color);
 }
 
 void RSGraphicRootNode::SetTestSurface(
@@ -45,6 +104,9 @@ void RSGraphicRootNode::SetTestSurface(
     }
     testSurfaceNodes_.push_back(node);
     screenSurfaceNode_->AddChild(testSurfaceNodes_.back(), -1);
+    if (isDividedRender_) {
+        testRootNodes_.push_back(BindDividedRenderRoot(node));
+    }
 }
 
 void RSGraphicRootNode::ResetTestSurface()
@@ -55,16 +117,18 @@ void RSGraphicRootNode::ResetTestSurface()
         LOGE("RSGraphicRootNode::ResetTestSurface screenSurfaceNode_ is null");
     }
     testSurfaceNodes_.clear();
+    testRootNodes_.clear();
     nodes_.clear();
 }
 
 void RSGraphicRootNode::AddChild(std::shared_ptr<RSNode> child, int index)
 {
-    if (testSurfaceNodes_.empty() || !testSurfaceNodes_.back()) {
+    auto parent = GetMainDrawParent();
+    if (!parent) {
         LOGE("RSGraphicRootNode::AddChild testSurfaceNodes_.back() is null");
         return;
     }
-    testSurfaceNodes_.back()->AddChild(child, index);
+    parent->AddChild(child, index);
 }
 
 void RSGraphicRootNode::RemoveChild(std::shared_ptr<RSNode> child)
@@ -115,8 +179,6 @@ std::shared_ptr<RSSurfaceNode> RSGraphicRootNode::CreateContentNode(
         return nullptr;
     }
 
-    constexpr int BOUNDS_WIDTH_INDEX = 2;
-    constexpr int BOUNDS_HEIGHT_INDEX = 3;
     float width = options.bounds[BOUNDS_WIDTH_INDEX];
     float height = options.bounds[BOUNDS_HEIGHT_INDEX];
     contentNode->SetBounds({0, 0, width, height});
@@ -170,7 +232,7 @@ SubWindowId RSGraphicRootNode::CreateSubWindow(const SubWindowOptions& options)
     }
 
     leashNode->AddChild(contentNode, -1);
-    subWindows_[id] = {leashNode, contentNode};
+    subWindows_[id] = {leashNode, contentNode, BindDividedRenderRoot(contentNode)};
     return id;
 }
 
@@ -210,7 +272,11 @@ bool RSGraphicRootNode::AddChildToSubWindow(
         LOGE("RSGraphicRootNode::AddChildToSubWindow content node is null");
         return false;
     }
-    it->second.contentNode->AddChild(child, childIndex);
+    if (it->second.contentRoot) {
+        it->second.contentRoot->AddChild(child, childIndex);
+    } else {
+        it->second.contentNode->AddChild(child, childIndex);
+    }
     return true;
 }
 
