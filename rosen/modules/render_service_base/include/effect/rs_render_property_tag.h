@@ -178,6 +178,10 @@ enum class RSNGEffectType : int16_t {
     COLORFUL_BRIGHTNESS_BLENDER,
     BRIGHTNESS_BLENDER,
     HDR_DARKEN_BLENDER,
+    // new types must be appended after all existing entries: the values are
+    // written into IPC parcels and renumbering breaks old-parcel compatibility
+    STICKER_LASER_SHADER,
+    STICKER_EMBOSS_FILTER,
 };
 
 using RSNGEffectTypeUnderlying = std::underlying_type<RSNGEffectType>::type;

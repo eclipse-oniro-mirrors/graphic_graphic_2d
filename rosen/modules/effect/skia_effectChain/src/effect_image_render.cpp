@@ -303,6 +303,18 @@ std::shared_ptr<EffectImageFilter> EffectImageFilter::ReededGlass(
     return std::make_shared<EffectImageReededGlassFilter>(params);
 }
 
+std::shared_ptr<EffectImageFilter> EffectImageFilter::StickerEmboss(
+    const std::shared_ptr<Drawing::GEStickerEmbossFilterParams>& params)
+{
+    return std::make_shared<EffectImageStickerEmbossFilter>(params);
+}
+
+std::shared_ptr<EffectImageFilter> EffectImageFilter::StickerLaserShader(
+    const std::shared_ptr<Drawing::GEStickerLaserShaderParams>& params)
+{
+    return std::make_shared<EffectImageStickerLaserShaderFilter>(params);
+}
+
 DrawingError EffectImageWaterGlassFilter::Apply(const std::shared_ptr<EffectImageChain>& image)
 {
     if (image == nullptr) {
@@ -319,6 +331,24 @@ DrawingError EffectImageReededGlassFilter::Apply(const std::shared_ptr<EffectIma
     }
 
     return image->ApplyReededGlass(reededGlassData_);
+}
+
+DrawingError EffectImageStickerEmbossFilter::Apply(const std::shared_ptr<EffectImageChain>& image)
+{
+    if (image == nullptr) {
+        return DrawingError::ERR_IMAGE_NULL;
+    }
+
+    return image->ApplyStickerEmboss(stickerEmbossData_);
+}
+
+DrawingError EffectImageStickerLaserShaderFilter::Apply(const std::shared_ptr<EffectImageChain>& image)
+{
+    if (image == nullptr) {
+        return DrawingError::ERR_IMAGE_NULL;
+    }
+
+    return image->ApplyStickerLaserShader(stickerLaserData_);
 }
 
 #ifndef ROSEN_ARKUI_X

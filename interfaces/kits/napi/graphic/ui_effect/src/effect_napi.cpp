@@ -14,6 +14,7 @@
  */
 #include "effect_napi.h"
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include "ui_effect_napi_utils.h"
@@ -29,6 +30,107 @@ namespace Rosen {
 
 using namespace UIEffect;
 static const std::string CLASS_NAME = "VisualEffect";
+
+namespace {
+bool ParsePixelMap(napi_env env, napi_value argv, std::shared_ptr<Media::PixelMap>& pixelMap)
+{
+#ifdef IMAGE_NAPI_ENABLE
+    napi_value constructor = nullptr;
+    napi_value global = nullptr;
+    bool isInstance = false;
+    napi_status ret = napi_invalid_arg;
+
+    napi_get_global(env, &global);
+
+    ret = napi_get_named_property(env, global, "PixelMap", &constructor);
+    if (ret != napi_ok) {
+        UIEFFECT_LOG_E("Get PixelMapNapi property failed!");
+        return false;
+    }
+
+    napi_valuetype res = napi_undefined;
+    napi_typeof(env, argv, &res);
+    if (res != napi_object) {
+        UIEFFECT_LOG_E("InValued type! res: %{public}d", res);
+        return false;
+    }
+    // validate the native type before unwrapping: a plain napi_unwrap accepts any
+    // wrapped object, so a foreign napi_object would be reinterpreted as PixelMapNapi
+    ret = napi_instanceof(env, argv, constructor, &isInstance);
+    if (ret != napi_ok || !isInstance) {
+        UIEFFECT_LOG_E("InValued type! ret: %{public}d, isInstance: %{public}d", ret, isInstance);
+        return false;
+    }
+    Media::PixelMapNapi* tempPixelMap = nullptr;
+    if (napi_unwrap(env, argv, reinterpret_cast<void**>(&tempPixelMap)) != napi_ok) {
+        UIEFFECT_LOG_E("Get PixelMapNapi napi_unwrap failed!");
+        return false;
+    }
+    if (tempPixelMap == nullptr) {
+        UIEFFECT_LOG_E("Get PixelMapNapi tempPixelMap is nullptr!");
+        return false;
+    }
+    pixelMap = tempPixelMap->GetPixelNapiInner();
+    if (pixelMap == nullptr) {
+        UIEFFECT_LOG_E("Get PixelMapNapi pixelMap is nullptr!");
+        return false;
+    }
+    return true;
+#else
+    UIEFFECT_LOG_E("ImageNapi disabled, parse pixel map failed");
+#endif
+    return false;
+}
+
+// ShadowOptions declares lightDirection/color as number arrays in ETS, matching
+// the ANI parsing: lightDirection [x, y]; color [red, green, blue, alpha] in 0-255
+bool ParseJsPointArray(napi_env env, napi_value value, Vector2f& out)
+{
+    bool isArray = false;
+    uint32_t length = 0;
+    if (napi_is_array(env, value, &isArray) != napi_ok || !isArray ||
+        napi_get_array_length(env, value, &length) != napi_ok || length != NUM_2) {
+        return false;
+    }
+    double coords[NUM_2] = { 0.0, 0.0 };
+    for (uint32_t idx = 0; idx < NUM_2; idx++) {
+        napi_value element = nullptr;
+        if (napi_get_element(env, value, idx, &element) != napi_ok ||
+            UIEffectNapiUtils::GetType(env, element) != napi_number ||
+            napi_get_value_double(env, element, &coords[idx]) != napi_ok || !std::isfinite(coords[idx])) {
+            return false;
+        }
+    }
+    out = Vector2f(static_cast<float>(coords[NUM_0]), static_cast<float>(coords[NUM_1]));
+    return true;
+}
+
+bool ParseJsColorArray(napi_env env, napi_value value, Vector4f& out)
+{
+    constexpr double rgbaColorMax = 255.0;
+    bool isArray = false;
+    uint32_t length = 0;
+    if (napi_is_array(env, value, &isArray) != napi_ok || !isArray ||
+        napi_get_array_length(env, value, &length) != napi_ok || length != NUM_4) {
+        return false;
+    }
+    double channels[NUM_4] = { 0.0, 0.0, 0.0, 0.0 };
+    for (uint32_t idx = 0; idx < NUM_4; idx++) {
+        napi_value element = nullptr;
+        if (napi_get_element(env, value, idx, &element) != napi_ok ||
+            UIEffectNapiUtils::GetType(env, element) != napi_number ||
+            napi_get_value_double(env, element, &channels[idx]) != napi_ok || !std::isfinite(channels[idx])) {
+            return false;
+        }
+        channels[idx] = std::clamp(std::round(channels[idx]), 0.0, rgbaColorMax);
+    }
+    out = Vector4f(static_cast<float>(channels[NUM_0]) / rgbaColorMax,
+        static_cast<float>(channels[NUM_1]) / rgbaColorMax,
+        static_cast<float>(channels[NUM_2]) / rgbaColorMax,
+        static_cast<float>(channels[NUM_3]) / rgbaColorMax);
+    return true;
+}
+} // namespace
 
 EffectNapi::EffectNapi()
 {
@@ -132,6 +234,7 @@ napi_value EffectNapi::CreateEffect(napi_env env, napi_callback_info info)
         DECLARE_NAPI_FUNCTION("liquidMaterial", CreateHarmoniumEffect),
         DECLARE_NAPI_FUNCTION("distortionCollapse", CreateDistortionCollapseEffect),
         DECLARE_NAPI_FUNCTION("glassMarbleEffect", CreateGlassMarbleEffect),
+        DECLARE_NAPI_FUNCTION("iridescence", CreateIridescence),
     };
     status = napi_define_properties(env, object, sizeof(resultFuncs) / sizeof(resultFuncs[0]), resultFuncs);
     UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok, nullptr,
@@ -1330,6 +1433,175 @@ napi_value EffectNapi::CreateGlassMarbleEffect(napi_env env, napi_callback_info 
     UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && visualEffectObj != nullptr, nullptr,
         UIEFFECT_LOG_E("CreateGlassMarbleEffect napi_unwrap fail"));
     visualEffectObj->AddPara(para);
+    return thisVar;
+}
+
+bool EffectNapi::GetNumberProperty(napi_env env, napi_value obj, const char* name, float& out)
+{
+    napi_value value = nullptr;
+    if (napi_get_named_property(env, obj, name, &value) != napi_ok ||
+        UIEffectNapiUtils::GetType(env, value) != napi_number) {
+        UIEFFECT_LOG_E("EffectNapi parse %{public}s failed", name);
+        return false;
+    }
+    out = GetSpecialValue(env, value);
+    return true;
+}
+
+bool EffectNapi::GetPointProperty(napi_env env, napi_value obj, const char* name, Vector2f& out)
+{
+    napi_value value = nullptr;
+    if (napi_get_named_property(env, obj, name, &value) != napi_ok ||
+        UIEffectNapiUtils::GetType(env, value) != napi_object) {
+        UIEFFECT_LOG_E("EffectNapi parse %{public}s failed", name);
+        return false;
+    }
+    // ETS Point.x/y are optional: an absent coordinate defaults to 0
+    auto getCoordinate = [env, value](const char* coordName, double& coord) {
+        napi_value coordValue = nullptr;
+        if (napi_get_named_property(env, value, coordName, &coordValue) != napi_ok) {
+            return false;
+        }
+        if (UIEffectNapiUtils::GetType(env, coordValue) == napi_undefined) {
+            coord = 0.0;
+            return true;
+        }
+        return napi_get_value_double(env, coordValue, &coord) == napi_ok && std::isfinite(coord);
+    };
+    double x = 0.0;
+    double y = 0.0;
+    if (!getCoordinate("x", x) || !getCoordinate("y", y)) {
+        UIEFFECT_LOG_E("EffectNapi parse %{public}s failed", name);
+        return false;
+    }
+    out = Vector2f(static_cast<float>(x), static_cast<float>(y));
+    return true;
+}
+
+bool EffectNapi::FillIridescenceParams(napi_env env, napi_value iridescenceParam,
+    const std::shared_ptr<StickerLaserShaderEffectPara>& para)
+{
+    float frequency = 0.0f;
+    float progress = 0.0f;
+    Vector2f direction = Vector2f(0.0f, 0.0f);
+    if (!GetNumberProperty(env, iridescenceParam, "frequency", frequency) ||
+        !GetPointProperty(env, iridescenceParam, "direction", direction) ||
+        !GetNumberProperty(env, iridescenceParam, "progress", progress)) {
+        return false;
+    }
+    para->SetFrequency(frequency);
+    para->SetDirection(direction);
+    para->SetProgress(progress);
+    return true;
+}
+
+bool EffectNapi::FillShadowOptions(napi_env env, napi_value shadowOptions,
+    const std::shared_ptr<StickerLaserShaderEffectPara>& para)
+{
+    constexpr float RGBA_COLOR_MAX = 255.0f;
+    constexpr float DEFAULT_SHADOW_COLOR_ALPHA = 26.0f / RGBA_COLOR_MAX;
+    float shadowRadius = 0.0f;
+    Vector2f lightDirection = Vector2f(0.0f, 0.0f);
+    float shadowDistance = 0.0f;
+    Vector4f shadowColor = Vector4f(0.0f, 0.0f, 0.0f, DEFAULT_SHADOW_COLOR_ALPHA);
+    napi_value shadowValue = nullptr;
+    if (napi_get_named_property(env, shadowOptions, "radius", &shadowValue) == napi_ok &&
+        UIEffectNapiUtils::GetType(env, shadowValue) == napi_number) {
+        shadowRadius = std::max(0.0f, GetSpecialValue(env, shadowValue));
+    }
+    if (napi_get_named_property(env, shadowOptions, "lightDirection", &shadowValue) == napi_ok &&
+        UIEffectNapiUtils::GetType(env, shadowValue) != napi_undefined) {
+        // arrays as declared in ETS; malformed values keep the default like the ANI side
+        if (!ParseJsPointArray(env, shadowValue, lightDirection)) {
+            UIEFFECT_LOG_E("EffectNapi FillShadowOptions parse lightDirection failed, keep default");
+        }
+    }
+    if (napi_get_named_property(env, shadowOptions, "shadowDistance", &shadowValue) == napi_ok &&
+        UIEffectNapiUtils::GetType(env, shadowValue) == napi_number) {
+        shadowDistance = std::max(0.0f, GetSpecialValue(env, shadowValue));
+    }
+    if (napi_get_named_property(env, shadowOptions, "color", &shadowValue) == napi_ok &&
+        UIEffectNapiUtils::GetType(env, shadowValue) != napi_undefined) {
+        // arrays as declared in ETS; malformed values keep the default like the ANI side
+        if (!ParseJsColorArray(env, shadowValue, shadowColor)) {
+            UIEFFECT_LOG_E("EffectNapi FillShadowOptions parse color failed, keep default");
+        }
+    }
+    para->SetElevationShadowColor(shadowColor);
+    para->SetElevationShadowRadius(shadowRadius);
+    para->SetElevationShadowDistance(shadowDistance);
+    para->SetLightDir(lightDirection);
+    return true;
+}
+
+napi_value EffectNapi::CreateIridescence(napi_env env, napi_callback_info info)
+{
+    // Signature: iridescence(picture, iridescenceParam, outlineWidth?, shadowOptions?)
+    // argv[0] = picture (required, image.PixelMap) - cutout image defining the effect range
+    // argv[1] = iridescenceParam (required, IridescenceParam)
+    //           Fields: frequency : float - required
+    //                   direction : common2D.Point - required
+    //                   progress  : float - required
+    // argv[2] = outlineWidth (optional, number) - default 0.0
+    // argv[3] = shadowOptions (optional, ShadowOptions)
+    //           Fields: radius         : float - optional, default 0 (no shadow)
+    //                   lightDirection : common2D.Point - optional, default (0, 0)
+    //                   shadowDistance : float - optional, default 0
+    //                   color          : common2D.Color - optional, default black {0, 0, 0, 26}
+    constexpr size_t maxArgc = NUM_4;
+    size_t realArgc = maxArgc;
+    napi_status status;
+    napi_value argv[maxArgc] = {0};
+    napi_value thisVar = nullptr;
+    UIEFFECT_JS_ARGS(env, info, status, realArgc, argv, thisVar);
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && (realArgc >= NUM_2 && realArgc <= maxArgc), nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateIridescence parsing input fail"));
+
+    // Param problems skip the effect and keep returning the VisualEffect itself,
+    // following the mapColorByBrightness convention
+    if (!UIEffectNapiUtils::CheckNullOrUndefined(env, argv[NUM_0], "picture")) {
+        return thisVar;
+    }
+    if (!UIEffectNapiUtils::CheckNullOrUndefined(env, argv[NUM_1], "iridescenceParam")) {
+        return thisVar;
+    }
+
+    auto para = std::make_shared<StickerLaserShaderEffectPara>();
+    UIEFFECT_NAPI_CHECK_RET_D(para != nullptr, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateIridescence para is nullptr"));
+
+    // Parse picture (required)
+    std::shared_ptr<Media::PixelMap> picture = nullptr;
+    if (!ParsePixelMap(env, argv[NUM_0], picture)) {
+        UIEFFECT_LOG_E("EffectNapi CreateIridescence parse picture failed");
+        return thisVar;
+    }
+    para->SetSticker(picture);
+
+    // Parse iridescenceParam (required)
+    UIEFFECT_NAPI_CHECK_RET_D(FillIridescenceParams(env, argv[NUM_1], para), thisVar,
+        UIEFFECT_LOG_E("EffectNapi CreateIridescence parse iridescenceParam failed"));
+
+    // Parse outlineWidth (optional); invalid widths keep the documented 0 default
+    float outlineWidth = 0.0f;
+    if (realArgc > NUM_2 && UIEffectNapiUtils::GetType(env, argv[NUM_2]) == napi_number) {
+        outlineWidth = std::max(GetSpecialValue(env, argv[NUM_2]), 0.0f);
+    }
+    para->SetOutlineWidth(outlineWidth);
+
+    // Parse shadowOptions (optional); omitting it keeps the para's documented defaults
+    // (shadow off, black at alpha 26/255), same as passing {}
+    if (realArgc > NUM_3 && UIEffectNapiUtils::GetType(env, argv[NUM_3]) == napi_object) {
+        UIEFFECT_NAPI_CHECK_RET_D(FillShadowOptions(env, argv[NUM_3], para), thisVar,
+            UIEFFECT_LOG_E("EffectNapi CreateIridescence parse shadowOptions failed"));
+    }
+
+    VisualEffect* visualEffectObj = nullptr;
+    status = napi_unwrap_s(env, thisVar, &VISUAL_EFFECT_TYPE_TAG, reinterpret_cast<void**>(&visualEffectObj));
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && visualEffectObj != nullptr, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateIridescence napi_unwrap fail"));
+    visualEffectObj->AddPara(para);
+    API_STATS_HISTOGRAM("Arkgraphics2d.UIEffect.VisualEffect.iridescence", 1);
     return thisVar;
 }
 

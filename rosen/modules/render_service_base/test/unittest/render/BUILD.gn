@@ -19,7 +19,10 @@ module_output_path = "graphic_2d/graphic_2d/rosen/modules/render_service_base"
 ohos_unittest("RSRenderTest") {
   module_out_path = module_output_path
 
-  sources = [ "rs_image_cache_test.cpp" ]
+  sources = [
+    "rs_image_cache_test.cpp",
+    "rs_render_sticker_effect_test.cpp",
+  ]
 
   configs = [ ":rs_render_test_config" ]
 
@@ -31,6 +34,7 @@ ohos_unittest("RSRenderTest") {
   external_deps = [
     "eventhandler:libeventhandler",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
   ]

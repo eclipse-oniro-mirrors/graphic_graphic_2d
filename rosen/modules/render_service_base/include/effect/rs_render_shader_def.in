@@ -489,3 +489,15 @@ DECLARE_SHADER(CosmosRingShadow, COSMOS_RING_SHADOW,
     ADD_PROPERTY_TAG(CosmosRingShadow, ShadowOffset),
     ADD_PROPERTY_TAG(CosmosRingShadow, ShadowColor)
 );
+
+DECLARE_SHADER(StickerLaserShader, STICKER_LASER_SHADER,
+    ADD_PROPERTY_TAG(StickerLaserShader, Sticker),
+    ADD_PROPERTY_TAG(StickerLaserShader, OutlineWidth),
+    ADD_PROPERTY_TAG(StickerLaserShader, Frequency),
+    ADD_PROPERTY_TAG(StickerLaserShader, Direction),
+    ADD_PROPERTY_TAG(StickerLaserShader, Progress),
+    ADD_PROPERTY_TAG(StickerLaserShader, LightDir),
+    ADD_PROPERTY_TAG(StickerLaserShader, ElevationShadowColor),
+    ADD_PROPERTY_TAG(StickerLaserShader, ElevationShadowRadius),
+    ADD_PROPERTY_TAG(StickerLaserShader, ElevationShadowDistance)
+);

@@ -252,6 +252,8 @@ rs_effect_feature_sources = [
   "rs_effect_feature/ng_effect_test/ng_mask_frame_gradient_test.cpp",
   "rs_effect_feature/ng_effect_test/ng_effect_light_cave_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_distort_light_test.cpp",
+  "rs_effect_feature/ng_shader_test/ng_shader_sticker_laser_test.cpp",
+  "rs_effect_feature/ng_filter_test/ng_filter_sticker_emboss_test.cpp",
 ]
 rs_framework_sources = [
   "rs_framework/uni_render_ui/surface_test.cpp",

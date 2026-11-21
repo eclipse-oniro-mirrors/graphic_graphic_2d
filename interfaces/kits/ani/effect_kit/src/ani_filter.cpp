@@ -416,6 +416,116 @@ static HalftoneParam ParseHalftoneParam(ani_env* env, ani_object val, bool& ok)
     return params;
 }
 
+
+namespace {
+bool GetPointProperty(ani_env* env, ani_object obj, const char* name, Vector2f& out)
+{
+    ani_ref ref = nullptr;
+    if (env->Object_GetPropertyByName_Ref(obj, name, &ref) != ANI_OK || ref == nullptr) {
+        return false;
+    }
+    ani_object pointObj = static_cast<ani_object>(ref);
+    // ETS Point.x/y are optional: an absent coordinate defaults to 0
+    auto getCoordinate = [env, pointObj](const char* coordName, double& coord) {
+        ani_ref coordRef = nullptr;
+        if (env->Object_GetPropertyByName_Ref(pointObj, coordName, &coordRef) != ANI_OK) {
+            return false;
+        }
+        ani_boolean isUndefined = ANI_TRUE;
+        env->Reference_IsUndefined(coordRef, &isUndefined);
+        if (isUndefined == ANI_TRUE) {
+            coord = 0.0;
+            return true;
+        }
+        ani_double value = 0.0;
+        if (env->Object_GetPropertyByName_Double(pointObj, coordName, &value) != ANI_OK || !std::isfinite(value)) {
+            return false;
+        }
+        coord = value;
+        return true;
+    };
+    double x = 0.0;
+    double y = 0.0;
+    if (!getCoordinate("x", x) || !getCoordinate("y", y)) {
+        return false;
+    }
+    out = Vector2f(static_cast<float>(x), static_cast<float>(y));
+    return true;
+}
+
+// shared double-based param getter; GE params members are float, cast at assignment.
+// values beyond the float range are rejected to keep the narrowing cast well defined
+bool GetFloatParam(ani_env* env, ani_object obj, const char* name, float& out)
+{
+    double value = 0.0;
+    if (!GetDoubleProperty(env, obj, name, value)) {
+        return false;
+    }
+    if (std::abs(value) > static_cast<double>(std::numeric_limits<float>::max())) {
+        return false;
+    }
+    out = static_cast<float>(value);
+    return true;
+}
+
+bool ParseEmbossParams(ani_env* env, ani_double outlineWidth, ani_object embossParam,
+    std::shared_ptr<Drawing::GEStickerEmbossFilterParams>& params)
+{
+    params = std::make_shared<Drawing::GEStickerEmbossFilterParams>();
+    if (params == nullptr) {
+        return false;
+    }
+    params->outlineWidth = static_cast<float>(outlineWidth);
+    // API-level edgeLightIntensity + edgeDarkIntensity are packed into the Vector2f pair
+    float edgeLightIntensity = 0.0f;
+    float edgeDarkIntensity = 0.0f;
+    if (!GetFloatParam(env, embossParam, "refractionRate", params->refractionRate) ||
+        !GetFloatParam(env, embossParam, "dirIntensity", params->dirIntensity) ||
+        !GetFloatParam(env, embossParam, "edgeLightWidth", params->edgeLightWidth) ||
+        !GetFloatParam(env, embossParam, "edgeLightFeatherRate", params->edgeLightFeatherRate) ||
+        !GetFloatParam(env, embossParam, "edgeLightIntensity", edgeLightIntensity) ||
+        !GetFloatParam(env, embossParam, "edgeDarkIntensity", edgeDarkIntensity) ||
+        !GetPointProperty(env, embossParam, "spotLightCenter", params->spotLightCenter) ||
+        !GetFloatParam(env, embossParam, "spotLightIntensity", params->spotLightIntensity) ||
+        !GetFloatParam(env, embossParam, "specPow", params->specPow) ||
+        !GetFloatParam(env, embossParam, "specIntensity", params->specIntensity)) {
+        return false;
+    }
+    params->edgeLightIntensity = Vector2f(edgeLightIntensity, edgeDarkIntensity);
+    return true;
+}
+
+bool ParseIridescenceParams(ani_env* env, ani_object iridescenceParam,
+    std::shared_ptr<Drawing::GEStickerLaserShaderParams>& params)
+{
+    params = std::make_shared<Drawing::GEStickerLaserShaderParams>();
+    if (params == nullptr) {
+        return false;
+    }
+    return GetFloatParam(env, iridescenceParam, "frequency", params->frequency) &&
+        GetPointProperty(env, iridescenceParam, "direction", params->direction) &&
+        GetFloatParam(env, iridescenceParam, "progress", params->progress);
+}
+
+// reuses the file-level ParseShadowOptions(ShadowOptions&); a shadow with zero radius covers
+// nothing, and absent fields fall back to the ShadowOptions defaults like outline/halftone
+void FillLaserShadowParams(ani_env* env, ani_object shadowOptions,
+    const std::shared_ptr<Drawing::GEStickerLaserShaderParams>& params)
+{
+    if (shadowOptions == nullptr) {
+        return;
+    }
+    ShadowOptions options = ParseShadowOptions(env, shadowOptions);
+    params->elevationShadowRadius = options.radius;
+    params->shadowDistance = options.shadowDistance;
+    params->lightDir = Vector2f(options.lightDirection.GetX(), options.lightDirection.GetY());
+    constexpr float rgbaColorMax = 255.0f;
+    params->elevationShadowColor = Vector4f(options.color.GetRed() / rgbaColorMax,
+        options.color.GetGreen() / rgbaColorMax, options.color.GetBlue() / rgbaColorMax,
+        options.color.GetAlpha() / rgbaColorMax);
+}
+} // namespace
+
 ani_object AniFilter::Outline(ani_env* env, ani_object obj, ani_double outlineWidth, ani_object shadowOptions)
 {
     AniFilter* aniFilter = AniEffectKitUtils::GetFilterFromEnv(env, obj);
@@ -460,6 +570,70 @@ ani_object AniFilter::Halftone(ani_env* env, ani_object obj, ani_object halftone
     if (halftone != nullptr) {
         aniFilter->AddNextFilter(halftone, "halftone");
     }
+    return AniEffectKitUtils::CreateAniObject(
+        env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
+}
+
+ani_object AniFilter::Emboss(ani_env* env, ani_object obj, ani_double outlineWidth, ani_object embossParam)
+{
+    AniFilter* aniFilter = AniEffectKitUtils::GetFilterFromEnv(env, obj);
+    if (aniFilter == nullptr) {
+        EFFECT_LOG_E("GetFilterFromEnv failed");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+
+    if (!std::isfinite(outlineWidth) || outlineWidth < 0.0) {
+        EFFECT_LOG_E("AniFilter::Emboss outlineWidth is invalid, skip this filter");
+        return AniEffectKitUtils::CreateAniObject(
+            env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
+    }
+
+    std::shared_ptr<Drawing::GEStickerEmbossFilterParams> params;
+    if (!ParseEmbossParams(env, outlineWidth, embossParam, params)) {
+        EFFECT_LOG_E("AniFilter::Emboss parse embossParam fail, skip this filter");
+        return AniEffectKitUtils::CreateAniObject(
+            env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
+    }
+
+    // the sticker is the effect chain input image, supplied by EffectImageChain on apply
+    auto emboss = EffectImageFilter::StickerEmboss(params);
+    if (emboss != nullptr) {
+        aniFilter->AddNextFilter(emboss, "emboss");
+    }
+
+    return AniEffectKitUtils::CreateAniObject(
+        env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
+}
+
+ani_object AniFilter::Iridescence(ani_env* env, ani_object obj, ani_object iridescenceParam,
+    ani_double outlineWidth, ani_object shadowOptions)
+{
+    AniFilter* aniFilter = AniEffectKitUtils::GetFilterFromEnv(env, obj);
+    if (aniFilter == nullptr) {
+        EFFECT_LOG_E("GetFilterFromEnv failed");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+
+    std::shared_ptr<Drawing::GEStickerLaserShaderParams> params;
+    if (!ParseIridescenceParams(env, iridescenceParam, params)) {
+        EFFECT_LOG_E("AniFilter::Iridescence parse iridescenceParam fail, skip this filter");
+        return AniEffectKitUtils::CreateAniObject(
+            env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
+    }
+    if (!std::isfinite(outlineWidth) || outlineWidth < 0.0) {
+        EFFECT_LOG_E("AniFilter::Iridescence outlineWidth is invalid, skip this filter");
+        return AniEffectKitUtils::CreateAniObject(
+            env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
+    }
+    params->outlineWidth = static_cast<float>(outlineWidth);
+    FillLaserShadowParams(env, shadowOptions, params);
+
+    // the sticker is the effect chain input image, supplied by EffectImageChain on apply
+    auto iridescence = EffectImageFilter::StickerLaserShader(params);
+    if (iridescence != nullptr) {
+        aniFilter->AddNextFilter(iridescence, "iridescence");
+    }
+
     return AniEffectKitUtils::CreateAniObject(
         env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
 }
@@ -627,6 +801,14 @@ ani_status AniFilter::Init(ani_env* env)
             "dC{@ohos.effectKit.effectKit.ShadowOptions}:C{@ohos.effectKit.effectKit.Filter}",
             reinterpret_cast<void*>(static_cast<ani_object(*)(ani_env*, ani_object, ani_object, ani_double,
             ani_object)>(&OHOS::Rosen::AniFilter::Halftone)) },
+        ani_native_function { "embossNative",
+            "dC{@ohos.effectKit.effectKit.EmbossParam}:C{@ohos.effectKit.effectKit.Filter}",
+            reinterpret_cast<void*>(OHOS::Rosen::AniFilter::Emboss) },
+        ani_native_function { "iridescenceNative",
+            "C{@ohos.effectKit.effectKit.IridescenceParam}dC{@ohos.effectKit.effectKit.ShadowOptions}"
+            ":C{@ohos.effectKit.effectKit.Filter}",
+            reinterpret_cast<void*>(static_cast<ani_object(*)(ani_env*, ani_object, ani_object, ani_double,
+                ani_object)>(&OHOS::Rosen::AniFilter::Iridescence)) },
         ani_native_function { "getPixelMapNative", ":C{@ohos.multimedia.image.image.PixelMap}",
             reinterpret_cast<void*>(OHOS::Rosen::AniFilter::GetPixelMap) },
         ani_native_function { "setGpuResourceTagNative",

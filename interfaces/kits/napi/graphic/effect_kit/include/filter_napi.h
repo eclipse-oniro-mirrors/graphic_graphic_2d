@@ -59,6 +59,8 @@ private:
     static napi_value Grayscale(napi_env env, napi_callback_info info);
     static napi_value Invert(napi_env env, napi_callback_info info);
     static napi_value SetColorMatrix(napi_env env, napi_callback_info info);
+    static napi_value Emboss(napi_env env, napi_callback_info info);
+    static napi_value Iridescence(napi_env env, napi_callback_info info);
     static napi_value Outline(napi_env env, napi_callback_info info);
     static napi_value Halftone(napi_env env, napi_callback_info info);
     static napi_value SetGpuResourceTag(napi_env env, napi_callback_info info);

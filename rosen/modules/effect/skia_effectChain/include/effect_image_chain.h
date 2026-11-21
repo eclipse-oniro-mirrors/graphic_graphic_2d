@@ -106,6 +106,8 @@ public:
     DrawingError ApplySDFCreation(int spreadFactor, bool generateDerivs);
     DrawingError ApplyWaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& waterGlassDate);
     DrawingError ApplyReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>& reededGlassDate);
+    DrawingError ApplyStickerEmboss(const std::shared_ptr<Drawing::GEStickerEmbossFilterParams>& stickerEmbossData);
+    DrawingError ApplyStickerLaserShader(const std::shared_ptr<Drawing::GEStickerLaserShaderParams>& stickerLaserData);
     DrawingError ApplyMaskTransitionFilter(const std::shared_ptr<Media::PixelMap>& topLayerMap,
         const std::shared_ptr<Drawing::GEShaderMask>& mask, float factor, bool inverse);
     DrawingError ApplyWaterDropletTransitionFilter(const std::shared_ptr<Media::PixelMap>& topLayerMap,

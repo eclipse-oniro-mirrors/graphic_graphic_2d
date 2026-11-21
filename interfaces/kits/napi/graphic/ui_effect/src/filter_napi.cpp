@@ -240,6 +240,7 @@ napi_value FilterNapi::CreateFilter(napi_env env, napi_callback_info info)
         DECLARE_NAPI_FUNCTION("variableRadiusBlur", SetVariableRadiusBlur),
         DECLARE_NAPI_FUNCTION("motionBlur", SetMotionBlur),
         DECLARE_NAPI_FUNCTION("mapColorByBrightness", SetMapColorByBrightness),
+        DECLARE_NAPI_FUNCTION("emboss", SetEmboss),
     };
     status = napi_define_properties(env, object, sizeof(resultFuncs) / sizeof(resultFuncs[0]), resultFuncs);
     UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok, nullptr,
@@ -1503,6 +1504,123 @@ napi_value FilterNapi::SetMapColorByBrightness(napi_env env, napi_callback_info 
         FILTER_LOG_E("FilterNapi SetMapColorByBrightness parsing array fail"));
 
     filterObj->AddPara(para);
+    return thisVar;
+}
+
+static bool GetNumberProperty(napi_env env, napi_value obj, const char* name, float& out)
+{
+    napi_value value = nullptr;
+    if (napi_get_named_property(env, obj, name, &value) != napi_ok ||
+        UIEffectNapiUtils::GetType(env, value) != napi_number) {
+        FILTER_LOG_E("FilterNapi SetEmboss parse %{public}s failed", name);
+        return false;
+    }
+    out = FilterNapi::GetSpecialValue(env, value);
+    return true;
+}
+
+static bool GetPointProperty(napi_env env, napi_value obj, const char* name, Vector2f& out)
+{
+    napi_value value = nullptr;
+    if (napi_get_named_property(env, obj, name, &value) != napi_ok ||
+        UIEffectNapiUtils::GetType(env, value) != napi_object || !ParseJsPoint(env, value, out)) {
+        FILTER_LOG_E("FilterNapi SetEmboss parse %{public}s failed", name);
+        return false;
+    }
+    return true;
+}
+
+static bool ParseEmbossParams(napi_env env, napi_value embossParam,
+    const std::shared_ptr<StickerEmbossPara>& para)
+{
+    float refractionRate = 0.0f;
+    float dirIntensity = 0.0f;
+    float edgeLightWidth = 0.0f;
+    float edgeLightFeatherRate = 0.0f;
+    float edgeLightIntensity = 0.0f;
+    float edgeDarkIntensity = 0.0f;
+    float spotLightIntensity = 0.0f;
+    float specPow = 0.0f;
+    float specIntensity = 0.0f;
+    Vector2f spotLightCenter;
+    if (!GetNumberProperty(env, embossParam, "refractionRate", refractionRate) ||
+        !GetNumberProperty(env, embossParam, "dirIntensity", dirIntensity) ||
+        !GetNumberProperty(env, embossParam, "edgeLightWidth", edgeLightWidth) ||
+        !GetNumberProperty(env, embossParam, "edgeLightFeatherRate", edgeLightFeatherRate) ||
+        !GetNumberProperty(env, embossParam, "edgeLightIntensity", edgeLightIntensity) ||
+        !GetNumberProperty(env, embossParam, "edgeDarkIntensity", edgeDarkIntensity) ||
+        !GetPointProperty(env, embossParam, "spotLightCenter", spotLightCenter) ||
+        !GetNumberProperty(env, embossParam, "spotLightIntensity", spotLightIntensity) ||
+        !GetNumberProperty(env, embossParam, "specPow", specPow) ||
+        !GetNumberProperty(env, embossParam, "specIntensity", specIntensity)) {
+        return false;
+    }
+    para->SetRefractionRate(refractionRate);
+    para->SetDirIntensity(dirIntensity);
+    para->SetEdgeLightWidth(edgeLightWidth);
+    para->SetEdgeLightFeatherRate(edgeLightFeatherRate);
+    para->SetEdgeLightIntensity(Vector2f(edgeLightIntensity, edgeDarkIntensity));
+    para->SetSpotLightCenter(spotLightCenter);
+    para->SetSpotLightIntensity(spotLightIntensity);
+    para->SetSpecPow(specPow);
+    para->SetSpecIntensity(specIntensity);
+    return true;
+}
+
+napi_value FilterNapi::SetEmboss(napi_env env, napi_callback_info info)
+{
+    // Signature: emboss(picture, outlineWidth, embossParam)
+    // argv[0] = picture (required, image.PixelMap) - cutout image defining the effect range
+    // argv[1] = outlineWidth (required, number)
+    // argv[2] = embossParam (required, EmbossParam)
+    //           Fields: refractionRate       : float - required
+    //                   dirIntensity         : float - required
+    //                   edgeLightWidth       : float - required
+    //                   edgeLightFeatherRate : float - required
+    //                   edgeLightIntensity   : float - required (light part)
+    //                   edgeDarkIntensity    : float - required (dark part)
+    //                   spotLightCenter      : common2D.Point - required
+    //                   spotLightIntensity   : float - required
+    //                   specPow              : float - required
+    //                   specIntensity        : float - required
+    constexpr size_t expectArgc = NUM_3;
+    size_t argCount = expectArgc;
+    napi_status status;
+    napi_value thisVar = nullptr;
+    napi_value argValue[expectArgc] = {0};
+    UIEFFECT_JS_ARGS(env, info, status, argCount, argValue, thisVar);
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && argCount == expectArgc &&
+        UIEffectNapiUtils::GetType(env, argValue[NUM_0]) == napi_object &&
+        UIEffectNapiUtils::GetType(env, argValue[NUM_1]) == napi_number &&
+        UIEffectNapiUtils::GetType(env, argValue[NUM_2]) == napi_object, nullptr,
+        FILTER_LOG_E("FilterNapi SetEmboss parsing input fail"));
+
+    auto para = std::make_shared<StickerEmbossPara>();
+    UIEFFECT_NAPI_CHECK_RET_D(para != nullptr, nullptr,
+        FILTER_LOG_E("FilterNapi SetEmboss para is nullptr"));
+
+    // Parse picture (required)
+    std::shared_ptr<Media::PixelMap> picture = nullptr;
+    if (!ParsePixelMap(env, argValue[NUM_0], picture)) {
+        FILTER_LOG_E("FilterNapi SetEmboss parse picture failed");
+        return nullptr;
+    }
+    para->SetSticker(picture);
+
+    // Parse outlineWidth (required)
+    para->SetOutlineWidth(GetSpecialValue(env, argValue[NUM_1]));
+
+    // Parse embossParam (required); API-level edgeLightIntensity + edgeDarkIntensity
+    // are packed into the Vector2f edge light intensity pair
+    UIEFFECT_NAPI_CHECK_RET_D(ParseEmbossParams(env, argValue[NUM_2], para), nullptr,
+        FILTER_LOG_E("FilterNapi SetEmboss parse embossParam failed"));
+
+    Filter* filterObj = nullptr;
+    status = napi_unwrap_s(env, thisVar, &FILTER_TYPE_TAG, reinterpret_cast<void**>(&filterObj));
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && filterObj != nullptr, nullptr,
+        FILTER_LOG_E("FilterNapi SetEmboss napi_unwrap fail"));
+    filterObj->AddPara(para);
+    API_STATS_HISTOGRAM("Arkgraphics2d.Filter.emboss", 1);
     return thisVar;
 }
 

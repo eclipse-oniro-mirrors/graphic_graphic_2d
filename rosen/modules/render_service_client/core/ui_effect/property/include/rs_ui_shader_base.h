@@ -27,8 +27,8 @@ class RSNGShaderBase : public RSNGEffectBase<RSNGShaderBase, RSNGRenderShaderBas
 public:
     virtual ~RSNGShaderBase() = default;
 
-    static std::shared_ptr<RSNGShaderBase> Create(RSNGEffectType type);
-    static std::shared_ptr<RSNGShaderBase> Create(std::shared_ptr<VisualEffectPara> effectPara);
+    RSC_EXPORT static std::shared_ptr<RSNGShaderBase> Create(RSNGEffectType type);
+    RSC_EXPORT static std::shared_ptr<RSNGShaderBase> Create(std::shared_ptr<VisualEffectPara> effectPara);
 };
 
 template<RSNGEffectType Type, typename... PropertyTags>
