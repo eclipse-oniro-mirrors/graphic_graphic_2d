@@ -53,6 +53,12 @@ void RSLogicalDisplayRenderParams::OnSync(const std::unique_ptr<RSRenderParams>&
     targetLogicalDisplayRenderParam->offsetY_ = offsetY_;
     targetLogicalDisplayRenderParam->fixedWidth_ = fixedWidth_;
     targetLogicalDisplayRenderParam->fixedHeight_ = fixedHeight_;
+    targetLogicalDisplayRenderParam->windowRecordConfig_ = windowRecordConfig_;
+    targetLogicalDisplayRenderParam->recordSurfaceDrawables_ = recordSurfaceDrawables_;
+    targetLogicalDisplayRenderParam->recordWhiteListIds_ = recordWhiteListIds_;
+    targetLogicalDisplayRenderParam->recordSourceDisplayDrawable_ = recordSourceDisplayDrawable_;
+    targetLogicalDisplayRenderParam->hasPaintableRecordSurface_ = hasPaintableRecordSurface_;
+    targetLogicalDisplayRenderParam->isOnVirtualScreen_ = isOnVirtualScreen_;
     targetLogicalDisplayRenderParam->hasDstAlphaBlendModeNode_ = hasDstAlphaBlendModeNode_;
 
     RSRenderParams::OnSync(target);

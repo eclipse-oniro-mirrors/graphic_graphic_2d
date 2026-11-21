@@ -16,6 +16,7 @@
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_LOGICAL_DISPLAY_RENDER_NODE_H
 
 #include <memory>
+#include <unordered_set>
 
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
@@ -26,6 +27,7 @@
 
 namespace OHOS {
 namespace Rosen {
+class RSSurfaceRenderNode;
 class RSB_EXPORT RSLogicalDisplayRenderNode : public RSRenderNode {
 public:
     using WeakPtr = std::weak_ptr<RSLogicalDisplayRenderNode>;
@@ -171,6 +173,37 @@ public:
     bool IsMirrorDisplay() const;
     void SetVirtualScreenMuteStatus(bool virtualScreenMuteStatus);
     bool GetVirtualScreenMuteStatus() const;
+
+    // Stores the record config only (main thread, command application). The ids are resolved
+    // every frame in UpdateRenderParams() -> ResolveWindowRecordSnapshot(), so a config that
+    // arrives before its window nodes exist is picked up on a later frame instead of being
+    // dropped permanently. The capture white list keeps nonzero ids only while at least one main
+    // window resolves.
+    void SetWindowRecordConfig(const RSWindowRecordConfig& config);
+
+    const RSWindowRecordConfig& GetWindowRecordConfig() const { return windowRecordConfig_; }
+    bool IsWindowRecordActive() const { return !windowRecordConfig_.surfaceNodeIds.empty(); }
+
+    // Main thread only, called by the parent screen after commands/tree updates and before the
+    // visitor is constructed. Publishes this frame's record anchor as the mirror relation, so
+    // ResolveWindowRecordSnapshot() consumes the published relation instead of reselecting.
+    // The publication-completed flag distinguishes "selected no anchor" from "not yet published".
+    void PublishWindowRecordMirrorSource();
+
+    // Main thread only, ends the record session. Clears the config and the publication state, then
+    // releases both record-owned mirror layers: this display's mirror relation and the parent
+    // output screen's relation derived from it. Empty config with no source is the unified paused
+    // MIRROR output state; there is no separate wait latch.
+    void EndWindowRecordSession();
+
+    // Main thread only: builds the effective mixed persistent-id/node-id capture white list when
+    // at least one main-window node is resolvable. Called every frame by this node and by the
+    // parent screen node when it selects the effective white list.
+    std::unordered_set<NodeId> BuildEffectiveRecordWhiteListIds() const;
+
+    // true when this display is bound to a virtual screen (the SetWindowRecordConfig path gates on this)
+    bool IsOnVirtualScreen() const;
+
     void SetDisplaySpecialSurfaceChanged(bool displaySpecialSurfaceChanged);
 
     void SetBootAnimation(bool isBootAnimation) override;
@@ -260,6 +293,31 @@ private:
     CompositeType compositeType_ = CompositeType::HARDWARE_COMPOSITE;
     DisplayMode displayMode_ = DisplayMode::INVALID;
     bool hasCaptureWindow_ = false;
+
+    RSWindowRecordConfig windowRecordConfig_;
+
+    // Main thread only. Resolves windowRecordConfig_.surfaceNodeIds into render-thread safe
+    // snapshots (main-window surface drawables, mixed-id capture white list, source display
+    // drawable). Doing this here is what lets the render thread avoid RSRenderNodeMap and
+    // RSRenderNode entirely: both are main-thread exclusive and unlocked.
+    void ResolveWindowRecordSnapshot(RSLogicalDisplayRenderParams& param);
+
+    // Main thread only, called by EndWindowRecordSession(): drops the config and invalidates the
+    // publication. Never called alone, so a session cannot end without releasing both relations.
+    void ClearWindowRecordSession()
+    {
+        windowRecordConfig_ = {};
+        recordPublicationDone_ = false;
+    }
+
+    // Main thread only. Anchor resolved once by PublishWindowRecordMirrorSource() for the publish
+    // step; the snapshot then consumes the published mirror relation instead of reselecting.
+    std::shared_ptr<RSLogicalDisplayRenderNode> ResolveWindowRecordSourceDisplay() const;
+
+    // True when the anchor resolver ran for the current active session, even if it selected no
+    // anchor. A completed publication with no anchor must not fall back to same-frame reselection;
+    // it is also the only state that distinguishes published-no-anchor from unpublished.
+    bool recordPublicationDone_ = false;
 
     bool isBootAnimation_ = false;
 

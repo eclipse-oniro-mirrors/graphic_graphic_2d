@@ -293,6 +293,19 @@ void RSDisplayNode::SetVirtualScreenMuteStatus(bool virtualScreenMuteStatus)
         "virtualScreenMuteStatus: %{public}d", GetId(), virtualScreenMuteStatus);
 }
 
+void RSDisplayNode::SetWindowRecordConfig(const RSWindowRecordConfig& config)
+{
+    if (config.surfaceNodeIds.size() > MAX_WINDOW_RECORD_SURFACE_NUM) {
+        ROSEN_LOGE("RSDisplayNode::%{public}s too many record surfaces:%{public}zu",
+            __func__, config.surfaceNodeIds.size());
+        return; // server-side SetWindowRecordConfig enforces the same bound; fail early, no IPC
+    }
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSDisplayNodeSetWindowRecordConfig>(GetId(), config);
+    AddCommand(command, true);
+    ROSEN_LOGI("RSDisplayNode::%{public}s, NodeId[%{public}" PRIu64 "]", __func__, GetId());
+}
+
 void RSDisplayNode::OnBoundsSizeChanged()
 {
     auto bounds = GetStagingProperties().GetBounds();

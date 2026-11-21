@@ -15,9 +15,11 @@
 
 #include "png.h"
 #include "rs_graphic_log.h"
+#include "rs_graphic_test_png.h"
 #include "rs_graphic_test_utils.h"
 
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
 #include <ostream>
 #include <set>
@@ -84,6 +86,38 @@ bool WriteToPngWithPixelMap(const std::string& fileName, OHOS::Media::PixelMap& 
     param.stride = static_cast<uint32_t>(pixelMap.GetRowStride());
     param.bitDepth = bitDepth;
     return WriteToPng(fileName, param);
+}
+
+bool WriteToPngWithPixelMapAtomic(const std::string& fileName, OHOS::Media::PixelMap& pixelMap,
+    uint32_t expectedWidth, uint32_t expectedHeight)
+{
+    const std::string temporaryName = fileName + ".tmp";
+    std::error_code filesystemError;
+    if (std::filesystem::exists(fileName, filesystemError) || std::filesystem::exists(temporaryName, filesystemError)) {
+        LOGE("WriteToPngWithPixelMapAtomic target already exists: %{public}s", fileName.c_str());
+        return false;
+    }
+    if (filesystemError) {
+        LOGE("WriteToPngWithPixelMapAtomic inspect path failed: %{public}s", filesystemError.message().c_str());
+        return false;
+    }
+    constexpr int bitDepth = 8;
+    WriteToPngParam param;
+    param.width = static_cast<uint32_t>(pixelMap.GetWidth());
+    param.height = static_cast<uint32_t>(pixelMap.GetHeight());
+    param.data = pixelMap.GetPixels();
+    param.stride = static_cast<uint32_t>(pixelMap.GetRowStride());
+    param.bitDepth = bitDepth;
+    if (!WriteToPng(temporaryName, param)) {
+        return false;
+    }
+    PngFileInfo info;
+    std::string error;
+    if (!FinalizePngFile(temporaryName, fileName, expectedWidth, expectedHeight, info, error)) {
+        LOGE("WriteToPngWithPixelMapAtomic finalize failed: %{public}s", error.c_str());
+        return false;
+    }
+    return true;
 }
 
 void WaitTimeout(int ms)

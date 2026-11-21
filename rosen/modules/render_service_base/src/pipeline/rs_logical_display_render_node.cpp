@@ -12,17 +12,265 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <algorithm>
 #include <unordered_set>
 
 #include "rs_trace.h"
 
+#include "pipeline/rs_context.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "params/rs_logical_display_render_params.h"
+#include "pipeline/rs_screen_render_node.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "property/rs_point_light_manager.h"
 #include "visitor/rs_node_visitor.h"
 
 namespace OHOS::Rosen {
+namespace {
+constexpr size_t MAX_RECORD_SURFACE_ANCESTOR_DEPTH = 256;
+
+struct WindowRecordSurface {
+    bool paintable = false;
+    NodeId displayId = INVALID_NODEID;
+    bool isMainWindow = false;
+    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable;
+};
+
+// Returns the real owning display and ancestor-aware paintability; stamped logicalDisplayNodeId_ is
+// stale after reparenting. Off-tree, display-less or over-deep chains fail closed.
+WindowRecordSurface ResolveWindowRecordSurfaceState(const RSSurfaceRenderNode& surfaceNode)
+{
+    WindowRecordSurface surface;
+    if (!surfaceNode.IsOnTheTree()) {
+        return surface;
+    }
+    surface.paintable = surfaceNode.ShouldPaint();
+    auto parent = surfaceNode.GetParent().lock();
+    for (size_t depth = 0; parent != nullptr && depth < MAX_RECORD_SURFACE_ANCESTOR_DEPTH; ++depth) {
+        surface.paintable = surface.paintable && parent->ShouldPaint();
+        if (parent->GetType() == RSRenderNodeType::LOGICAL_DISPLAY_NODE) {
+            surface.displayId = parent->GetId();
+            return surface;
+        }
+        parent = parent->GetParent().lock();
+    }
+    // Fail closed: a display-less or over-deep chain opens neither gate.
+    return WindowRecordSurface{};
+}
+
+// Cache each configured node and its parent-chain state once for anchor selection and collection.
+std::vector<WindowRecordSurface> ResolveWindowRecordSurfaces(
+    const RSRenderNodeMap& nodeMap, const std::vector<NodeId>& ids)
+{
+    std::vector<WindowRecordSurface> surfaces;
+    surfaces.reserve(ids.size());
+    for (NodeId windowId : ids) {
+        auto surfaceNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(windowId);
+        if (surfaceNode == nullptr) {
+            continue;
+        }
+        auto surface = ResolveWindowRecordSurfaceState(*surfaceNode);
+        surface.isMainWindow = surfaceNode->IsMainWindowType();
+        if (surface.isMainWindow) {
+            surface.drawable = surfaceNode->GetRenderDrawable();
+        }
+        surfaces.emplace_back(std::move(surface));
+    }
+    return surfaces;
+}
+
+// First main window with both drawables owns the recording (existing selection rule). The anchor
+// display id comes from the live parent chain, and the anchor's real parent screen must match its
+// screen id because the screen relation follows that parent.
+std::shared_ptr<RSLogicalDisplayRenderNode> SelectWindowRecordSourceDisplay(
+    const RSRenderNodeMap& nodeMap, const std::vector<WindowRecordSurface>& surfaces)
+{
+    for (const auto& surface : surfaces) {
+        if (!surface.isMainWindow || surface.drawable == nullptr || surface.displayId == INVALID_NODEID) {
+            continue;
+        }
+        auto candidate = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(surface.displayId);
+        if (candidate == nullptr || candidate->GetRenderDrawable() == nullptr) {
+            continue;
+        }
+        auto parentScreen = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(candidate->GetParent().lock());
+        if (parentScreen == nullptr || parentScreen->GetScreenId() != candidate->GetScreenId()) {
+            continue;
+        }
+        return candidate;
+    }
+    return nullptr;
+}
+} // namespace
+
+bool RSLogicalDisplayRenderNode::IsOnVirtualScreen() const
+{
+    if (screenId_ == INVALID_SCREEN_ID) {
+        return false;
+    }
+    auto parent = GetParent().lock();
+    auto screenNode = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(parent);
+    return screenNode != nullptr && screenNode->GetScreenProperty().IsVirtual();
+}
+
+void RSLogicalDisplayRenderNode::SetWindowRecordConfig(const RSWindowRecordConfig& config)
+{
+    if (config.surfaceNodeIds.size() > MAX_WINDOW_RECORD_SURFACE_NUM) {
+        RS_LOGE("RSLogicalDisplayRenderNode::%{public}s too many record surfaces:%{public}zu, keep previous",
+            __func__, config.surfaceNodeIds.size());
+        return;
+    }
+    // A new config invalidates the previous frame's publication; the next publication reselects.
+    recordPublicationDone_ = false;
+    windowRecordConfig_ = config;
+}
+
+std::unordered_set<NodeId> RSLogicalDisplayRenderNode::BuildEffectiveRecordWhiteListIds() const
+{
+    if (windowRecordConfig_.surfaceNodeIds.empty()) {
+        return {};
+    }
+    auto context = GetContext().lock();
+    if (!context) {
+        return {};
+    }
+    auto& nodeMap = context->GetNodeMap();
+    std::unordered_set<NodeId> whiteListIds;
+    bool hasMainWindow = false;
+    for (NodeId id : windowRecordConfig_.surfaceNodeIds) {
+        // Keep both client-supplied id spaces so a leashless child can match by its node id during
+        // record-only capture. Zero is invalid in both spaces and must not become an allow-all id.
+        if (id == INVALID_NODEID) {
+            continue;
+        }
+        whiteListIds.insert(id);
+        if (!hasMainWindow) {
+            auto surfaceNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(id);
+            hasMainWindow = surfaceNode && surfaceNode->IsMainWindowType();
+        }
+    }
+    // Only keep the non-zero ids when at least one main window resolves: capture needs it for bbox
+    // and source-display resolution, and an empty list makes the caller skip the frame.
+    if (!hasMainWindow) {
+        return {};
+    }
+    return whiteListIds;
+}
+
+void RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot(RSLogicalDisplayRenderParams& param)
+{
+    param.recordSurfaceDrawables_.clear();
+    param.recordWhiteListIds_.clear();
+    param.recordSourceDisplayDrawable_.reset();
+    param.hasPaintableRecordSurface_ = false;
+    if (windowRecordConfig_.surfaceNodeIds.empty()) {
+        recordPublicationDone_ = false;
+        return;
+    }
+    // A record session is only valid on a virtual MIRROR output. Fail closed here for both the
+    // published and unpublished/direct snapshot paths when the mode changed without ending the
+    // session; the publication state is kept so a later MIRROR frame still follows publication.
+    if (!IsMirrorDisplay()) {
+        param.MarkWindowRecordSnapshotSynced();
+        return;
+    }
+    auto context = GetContext().lock();
+    if (!context) {
+        return;
+    }
+    // Main thread, per-frame prepare: the only place that may query RSRenderNodeMap and walk the
+    // node tree. The render thread later consumes just the snapshots written here.
+    auto& nodeMap = context->GetNodeMap();
+    param.recordWhiteListIds_ = BuildEffectiveRecordWhiteListIds();
+    auto surfaces = ResolveWindowRecordSurfaces(nodeMap, windowRecordConfig_.surfaceNodeIds);
+    std::shared_ptr<RSLogicalDisplayRenderNode> sourceDisplay;
+    if (recordPublicationDone_) {
+        // Consume the relation published before this prepare. A published frame with no anchor
+        // stays source-less; an anchor that only becomes resolvable after publication waits for
+        // the next publication instead of triggering a same-frame reselect.
+        sourceDisplay = GetMirrorSource().lock();
+    } else {
+        // Direct callers that skipped publication resolve with the same rule once.
+        sourceDisplay = SelectWindowRecordSourceDisplay(nodeMap, surfaces);
+    }
+    auto sourceDrawable = sourceDisplay ? sourceDisplay->GetRenderDrawable() : nullptr;
+    if (sourceDrawable == nullptr) {
+        // No display can take the recording this frame; keep the snapshot empty so the bbox and
+        // paintability gates stay closed.
+        param.MarkWindowRecordSnapshotSynced();
+        return;
+    }
+    param.recordSourceDisplayDrawable_ = std::move(sourceDrawable);
+    // isSecurityExemption_ is written by the visitor's common UpdateVirtualDisplaySecurityExemption;
+    // UpdateRenderParams copies that value and the record path must not recompute it.
+    const NodeId anchorDisplayId = sourceDisplay->GetId();
+    param.recordSurfaceDrawables_.reserve(surfaces.size());
+    // Filter after anchor selection so earlier non-main surfaces still contribute paintability.
+    for (auto& surface : surfaces) {
+        if (surface.displayId != anchorDisplayId || !surface.paintable) {
+            continue;
+        }
+        param.hasPaintableRecordSurface_ = true;
+        if (!surface.isMainWindow || surface.drawable == nullptr) {
+            continue;
+        }
+        param.recordSurfaceDrawables_.emplace_back(std::move(surface.drawable));
+    }
+    param.MarkWindowRecordSnapshotSynced();
+}
+
+std::shared_ptr<RSLogicalDisplayRenderNode> RSLogicalDisplayRenderNode::ResolveWindowRecordSourceDisplay() const
+{
+    auto context = GetContext().lock();
+    if (!context || windowRecordConfig_.surfaceNodeIds.empty()) {
+        return nullptr;
+    }
+    auto& nodeMap = context->GetNodeMap();
+    auto surfaces = ResolveWindowRecordSurfaces(nodeMap, windowRecordConfig_.surfaceNodeIds);
+    return SelectWindowRecordSourceDisplay(nodeMap, surfaces);
+}
+
+void RSLogicalDisplayRenderNode::PublishWindowRecordMirrorSource()
+{
+    if (!IsWindowRecordActive()) {
+        recordPublicationDone_ = false;
+        return;
+    }
+    // Mark completion before resolving so a no-anchor result is a valid published outcome rather
+    // than an unpublished state that the later snapshot could retry with a newly valid anchor.
+    recordPublicationDone_ = true;
+    // Fail closed on an output that cannot hold a mirror relation: SetMirrorSource() no-ops outside
+    // MIRROR mode, and an active record must never keep a stale configured source.
+    if (!IsMirrorDisplay()) {
+        ResetMirrorSource();
+        return;
+    }
+    auto sourceDisplay = ResolveWindowRecordSourceDisplay();
+    if (sourceDisplay == nullptr) {
+        // Keep the session but drop the record-owned relation: never emit the configured
+        // whole-screen mirror while no drawable anchor exists. Recovery is automatic.
+        ResetMirrorSource();
+        return;
+    }
+    SetMirrorSource(std::move(sourceDisplay));
+}
+
+void RSLogicalDisplayRenderNode::EndWindowRecordSession()
+{
+    const bool wasActive = IsWindowRecordActive();
+    ClearWindowRecordSession();
+    if (!wasActive) {
+        return;
+    }
+    // Release both record-owned layers: this display's relation and the parent output screen's
+    // relation that early publication mirrored from it. The screen helper keeps its shared-source
+    // count balanced and is idempotent when the relation is already empty.
+    ResetMirrorSource();
+    auto screenNode = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(GetParent().lock());
+    if (screenNode != nullptr) {
+        screenNode->PublishRecordScreenMirrorSource(nullptr);
+    }
+}
+
 RSLogicalDisplayRenderNode::RSLogicalDisplayRenderNode(NodeId id,
     const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
     : RSRenderNode(id, context, isTextureExportNode), screenId_(config.screenId)
@@ -102,11 +350,13 @@ void RSLogicalDisplayRenderNode::UpdateRenderParams()
     logicalDisplayRenderParam->nodeRotation_ = GetRotation();
     logicalDisplayRenderParam->displayMode_ = displayMode_;
     logicalDisplayRenderParam->specialLayerManager_ = specialLayerManager_;
+    // Mute is an output property and must reach the render thread even when no mirror source
+    // resolves.
+    logicalDisplayRenderParam->virtualScreenMuteStatus_ = virtualScreenMuteStatus_;
     auto mirroredNode = GetMirrorSource().lock();
     if (mirroredNode) {
         logicalDisplayRenderParam->mirrorSourceDrawable_ = mirroredNode->GetRenderDrawable();
         logicalDisplayRenderParam->specialLayerManager_ = mirroredNode->GetSpecialLayerMgr();
-        logicalDisplayRenderParam->virtualScreenMuteStatus_ = virtualScreenMuteStatus_;
         logicalDisplayRenderParam->SetMirrorSourceRotation(mirrorSourceRotation_);
     } else {
         logicalDisplayRenderParam->mirrorSourceDrawable_.reset();
@@ -124,6 +374,9 @@ void RSLogicalDisplayRenderNode::UpdateRenderParams()
     logicalDisplayRenderParam->SetAncestorScreenDrawable(screenDrawable);
     logicalDisplayRenderParam->fixedWidth_ = fixedWidth_;
     logicalDisplayRenderParam->fixedHeight_ = fixedHeight_;
+    logicalDisplayRenderParam->SetWindowRecordConfig(windowRecordConfig_);
+    logicalDisplayRenderParam->SetOnVirtualScreen(IsOnVirtualScreen());
+    ResolveWindowRecordSnapshot(*logicalDisplayRenderParam);
     auto& boundGeo = GetRenderProperties().GetBoundsGeometry();
     if (boundGeo) {
         logicalDisplayRenderParam->offsetX_ = boundGeo->GetX();

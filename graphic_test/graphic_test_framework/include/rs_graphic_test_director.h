@@ -41,6 +41,7 @@ public:
     void Run();
     void FlushMessage();
     bool FlushMessageAndWait(int timeoutMs);
+    void FlushMessageAndSettle(int settleMs);
     std::shared_ptr<Media::PixelMap> TakeScreenCaptureAndWait(int ms, bool isScreenShot = false);
     void ResetImagePath();
 
@@ -49,6 +50,8 @@ public:
     void SetSurfaceBounds(const Vector4f& bounds);
     void SetScreenSurfaceBounds(const Vector4f& bounds);
     void SetSurfaceColor(const RSColor& color);
+    // Divided render only: binds a window surface to the root node whose tree the client draws into it.
+    void BindRootToSurface(const std::shared_ptr<RSSurfaceNode>& surface, const std::shared_ptr<RSRootNode>& root);
     void SetScreenSize(float width, float height);
     bool IsSingleTest();
     void SetSingleTest(bool IsSingleTest);
@@ -77,6 +80,8 @@ public:
 private:
     void InitProfilerThread();
     void NotifyAnimationFrameCallbacks();
+    std::shared_ptr<Media::PixelMap> TakeScreenCaptureOnce(int ms, bool isScreenShot);
+    std::shared_ptr<Media::PixelMap> TakeStableScreenCapture(int ms, bool isScreenShot);
 
     ScreenId screenId_ = 0;
     RectF screenBounds_;

@@ -22,7 +22,9 @@
 #include "command/rs_display_node_command.h"
 #include "common/rs_background_thread.h"
 #include "pipeline/rs_render_node_gc.h"
+#include "pipeline/rs_screen_render_node.h"
 #include "platform/common/rs_system_properties.h"
+#include "screen_manager/rs_screen_property.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -30,6 +32,19 @@ namespace {
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos;
+constexpr ScreenId TEST_SCREEN_ID = 1;
+constexpr NodeId TEST_SCREEN_NODE_ID = 100;
+constexpr NodeId TEST_DISPLAY_NODE_ID = 1;
+
+void RegisterScreenNode(RSContext& context)
+{
+    auto screenRenderNode = std::make_shared<RSScreenRenderNode>(TEST_SCREEN_NODE_ID, TEST_SCREEN_ID,
+        context.weak_from_this());
+    RSScreenProperty property;
+    property.Set(ScreenPropertyType::IS_VIRTUAL, sptr<ScreenProperty<bool>>::MakeSptr(true));
+    screenRenderNode->SetScreenProperty(property);
+    context.GetMutableNodeMap().RegisterRenderNode(screenRenderNode);
+}
 } // namespace
 
 /*
@@ -50,6 +65,20 @@ T GetData()
     }
     g_pos += objectSize;
     return object;
+}
+
+RSWindowRecordConfig GetWindowRecordConfigFromData()
+{
+    RSWindowRecordConfig recordConfig;
+    // Read one byte and use the lowest bit: a bool copy of 0x02 is a UBSan trap before business code.
+    const uint8_t renderFitBits = GetData<uint8_t>();
+    recordConfig.renderFit = (renderFitBits & 1) ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
+    // Bounded id count; includes the over-cap MAX_WINDOW_RECORD_SURFACE_NUM + 1 value.
+    size_t idCount = GetData<uint16_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
+    for (size_t i = 0; i < idCount; ++i) {
+        recordConfig.surfaceNodeIds.push_back(GetData<NodeId>());
+    }
+    return recordConfig;
 }
 
 bool DoDisplayNode(const uint8_t* data, size_t size, RSContext& context)
@@ -131,6 +160,28 @@ bool DoSetVirtualScreenMuteStatus(const uint8_t* data, size_t size, RSContext& c
 
     return true;
 }
+
+bool DoSetWindowRecordConfig()
+{
+    if (g_data == nullptr) {
+        return false;
+    }
+    // A dedicated context keeps the fixed virtual screen and display away from the random fixtures above.
+    std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
+    RegisterScreenNode(*context);
+    // The start gate requires an existing virtual MIRROR output, so configure one before a
+    // non-empty record config; an unregistered source keeps the paused empty+no-source state.
+    RSDisplayNodeConfig displayConfig;
+    displayConfig.screenId = TEST_SCREEN_ID;
+    displayConfig.displayMode = DisplayMode::MIRROR;
+    DisplayNodeCommandHelper::Create(*context, TEST_DISPLAY_NODE_ID, displayConfig);
+
+    RSWindowRecordConfig recordConfig = GetWindowRecordConfigFromData();
+    DisplayNodeCommandHelper::SetWindowRecordConfig(*context, TEST_DISPLAY_NODE_ID, recordConfig);
+
+    context = nullptr;
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS
 
@@ -149,6 +200,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSetDisplayMode(data, size, *context);
     OHOS::Rosen::DoSetBootAnimation(data, size, *context);
     OHOS::Rosen::DoSetVirtualScreenMuteStatus(data, size, *context);
+    OHOS::Rosen::DoSetWindowRecordConfig();
 
     context = nullptr;
     OHOS::Rosen::RSRenderNodeGC::Instance().ReleaseNodeMemory();

@@ -57,6 +57,16 @@ public:
         return isFirstTimeToProcessor_;
     }
 
+    void SetWindowRecordBBox(const Drawing::RectI& bbox)
+    {
+        windowRecordBBox_ = bbox;
+    }
+
+    const Drawing::RectI& GetWindowRecordBBox() const
+    {
+        return windowRecordBBox_;
+    }
+
     RSRenderNodeDrawableType GetDrawableType() const override
     {
         return RSRenderNodeDrawableType::LOGICAL_DISPLAY_NODE_DRAWABLE;
@@ -125,6 +135,7 @@ private:
     bool lastEnableVisibleRect_ = false;
     Drawing::RectI curVisibleRect_;
     Drawing::RectI lastVisibleRect_;
+    Drawing::RectI windowRecordBBox_;
     std::shared_ptr<RSSLRScaleFunction> scaleManager_ = nullptr;
     bool isMirrorSLRCopy_ = false;
     bool isFirstTimeToProcessor_ = true;

@@ -49,6 +49,8 @@ struct CaptureParam {
     bool needCaptureSpecialLayer_ = false;
     bool hasDirtyContent_ = false;
     bool hasPrivacyAndSpecialLayer_ = false;
+    // Window-record also permits matching a surface by its own node id.
+    bool isWindowRecord_ = false;
     std::unordered_set<NodeId> blackList_;
     std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> effectData_ = nullptr;
     CaptureParam() {}

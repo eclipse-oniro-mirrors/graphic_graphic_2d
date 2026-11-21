@@ -45,6 +45,8 @@ struct Size {
 };
 
 bool WriteToPngWithPixelMap(const std::string& fileName, OHOS::Media::PixelMap& pixelMap);
+bool WriteToPngWithPixelMapAtomic(const std::string& fileName, OHOS::Media::PixelMap& pixelMap,
+    uint32_t expectedWidth, uint32_t expectedHeight);
 void WaitTimeout(int ms);
 
 }

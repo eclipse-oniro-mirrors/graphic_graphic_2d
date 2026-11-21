@@ -33,6 +33,7 @@
 inline const std::string RENDER_NODE_NAME = "ScreenNode";
 
 namespace OHOS::Rosen {
+class RSScreenRenderParams;
 namespace DrawableV2 {
 class RSMultiScreenUtil;
 

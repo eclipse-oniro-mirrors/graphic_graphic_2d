@@ -104,6 +104,7 @@
 #include "pipeline/main_thread/rs_uni_render_visitor.h"
 #include "pipeline/main_thread/rs_render_service_listener.h"
 #include "pipeline/rs_logical_display_render_node.h"
+#include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
 #include "pipeline/rs_surface_handler.h"
@@ -682,6 +683,7 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
         WaitUntilUnmarshallingTaskFinished();
         ProcessCommand();
         RSLayerSplitManager::GetInstance()->MoveSplitSurfaceNode();
+        PublishWindowRecordMirrorSources();
         RsFrameBlurPredict::GetInstance().AdjustCurrentFrameDrawLargeAreaBlurFrequencyPredictively();
         UpdateSubSurfaceCnt();
         Animate(timestamp_);
@@ -1595,6 +1597,20 @@ void RSMainThread::ProcessCommand()
             break;
     }
     context_->purgeType_ = RSContext::PurgeType::NONE;
+}
+
+void RSMainThread::PublishWindowRecordMirrorSources()
+{
+    if (!context_) {
+        return;
+    }
+    // Publication must happen after tree updates and before animation/HWC/visitor construction so
+    // every mirror consumer observes the record-owned relation for the same frame.
+    context_->GetMutableNodeMap().TraverseScreenNodes([](const std::shared_ptr<RSScreenRenderNode>& screenNode) {
+        if (screenNode != nullptr) {
+            screenNode->PublishWindowRecordMirrorSource();
+        }
+    });
 }
 
 void RSMainThread::UpdateSubSurfaceCnt()

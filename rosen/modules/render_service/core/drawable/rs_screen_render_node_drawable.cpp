@@ -690,7 +690,7 @@ bool RSScreenRenderNodeDrawable::PrepareForDraw(std::shared_ptr<RSProcessor>& pr
     RSRenderNodeDrawable::InitDfxForCacheInfo();
     CompositeType compositeType = params->GetCompositeType();
     // set for cache and draw cross node in extended screen model
-    uniParam->SetIsMirrorScreen(params->IsMirrorScreen());
+    uniParam->SetIsMirrorScreen(params->IsMirrorScreen() || params->HasWindowRecordDisplay());
     uniParam->SetCurrentVisitDisplayDrawableId(GetId());
     uniParam->SetIsFirstVisitCrossNodeDisplay(params->IsFirstVisitCrossNodeDisplay());
     uniParam->SetCompositeType(compositeType);
@@ -824,11 +824,25 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
     RS_TRACE_NAME_FMT("RSScreenRenderNodeDrawable::OnDraw[%" PRIu64 "][%" PRIu64"] zoomed(%d)",
         paramScreenId, GetId(), params->GetZoomed());
+    if (params->HasWindowRecordDisplay()) {
+        RSMultiScreenUtil::HandleWindowRecordScreen(*this, *params, processor);
+        return;
+    }
     auto mirroredDrawable = params->GetMirrorSourceDrawable().lock();
     auto mirrorSourceParams =
         mirroredDrawable ? static_cast<RSScreenRenderParams*>(mirroredDrawable->GetRenderParams().get()) : nullptr;
     if (mirrorSourceParams) {
-        RSMultiScreenUtil::HandleMirrorScreen(*this, *mirrorSourceParams, *params, processor);
+        RSMultiScreenUtil::HandleMirrorScreen(*this, mirrorSourceParams, *params, processor);
+        return;
+    }
+    if (params->GetCompositeType() == CompositeType::UNI_RENDER_VIRTUAL_MIRROR_COMPOSITE) {
+        // Four-state output contract: a virtual MIRROR output without usable source params is
+        // paused, even muted, and must not request a buffer or PostProcess. This covers both an
+        // absent source drawable and a source drawable whose params are not ready yet. A
+        // record-active output returned above with its record gates; an ordinary source mirror
+        // returned with valid params too.
+        RS_TRACE_NAME_FMT("RSScreenRenderNodeDrawable::%s paused virtual mirror output, skip", __func__);
+        SetDrawSkipType(DrawSkipType::SKIP_FRAME);
         return;
     }
     if (params->GetCompositeType() == CompositeType::UNI_RENDER_VIRTUAL_EXPAND_COMPOSITE ||

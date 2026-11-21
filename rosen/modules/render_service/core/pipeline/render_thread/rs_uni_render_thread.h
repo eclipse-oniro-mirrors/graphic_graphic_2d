@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common/rs_thread_handler.h"
@@ -298,6 +299,35 @@ public:
         }
 
         sptr<SyncFence> fence_ = SyncFence::InvalidFence();
+    };
+
+    // Restores the special-layer state and complete capture state on scope exit.
+    struct SpecialLayerCaptureGuard {
+        SpecialLayerCaptureGuard()
+            : hadRenderThreadParams_(RSUniRenderThread::Instance().GetRSRenderThreadParams() != nullptr),
+              captureParam_(RSUniRenderThread::GetCaptureParam())
+        {
+            auto& params = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+            if (params != nullptr) {
+                specialLayerParam_ = std::exchange(params->GetMutableSpecialLayerRenderParam(), {});
+            }
+        }
+
+        ~SpecialLayerCaptureGuard()
+        {
+            auto& params = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+            if (hadRenderThreadParams_ && params != nullptr) {
+                params->GetMutableSpecialLayerRenderParam() = std::move(specialLayerParam_);
+            }
+            RSUniRenderThread::SetCaptureParam(captureParam_);
+        }
+
+        SpecialLayerCaptureGuard(const SpecialLayerCaptureGuard&) = delete;
+        SpecialLayerCaptureGuard& operator=(const SpecialLayerCaptureGuard&) = delete;
+
+        SpecialLayerRenderParam specialLayerParam_;
+        bool hadRenderThreadParams_ = false;
+        CaptureParam captureParam_;
     };
     using CommitDoneCallback = std::function<void(ScreenId)>;
     void SetCommitDoneCallback(CommitDoneCallback callback);

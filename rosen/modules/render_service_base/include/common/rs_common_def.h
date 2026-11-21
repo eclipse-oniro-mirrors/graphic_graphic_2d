@@ -474,6 +474,29 @@ struct RSSurfaceCaptureConfig {
     }
 };
 
+enum class WindowRecordFit {
+    ASPECT_FIT_TOP_LEFT,
+    ASPECT_FIT,
+};
+
+// Upper bound for one record session's window list: the ids are re-resolved on the RS main thread
+// every frame and the resulting set is copied into the render params every frame, so the list must
+// stay small (the generic parcel bound is 65535).
+constexpr size_t MAX_WINDOW_RECORD_SURFACE_NUM = 4096;
+
+struct RSWindowRecordConfig {
+    WindowRecordFit renderFit = WindowRecordFit::ASPECT_FIT_TOP_LEFT;
+    // Contains leash persistent ids and surface node ids. Every main window is supplied with both
+    // ids, and values from the two id spaces never collide across different windows.
+    std::vector<NodeId> surfaceNodeIds = {};
+
+    bool operator==(const RSWindowRecordConfig& other) const
+    {
+        return renderFit == other.renderFit &&
+               surfaceNodeIds == other.surfaceNodeIds;
+    }
+};
+
 struct RSSurfaceCaptureBlurParam {
     bool isNeedBlur = false;
     float blurRadius = 1E-6;
