@@ -598,7 +598,7 @@ ani_object AniFilter::Emboss(ani_env* env, ani_object obj, ani_double outlineWid
     // the sticker is the effect chain input image, supplied by EffectImageChain on apply
     auto emboss = EffectImageFilter::StickerEmboss(params);
     if (emboss != nullptr) {
-        aniFilter->AddNextFilter(emboss);
+        aniFilter->AddNextFilter(emboss, "emboss");
     }
 
     return AniEffectKitUtils::CreateAniObject(
@@ -631,7 +631,7 @@ ani_object AniFilter::Iridescence(ani_env* env, ani_object obj, ani_object iride
     // the sticker is the effect chain input image, supplied by EffectImageChain on apply
     auto iridescence = EffectImageFilter::StickerLaserShader(params);
     if (iridescence != nullptr) {
-        aniFilter->AddNextFilter(iridescence);
+        aniFilter->AddNextFilter(iridescence, "iridescence");
     }
 
     return AniEffectKitUtils::CreateAniObject(

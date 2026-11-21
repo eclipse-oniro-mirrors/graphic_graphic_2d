@@ -689,7 +689,7 @@ napi_value FilterNapi::Emboss(napi_env env, napi_callback_info info)
     auto emboss = EffectImageFilter::StickerEmboss(params);
     EFFECT_NAPI_CHECK_RET_D(emboss != nullptr, _this,
         EFFECT_LOG_E("FilterNapi Emboss create filter fail"));
-    thisFilter->AddEffectFilter(emboss);
+    thisFilter->AddEffectFilter(emboss, "emboss");
     return _this;
 }
 
@@ -767,7 +767,7 @@ napi_value FilterNapi::Iridescence(napi_env env, napi_callback_info info)
     auto iridescence = EffectImageFilter::StickerLaserShader(params);
     EFFECT_NAPI_CHECK_RET_D(iridescence != nullptr, _this,
         EFFECT_LOG_E("FilterNapi Iridescence create filter fail"));
-    thisFilter->AddEffectFilter(iridescence);
+    thisFilter->AddEffectFilter(iridescence, "iridescence");
     return _this;
 }
 
