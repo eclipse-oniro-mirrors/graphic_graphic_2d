@@ -63,6 +63,10 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr int64_t SURFACE_CAPTURE_REPLY_TIMEOUT_MS = 5000;
+}
+
 RSRenderPipelineClient::RSRenderPipelineClient()
 {
     tokenMaskId_ = RSRenderServiceConnectHub::GetDefaultTokenMaskId();
@@ -400,7 +404,7 @@ void RSRenderPipelineClient::TriggerSurfaceCaptureCallback(NodeId id, const RSSu
         std::lock_guard<std::mutex> lock(mutex_);
         auto iter = surfaceCaptureCbMap_.find({ id, captureConfig });
         if (iter != surfaceCaptureCbMap_.end()) {
-            callbackVector = iter->second;
+            callbackVector = iter->second.callbacks;
             surfaceCaptureCbMap_.erase(iter);
         }
     }
@@ -480,14 +484,31 @@ bool RSRenderPipelineClient::TakeSurfaceCapture(NodeId id, std::shared_ptr<Surfa
     }
     {
         std::lock_guard<std::mutex> lock(mutex_);
+        auto now = std::chrono::steady_clock::now();
         auto iter = surfaceCaptureCbMap_.find({ id, captureConfig });
-        if (iter != surfaceCaptureCbMap_.end()) {
-            ROSEN_LOGD("RSRenderPipelineClient::TakeSurfaceCapture surfaceCaptureCbMap_.count(id) != 0");
-            iter->second.emplace_back(callback);
-            return true;
+        if (iter == surfaceCaptureCbMap_.end()) {
+            SurfaceCaptureEntry captureGroup;
+            captureGroup.callbacks = { callback };
+            captureGroup.lastSendTime = now;
+            surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), std::move(captureGroup));
+        } else {
+            const int64_t elapsedMs =
+                std::chrono::duration_cast<std::chrono::milliseconds>(now - iter->second.lastSendTime).count();
+            if (elapsedMs < SURFACE_CAPTURE_REPLY_TIMEOUT_MS) {
+                ROSEN_LOGD(
+                    "RSRenderPipelineClient::TakeSurfaceCapture merge into pending request, nodeId:[%{public}" PRIu64
+                    "] waiting[%{public}zu] elapsed[%{public}" PRId64 " ms]",
+                    id, iter->second.callbacks.size(), elapsedMs);
+                iter->second.callbacks.emplace_back(callback);
+                return true;
+            }
+            ROSEN_LOGW("RSRenderPipelineClient::TakeSurfaceCapture pending request timeout, nodeId:[%{public}" PRIu64
+                       "] elapsed[%{public}" PRId64 " ms] discard[%{public}zu] callbacks",
+                id, elapsedMs, iter->second.callbacks.size());
+            iter->second.callbacks.clear();
+            iter->second.callbacks.emplace_back(callback);
+            iter->second.lastSendTime = now;
         }
-        std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
-        surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), callbackVector);
 
         if (surfaceCaptureCbDirector_ == nullptr) {
             surfaceCaptureCbDirector_ = new SurfaceCaptureCallbackDirector(weak_from_this());
@@ -528,11 +549,12 @@ bool RSRenderPipelineClient::TakeSelfSurfaceCapture(NodeId id, std::shared_ptr<S
         auto iter = surfaceCaptureCbMap_.find({ id, captureConfig });
         if (iter != surfaceCaptureCbMap_.end()) {
             ROSEN_LOGD("RSRenderPipelineClient::TakeSelfSurfaceCapture surfaceCaptureCbMap_.count(id) != 0");
-            iter->second.emplace_back(callback);
+            iter->second.callbacks.emplace_back(callback);
             return true;
         }
-        std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
-        surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), callbackVector);
+        SurfaceCaptureEntry captureGroup;
+        captureGroup.callbacks = { callback };
+        surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), std::move(captureGroup));
 
         if (surfaceCaptureCbDirector_ == nullptr) {
             surfaceCaptureCbDirector_ = new SurfaceCaptureCallbackDirector(weak_from_this());
@@ -564,11 +586,12 @@ bool RSRenderPipelineClient::SetWindowFreezeImmediately(NodeId id, bool isFreeze
         auto iter = surfaceCaptureCbMap_.find({ id, captureConfig });
         if (iter != surfaceCaptureCbMap_.end()) {
             ROSEN_LOGD("RSRenderPipelineClient::SetWindowFreezeImmediately surfaceCaptureCbMap_.count(id) != 0");
-            iter->second.emplace_back(callback);
+            iter->second.callbacks.emplace_back(callback);
             return true;
         }
-        std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
-        surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), callbackVector);
+        SurfaceCaptureEntry captureGroup;
+        captureGroup.callbacks = { callback };
+        surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), std::move(captureGroup));
 
         if (surfaceCaptureCbDirector_ == nullptr) {
             surfaceCaptureCbDirector_ = new SurfaceCaptureCallbackDirector(weak_from_this());
@@ -598,11 +621,12 @@ bool RSRenderPipelineClient::TakeSurfaceCaptureWithAllWindows(NodeId id,
         auto iter = surfaceCaptureCbMap_.find(key);
         if (iter != surfaceCaptureCbMap_.end()) {
             ROSEN_LOGD("%{public}s surfaceCaptureCbMap_.count(id) != 0", __func__);
-            iter->second.emplace_back(callback);
+            iter->second.callbacks.emplace_back(callback);
             return true;
         }
-        std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = { callback };
-        surfaceCaptureCbMap_.emplace(key, callbackVector);
+        SurfaceCaptureEntry captureGroup;
+        captureGroup.callbacks = { callback };
+        surfaceCaptureCbMap_.emplace(key, std::move(captureGroup));
 
         if (surfaceCaptureCbDirector_ == nullptr) {
             surfaceCaptureCbDirector_ = new SurfaceCaptureCallbackDirector(weak_from_this());
@@ -648,11 +672,12 @@ bool RSRenderPipelineClient::TakeUICaptureInRange(
         auto iter = surfaceCaptureCbMap_.find({ id, captureConfig });
         if (iter != surfaceCaptureCbMap_.end()) {
             ROSEN_LOGD("RSRenderPipelineClient::TakeUICaptureInRange surfaceCaptureCbMap_.count(id) != 0");
-            iter->second.emplace_back(callback);
+            iter->second.callbacks.emplace_back(callback);
             return true;
         }
-        std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
-        surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), callbackVector);
+        SurfaceCaptureEntry captureGroup;
+        captureGroup.callbacks = { callback };
+        surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), std::move(captureGroup));
 
         if (surfaceCaptureCbDirector_ == nullptr) {
             surfaceCaptureCbDirector_ = new SurfaceCaptureCallbackDirector(weak_from_this());
