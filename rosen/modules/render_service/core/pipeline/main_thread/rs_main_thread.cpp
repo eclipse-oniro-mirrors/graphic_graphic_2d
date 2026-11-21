@@ -4629,12 +4629,6 @@ void RSMainThread::ProcessDataBySingleFrameComposer(std::unique_ptr<RSTransactio
         return;
     }
 
-    if (RSSystemProperties::GetSingleFrameComposerEnabled()) {
-        RSSingleFrameComposer::SetSingleFrameFlag(std::this_thread::get_id());
-        context_->transactionTimestamp_ = rsTransactionData->GetTimestamp();
-        rsTransactionData->ProcessBySingleFrameComposer(*context_);
-    }
-
     {
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
         cachedTransactionDataMap_[rsTransactionData->GetSendingPid()].emplace_back(std::move(rsTransactionData));
