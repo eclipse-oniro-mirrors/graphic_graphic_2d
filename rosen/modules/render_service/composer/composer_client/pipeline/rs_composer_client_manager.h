@@ -62,6 +62,7 @@ public:
     void DumpCurrentFrameLayers();
     void ClearFrameBuffers(const std::unordered_set<ScreenId>& screenHasProtectedLayerSet);
     void GetAllScreenHdiOutput(std::vector<std::shared_ptr<HdiOutput>>& hdiOutputVec);
+    bool PostTaskToComposer(ScreenId screenId, const std::function<void()>& task);
 
 private:
     mutable std::mutex rsComposerMapMutex_;

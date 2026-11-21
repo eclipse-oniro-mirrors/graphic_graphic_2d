@@ -2181,6 +2181,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             RSBaseSurfaceUtil::DropFrameConfig dropFrameConfig;
             dropFrameConfig.enable = IsNeedDropFrameByPid(surfaceHandler->GetNodeId());
             dropFrameConfig.level = GetDropFrameLevelByPid(surfaceHandler->GetNodeId());
+            tunnelLayerManager_->UpdateTunnelStateMachinePerFrame(surfaceNode);
             bool comsumeResult;
             {
                 std::lock_guard<std::mutex> lock(surfaceHandler->GetTunnelMutex());
@@ -2192,7 +2193,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                 static_cast<uint32_t>(OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO)) {
                 lppVideoHandler_.ConsumeAndUpdateLppBuffer(vsyncId_, surfaceNode);
             }
-            tunnelLayerManager_->UpdateTunnelStateMachine(surfaceNode, comsumeResult);
+            tunnelLayerManager_->TryHandleLppAfterConsume(surfaceNode, comsumeResult);
             if (comsumeResult) {
                 if (!isUniRender_) {
                     this->dividedRenderbufferTimestamps_[surfaceNode->GetId()] =
@@ -3103,6 +3104,9 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     int64_t rsPeriod = 0;
     if (receiver_) {
         receiver_->GetVSyncPeriod(rsPeriod);
+    }
+    if (rsPeriod > 0) {
+        FrameReport::GetInstance().SetVsyncPeriodNs(rsPeriod);
     }
     uint32_t refreshRate = impl::CalculateRefreshRate(rsPeriod);
     rsVsyncRateReduceManager_.ResetFrameValues(refreshRate);

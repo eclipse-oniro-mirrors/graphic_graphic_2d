@@ -65,23 +65,35 @@ void RSRenderServiceListener::OnBufferAvailable()
     }
 
     bool isNewTunnelEnabled = Rosen::IsNewTunnelEnabled();
-    auto doFastCompose = CheckFastCompose(consumer);
-    bool isTunnelCandidate = isNewTunnelEnabled && surfaceHandler->HasReceivedTunnelLayerInfo();
-    if (isTunnelCandidate) {
+    auto task = [this, consumer, surfaceHandler, node, isNewTunnelEnabled]() {
+        auto doFastCompose = CheckFastCompose(consumer);
         auto* surfaceRenderNodeRaw = node->AsRSSurfaceRenderNode();
-        if (surfaceRenderNodeRaw != nullptr) {
-            std::shared_ptr<RSSurfaceRenderNode> surfaceRenderNode(node, surfaceRenderNodeRaw);
-            auto handleResult =
-                RSTunnelLayerHelper::HandleListenerBuffer(surfaceRenderNode, surfaceHandler, composerClientManager_);
-            if (handleResult.needRequestVsync) {
-                RSMainThread::Instance()->RequestNextVSync("tunnel-pending-param");
-            }
-            if (handleResult.committed) {
-                return;
-            }
+        bool isTunnelCandidate =
+            isNewTunnelEnabled && surfaceHandler->HasReceivedTunnelLayerInfo() && surfaceRenderNodeRaw != nullptr;
+        if (!isTunnelCandidate) {
+            SetBufferInfoAndRequest(surfaceHandler, surfaceHandler->GetConsumer(), doFastCompose);
+            return;
         }
+        std::shared_ptr<RSSurfaceRenderNode> surfaceRenderNode(node, surfaceRenderNodeRaw);
+        auto handleResult =
+            RSTunnelLayerHelper::HandleListenerBuffer(surfaceRenderNode, surfaceHandler, composerClientManager_);
+        if (handleResult.needRequestVsync) {
+            RSMainThread::Instance()->RequestNextVSync("tunnel-pending-param");
+        }
+        if (!handleResult.committed) {
+            SetBufferInfoAndRequest(surfaceHandler, surfaceHandler->GetConsumer(), doFastCompose);
+        }
+    };
+
+    bool dispatched = false;
+    auto* surfaceRenderNodeRaw = node->AsRSSurfaceRenderNode();
+    if (surfaceRenderNodeRaw != nullptr && surfaceRenderNodeRaw->TryGetTunnelRuntimeState() != nullptr &&
+        composerClientManager_ != nullptr) {
+        dispatched = composerClientManager_->PostTaskToComposer(surfaceRenderNodeRaw->GetScreenId(), task);
     }
-    SetBufferInfoAndRequest(surfaceHandler, surfaceHandler->GetConsumer(), doFastCompose);
+    if (!dispatched) {
+        task();
+    }
 }
 
 bool RSRenderServiceListener::CheckFastCompose(const sptr<IConsumerSurface>& consumer)

@@ -260,6 +260,28 @@ std::shared_ptr<RSTunnelRuntimeState> RSSurfaceRenderNode::TryGetTunnelRuntimeSt
     return tunnelRuntimeState_;
 }
 
+#ifndef ROSEN_CROSS_PLATFORM
+void RSSurfaceRenderNode::RestoreTunnelRuntimeState()
+{
+    std::lock_guard<std::mutex> lock(tunnelStateMutex_);
+    TunnelLayerState tunnelLayerInfo;
+    auto consumer = surfaceHandler_->GetConsumer();
+    if (consumer && consumer->GetTunnelLayerInfo(tunnelLayerInfo) == GSERROR_OK) {
+        if (tunnelLayerInfo.tunnelLayerId != 0 && tunnelLayerInfo.property != 0) {
+            RS_TRACE_NAME_FMT("TUNNEL_DEBUG %s tunnelLayerId %lu property %d", __func__, tunnelLayerInfo.tunnelLayerId,
+                tunnelLayerInfo.property);
+            RS_LOGI_IF(DEBUG_TUNNEL, "TUNNEL_DEBUG %{public}s tunnelLayerId %{public}" PRIu64 " property %{public}d",
+                __func__, tunnelLayerInfo.tunnelLayerId, tunnelLayerInfo.property);
+            if (!tunnelRuntimeState_) {
+                tunnelRuntimeState_ = std::make_shared<RSTunnelRuntimeState>();
+            }
+            surfaceHandler_->MarkTunnelLayerInfoReceived();
+            tunnelRuntimeState_->SetLayerInfo(tunnelLayerInfo.tunnelLayerId, tunnelLayerInfo.property);
+        }
+    }
+}
+#endif
+
 void RSSurfaceRenderNode::UpdateSrcRect(const Drawing::Canvas& canvas, const Drawing::RectI& dstRect,
     bool hasRotation)
 {

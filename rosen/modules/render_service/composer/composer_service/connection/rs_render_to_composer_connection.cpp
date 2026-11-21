@@ -159,5 +159,15 @@ void RSRenderToComposerConnection::SetSkipDelay(bool skipDelay)
     }
     rsRenderComposerAgent_->SetSkipDelay(skipDelay);
 }
+
+bool RSRenderToComposerConnection::PostTask(const std::function<void()>& task)
+{
+    if (rsRenderComposerAgent_ == nullptr) {
+        RS_LOGE("%{public}s param illegal", __func__);
+        return false;
+    }
+    rsRenderComposerAgent_->PostTask(task);
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS

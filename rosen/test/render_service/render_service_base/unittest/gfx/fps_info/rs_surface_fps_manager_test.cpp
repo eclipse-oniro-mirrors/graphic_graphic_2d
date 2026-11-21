@@ -360,4 +360,53 @@ HWTEST_F(RSSurfaceFpsManagerTest, GetSelfDrawSurfaceNameByPid, TestSize.Level1)
     EXPECT_EQ(surfaceFpsManager.GetSelfDrawSurfaceNameByPid(upid), "");
     surfaceFpsManager.UnregisterSurfaceFps(uid);
 }
+
+/**
+ * @tc.name: RecordFrame001
+ * @tc.desc: test results of RecordFrame with an unregistered surface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceFpsManagerTest, RecordFrame001, TestSize.Level1)
+{
+    constexpr uint64_t FLUSH_TIMESTAMP = 300;
+    constexpr uint64_t PRESENT_TIMESTAMP = 400;
+    RSSurfaceFpsManager& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
+    NodeId id = 3000;
+    NodeId unknownId = 3001;
+    std::string name = "recordframesurface0";
+    uint64_t uniqueId = 0;
+    surfaceFpsManager.RegisterSurfaceFps(id, name, uniqueId);
+    surfaceFpsManager.RecordFrame(unknownId, FLUSH_TIMESTAMP, PRESENT_TIMESTAMP);
+    EXPECT_EQ(nullptr, surfaceFpsManager.GetSurfaceFps(unknownId));
+    std::string result("");
+    surfaceFpsManager.Dump(result, unknownId);
+    EXPECT_TRUE(result.empty());
+    result.clear();
+    surfaceFpsManager.Dump(result, id);
+    EXPECT_TRUE(result.find(std::to_string(FLUSH_TIMESTAMP)) == std::string::npos);
+    EXPECT_TRUE(result.find(std::to_string(PRESENT_TIMESTAMP)) == std::string::npos);
+    surfaceFpsManager.UnregisterSurfaceFps(id);
+}
+
+/**
+ * @tc.name: RecordFrame002
+ * @tc.desc: test results of RecordFrame with a registered surface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceFpsManagerTest, RecordFrame002, TestSize.Level1)
+{
+    constexpr uint64_t FLUSH_TIMESTAMP = 300;
+    constexpr uint64_t PRESENT_TIMESTAMP = 400;
+    RSSurfaceFpsManager& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
+    NodeId id = 3000;
+    std::string name = "recordframesurface0";
+    uint64_t uniqueId = 0;
+    surfaceFpsManager.RegisterSurfaceFps(id, name, uniqueId);
+    surfaceFpsManager.RecordFrame(id, FLUSH_TIMESTAMP, PRESENT_TIMESTAMP);
+    std::string result("");
+    surfaceFpsManager.Dump(result, id);
+    EXPECT_TRUE(result.find(std::to_string(FLUSH_TIMESTAMP)) != std::string::npos);
+    EXPECT_TRUE(result.find(std::to_string(PRESENT_TIMESTAMP)) != std::string::npos);
+    surfaceFpsManager.UnregisterSurfaceFps(id);
+}
 }

@@ -142,10 +142,10 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState001, TestSize.Level1)
     ASSERT_TRUE(lppContext.IsProducerReady());
     ASSERT_TRUE(RegisterSurfaceNode(rsContext, lppContext.node));
     lppContext.surfaceHandler->SetSourceType(static_cast<uint32_t>(OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO));
-    tunnelLayerManager.UpdateTunnelStateMachine(lppContext.node, true);
+    tunnelLayerManager.TryHandleLppAfterConsume(lppContext.node, true);
     ExpectTunnelLayerInfo(
         lppContext.node, lppContext.consumer->GetUniqueId(), TUNNEL_PROP_BUFFER_ADDR | TUNNEL_PROP_DEVICE_COMMIT);
-    tunnelLayerManager.UpdateTunnelStateMachine(lppContext.node, true);
+    tunnelLayerManager.TryHandleLppAfterConsume(lppContext.node, true);
     ExpectTunnelLayerInfo(
         lppContext.node, lppContext.consumer->GetUniqueId(), TUNNEL_PROP_BUFFER_ADDR | TUNNEL_PROP_DEVICE_COMMIT);
 
@@ -155,14 +155,14 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState001, TestSize.Level1)
     lppNoConsumerContext.surfaceHandler->SetSourceType(
         static_cast<uint32_t>(OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO));
     lppNoConsumerContext.surfaceHandler->SetConsumer(nullptr);
-    tunnelLayerManager.UpdateTunnelStateMachine(lppNoConsumerContext.node, true);
+    tunnelLayerManager.TryHandleLppAfterConsume(lppNoConsumerContext.node, true);
     EXPECT_EQ(lppNoConsumerContext.node->TryGetTunnelRuntimeState(), nullptr);
     ExpectTunnelLayerInfo(lppNoConsumerContext.node, 0, TUNNEL_PROP_INVALID);
 
     auto disabledNoStateContext = CreateTunnelContext(MakeNodeId(TEST_PID_TWO, TEST_NODE_UID_THREE));
     ASSERT_TRUE(disabledNoStateContext.IsProducerReady());
     ASSERT_TRUE(RegisterSurfaceNode(rsContext, disabledNoStateContext.node));
-    tunnelLayerManager.UpdateTunnelStateMachine(disabledNoStateContext.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(disabledNoStateContext.node);
     EXPECT_EQ(disabledNoStateContext.node->TryGetTunnelRuntimeState(), nullptr);
     ExpectTunnelLayerInfo(disabledNoStateContext.node, 0, TUNNEL_PROP_INVALID);
 
@@ -173,7 +173,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState001, TestSize.Level1)
     auto& disabledRuntime = *disabledContext.node->GetTunnelRuntimeState();
     disabledRuntime.SetLayerInfo(disabledContext.consumer->GetUniqueId(), TUNNEL_PROP_BUFFER_ADDR);
     disabledRuntime.SetBuilding();
-    tunnelLayerManager.UpdateTunnelStateMachine(disabledContext.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(disabledContext.node);
     ExpectTunnelLayerInfo(disabledContext.node, disabledContext.consumer->GetUniqueId(), TUNNEL_PROP_BUFFER_ADDR);
     EXPECT_EQ(disabledRuntime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 }
@@ -199,11 +199,11 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState002, TestSize.Level1)
     newTunnelContext.surfaceHandler->SetCurrentFrameBufferConsumed();
     {
         ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
-        tunnelLayerManager.UpdateTunnelStateMachine(newTunnelContext.node, true);
+        tunnelLayerManager.UpdateTunnelStateMachinePerFrame(newTunnelContext.node);
         ExpectTunnelLayerInfo(newTunnelContext.node, tunnelState.tunnelLayerId, tunnelState.property);
         EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 
-        tunnelLayerManager.UpdateTunnelStateMachine(newTunnelContext.node, true);
+        tunnelLayerManager.UpdateTunnelStateMachinePerFrame(newTunnelContext.node);
         EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 
         auto generation = runtime.GetTunnelLayerGeneration();
@@ -211,7 +211,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState002, TestSize.Level1)
             newTunnelContext.node->GetId(), LayerStateChange::AVAILABLE, generation);
         EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::ACTIVE);
 
-        tunnelLayerManager.UpdateTunnelStateMachine(newTunnelContext.node, true);
+        tunnelLayerManager.UpdateTunnelStateMachinePerFrame(newTunnelContext.node);
         // ACTIVE rolls back to NOT_TUNNEL via the main consume path. BeginTunnelBuilding is invoked
         // but the arbiter's consecutive-sole-present threshold is not met in the test environment,
         // so the state stays NOT_TUNNEL.
@@ -232,7 +232,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState003, TestSize.Level1)
     auto noStateContext = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_THREE));
     ASSERT_TRUE(noStateContext.IsProducerReady());
     ASSERT_TRUE(RegisterSurfaceNode(rsContext, noStateContext.node));
-    tunnelLayerManager.UpdateTunnelStateMachine(noStateContext.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(noStateContext.node);
     EXPECT_EQ(noStateContext.node->TryGetTunnelRuntimeState(), nullptr);
     ExpectTunnelLayerInfo(noStateContext.node, 0, TUNNEL_PROP_INVALID);
 
@@ -246,11 +246,11 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState003, TestSize.Level1)
     trackedRuntime.SetBuilding();
     trackedContext.surfaceHandler->MarkTunnelLayerInfoReceived();
     trackedContext.surfaceHandler->SetCurrentFrameBufferConsumed();
-    tunnelLayerManager.UpdateTunnelStateMachine(trackedContext.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(trackedContext.node);
 
     TunnelLayerInfo emptyTunnelInfo;
     ASSERT_EQ(trackedContext.consumer->SetTunnelLayerInfo(emptyTunnelInfo), GSERROR_OK);
-    tunnelLayerManager.UpdateTunnelStateMachine(trackedContext.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(trackedContext.node);
 
     EXPECT_EQ(trackedRuntime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 }
@@ -277,7 +277,7 @@ HWTEST_F(RSTunnelLayerManagerTest, HandleLayerStateChanged001, TestSize.Level1)
     runtime.SetBuilding();
     context.surfaceHandler->MarkTunnelLayerInfoReceived();
     context.surfaceHandler->SetCurrentFrameBufferConsumed();
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
     auto generation = runtime.GetTunnelLayerGeneration();
 
     tunnelLayerManager.HandleLayerStateChanged(context.node->GetId(), LayerStateChange::AVAILABLE, generation + 1);
@@ -288,7 +288,7 @@ HWTEST_F(RSTunnelLayerManagerTest, HandleLayerStateChanged001, TestSize.Level1)
 
     ASSERT_TRUE(SetTunnelInfoForConsumer(context.consumer, tunnelState));
     runtime.SetBuilding();
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
     generation = runtime.GetTunnelLayerGeneration();
     auto unknownState = static_cast<LayerStateChange>(TEST_UNKNOWN_LAYER_STATE);
     tunnelLayerManager.HandleLayerStateChanged(context.node->GetId(), unknownState, generation);
@@ -333,7 +333,7 @@ HWTEST_F(RSTunnelLayerManagerTest, ClearRuntimeStateByPid001, TestSize.Level1)
 
 /**
  * @tc.name: UpdateTunnelLayerState_ReceivesInfo_ProcessesNewLayerId
- * @tc.desc: Test UpdateTunnelStateMachine proceeds past the HasReceivedTunnelLayerInfo guard when the
+ * @tc.desc: Test UpdateTunnelStateMachinePerFrame proceeds past the HasReceivedTunnelLayerInfo guard when the
  *          handler has marked tunnel info received, covering the false branch of the guard and the
  *          HandleNewTunnelLayerId path that resets runtime state to BUILDING.
  * @tc.type: FUNC
@@ -354,7 +354,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState_ReceivesInfo_Processes
     context.surfaceHandler->SetCurrentFrameBufferConsumed();
     ASSERT_TRUE(context.surfaceHandler->HasReceivedTunnelLayerInfo());
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
     ExpectTunnelLayerInfo(context.node, tunnelState.tunnelLayerId, tunnelState.property);
     EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
@@ -362,7 +362,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState_ReceivesInfo_Processes
 
 /**
  * @tc.name: UpdateTunnelLayerState_NullptrSurfaceHandler_TrueBranch
- * @tc.desc: Test UpdateTunnelStateMachine returns immediately when surfaceNode is nullptr,
+ * @tc.desc: Test UpdateTunnelStateMachinePerFrame returns immediately when surfaceNode is nullptr,
  *           covering the null-node guard at entry.
  * @tc.type: FUNC
  */
@@ -379,14 +379,14 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState_NullptrSurfaceHandler_
     auto& runtime = *context.node->GetTunnelRuntimeState();
     runtime.SetLayerInfo(tunnelState.tunnelLayerId, tunnelState.property);
 
-    tunnelLayerManager.UpdateTunnelStateMachine(nullptr, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(nullptr);
 
     ExpectTunnelLayerInfo(context.node, tunnelState.tunnelLayerId, tunnelState.property);
 }
 
 /**
  * @tc.name: UpdateTunnelLayerState_NotNullSurfaceHandler_FalseBranch
- * @tc.desc: Test UpdateTunnelStateMachine proceeds past the null-node guard when surfaceNode is
+ * @tc.desc: Test UpdateTunnelStateMachinePerFrame proceeds past the null-node guard when surfaceNode is
  *           valid, covering the false branch and the HandleNewTunnelLayerId path that advances
  *           runtime state to BUILDING.
  * @tc.type: FUNC
@@ -408,21 +408,21 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState_NotNullSurfaceHandler_
     context.surfaceHandler->SetCurrentFrameBufferConsumed();
     ASSERT_TRUE(context.surfaceHandler->HasReceivedTunnelLayerInfo());
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
 ExpectTunnelLayerInfo(context.node, tunnelState.tunnelLayerId, tunnelState.property);
     EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
 }
 
 /**
- * @tc.name: UpdateTunnelStateMachine_TunnelRuntimeNull_TrueBranch
- * @tc.desc: Cover UpdateTunnelStateMachine line 122 (tunnelRuntime == nullptr) true branch.
+ * @tc.name: UpdateTunnelStateMachinePerFrame_TunnelRuntimeNull_TrueBranch
+ * @tc.desc: Cover UpdateTunnelStateMachinePerFrame line 131 (tunnelRuntime == nullptr) true branch.
  *          A non-tunnel surface keeps tunnelRuntimeState_ null; even after marking
  *          HasReceivedTunnelLayerInfo, TryGetTunnelRuntimeState() returns nullptr and
  *          the function returns early without creating state or touching staging params.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_TunnelRuntimeNull_TrueBranch, TestSize.Level1)
+HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachinePerFrame_TunnelRuntimeNull_TrueBranch, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     auto rsContext = std::make_shared<RSContext>();
@@ -432,19 +432,19 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_TunnelRuntimeNull_Tr
     ASSERT_TRUE(RegisterSurfaceNode(rsContext, context.node));
     context.surfaceHandler->MarkTunnelLayerInfoReceived();
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
     EXPECT_EQ(context.node->TryGetTunnelRuntimeState(), nullptr);
 }
 
 /**
- * @tc.name: UpdateTunnelStateMachine_TunnelRuntimeNotNull_FalseBranch
- * @tc.desc: Cover UpdateTunnelStateMachine line 122 (tunnelRuntime == nullptr) false branch.
+ * @tc.name: UpdateTunnelStateMachinePerFrame_TunnelRuntimeNotNull_FalseBranch
+ * @tc.desc: Cover UpdateTunnelStateMachinePerFrame line 131 (tunnelRuntime == nullptr) false branch.
  *          A surface whose tunnelRuntimeState_ has been created (via GetTunnelRuntimeState)
  *          passes the guard, advances to line 126 IncrementTunnelLayerGeneration and beyond.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_TunnelRuntimeNotNull_FalseBranch, TestSize.Level1)
+HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachinePerFrame_TunnelRuntimeNotNull_FalseBranch, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     TunnelLayerParam::SetNewTunnelEnabled(true);
@@ -463,7 +463,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_TunnelRuntimeNotNull
     context.surfaceHandler->SetCurrentFrameBufferConsumed();
 
     auto generationBefore = runtime.GetTunnelLayerGeneration();
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
     auto generationAfter = runtime.GetTunnelLayerGeneration();
 
     EXPECT_NE(context.node->TryGetTunnelRuntimeState(), nullptr);
@@ -471,15 +471,15 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_TunnelRuntimeNotNull
 }
 
 /**
- * @tc.name: UpdateTunnelStateMachine_ArbiterNotNull_TrueBranch
- * @tc.desc: Cover UpdateTunnelStateMachine line 128 (arbiter_ != nullptr) true branch.
+ * @tc.name: UpdateTunnelStateMachinePerFrame_ArbiterNotNull_TrueBranch
+ * @tc.desc: Cover UpdateTunnelStateMachinePerFrame line 137 (arbiter_ != nullptr) true branch.
  *          The constructor always creates a non-null arbiter_; when the runtime is non-null
  *          and state is BUILDING, ArbitrateAndClaim runs and the generation is bumped.
  *          Observable side-effect: staging tunnelLayerGeneration advances after the call,
- *          proving the arbiter path was taken (state machine continued past line 128).
+ *          proving the arbiter path was taken (state machine continued past line 137).
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_ArbiterNotNull_TrueBranch, TestSize.Level1)
+HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachinePerFrame_ArbiterNotNull_TrueBranch, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     TunnelLayerParam::SetNewTunnelEnabled(true);
@@ -498,7 +498,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_ArbiterNotNull_TrueB
     context.surfaceHandler->SetCurrentFrameBufferConsumed();
 
     auto generationBefore = runtime.GetTunnelLayerGeneration();
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
     auto generationAfter = runtime.GetTunnelLayerGeneration();
 
     EXPECT_NE(generationAfter, generationBefore);
@@ -506,12 +506,12 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_ArbiterNotNull_TrueB
 }
 
 /**
- * @tc.name: UpdateTunnelStateMachine_TunnelStateActive_TrueBranch
- * @tc.desc: Cover UpdateTunnelStateMachine line 132 (tunnelState == ACTIVE) true branch.
+ * @tc.name: UpdateTunnelStateMachinePerFrame_TunnelStateActive_TrueBranch
+ * @tc.desc: Cover UpdateTunnelStateMachinePerFrame line 141 (tunnelState == ACTIVE) true branch.
  *          An ACTIVE runtime is rolled back to NOT_TUNNEL by the main consume path.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_TunnelStateActive_TrueBranch, TestSize.Level1)
+HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachinePerFrame_TunnelStateActive_TrueBranch, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     TunnelLayerParam::SetNewTunnelEnabled(true);
@@ -531,18 +531,18 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_TunnelStateActive_Tr
     ASSERT_TRUE(runtime.SetActiveFromTunnelLayerAvailable(runtime.GetTunnelLayerGeneration()));
     ASSERT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::ACTIVE);
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
     EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
 }
 
 /**
- * @tc.name: UpdateTunnelStateMachine_TunnelStateNotActive_FalseBranch
- * @tc.desc: Cover UpdateTunnelStateMachine line 132 (tunnelState == ACTIVE) false branch.
+ * @tc.name: UpdateTunnelStateMachinePerFrame_TunnelStateNotActive_FalseBranch
+ * @tc.desc: Cover UpdateTunnelStateMachinePerFrame line 141 (tunnelState == ACTIVE) false branch.
  *          A BUILDING runtime stays BUILDING; no ACTIVE -> NOT_TUNNEL rollback occurs.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_TunnelStateNotActive_FalseBranch, TestSize.Level1)
+HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachinePerFrame_TunnelStateNotActive_FalseBranch, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     auto rsContext = std::make_shared<RSContext>();
@@ -560,19 +560,19 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_TunnelStateNotActive
     context.surfaceHandler->SetCurrentFrameBufferConsumed();
     ASSERT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
     EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 }
 
 /**
- * @tc.name: UpdateTunnelStateMachine_BufferNotConsumed_TrueBranch
- * @tc.desc: Cover UpdateTunnelStateMachine line 140 (!IsCurrentFrameBufferConsumed) true branch.
+ * @tc.name: UpdateTunnelStateMachinePerFrame_BufferNotConsumed_TrueBranch
+ * @tc.desc: Cover UpdateTunnelStateMachinePerFrame line 149 (!IsCurrentFrameBufferConsumed) true branch.
  *          When the current-frame buffer is not consumed, SyncTunnelStateToStaging runs and
  *          the function returns before HandleNewTunnelLayerId; BUILDING state is preserved.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_BufferNotConsumed_TrueBranch, TestSize.Level1)
+HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachinePerFrame_BufferNotConsumed_TrueBranch, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     auto rsContext = std::make_shared<RSContext>();
@@ -590,19 +590,19 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_BufferNotConsumed_Tr
     context.surfaceHandler->ResetCurrentFrameBufferConsumed();
     ASSERT_FALSE(context.surfaceHandler->IsCurrentFrameBufferConsumed());
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
     EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 }
 
 /**
- * @tc.name: UpdateTunnelStateMachine_BufferConsumed_FalseBranch
- * @tc.desc: Cover UpdateTunnelStateMachine line 140 (!IsCurrentFrameBufferConsumed) false branch.
+ * @tc.name: UpdateTunnelStateMachinePerFrame_BufferConsumed_FalseBranch
+ * @tc.desc: Cover UpdateTunnelStateMachinePerFrame line 149 (!IsCurrentFrameBufferConsumed) false branch.
  *          When the current-frame buffer is consumed, the function proceeds to line 148
- *          GetLayerInfo and the cachedTunnelLayerId check at line 149.
+ *          GetLayerInfo and the cachedTunnelLayerId check at line 158.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_BufferConsumed_FalseBranch, TestSize.Level1)
+HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachinePerFrame_BufferConsumed_FalseBranch, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     auto rsContext = std::make_shared<RSContext>();
@@ -620,19 +620,19 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_BufferConsumed_False
     context.surfaceHandler->SetCurrentFrameBufferConsumed();
     ASSERT_TRUE(context.surfaceHandler->IsCurrentFrameBufferConsumed());
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
     EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 }
 
 /**
- * @tc.name: UpdateTunnelStateMachine_CachedLayerIdZero_TrueBranch
- * @tc.desc: Cover UpdateTunnelStateMachine line 149 (cachedTunnelLayerId == 0) true branch.
+ * @tc.name: UpdateTunnelStateMachinePerFrame_CachedLayerIdZero_TrueBranch
+ * @tc.desc: Cover UpdateTunnelStateMachinePerFrame line 158 (cachedTunnelLayerId == 0) true branch.
  *          A runtime with tunnelLayerId == 0 (default, never set) takes the early-return
  *          path after SyncTunnelStateToStaging, leaving state as NOT_TUNNEL.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_CachedLayerIdZero_TrueBranch, TestSize.Level1)
+HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachinePerFrame_CachedLayerIdZero_TrueBranch, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     auto rsContext = std::make_shared<RSContext>();
@@ -651,19 +651,19 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_CachedLayerIdZero_Tr
     runtime.GetLayerInfo(layerId, property);
     ASSERT_EQ(layerId, 0u);
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
     EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 }
 
 /**
- * @tc.name: UpdateTunnelStateMachine_CachedLayerIdNonZero_FalseBranch
- * @tc.desc: Cover UpdateTunnelStateMachine line 149 (cachedTunnelLayerId == 0) false branch.
- *          A runtime with a non-zero tunnelLayerId proceeds past line 149 to
+ * @tc.name: UpdateTunnelStateMachinePerFrame_CachedLayerIdNonZero_FalseBranch
+ * @tc.desc: Cover UpdateTunnelStateMachinePerFrame line 158 (cachedTunnelLayerId == 0) false branch.
+ *          A runtime with a non-zero tunnelLayerId proceeds past line 158 to
  *          HandleNewTunnelLayerId, advancing state to BUILDING.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_CachedLayerIdNonZero_FalseBranch, TestSize.Level1)
+HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachinePerFrame_CachedLayerIdNonZero_FalseBranch, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     auto rsContext = std::make_shared<RSContext>();
@@ -685,7 +685,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_CachedLayerIdNonZero
     runtime.GetLayerInfo(layerId, property);
     ASSERT_NE(layerId, 0u);
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
     EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 }
@@ -694,7 +694,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_CachedLayerIdNonZero
  * @tc.name: SyncTunnelStateToStaging_StagingNotNull_FalseBranch
  * @tc.desc: Cover SyncTunnelStateToStaging line 168 (staging == nullptr) false branch.
  *          RSTestUtil::CreateSurfaceNode calls InitRenderParams which creates staging params,
- *          so SyncTunnelStateToStaging (invoked internally by UpdateTunnelStateMachine) writes
+ *          so SyncTunnelStateToStaging (invoked internally by UpdateTunnelStateMachinePerFrame) writes
  *          tunnel state into the staging params. Verify by reading back staging tunnel fields.
  * @tc.type: FUNC
  */
@@ -722,7 +722,7 @@ HWTEST_F(RSTunnelLayerManagerTest, SyncTunnelStateToStaging_StagingNotNull_False
     EXPECT_EQ(staging->GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
     EXPECT_EQ(staging->GetTunnelLayerId(), 0u);
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
     EXPECT_EQ(staging->GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
     EXPECT_EQ(staging->GetTunnelLayerId(), tunnelState.tunnelLayerId);
@@ -852,11 +852,11 @@ HWTEST_F(RSTunnelLayerManagerTest, AttachArbiterToRenderThread_ArbiterNotNull_Tr
 }
 
 /**
- * @tc.name: UpdateTunnelStateMachine_NullRuntimeState
- * @tc.desc: Cover UpdateTunnelStateMachine early return when tunnelRuntime is null.
+ * @tc.name: UpdateTunnelStateMachinePerFrame_NullRuntimeState
+ * @tc.desc: Cover UpdateTunnelStateMachinePerFrame early return when tunnelRuntime is null.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_NullRuntimeState, TestSize.Level1)
+HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachinePerFrame_NullRuntimeState, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     auto rsContext = std::make_shared<RSContext>();
@@ -866,7 +866,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelStateMachine_NullRuntimeState, Te
     ASSERT_TRUE(RegisterSurfaceNode(rsContext, context.node));
     context.surfaceHandler->MarkTunnelLayerInfoReceived();
 
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
     EXPECT_EQ(context.node->TryGetTunnelRuntimeState(), nullptr);
 }
 
@@ -896,7 +896,7 @@ HWTEST_F(RSTunnelLayerManagerTest, HandleAvailableCallback_ConcurrentNullRuntime
     runtime.SetBuilding();
     context.surfaceHandler->MarkTunnelLayerInfoReceived();
     context.surfaceHandler->SetCurrentFrameBufferConsumed();
-    tunnelLayerManager.UpdateTunnelStateMachine(context.node, true);
+    tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
     auto generation = runtime.GetTunnelLayerGeneration();
 
     // Second consumer: SetConsumer with a different consumer resets tunnelRuntimeState_.
@@ -924,6 +924,86 @@ HWTEST_F(RSTunnelLayerManagerTest, HandleAvailableCallback_ConcurrentNullRuntime
     resetThread.join();
 
     SUCCEED();
+}
+
+/**
+ * @tc.name: TryHandleLppAfterConsume001
+ * @tc.desc: Test null-node and null-surface-handler guards reject TryHandleLppAfterConsume.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerManagerTest, TryHandleLppAfterConsume001, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    RSTunnelLayerManager tunnelLayerManager(rsContext);
+    EXPECT_FALSE(tunnelLayerManager.TryHandleLppAfterConsume(nullptr, true));
+
+    auto context = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_ONE));
+    ASSERT_TRUE(context.IsProducerReady());
+    auto savedHandler = context.node->surfaceHandler_;
+    context.node->surfaceHandler_ = nullptr;
+    EXPECT_FALSE(tunnelLayerManager.TryHandleLppAfterConsume(context.node, true));
+    context.node->surfaceHandler_ = savedHandler;
+    EXPECT_EQ(context.node->TryGetTunnelRuntimeState(), nullptr);
+}
+
+/**
+ * @tc.name: TryHandleLppAfterConsume002
+ * @tc.desc: Test consume failure and non-LPP source type reject TryHandleLppAfterConsume.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerManagerTest, TryHandleLppAfterConsume002, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    RSTunnelLayerManager tunnelLayerManager(rsContext);
+
+    auto lppContext = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_TWO));
+    ASSERT_TRUE(lppContext.IsProducerReady());
+    lppContext.surfaceHandler->SetSourceType(
+        static_cast<uint32_t>(OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO));
+    EXPECT_FALSE(tunnelLayerManager.TryHandleLppAfterConsume(lppContext.node, false));
+    EXPECT_EQ(lppContext.node->TryGetTunnelRuntimeState(), nullptr);
+
+    auto normalContext = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_THREE));
+    ASSERT_TRUE(normalContext.IsProducerReady());
+    ASSERT_EQ(normalContext.consumer->SetSurfaceSourceType(OHSurfaceSource::OH_SURFACE_SOURCE_DEFAULT),
+        GSERROR_OK);
+    EXPECT_FALSE(tunnelLayerManager.TryHandleLppAfterConsume(normalContext.node, true));
+    EXPECT_EQ(normalContext.node->TryGetTunnelRuntimeState(), nullptr);
+}
+
+/**
+ * @tc.name: TryHandleLppAfterConsume003
+ * @tc.desc: Test LPP consume paths: layer id sync on success, idempotent repeat, and the
+ *           consumer-null shortcut that reports handled without creating runtime state.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerManagerTest, TryHandleLppAfterConsume003, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    RSTunnelLayerManager tunnelLayerManager(rsContext);
+
+    auto context = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_ONE));
+    ASSERT_TRUE(context.IsProducerReady());
+    context.surfaceHandler->SetSourceType(
+        static_cast<uint32_t>(OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO));
+
+    EXPECT_TRUE(tunnelLayerManager.TryHandleLppAfterConsume(context.node, true));
+    ExpectTunnelLayerInfo(
+        context.node, context.consumer->GetUniqueId(), TUNNEL_PROP_BUFFER_ADDR | TUNNEL_PROP_DEVICE_COMMIT);
+    EXPECT_TRUE(context.node->GetTunnelRuntimeState()->IsLppTunnel());
+
+    EXPECT_TRUE(tunnelLayerManager.TryHandleLppAfterConsume(context.node, true));
+    ExpectTunnelLayerInfo(
+        context.node, context.consumer->GetUniqueId(), TUNNEL_PROP_BUFFER_ADDR | TUNNEL_PROP_DEVICE_COMMIT);
+
+    auto noConsumerContext = CreateTunnelContext(MakeNodeId(TEST_PID_TWO, TEST_NODE_UID_TWO));
+    ASSERT_TRUE(noConsumerContext.IsProducerReady());
+    noConsumerContext.surfaceHandler->SetSourceType(
+        static_cast<uint32_t>(OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO));
+    noConsumerContext.surfaceHandler->SetConsumer(nullptr);
+    EXPECT_TRUE(tunnelLayerManager.TryHandleLppAfterConsume(noConsumerContext.node, true));
+    EXPECT_EQ(noConsumerContext.node->TryGetTunnelRuntimeState(), nullptr);
+    ExpectTunnelLayerInfo(noConsumerContext.node, 0, TUNNEL_PROP_INVALID);
 }
 
 } // namespace OHOS::Rosen

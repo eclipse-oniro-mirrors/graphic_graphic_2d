@@ -249,5 +249,11 @@ void RSComposerClient::SetSkipDelay(bool skipDelay)
 {
     rsComposerContext_->SetSkipDelay(skipDelay);
 }
+
+bool RSComposerClient::PostTaskToComposer(const std::function<void()>& task)
+{
+    auto connection = rsComposerContext_->rsComposerConnection_;
+    return connection != nullptr && connection->PostTask(task);
+}
 } // namespace Rosen
 } // namespace OHOS

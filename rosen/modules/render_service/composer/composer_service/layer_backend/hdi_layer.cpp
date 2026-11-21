@@ -703,14 +703,26 @@ sptr<SyncFence> HdiLayer::GetReleaseFence() const
 
 bool HdiLayer::RecordPresentTime(int64_t timestamp)
 {
+    RS_OPTIONAL_TRACE_NAME_FMT("%s timestamp: %" PRId64, __func__, timestamp);
     std::unique_lock<std::mutex> lock(mutex_);
     if (currBufferInfo_->sbuffer_ != prevSbuffer_) {
         presentTimeRecords_[count_].presentTime = timestamp;
         presentTimeRecords_[count_].windowsName = rsLayer_->GetWindowsName();
+        HLOGD("RecordPresentTime timestamp: %{public}" PRId64 ", count: %{public}u", timestamp, count_);
         count_ = (count_ + 1) % FRAME_RECORDS_NUM;
         return true;
     }
     return false;
+}
+
+void HdiLayer::RecordTunnelPresentTime(int64_t timestamp)
+{
+    RS_OPTIONAL_TRACE_NAME_FMT("%s timestamp: %" PRId64, __func__, timestamp);
+    std::unique_lock<std::mutex> lock(mutex_);
+    presentTimeRecords_[count_].presentTime = timestamp;
+    presentTimeRecords_[count_].windowsName = rsLayer_ ? rsLayer_->GetWindowsName() : std::vector<std::string>{};
+    HLOGD("RecordTunnelPresentTime timestamp: %{public}" PRId64 ", count: %{public}u", timestamp, count_);
+    count_ = (count_ + 1) % FRAME_RECORDS_NUM;
 }
 
 void HdiLayer::SelectHitchsInfo(std::string windowName, std::string& result)
@@ -849,6 +861,26 @@ void HdiLayer::ClearDump()
     std::unique_lock<std::mutex> lock(mutex_);
     presentTimeRecords_.fill(defaultFPSInfo);
     mergedPresentTimeRecords_.fill(0);
+}
+
+std::array<FPSInfo, HdiLayer::FRAME_RECORDS_NUM> HdiLayer::GetPresentTimeRecords() const
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    return presentTimeRecords_;
+}
+
+uint32_t HdiLayer::GetCount() const
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    return count_;
+}
+
+void HdiLayer::RestorePresentTimeRecords(
+    const std::array<FPSInfo, HdiLayer::FRAME_RECORDS_NUM>& records, uint32_t count)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    presentTimeRecords_ = records;
+    count_ = count;
 }
 
 int32_t HdiLayer::SetPerFrameParameters()

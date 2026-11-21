@@ -43,9 +43,10 @@ public:
     void AttachArbiterToRenderThread() const;
 
     void ClearRuntimeStateByPid(pid_t remotePid);
-    // Unified per-frame state-machine entry: arbitrate, roll ACTIVE back to NOT_TUNNEL, re-gate BUILDING.
-    void UpdateTunnelStateMachine(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
-        bool consumeSucceeded);
+    // Per-frame state machine; consume-result-independent, may run before ConsumeAndUpdateBuffer.
+    void UpdateTunnelStateMachinePerFrame(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
+    // LPP layer-id sync gated on a real consume result; returns true when it handled the node.
+    bool TryHandleLppAfterConsume(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, bool consumeSucceeded);
     void HandleLayerStateChanged(NodeId nodeId, LayerStateChange state, uint64_t tunnelLayerGeneration) override;
 
 private:

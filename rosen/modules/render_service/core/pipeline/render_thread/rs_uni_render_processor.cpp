@@ -215,12 +215,11 @@ void RSUniRenderProcessor::CreateLayer(RSSurfaceRenderNode& node, RSSurfaceRende
 
     RS_OPTIONAL_TRACE_NAME_FMT(
         "CreateLayer name:%s ScreenId:%llu zorder:%d layerRect:[%d, %d, %d, %d] cropRect:[%d, %d, %d, %d]"
-        "dirty:[%d, %d, %d, %d] buffer:[%d, %d] alpha:[%f] type:[%d] transform:[%d]",
-        offlineResult ? "DeviceOfflineLayer" : node.GetName().c_str(), screenInfo_.id, layerInfo.zOrder,
-        layerRect.x, layerRect.y, layerRect.w, layerRect.h,
-        cropRect.x, cropRect.y, cropRect.w, cropRect.h,
-        dirtyRect.x, dirtyRect.y, dirtyRect.w, dirtyRect.h, buffer->GetSurfaceBufferWidth(),
-        buffer->GetSurfaceBufferHeight(), layerInfo.alpha, layer->GetType(), layer->GetTransform());
+        "dirty:[%d, %d, %d, %d] buffer:[%d, %d] alpha:[%f] type:[%d] generation[%d] transform:[%d]",
+        offlineResult ? "DeviceOfflineLayer" : node.GetName().c_str(), screenInfo_.id, layerInfo.zOrder, layerRect.x,
+        layerRect.y, layerRect.w, layerRect.h, cropRect.x, cropRect.y, cropRect.w, cropRect.h, dirtyRect.x, dirtyRect.y,
+        dirtyRect.w, dirtyRect.h, buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight(), layerInfo.alpha,
+        layer->GetType(), layer->GetTunnelLayerGeneration(), layer->GetTransform());
     if (!offlineResult) {
         HandleDelegateComposerLayer(layer, params);
     }

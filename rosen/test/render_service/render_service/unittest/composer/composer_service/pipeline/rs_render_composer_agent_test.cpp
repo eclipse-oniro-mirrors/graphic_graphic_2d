@@ -1479,5 +1479,49 @@ HWTEST_F(RsRenderComposerAgentTest, SetActiveRectSwitchStatus_ComposerNulledWhil
     EXPECT_EQ(composer->activeRect_.left_, 0);
     EXPECT_EQ(composer->activeRect_.width_, 0);
 }
+
+/**
+ * @tc.name: PostTask001
+ * @tc.desc: Test PostTask with a null rsRenderComposer returns early without executing the task.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RsRenderComposerAgentTest, PostTask001, TestSize.Level1)
+{
+    std::atomic<bool> taskExecuted { false };
+    auto agent = std::make_shared<RSRenderComposerAgent>(std::shared_ptr<RSRenderComposer>(nullptr));
+    ASSERT_TRUE(agent->rsRenderComposer_ == nullptr);
+
+    constexpr int32_t waitIntervalMs = 100;
+    agent->PostTask([&taskExecuted]() { taskExecuted.store(true); });
+    std::this_thread::sleep_for(std::chrono::milliseconds(waitIntervalMs));
+
+    EXPECT_FALSE(taskExecuted.load());
+}
+
+/**
+ * @tc.name: PostTask002
+ * @tc.desc: Test PostTask with a valid rsRenderComposer forwards the task to the composer handler and
+ *           the task gets executed.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RsRenderComposerAgentTest, PostTask002, TestSize.Level1)
+{
+    std::atomic<bool> taskExecuted { false };
+    auto agent = std::make_shared<RSRenderComposerAgent>(rsRenderComposer_);
+    ASSERT_NE(agent->rsRenderComposer_, nullptr);
+
+    agent->PostTask([&taskExecuted]() { taskExecuted.store(true); });
+
+    constexpr int32_t maxWaitRounds = 50;
+    constexpr int32_t waitIntervalMs = 100;
+    for (int32_t round = 0; round < maxWaitRounds; round++) {
+        if (taskExecuted.load()) {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(waitIntervalMs));
+    }
+
+    EXPECT_TRUE(taskExecuted.load());
+}
 } // namespace Rosen
 } // namespace OHOS

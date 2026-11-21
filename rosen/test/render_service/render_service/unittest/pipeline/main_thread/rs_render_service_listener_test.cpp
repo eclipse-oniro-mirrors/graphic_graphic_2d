@@ -21,8 +21,11 @@
 
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/main_thread/rs_render_service_listener.h"
+#include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_test_util.h"
+#include "composer/composer_service/connection/rs_render_to_composer_connection.h"
+#include "composer/composer_service/pipeline/rs_render_composer_agent.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -582,9 +585,9 @@ HWTEST_F(RSRenderServiceListenerTest, OnTunnelLayerInfoChanged006, TestSize.Leve
     uint64_t storedTunnelLayerId = 0;
     uint32_t storedProperty = TUNNEL_PROP_INVALID;
     node->GetTunnelRuntimeState()->GetLayerInfo(storedTunnelLayerId, storedProperty);
-    EXPECT_NE(storedTunnelLayerId, testTunnelLayerId);
-    EXPECT_NE(storedProperty, testProperty);
-    EXPECT_FALSE(surfaceHandler->HasReceivedTunnelLayerInfo());
+    EXPECT_EQ(storedTunnelLayerId, testTunnelLayerId);
+    EXPECT_EQ(storedProperty, testProperty);
+    EXPECT_TRUE(surfaceHandler->HasReceivedTunnelLayerInfo());
 }
 
 /**
@@ -641,8 +644,8 @@ HWTEST_F(RSRenderServiceListenerTest, OnTunnelLayerInfoChanged008, TestSize.Leve
     uint64_t storedTunnelLayerId = 0;
     uint32_t storedProperty = TUNNEL_PROP_INVALID;
     node->GetTunnelRuntimeState()->GetLayerInfo(storedTunnelLayerId, storedProperty);
-    EXPECT_NE(storedTunnelLayerId, testTunnelLayerId);
-    EXPECT_NE(storedProperty, testProperty);
+    EXPECT_EQ(storedTunnelLayerId, testTunnelLayerId);
+    EXPECT_EQ(storedProperty, testProperty);
     EXPECT_FALSE(surfaceHandler->HasReceivedTunnelLayerInfo());
 }
 
@@ -884,5 +887,103 @@ HWTEST_F(RSRenderServiceListenerTest, ProcessPendingCallbacks005, TestSize.Level
     rsListener->ProcessPendingCallbacks();
 
     EXPECT_TRUE((rsListener->pendingCallbackBits_ & rsListener->PENDING_ON_CLEAN_CACHE_BIT) != 0);
+}
+
+/**
+ * @tc.name: OnBufferAvailable002
+ * @tc.desc: Test OnBufferAvailable with a non-tunnel node while the new-tunnel switch is on: the
+ *           dispatch condition (TryGetTunnelRuntimeState non-null) stays false so the task runs
+ *           locally without crash and the UI buffer notification is delivered.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderServiceListenerTest, OnBufferAvailable002, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedSwitch(true);
+    auto node = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(node, nullptr);
+    auto surfaceHandler = node->GetRSSurfaceHandler();
+    ASSERT_NE(surfaceHandler, nullptr);
+    ASSERT_EQ(node->TryGetTunnelRuntimeState(), nullptr);
+
+    std::shared_ptr<RSRenderServiceListener> rsListener =
+        std::make_shared<RSRenderServiceListener>(node, surfaceHandler, std::make_shared<RSComposerClientManager>());
+    node->SetIsNotifyUIBufferAvailable(false);
+    rsListener->OnBufferAvailable();
+
+    EXPECT_EQ(node->TryGetTunnelRuntimeState(), nullptr);
+    EXPECT_TRUE(node->IsNotifyUIBufferAvailable());
+    EXPECT_EQ(surfaceHandler->GetAvailableBufferCount(), 1);
+}
+
+/**
+ * @tc.name: OnBufferAvailable003
+ * @tc.desc: Test OnBufferAvailable dispatch for a tunnel node with an empty composer manager:
+ *           PostTaskToComposer returns false so the task runs locally, HandleListenerBuffer claims
+ *           the listener phase and stamps the node screenId into the runtime state.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderServiceListenerTest, OnBufferAvailable003, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedSwitch(true);
+    auto node = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(node, nullptr);
+    auto surfaceHandler = node->GetRSSurfaceHandler();
+    ASSERT_NE(surfaceHandler, nullptr);
+    surfaceHandler->MarkTunnelLayerInfoReceived();
+    auto& tunnelRuntime = *node->GetTunnelRuntimeState();
+    tunnelRuntime.SetBuilding();
+    ASSERT_TRUE(tunnelRuntime.SetActiveFromTunnelLayerAvailable(tunnelRuntime.GetTunnelLayerGeneration()));
+    ASSERT_EQ(tunnelRuntime.GetScreenId(), 0u);
+
+    std::shared_ptr<RSRenderServiceListener> rsListener =
+        std::make_shared<RSRenderServiceListener>(node, surfaceHandler, std::make_shared<RSComposerClientManager>());
+    rsListener->OnBufferAvailable();
+
+    // Orphan nodes report INVALID_SCREEN_ID; its presence proves the listener claim ran.
+    EXPECT_EQ(tunnelRuntime.GetScreenId(), INVALID_SCREEN_ID);
+    EXPECT_EQ(tunnelRuntime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::ACTIVE);
+    EXPECT_EQ(tunnelRuntime.GetPhase(), RSTunnelRuntimeState::Phase::TUNNEL_IDLE);
+    EXPECT_EQ(surfaceHandler->GetAvailableBufferCount(), 1);
+}
+
+/**
+ * @tc.name: OnBufferAvailable004
+ * @tc.desc: Test OnBufferAvailable dispatch success for a tunnel node: PostTaskToComposer accepts
+ *           the task so it is deferred to the composer and the listener claim dose not run locally.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderServiceListenerTest, OnBufferAvailable004, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedSwitch(true);
+    auto node = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(node, nullptr);
+    auto surfaceHandler = node->GetRSSurfaceHandler();
+    ASSERT_NE(surfaceHandler, nullptr);
+    surfaceHandler->MarkTunnelLayerInfoReceived();
+    auto& tunnelRuntime = *node->GetTunnelRuntimeState();
+    tunnelRuntime.SetBuilding();
+    ASSERT_TRUE(tunnelRuntime.SetActiveFromTunnelLayerAvailable(tunnelRuntime.GetTunnelLayerGeneration()));
+    constexpr ScreenId composerScreenId = 1;
+    auto screenNode = std::make_shared<RSScreenRenderNode>(100, composerScreenId);
+    node->SetAncestorScreenNode(screenNode);
+    ASSERT_EQ(node->GetScreenId(), composerScreenId);
+
+    auto agent = std::make_shared<RSRenderComposerAgent>(nullptr);
+    ASSERT_NE(agent, nullptr);
+    auto connection = sptr<RSRenderToComposerConnection>::MakeSptr("tunnel_test", composerScreenId, agent);
+    ASSERT_NE(connection, nullptr);
+    auto composerClient = RSComposerClient::Create(connection, nullptr);
+    ASSERT_NE(composerClient, nullptr);
+    auto clientComposer = std::make_shared<RSComposerClientManager>();
+    clientComposer->AddComposerClient(composerScreenId, composerClient);
+
+    std::shared_ptr<RSRenderServiceListener> rsListener =
+        std::make_shared<RSRenderServiceListener>(node, surfaceHandler, clientComposer);
+    rsListener->OnBufferAvailable();
+
+    EXPECT_EQ(tunnelRuntime.GetScreenId(), 0u);
+    EXPECT_EQ(tunnelRuntime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::ACTIVE);
+
+    clientComposer->DeleteComposerClient(composerScreenId);
 }
 } // namespace OHOS::Rosen
