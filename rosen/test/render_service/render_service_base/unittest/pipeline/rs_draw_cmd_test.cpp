@@ -1505,7 +1505,6 @@ HWTEST_F(RSDrawCmdTest, PreProcessPixelMapAstcReserveImageInfo_001, TestSize.Lev
     opts.size.width = 200;
     opts.size.height = 150;
     opts.editable = true;
-    opts.pixelFormat = Media::PixelFormat::ASTC_4x4;
     std::shared_ptr<Media::PixelMap> astcPixelMap = Media::PixelMap::Create(opts);
     ASSERT_NE(astcPixelMap, nullptr);
     astcPixelMap->isAstc_ = true;
@@ -1535,7 +1534,6 @@ HWTEST_F(RSDrawCmdTest, PreProcessPixelMapAstcReserveImageInfo_002, TestSize.Lev
     opts.size.width = 200;
     opts.size.height = 150;
     opts.editable = true;
-    opts.pixelFormat = Media::PixelFormat::ASTC_4x4;
     std::shared_ptr<Media::PixelMap> astcPixelMap = Media::PixelMap::Create(opts);
     ASSERT_NE(astcPixelMap, nullptr);
     astcPixelMap->isAstc_ = true;
@@ -1565,7 +1563,6 @@ HWTEST_F(RSDrawCmdTest, PreProcessPixelMapAstcReserveImageInfo_003, TestSize.Lev
     opts.size.width = 200;
     opts.size.height = 150;
     opts.editable = true;
-    opts.pixelFormat = Media::PixelFormat::ASTC_4x4;
     std::shared_ptr<Media::PixelMap> astcPixelMap = Media::PixelMap::Create(opts);
     ASSERT_NE(astcPixelMap, nullptr);
     astcPixelMap->isAstc_ = true;
