@@ -1288,4 +1288,563 @@ HWTEST_F(RSImageCacheTest, IsCacheAccessAllowedTest, TestSize.Level1)
     EXPECT_TRUE(RSImageCache::IsCacheAccessAllowed(uniqueId, 0));
     RSMarshallingHelper::SetCallingPid(originPid);
 }
+
+/**
+ * @tc.name: GpuMemoryTypeEnum_001
+ * @tc.desc: Verify GpuMemoryType enum values
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, GpuMemoryTypeEnum_001, TestSize.Level1)
+{
+    EXPECT_EQ(static_cast<uint8_t>(GpuMemoryType::MIPMAP_AND_IMAGE_GPU), 0u);
+    EXPECT_GT(static_cast<uint8_t>(GpuMemoryType::MAX), 0u);
+}
+
+/**
+ * @tc.name: GpuMemoryTypeEnum_002
+ * @tc.desc: Verify GpuMemoryType can be cast from uint8_t for IPC deserialization
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, GpuMemoryTypeEnum_002, TestSize.Level1)
+{
+    uint8_t rawValue = 0;
+    GpuMemoryType type = static_cast<GpuMemoryType>(rawValue);
+    EXPECT_EQ(type, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
+
+    uint8_t invalidValue = static_cast<uint8_t>(GpuMemoryType::MAX);
+    GpuMemoryType invalidType = static_cast<GpuMemoryType>(invalidValue);
+    EXPECT_EQ(invalidType, GpuMemoryType::MAX);
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowGpuOnly_001
+ * @tc.desc: Verify RemoveImageMemForWindow with isCleanCPUCache=false calls PurgeGpuImageOnly
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowGpuOnly_001, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    std::shared_ptr<RSImage> rsImage = std::make_shared<RSImage>();
+    std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+    Drawing::AdaptiveImageInfo imageInfo;
+    auto extendImageObject = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+    NodeId surfaceNodeId = 9001;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(rsImage, extendImageObject->weak_from_this()));
+        EXPECT_EQ(imageCache.rsImageInfoMap.size(), 1);
+    }
+
+    imageCache.RemoveImageMemForWindow(surfaceNodeId, false);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+        imageCache.rsImageInfoMap.clear();
+    }
+    EXPECT_FALSE(extendImageObject->IsImageInfoReserved());
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowGpuOnly_002
+ * @tc.desc: Verify RemoveImageMemForWindow with isCleanCPUCache=true calls Purge (default behavior)
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowGpuOnly_002, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    std::shared_ptr<RSImage> rsImage = std::make_shared<RSImage>();
+    std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+    Drawing::AdaptiveImageInfo imageInfo;
+    auto extendImageObject = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+    NodeId surfaceNodeId = 9002;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(rsImage, extendImageObject->weak_from_this()));
+        EXPECT_EQ(imageCache.rsImageInfoMap.size(), 1);
+    }
+
+    imageCache.RemoveImageMemForWindow(surfaceNodeId, true);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+        imageCache.rsImageInfoMap.clear();
+    }
+    EXPECT_FALSE(extendImageObject->IsImageInfoReserved());
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowGpuOnly_003
+ * @tc.desc: Verify RemoveImageMemForWindow with isCleanCPUCache=false on nonexistent node is safe
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowGpuOnly_003, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    NodeId nonexistentNodeId = 99999;
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+    }
+    imageCache.RemoveImageMemForWindow(nonexistentNodeId, false);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(nonexistentNodeId), 0u);
+    }
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowGpuOnly_004
+ * @tc.desc: Verify RemoveImageMemForWindow with default isCleanCPUCache=true (backward compat)
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowGpuOnly_004, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    std::shared_ptr<RSImage> rsImage = std::make_shared<RSImage>();
+    std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+    Drawing::AdaptiveImageInfo imageInfo;
+    auto extendImageObject = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+    NodeId surfaceNodeId = 9003;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(rsImage, extendImageObject->weak_from_this()));
+        EXPECT_EQ(imageCache.rsImageInfoMap.size(), 1);
+    }
+
+    imageCache.RemoveImageMemForWindow(surfaceNodeId);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+        imageCache.rsImageInfoMap.clear();
+    }
+    EXPECT_FALSE(extendImageObject->IsImageInfoReserved());
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowGpuOnly_005
+ * @tc.desc: Verify RemoveImageMemForWindow with isCleanCPUCache=false and expired weak_ptr
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowGpuOnly_005, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    std::weak_ptr<RSImage> expiredWeak;
+    {
+        std::shared_ptr<RSImage> tempRsImage = std::make_shared<RSImage>();
+        expiredWeak = tempRsImage;
+    }
+    std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+    Drawing::AdaptiveImageInfo imageInfo;
+    auto extendImageObject = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+    NodeId surfaceNodeId = 9004;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(expiredWeak, extendImageObject->weak_from_this()));
+        EXPECT_EQ(imageCache.rsImageInfoMap.size(), 1);
+    }
+
+    imageCache.RemoveImageMemForWindow(surfaceNodeId, false);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+        imageCache.rsImageInfoMap.clear();
+    }
+    EXPECT_FALSE(extendImageObject->IsImageInfoReserved());
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowGpuOnly_006
+ * @tc.desc: Verify RemoveImageMemForWindow thread-safety via rsImageInfoMapMutex_
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowGpuOnly_006, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    std::shared_ptr<RSImage> rsImage = std::make_shared<RSImage>();
+    std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+    Drawing::AdaptiveImageInfo imageInfo;
+    auto extendImageObject = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+    NodeId surfaceNodeId = 9005;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(rsImage, extendImageObject->weak_from_this()));
+        EXPECT_EQ(imageCache.rsImageInfoMap.size(), 1);
+    }
+
+    imageCache.RemoveImageMemForWindow(surfaceNodeId, false);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+        imageCache.rsImageInfoMap.clear();
+    }
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowGpuOnly_007
+ * @tc.desc: Verify RemoveImageMemForWindow with isCleanCPUCache=false and expired imageOp (imageOp.lock() fails)
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowGpuOnly_007, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    std::shared_ptr<RSImage> rsImage = std::make_shared<RSImage>();
+    std::weak_ptr<RSExtendImageObject> expiredImageOp;
+    {
+        std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+        Drawing::AdaptiveImageInfo imageInfo;
+        auto temp = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+        expiredImageOp = temp;
+    }
+    NodeId surfaceNodeId = 9008;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(rsImage, expiredImageOp));
+        EXPECT_EQ(imageCache.rsImageInfoMap.size(), 1);
+    }
+
+    imageCache.RemoveImageMemForWindow(surfaceNodeId, false);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+        imageCache.rsImageInfoMap.clear();
+    }
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowGpuOnly_008
+ * @tc.desc: Verify RemoveImageMemForWindow with both expired img and expired imageOp
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowGpuOnly_008, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    std::weak_ptr<RSImage> expiredImg;
+    {
+        auto temp = std::make_shared<RSImage>();
+        expiredImg = temp;
+    }
+    std::weak_ptr<RSExtendImageObject> expiredImageOp;
+    {
+        std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+        Drawing::AdaptiveImageInfo imageInfo;
+        auto temp = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+        expiredImageOp = temp;
+    }
+    NodeId surfaceNodeId = 9009;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(expiredImg, expiredImageOp));
+        EXPECT_EQ(imageCache.rsImageInfoMap.size(), 1);
+    }
+
+    imageCache.RemoveImageMemForWindow(surfaceNodeId, false);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+        imageCache.rsImageInfoMap.clear();
+    }
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowGpuOnly_009
+ * @tc.desc: Verify RemoveImageMemForWindow with isCleanCPUCache=true and expired imageOp
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowGpuOnly_009, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    std::shared_ptr<RSImage> rsImage = std::make_shared<RSImage>();
+    std::weak_ptr<RSExtendImageObject> expiredImageOp;
+    {
+        std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+        Drawing::AdaptiveImageInfo imageInfo;
+        auto temp = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+        expiredImageOp = temp;
+    }
+    NodeId surfaceNodeId = 9010;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(rsImage, expiredImageOp));
+        EXPECT_EQ(imageCache.rsImageInfoMap.size(), 1);
+    }
+
+    imageCache.RemoveImageMemForWindow(surfaceNodeId, true);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+        imageCache.rsImageInfoMap.clear();
+    }
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowDisabled_001
+ * @tc.desc: Verify RemoveImageMemForWindow when GetDefaultMemClearEnabled is false (early return)
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowDisabled_001, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    std::shared_ptr<RSImage> rsImage = std::make_shared<RSImage>();
+    std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+    Drawing::AdaptiveImageInfo imageInfo;
+    auto extendImageObject = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+    NodeId surfaceNodeId = 9011;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(rsImage, extendImageObject->weak_from_this()));
+        EXPECT_EQ(imageCache.rsImageInfoMap.size(), 1);
+    }
+
+    bool wasEnabled = RSSystemProperties::GetDefaultMemClearEnabled();
+    if (!wasEnabled) {
+        imageCache.RemoveImageMemForWindow(surfaceNodeId, false);
+        {
+            std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+            EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 1u);
+        }
+    } else {
+        imageCache.RemoveImageMemForWindow(surfaceNodeId, false);
+        {
+            std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+            EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+        }
+    }
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+    }
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowConcurrent_001
+ * @tc.desc: Verify RemoveImageMemForWindow can be called concurrently from multiple
+ *          threads without crash or data corruption
+ * @tc.type: RELI
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowConcurrent_001, TestSize.Level2)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    constexpr int threadCount = 8;
+    constexpr NodeId baseNodeId = 9100;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+        for (int i = 0; i < threadCount; ++i) {
+            NodeId nodeId = baseNodeId + i;
+            std::shared_ptr<RSImage> rsImage = std::make_shared<RSImage>();
+            std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+            Drawing::AdaptiveImageInfo imageInfo;
+            auto extendImageObject = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+            imageCache.rsImageInfoMap[nodeId].push_back(
+                std::make_pair(rsImage, extendImageObject->weak_from_this()));
+        }
+        EXPECT_EQ(imageCache.rsImageInfoMap.size(), static_cast<size_t>(threadCount));
+    }
+
+    std::vector<std::thread> threads;
+    std::atomic<int> successCount(0);
+    for (int i = 0; i < threadCount; ++i) {
+        threads.emplace_back([&imageCache, &successCount, baseNodeId, i]() {
+            NodeId nodeId = baseNodeId + i;
+            imageCache.RemoveImageMemForWindow(nodeId, false);
+            successCount.fetch_add(1);
+        });
+    }
+    for (auto& t : threads) {
+        t.join();
+    }
+    EXPECT_EQ(successCount.load(), threadCount);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        for (int i = 0; i < threadCount; ++i) {
+            NodeId nodeId = baseNodeId + i;
+            EXPECT_EQ(imageCache.rsImageInfoMap.count(nodeId), 0u);
+        }
+        imageCache.rsImageInfoMap.clear();
+    }
+}
+
+/**
+ * @tc.name: RemoveImageMemForWindowMixedMode_001
+ * @tc.desc: Verify RemoveImageMemForWindow mixed mode: first GPU-only, then full purge
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, RemoveImageMemForWindowMixedMode_001, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    NodeId surfaceNodeId = 9007;
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+    }
+
+    std::shared_ptr<RSImage> rsImage1 = std::make_shared<RSImage>();
+    std::shared_ptr<OHOS::Media::PixelMap> pixelMap1;
+    Drawing::AdaptiveImageInfo imageInfo1;
+    auto extendImageObject1 = std::make_shared<RSExtendImageObject>(pixelMap1, imageInfo1);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(rsImage1, extendImageObject1->weak_from_this()));
+    }
+
+    imageCache.RemoveImageMemForWindow(surfaceNodeId, false);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+    }
+    EXPECT_FALSE(extendImageObject1->IsImageInfoReserved());
+
+    std::shared_ptr<RSImage> rsImage2 = std::make_shared<RSImage>();
+    std::shared_ptr<OHOS::Media::PixelMap> pixelMap2;
+    Drawing::AdaptiveImageInfo imageInfo2;
+    auto extendImageObject2 = std::make_shared<RSExtendImageObject>(pixelMap2, imageInfo2);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap[surfaceNodeId].push_back(
+            std::make_pair(rsImage2, extendImageObject2->weak_from_this()));
+    }
+
+    imageCache.RemoveImageMemForWindow(surfaceNodeId, true);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 0u);
+        imageCache.rsImageInfoMap.clear();
+    }
+    EXPECT_FALSE(extendImageObject2->IsImageInfoReserved());
+}
+
+/**
+ * @tc.name: ReserveImageInfoThreadSafe_001
+ * @tc.desc: Verify ReserveImageInfo uses rsImageInfoMapMutex_ for concurrent access
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, ReserveImageInfoThreadSafe_001, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    constexpr NodeId nodeId = 30001;
+    constexpr NodeId firstLevelNodeId = 40001;
+    auto context = std::make_shared<RSContext>();
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(nodeId, context);
+    auto drawable = std::make_shared<TestImageCacheDrawableAdapter>(surfaceNode);
+    ASSERT_NE(drawable, nullptr);
+    ASSERT_NE(drawable->GetRenderParams(), nullptr);
+    drawable->GetRenderParams()->SetFirstLevelNode(firstLevelNodeId);
+    DrawableV2::RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.emplace(nodeId, drawable);
+
+    std::shared_ptr<RSImage> rsImage = std::make_shared<RSImage>();
+    std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+    Drawing::AdaptiveImageInfo imageInfo;
+    auto extendImageObject = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+    }
+    imageCache.ReserveImageInfo(rsImage, nodeId, extendImageObject->weak_from_this());
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(firstLevelNodeId), 1u);
+        EXPECT_EQ(imageCache.rsImageInfoMap[firstLevelNodeId].size(), 1u);
+        imageCache.rsImageInfoMap.clear();
+    }
+    EXPECT_TRUE(extendImageObject->IsImageInfoReserved());
+
+    DrawableV2::RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.erase(nodeId);
+}
+
+/**
+ * @tc.name: ReserveImageInfoThreadSafe_002
+ * @tc.desc: Verify ReserveImageInfo does not double-reserve when imageInfoReserved_ is already true
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageCacheTest, ReserveImageInfoThreadSafe_002, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    constexpr NodeId nodeId = 30002;
+    constexpr NodeId firstLevelNodeId = 40002;
+    auto context = std::make_shared<RSContext>();
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(nodeId, context);
+    auto drawable = std::make_shared<TestImageCacheDrawableAdapter>(surfaceNode);
+    ASSERT_NE(drawable, nullptr);
+    ASSERT_NE(drawable->GetRenderParams(), nullptr);
+    drawable->GetRenderParams()->SetFirstLevelNode(firstLevelNodeId);
+    DrawableV2::RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.emplace(nodeId, drawable);
+
+    std::shared_ptr<RSImage> rsImage = std::make_shared<RSImage>();
+    std::shared_ptr<OHOS::Media::PixelMap> pixelMap;
+    Drawing::AdaptiveImageInfo imageInfo;
+    auto extendImageObject = std::make_shared<RSExtendImageObject>(pixelMap, imageInfo);
+    extendImageObject->SetImageInfoReserved(true);
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        imageCache.rsImageInfoMap.clear();
+    }
+    imageCache.ReserveImageInfo(rsImage, nodeId, extendImageObject->weak_from_this());
+
+    {
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(firstLevelNodeId), 0u);
+        imageCache.rsImageInfoMap.clear();
+    }
+    EXPECT_TRUE(extendImageObject->IsImageInfoReserved());
+
+    DrawableV2::RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.erase(nodeId);
+}
 } // namespace OHOS::Rosen

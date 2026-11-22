@@ -81,6 +81,7 @@
 #include "platform/common/rs_system_properties.h"
 #include "platform/ohos/rs_jank_stats_helper.h"
 #include "render/rs_typeface_cache.h"
+#include "render/rs_image_cache.h"
 #include "transaction/rs_unmarshal_thread.h"
 #include "transaction/rs_transaction_data_callback_manager.h"
 #include "dirty_region/rs_optimize_canvas_dirty_collector.h"
@@ -2815,6 +2816,55 @@ bool RSClientToServiceConnection::ProfilerIsSecureScreen()
     return RSProfiler::IsSecureScreen();
 #else
     return false;
+#endif
+}
+
+void RSClientToServiceConnection::ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type)
+{
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+    RS_TRACE_NAME_FMT("RSClientToServiceConnection::ReleaseGpuMemory nodeId:%" PRIu64 ", type:%d",
+        surfaceNodeId, static_cast<int>(type));
+    RS_LOGI("RSClientToServiceConnection::ReleaseGpuMemory nodeId:%{public}" PRIu64
+        ", type:%{public}d", surfaceNodeId, static_cast<int>(type));
+    if (renderServiceAgent_ == nullptr) {
+        RS_LOGE("%{public}s renderServiceAgent_ is nullptr", __func__);
+        return;
+    }
+    renderServiceAgent_->ScheduleTask([surfaceNodeId, type]() {
+        if (RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+            RS_LOGE("RSClientToServiceConnection::ReleaseGpuMemory only surpports DDGR backend, "
+                "nodeId:%{public}" PRIu64, surfaceNodeId);
+            return;
+        }
+        auto node = RSMainThread::Instance()->GetContext().GetNodeMap()
+            .GetRenderNode<RSSurfaceRenderNode>(surfaceNodeId);
+        if (node == nullptr) {
+            RS_LOGE("ReleaseGpuMemory: node not found, id:%{public}" PRIu64, surfaceNodeId);
+            return;
+        }
+        if (!IS_SCB_WINDOW_TYPE(node->GetSurfaceWindowType())) {
+            RS_LOGE("RSClientToServiceConnection::ReleaseGpuMemory surface type must SCB window, "
+                "nodeId:%{public}" PRIu64, surfaceNodeId);
+            return;
+        }
+        switch (type) {
+            // MIPMAP is the derived/upgraded form of IMAGE_GPU: both belong to the
+            // same image and are managed uniformly in RSImageCache, so they are
+            // released together and expressed as a single value
+            case GpuMemoryType::MIPMAP_AND_IMAGE_GPU:
+                RSUniRenderThread::Instance().PostTask([surfaceNodeId]() {
+                    RSImageCache::Instance().RemoveImageMemForWindow(surfaceNodeId, false);
+                });
+                break;
+            default:
+                RS_LOGE("RSClientToServiceConnection::ReleaseGpuMemory unsupported type:%{public}d, "
+                    "nodeId:%{public}" PRIu64, static_cast<int>(type), surfaceNodeId);
+                break;
+        }
+    });
+#else
+    RS_LOGE("RSClientToServiceConnection::ReleaseGpuMemory not supported, nodeId:%{public}" PRIu64
+        ", ROSEN_OHOS or RS_ENABLE_VK is not defined", surfaceNodeId);
 #endif
 }
 

@@ -8277,6 +8277,237 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetApsConfigParams_FilterCacheFram
 }
 
 /**
+ * @tc.name: ReleaseGpuMemory_NullAgent
+ * @tc.desc: Test ReleaseGpuMemory when renderServiceAgent_ == nullptr, should return without crash
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NullAgent, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto backupAgent = connectionStub_->renderServiceAgent_;
+    connectionStub_->renderServiceAgent_ = nullptr;
+
+    EXPECT_NO_FATAL_FAILURE(connectionStub_->ReleaseGpuMemory(1001, GpuMemoryType::MIPMAP_AND_IMAGE_GPU));
+
+    connectionStub_->renderServiceAgent_ = backupAgent;
+}
+
+/**
+ * @tc.name: ReleaseGpuMemory_Success
+ * @tc.desc: Test ReleaseGpuMemory with valid renderServiceAgent_, should schedule task without crash
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_Success, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+
+    EXPECT_NO_FATAL_FAILURE(connectionStub_->ReleaseGpuMemory(1002, GpuMemoryType::MIPMAP_AND_IMAGE_GPU));
+}
+
+/**
+ * @tc.name: ReleaseGpuMemory_UnsupportedType
+ * @tc.desc: Test ReleaseGpuMemory with unsupported type (MAX), should log error in switch default
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_UnsupportedType, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+
+    EXPECT_NO_FATAL_FAILURE(connectionStub_->ReleaseGpuMemory(1003, GpuMemoryType::MAX));
+}
+
+/**
+ * @tc.name: ReleaseGpuMemory_NonDdgrBackend
+ * @tc.desc: Test ReleaseGpuMemory async branch when GetGpuApiType() != DDGR, should return early
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NonDdgrBackend, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+
+    connectionStub_->ReleaseGpuMemory(1004, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_HANDLER_TIME * 1000));
+}
+
+/**
+ * @tc.name: ReleaseGpuMemory_NodeNotFound
+ * @tc.desc: Test ReleaseGpuMemory async branch when surface node not found in node map
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NodeNotFound, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+
+    NodeId nonexistentNodeId = 999999;
+    connectionStub_->ReleaseGpuMemory(nonexistentNodeId, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_HANDLER_TIME * 1000));
+}
+
+/**
+ * @tc.name: ReleaseGpuMemory_NonScbWindowType
+ * @tc.desc: Test ReleaseGpuMemory async branch when node found but window type is not SCB
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NonScbWindowType, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    NodeId testNodeId = 10010;
+    auto context = std::make_shared<RSContext>();
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(testNodeId, context);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
+    mainThread->GetContext().GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    connectionStub_->ReleaseGpuMemory(testNodeId, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_HANDLER_TIME * 1000));
+
+    mainThread->GetContext().GetMutableNodeMap().UnregisterRenderNode(testNodeId);
+}
+
+/**
+ * @tc.name: ReleaseGpuMemory_ScbWindowSuccess
+ * @tc.desc: Test ReleaseGpuMemory async branch when node found and is SCB window, hits MIPMAP_AND_IMAGE_GPU case
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_ScbWindowSuccess, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    NodeId testNodeId = 10011;
+    auto context = std::make_shared<RSContext>();
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(testNodeId, context);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->surfaceWindowType_ = SurfaceWindowType::SYSTEM_SCB_WINDOW;
+    mainThread->GetContext().GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    connectionStub_->ReleaseGpuMemory(testNodeId, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_HANDLER_TIME * 1000));
+
+    mainThread->GetContext().GetMutableNodeMap().UnregisterRenderNode(testNodeId);
+}
+
+/**
+ * @tc.name: ReleaseGpuMemory_ScbWindowUnsupportedType
+ * @tc.desc: Test ReleaseGpuMemory async branch when node is SCB window but type is unsupported (MAX), hits default case
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_ScbWindowUnsupportedType, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    NodeId testNodeId = 10012;
+    auto context = std::make_shared<RSContext>();
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(testNodeId, context);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->surfaceWindowType_ = SurfaceWindowType::SYSTEM_SCB_WINDOW;
+    mainThread->GetContext().GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+
+    connectionStub_->ReleaseGpuMemory(testNodeId, GpuMemoryType::MAX);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_HANDLER_TIME * 1000));
+
+    mainThread->GetContext().GetMutableNodeMap().UnregisterRenderNode(testNodeId);
+}
+
+/**
+ * @tc.name: ReleaseGpuMemoryStub_ReadSurfaceNodeIdFailed
+ * @tc.desc: Test RELEASE_GPU_MEMORY IPC when ReadUint64(surfaceNodeId) fails (empty parcel)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemoryStub_ReadSurfaceNodeIdFailed, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::RELEASE_GPU_MEMORY);
+
+    auto ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: ReleaseGpuMemoryStub_ReadGpuMemoryTypeFailed
+ * @tc.desc: Test RELEASE_GPU_MEMORY IPC when ReadUint8(type) fails (parcel has surfaceNodeId but no type)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemoryStub_ReadGpuMemoryTypeFailed, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    data.WriteUint64(2001);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::RELEASE_GPU_MEMORY);
+
+    auto ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: ReleaseGpuMemoryStub_InvalidGpuMemoryType
+ * @tc.desc: Test RELEASE_GPU_MEMORY IPC when type >= MAX (invalid enum value)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemoryStub_InvalidGpuMemoryType, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    data.WriteUint64(2002);
+    data.WriteUint8(static_cast<uint8_t>(GpuMemoryType::MAX));
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::RELEASE_GPU_MEMORY);
+
+    auto ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: ReleaseGpuMemoryStub_SuccessValidType
+ * @tc.desc: Test RELEASE_GPU_MEMORY IPC with valid type MIPMAP_AND_IMAGE_GPU
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemoryStub_SuccessValidType, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    data.WriteUint64(2003);
+    data.WriteUint8(static_cast<uint8_t>(GpuMemoryType::MIPMAP_AND_IMAGE_GPU));
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::RELEASE_GPU_MEMORY);
+
+    auto ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
  * @tc.name: SyncFrameRateRangeNullAgentTest001
  * @tc.desc: SyncFrameRateRange early-returns with a null agent; UnregisterFrameRateLinker
  *           early-returns with a null hgm context

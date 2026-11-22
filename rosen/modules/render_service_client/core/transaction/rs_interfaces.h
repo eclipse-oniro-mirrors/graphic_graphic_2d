@@ -1683,6 +1683,17 @@ public:
      */
     int32_t GetFrameStabilityResult(const FrameStabilityTarget& target, bool& result);
 
+    /**
+     * @brief Release GPU memory for the specified SCB window
+     * @param surfaceNodeId The surface node id of the SCB window
+     * @param type The GPU memory type to release. MIPMAP is the derived/upgraded
+     * form of IMAGE_GPU: both belong to the same image and are managed
+     * uniformly in RSImageCache, so they are released together and
+     * expressed as a single value MIPMAP_AND_IMAGE_GPU. New types can
+     * be appended for future per-type cleanup logic.
+     */
+    void ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type);
+
 private:
     RSInterfaces();
     ~RSInterfaces() noexcept;

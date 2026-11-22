@@ -1708,5 +1708,29 @@ HWTEST_F(RSServiceClientTest, CreateVirtualScreenWithInvalidSize001, TestSize.Le
     ScreenId virtualScreenId = rsClient->CreateVirtualScreen(option, errorCode);
     EXPECT_EQ(virtualScreenId, INVALID_SCREEN_ID);
 }
+
+/**
+ * @tc.name: ReleaseGpuMemory_NullClientToService
+ * @tc.desc: Test ReleaseGpuMemory when RSConnectHub has no clientToService connection
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSServiceClientTest, ReleaseGpuMemory_NullClientToService, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    EXPECT_NO_FATAL_FAILURE(rsClient->ReleaseGpuMemory(1001, GpuMemoryType::MIPMAP_AND_IMAGE_GPU));
+}
+
+/**
+ * @tc.name: ReleaseGpuMemory_UnsupportedType
+ * @tc.desc: Test ReleaseGpuMemory with GpuMemoryType::MAX (unsupported type)
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSServiceClientTest, ReleaseGpuMemory_UnsupportedType, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    EXPECT_NO_FATAL_FAILURE(rsClient->ReleaseGpuMemory(1002, GpuMemoryType::MAX));
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -238,6 +238,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_UIFIRST_SCALE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_DISPLAY_ENGINE_CONTROL),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SKIP_COLOR_SPACE_CONVERSION),
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::RELEASE_GPU_MEMORY),
 };
 
 std::shared_ptr<MessageParcel> CopyParcelIfNeed(MessageParcel& old, pid_t callingPid)
@@ -3710,6 +3711,30 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
         case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::PROFILER_IS_SECURE_SCREEN): {
             bool retValue = ProfilerIsSecureScreen();
             reply.WriteBool(retValue);
+            break;
+        }
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::RELEASE_GPU_MEMORY): {
+            NodeId surfaceNodeId { 0 };
+            if (!data.ReadUint64(surfaceNodeId)) {
+                RS_LOGE("RSClientToServiceConnectionStub::OnRemoteRequest RELEASE_GPU_MEMORY "
+                    "Read surfaceNodeId failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            GpuMemoryType type { GpuMemoryType::MIPMAP_AND_IMAGE_GPU};
+            if (!data.ReadUint8(reinterpret_cast<uint8_t&>(type))) {
+                RS_LOGE("RSClientToServiceConnectionStub::OnRemoteRequest RELEASE_GPU_MEMORY "
+                    "Read GpuMemoryType failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (static_cast<uint8_t>(type) >= static_cast<uint8_t>(GpuMemoryType::MAX)) {
+                RS_LOGE("RSClientToServiceConnectionStub::OnRemoteRequest RELEASE_GPU_MEMORY "
+                    "invalid GpuMemoryType:%{public}d", static_cast<uint8_t>(type));
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            ReleaseGpuMemory(surfaceNodeId, type);
             break;
         }
         default: {

@@ -26,6 +26,7 @@
 
 #include "pipeline/rs_draw_cmd.h"
 #include "pipeline/rs_recording_canvas.h"
+#include "pipeline/rs_render_node_gc.h"
 #include "transaction/rs_marshalling_helper.h"
 
 using namespace testing;
@@ -1488,5 +1489,96 @@ HWTEST_F(RSDrawCmdTest, RSExtendImageObjectFlushImageCacheTest002, TestSize.Leve
     RSExtendImageLatticeObject extendImageLatticeObjWithPixelMap(validPixelMap);
     extendImageLatticeObjWithPixelMap.FlushImageCache();
     ASSERT_NE(extendImageLatticeObjWithPixelMap.rsImage_, nullptr);
+}
+
+/**
+ * @tc.name: PreProcessPixelMapAstcReserveImageInfo_001
+ * @tc.desc: Verify PreProcessPixelMap ASTC path calls ReserveImageInfo when !imageInfoReserved_ and
+ *          ExtractPid(GetNodeId()) == RSRenderNodeGC::Instance().GetScbPid()
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSDrawCmdTest, PreProcessPixelMapAstcReserveImageInfo_001, TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    Media::InitializationOptions opts;
+    opts.size.width = 200;
+    opts.size.height = 150;
+    opts.editable = true;
+    opts.pixelFormat = Media::PixelFormat::ASTC_4x4;
+    std::shared_ptr<Media::PixelMap> astcPixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(astcPixelMap, nullptr);
+    astcPixelMap->isAstc_ = true;
+    Drawing::SamplingOptions sampling;
+    RSExtendImageObject extendImageObject(astcPixelMap, imageInfo);
+    extendImageObject.rsImage_ = std::make_shared<RSImage>();
+    pid_t scbPid = RSRenderNodeGC::Instance().GetScbPid();
+    NodeId testNodeId = (static_cast<NodeId>(scbPid) << 32) | 0x1;
+    extendImageObject.SetNodeId(testNodeId);
+    extendImageObject.SetImageInfoReserved(false);
+
+    extendImageObject.PreProcessPixelMap(canvas, astcPixelMap, sampling);
+    EXPECT_TRUE(extendImageObject.IsImageInfoReserved());
+    RSImageCache::Instance().rsImageInfoMap.clear();
+}
+
+/**
+ * @tc.name: PreProcessPixelMapAstcReserveImageInfo_002
+ * @tc.desc: Verify PreProcessPixelMap ASTC path skips ReserveImageInfo when imageInfoReserved_ is already true
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSDrawCmdTest, PreProcessPixelMapAstcReserveImageInfo_002, TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    Media::InitializationOptions opts;
+    opts.size.width = 200;
+    opts.size.height = 150;
+    opts.editable = true;
+    opts.pixelFormat = Media::PixelFormat::ASTC_4x4;
+    std::shared_ptr<Media::PixelMap> astcPixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(astcPixelMap, nullptr);
+    astcPixelMap->isAstc_ = true;
+    Drawing::SamplingOptions sampling;
+    RSExtendImageObject extendImageObject(astcPixelMap, imageInfo);
+    extendImageObject.rsImage_ = std::make_shared<RSImage>();
+    pid_t scbPid = RSRenderNodeGC::Instance().GetScbPid();
+    NodeId testNodeId = (static_cast<NodeId>(scbPid) << 32) | 0x2;
+    extendImageObject.SetNodeId(testNodeId);
+    extendImageObject.SetImageInfoReserved(true);
+
+    extendImageObject.PreProcessPixelMap(canvas, astcPixelMap, sampling);
+    EXPECT_TRUE(extendImageObject.IsImageInfoReserved());
+    RSImageCache::Instance().rsImageInfoMap.clear();
+}
+
+/**
+ * @tc.name: PreProcessPixelMapAstcReserveImageInfo_003
+ * @tc.desc: Verify PreProcessPixelMap ASTC path skips ReserveImageInfo when pid != GetScbPid()
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSDrawCmdTest, PreProcessPixelMapAstcReserveImageInfo_003, TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    Media::InitializationOptions opts;
+    opts.size.width = 200;
+    opts.size.height = 150;
+    opts.editable = true;
+    opts.pixelFormat = Media::PixelFormat::ASTC_4x4;
+    std::shared_ptr<Media::PixelMap> astcPixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(astcPixelMap, nullptr);
+    astcPixelMap->isAstc_ = true;
+    Drawing::SamplingOptions sampling;
+    RSExtendImageObject extendImageObject(astcPixelMap, imageInfo);
+    extendImageObject.rsImage_ = std::make_shared<RSImage>();
+    pid_t nonScbPid = RSRenderNodeGC::Instance().GetScbPid() + 1;
+    NodeId testNodeId = (static_cast<NodeId>(nonScbPid) << 32) | 0x3;
+    extendImageObject.SetNodeId(testNodeId);
+    extendImageObject.SetImageInfoReserved(false);
+
+    extendImageObject.PreProcessPixelMap(canvas, astcPixelMap, sampling);
+    EXPECT_FALSE(extendImageObject.IsImageInfoReserved());
+    RSImageCache::Instance().rsImageInfoMap.clear();
 }
 } // namespace OHOS::Rosen

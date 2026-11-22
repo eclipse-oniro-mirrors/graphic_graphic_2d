@@ -1237,6 +1237,13 @@ void RSInterfaces::SetWindowContainer(NodeId nodeId, bool value)
 {
 }
 
+void RSInterfaces::ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type)
+{
+    ROSEN_LOGI("ReleaseGpuMemory nodeId:%{public}" PRIu64 ", type:%{public}d",
+        surfaceNodeId, static_cast<int>(type));
+    renderServiceClient_->ReleaseGpuMemory(surfaceNodeId, type);
+}
+
 int32_t RSInterfaces::RegisterSelfDrawingNodeRectChangeCallback(
     const RectConstraint& constraint, const SelfDrawingNodeRectChangeCallback& callback)
 {

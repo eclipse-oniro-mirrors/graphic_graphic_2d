@@ -5883,6 +5883,32 @@ ErrCode RSClientToServiceConnectionProxy::SetOptimizeCanvasDirtyPidList(const st
 {
     return ERR_INVALID_VALUE;
 }
+
+void RSClientToServiceConnectionProxy::ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::ReleaseGpuMemory WriteInterfaceToken err.");
+        return;
+    }
+    if (!data.WriteUint64(surfaceNodeId)) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::ReleaseGpuMemory WriteUint64 surfaceNodeId err.");
+        return;
+    }
+    if (!data.WriteUint8(static_cast<uint8_t>(type))) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::ReleaseGpuMemory WriteUint8 GpuMemoryType err.");
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::RELEASE_GPU_MEMORY);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::ReleaseGpuMemory SendRequest err.");
+    }
+}
 #endif
 } // namespace Rosen
 } // namespace OHOS

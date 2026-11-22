@@ -394,6 +394,7 @@ void RSImageCache::ReserveImageInfo(std::shared_ptr<RSImage> rsImage,
             return;
         }
         std::weak_ptr<RSImage> rsImage_weak = rsImage;
+        std::lock_guard<std::mutex> lock(rsImageInfoMapMutex_);
         rsImageInfoMap[surfaceNodeId].push_back(std::make_pair(rsImage_weak, drawCmd));
         if (auto drawCmdPtr = drawCmd.lock()) {
             drawCmdPtr->SetImageInfoReserved(true);
@@ -401,26 +402,36 @@ void RSImageCache::ReserveImageInfo(std::shared_ptr<RSImage> rsImage,
     }
 }
 
-void RSImageCache::RemoveImageMemForWindow(NodeId surfaceNodeId)
+void RSImageCache::RemoveImageMemForWindow(NodeId surfaceNodeId, bool isCleanCPUCache)
 {
     if (!RSSystemProperties::GetDefaultMemClearEnabled()) {
         return;
     }
-    RS_TRACE_NAME_FMT_DEBUG("", "RSImageCache::RemoveImageMemForWindow surfaceNodeId:%" PRIu64,
-        surfaceNodeId);
-    ImageContent& rsImageVec = rsImageInfoMap[surfaceNodeId];
+    RS_TRACE_NAME_FMT_DEBUG("", "RSImageCache::RemoveImageMemForWindow surfaceNodeId:%" PRIu64
+        ", isCleanCPUCache:%d", surfaceNodeId, isCleanCPUCache);
+    RS_LOGI("RSImageCache::RemoveImageMemForWindow surfaceNodeId:%{public}" PRIu64
+        ", isCleanCPUCache:%{public}d", surfaceNodeId, isCleanCPUCache);
+    ImageContent rsImageVec;
+    {
+        std::lock_guard<std::mutex> lock(rsImageInfoMapMutex_);
+        std::swap(rsImageVec, rsImageInfoMap[surfaceNodeId]);
+        rsImageInfoMap.erase(surfaceNodeId);
+    }
     for (auto& [img_wptr, imageOp] : rsImageVec) {
         if (auto img = img_wptr.lock()) {
             ReleaseDrawingImageCacheByPixelMapId(img->GetUniqueId());
             ReleaseDrawingImageCache(img->GetUniqueId());
-            img->Purge();
+            if (isCleanCPUCache) {
+                img->Purge();
+            } else {
+                img->PurgeGpuImageOnly();
+            }
         }
         if (auto imgOP_ptr = imageOp.lock()) {
             imgOP_ptr->PurgeMipmapMem();
             imgOP_ptr->SetImageInfoReserved(false);
         }
     }
-    rsImageInfoMap.erase(surfaceNodeId);
 }
 #endif
 } // namespace Rosen

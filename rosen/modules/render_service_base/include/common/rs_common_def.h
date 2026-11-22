@@ -662,6 +662,16 @@ enum class SurfaceWindowType : uint8_t {
     SCB_GESTURE_BACK = 9,
 };
 
+// GPU memory types releasable via RSImageCache::RemoveImageMemForWindow.
+// MIPMAP is the derived/upgraded form of IMAGE_GPU: both belong to the same
+// image and are managed uniformly in RSImageCache, so they are released
+// together and expressed as a single value. New types can be appended for
+// future per-type cleanup logic.
+enum class GpuMemoryType : uint8_t {
+    MIPMAP_AND_IMAGE_GPU = 0,
+    MAX,
+};
+
 enum class SurfaceHwcNodeType : uint8_t {
     DEFAULT_HWC_TYPE = 0,
     DEFAULT_HWC_VIDEO = 1,
