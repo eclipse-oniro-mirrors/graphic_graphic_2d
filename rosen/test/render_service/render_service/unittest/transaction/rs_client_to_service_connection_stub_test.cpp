@@ -8367,9 +8367,12 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NonScbWindowType,
     ASSERT_NE(mainThread, nullptr);
     NodeId testNodeId = 10010;
     auto context = std::make_shared<RSContext>();
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(testNodeId, context);
+    RSSurfaceRenderNodeConfig config = {
+        .id = testNodeId,
+        .surfaceWindowType = SurfaceWindowType::DEFAULT_WINDOW
+    };
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config, context);
     ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
     mainThread->GetContext().GetMutableNodeMap().RegisterRenderNode(surfaceNode);
 
     connectionStub_->ReleaseGpuMemory(testNodeId, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
@@ -8393,9 +8396,12 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_ScbWindowSuccess,
     ASSERT_NE(mainThread, nullptr);
     NodeId testNodeId = 10011;
     auto context = std::make_shared<RSContext>();
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(testNodeId, context);
+    RSSurfaceRenderNodeConfig config = {
+        .id = testNodeId,
+        .surfaceWindowType = SurfaceWindowType::SYSTEM_SCB_WINDOW
+    };
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config, context);
     ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->surfaceWindowType_ = SurfaceWindowType::SYSTEM_SCB_WINDOW;
     mainThread->GetContext().GetMutableNodeMap().RegisterRenderNode(surfaceNode);
 
     connectionStub_->ReleaseGpuMemory(testNodeId, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
@@ -8419,9 +8425,12 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_ScbWindowUnsuppor
     ASSERT_NE(mainThread, nullptr);
     NodeId testNodeId = 10012;
     auto context = std::make_shared<RSContext>();
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(testNodeId, context);
+    RSSurfaceRenderNodeConfig config = {
+        .id = testNodeId,
+        .surfaceWindowType = SurfaceWindowType::SYSTEM_SCB_WINDOW
+    };
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config, context);
     ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->surfaceWindowType_ = SurfaceWindowType::SYSTEM_SCB_WINDOW;
     mainThread->GetContext().GetMutableNodeMap().RegisterRenderNode(surfaceNode);
 
     connectionStub_->ReleaseGpuMemory(testNodeId, GpuMemoryType::MAX);
