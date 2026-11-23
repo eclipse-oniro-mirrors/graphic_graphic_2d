@@ -314,9 +314,9 @@ void MemoryManager::DumpMem(std::unordered_set<std::u16string>& argSets, std::st
     dumpString.append("dumpMem: " + type + "\n");
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     nodeMap.TraverseScreenNodes([&dumpString](const auto& screenNode) {
- 	    const auto& screenProperty = screenNode->GetScreenProperty();
+        const auto& screenProperty = screenNode->GetScreenProperty();
         dumpString.append("\nScreenResolution: " + std::to_string(screenProperty.GetPhyWidth()) + "x" +
- 	        std::to_string(screenProperty.GetPhyHeight()) + "\n");
+            std::to_string(screenProperty.GetPhyHeight()) + "\n");
     });
     dumpString.append(log.GetString());
     if (!isLite) {
