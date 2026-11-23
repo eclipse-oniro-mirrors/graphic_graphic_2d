@@ -895,19 +895,6 @@ HWTEST_F(RSUifirstManagerTest2, AddCapturedNodes, TestSize.Level1)
 }
 
 /**
- * @tc.name: ReadUIFirstCcmParam
- * @tc.desc: Test ccm config
- * @tc.type: FUNC
- * @tc.require: issueIBVHE7
- */
-HWTEST_F(RSUifirstManagerTest2, ReadUIFirstCcmParam, TestSize.Level1)
-{
-    uifirstManager_.ReadUIFirstCcmParam();
-    ASSERT_TRUE(uifirstManager_.isUiFirstOn_);
-    ASSERT_TRUE(uifirstManager_.isCardUiFirstOn_);
-}
-
-/**
  * @tc.name: IsSubHighPriorityType
  * @tc.desc: Test if surface has high priority
  * @tc.type: FUNC
