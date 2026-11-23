@@ -1318,6 +1318,7 @@ HWTEST_F(RSImageCacheTest, GpuMemoryTypeEnum_002, TestSize.Level1)
     EXPECT_EQ(invalidType, GpuMemoryType::MAX);
 }
 
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 /**
  * @tc.name: RemoveImageMemForWindowGpuOnly_001
  * @tc.desc: Verify RemoveImageMemForWindow with isCleanCPUCache=false calls PurgeGpuImageOnly
@@ -1848,4 +1849,5 @@ HWTEST_F(RSImageCacheTest, ReserveImageInfoThreadSafe_002, TestSize.Level1)
 
     DrawableV2::RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.erase(nodeId);
 }
+#endif
 } // namespace OHOS::Rosen
