@@ -2169,6 +2169,8 @@ HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_SaveLayer037, TestSize
  */
 HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_SaveLayerWithFlag038, TestSize.Level1)
 {
+    constexpr uint32_t SAVE_LAYER_FLAGS_INIT_WITH_PREVIOUS = 2;
+    constexpr uint32_t SAVE_LAYER_FLAGS_INVALID = 1;
     OH_Drawing_Rect *rect = OH_Drawing_RectCreate(200, 500, 300, 600);
     EXPECT_NE(rect, nullptr);
     OH_Drawing_Brush* brush = OH_Drawing_BrushCreate();
@@ -2177,8 +2179,15 @@ HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_SaveLayerWithFlag038, 
     // test canvas is nullptr and failed
     code = OH_Drawing_CanvasSaveLayerWithFlag(nullptr, rect, brush, 0);
     EXPECT_EQ(code, OH_DRAWING_ERROR_INCORRECT_PARAMETER);
-    // test canvas is valid and success
+    // test saveLayerFlags is invalid and failed
+    code = OH_Drawing_CanvasSaveLayerWithFlag(canvas_, rect, brush, SAVE_LAYER_FLAGS_INVALID);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE);
+    // test canvas is valid and saveLayerFlags is 0 and success
     code = OH_Drawing_CanvasSaveLayerWithFlag(canvas_, rect, brush, 0);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    OH_Drawing_CanvasRestore(canvas_);
+    // test saveLayerFlags is INIT_WITH_PREVIOUS and success
+    code = OH_Drawing_CanvasSaveLayerWithFlag(canvas_, rect, brush, SAVE_LAYER_FLAGS_INIT_WITH_PREVIOUS);
     EXPECT_EQ(code, OH_DRAWING_SUCCESS);
     OH_Drawing_CanvasRestore(canvas_);
     // test rect and brush are nullptr and success
