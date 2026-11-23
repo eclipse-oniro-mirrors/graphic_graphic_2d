@@ -1672,16 +1672,6 @@ void RSMainThread::RequestNextVsyncForCachedCommand(std::string& transactionFlag
 #endif
 }
 
-void RSMainThread::RequestNextVsyncForPendingTransaction(pid_t pid)
-{
-    RS_TRACE_NAME_FMT("RSMainThread::CheckAndUpdateTransactionIndex KeepAlive pid:%d", pid);
-    if (rsVsyncManagerAgent_ != nullptr && rsVsyncManagerAgent_->IsUiDvsyncOn()) {
-        RequestNextVSync("fromRsMainCommand", 0);
-    } else {
-        RequestNextVSync("UI", 0);
-    }
-}
-
 bool RSMainThread::NeedConsumeMultiCommand(int32_t& dvsyncPid)
 {
     if (rsVsyncManagerAgent_ == nullptr) {
@@ -1747,7 +1737,9 @@ bool RSMainThread::HandleTransactionIndexHole(pid_t pid, uint64_t curIndex, uint
             __FUNCTION__, curIndex, lastIndex, pid, waitedFrames, pendingCount);
     }
     if (waitedFrames >= REQUEST_VSYNC_AFTER_WAIT_FRAMES) {
-        RequestNextVsyncForPendingTransaction(pid);
+        // keep vsync flowing while waiting for the missing index, so the skip timeout above
+        // can still trigger when no other vsync source (animation/transaction) is active
+        RequestNextVSync();
     }
     return false;
 }

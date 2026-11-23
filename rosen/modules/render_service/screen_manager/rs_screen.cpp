@@ -154,7 +154,7 @@ void RSScreen::PhysicalScreenInit() noexcept
     }
 
     if (!hdiScreen_->Init()) {
-        if (hdiScreen_->GetDevice() == nullptr) {
+        if (!hdiScreen_->IsDeviceAvailable()) {
             RS_LOGE("%{public}s: RSScreen(id %{public}" PRIu64 ") failed to init HdiScreen, "
                 "device is unavailable, skip following HDI queries.", __func__, id);
             return;
