@@ -233,6 +233,9 @@ private:
     std::vector<ScreenHDRFormat> supportedPhysicalHDRFormats_;
     mutable std::mutex supportedPhysicalHDRFormatsMutex_;
     std::atomic<bool> specialHDRFormatsInit_ = false;
+    // Serialize SetActiveMode to prevent concurrent mode switches from racing on
+    // HDI calls, supportedModes_ reads and property_ state transitions.
+    std::mutex activeModeMutex_;
 
     static std::map<GraphicColorGamut, GraphicCM_ColorSpaceType> RS_TO_COMMON_COLOR_SPACE_TYPE_MAP;
     static std::map<GraphicCM_ColorSpaceType, GraphicColorGamut> COMMON_COLOR_SPACE_TYPE_TO_RS_MAP;
