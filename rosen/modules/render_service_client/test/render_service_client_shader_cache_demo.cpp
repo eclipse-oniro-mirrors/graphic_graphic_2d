@@ -78,6 +78,25 @@ constexpr int WINDOW_WIDTH = 1500;
 constexpr int WINDOW_HEIGHT = 2000;
 constexpr unsigned int ANIMATION_DURATION_MS = 5000;
 constexpr size_t GRADIENT_EFFECT_MAX_SIZE = 12;
+// Demo case numbers, keep in sync with the usage help at the top of the file.
+constexpr int CASE_CONTAINER_ON_PARAM_SINGLE = 1;
+constexpr int CASE_PER_EFFECT_ON_PARAM_SINGLE = 2;
+constexpr int CASE_CONTAINER_ON_PARAM_CHAIN = 3;
+constexpr int CASE_PER_EFFECT_ON_PARAM_CHAIN = 4;
+constexpr int CASE_NONE_CACHE = 5;
+constexpr int CASE_PER_EFFECT_CHAIN_B_ONLY = 6;
+constexpr int CASE_CONTAINER_BG_ANIM = 7;
+constexpr int CASE_FIXED_INTERVAL_POS_ANIM = 8;
+constexpr int CASE_FIXED_INTERVAL_SHADER_ANIM = 9;
+constexpr int CASE_FIXED_INTERVAL_NO_ANIM = 10;
+// Fixed-interval cases skip this many frames between cache re-renders.
+constexpr uint32_t DEMO_SKIP_INTERVAL = 3;
+// Sleep long enough to observe two full animation cycles per test phase.
+constexpr unsigned int MS_PER_SECOND = 1000;
+constexpr unsigned int OBSERVE_ANIMATION_CYCLES = 2;
+// Position offset for the position-animation case; moving the node changes
+// canvasHash every frame without touching shader params.
+constexpr int ANIMATED_NODE_OFFSET = 50;
 
 using ColorSetter = void(RSNGColorGradientEffect::*)(const Vector4f&);
 constexpr ColorSetter COLOR_SETTERS[] = {
@@ -216,75 +235,95 @@ public:
             return;
         }
 
-        switch (testCase) {
-            case 1:
-                TestPhase("CONTAINER + ON_PARAM_SAME (single, animated)",
-                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::ON_PARAM_SAME, 0,
-                    ShaderStateA(), ShaderStateB());
-                break;
-            case 2:
-                TestPhase("PER_EFFECT + ON_PARAM_SAME (single, animated)",
-                    RSFrameCacheLevel::PER_EFFECT, RSFrameSkipMode::ON_PARAM_SAME, 0,
-                    ShaderStateA(), ShaderStateB());
-                break;
-            case 3:
-                TestPhase("CONTAINER + ON_PARAM_SAME (chain, animated)",
-                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::ON_PARAM_SAME, 0,
-                    ChainStateA(), ChainStateB());
-                break;
-            case 4:
-                TestPhase("PER_EFFECT + ON_PARAM_SAME (chain, animated)",
-                    RSFrameCacheLevel::PER_EFFECT, RSFrameSkipMode::ON_PARAM_SAME, 0,
-                    ChainStateA(), ChainStateB());
-                break;
-            case 5:
-                TestPhaseNoCache("NONE (no cache, animated)",
-                    ShaderStateA(), ShaderStateB());
-                break;
-            case 6:
-                TestPhase("PER_EFFECT + ON_PARAM_SAME (chain, A stable / B animated)",
-                    RSFrameCacheLevel::PER_EFFECT, RSFrameSkipMode::ON_PARAM_SAME, 0,
-                    ChainOnlyBChangeA(), ChainOnlyBChangeB());
-                break;
-            case 7:
-                TestBgColorAnimation("CONTAINER + ON_PARAM_SAME (shader fixed, bg color animated)",
-                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::ON_PARAM_SAME, 0,
-                    ShaderStateA(), SK_ColorRED, SK_ColorBLUE);
-                break;
-            case 8:
-                TestSkipFrameFixed("CONTAINER + FIXED_INTERVAL(skip=3), shader fixed, pos animated",
-                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::FIXED_INTERVAL, 3,
-                    ShaderStateA());
-                break;
-            case 9:
-                TestPhase("CONTAINER + FIXED_INTERVAL(skip=3), shader animated",
-                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::FIXED_INTERVAL, 3,
-                    ShaderStateA(), ShaderStateB());
-                break;
-            case 10:
-                TestSkipFrameNoAnim("CONTAINER + FIXED_INTERVAL(skip=3), shader fixed, no anim",
-                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::FIXED_INTERVAL, 3,
-                    ShaderStateA());
-                break;
-            default:
-                std::cout << "Usage: shader_cache_demo <case>" << std::endl;
-                std::cout << "  1: CONTAINER + ON_PARAM_SAME (single)" << std::endl;
-                std::cout << "  2: PER_EFFECT + ON_PARAM_SAME (single)" << std::endl;
-                std::cout << "  3: CONTAINER + ON_PARAM_SAME (chain, both change)" << std::endl;
-                std::cout << "  4: PER_EFFECT + ON_PARAM_SAME (chain, both change)" << std::endl;
-                std::cout << "  5: NONE (no cache)" << std::endl;
-                std::cout << "  6: PER_EFFECT + ON_PARAM_SAME (chain, A stable / B change)" << std::endl;
-                std::cout << "  7: CONTAINER + ON_PARAM_SAME (shader fixed, bg animated)" << std::endl;
-                std::cout << "  8: CONTAINER + FIXED_INTERVAL(skip=3), shader fixed, pos animated" << std::endl;
-                std::cout << "  9: CONTAINER + FIXED_INTERVAL(skip=3), shader animated" << std::endl;
-                std::cout << "  10: CONTAINER + FIXED_INTERVAL(skip=3), shader fixed, no anim" << std::endl;
-                break;
+        if (testCase >= CASE_FIXED_INTERVAL_POS_ANIM) {
+            DispatchFixedIntervalCase(testCase);
+        } else {
+            DispatchCachePolicyCase(testCase);
         }
-
         std::cout << "\n=== ShaderCache Demo End ===" << std::endl;
     }
 
 private:
+    // Cases 1-7: cache level / skip mode policy scenarios.
+    void DispatchCachePolicyCase(int testCase)
+    {
+        switch (testCase) {
+            case CASE_CONTAINER_ON_PARAM_SINGLE:
+                TestPhase("CONTAINER + ON_PARAM_SAME (single, animated)",
+                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::ON_PARAM_SAME, 0,
+                    ShaderStateA(), ShaderStateB());
+                break;
+            case CASE_PER_EFFECT_ON_PARAM_SINGLE:
+                TestPhase("PER_EFFECT + ON_PARAM_SAME (single, animated)",
+                    RSFrameCacheLevel::PER_EFFECT, RSFrameSkipMode::ON_PARAM_SAME, 0,
+                    ShaderStateA(), ShaderStateB());
+                break;
+            case CASE_CONTAINER_ON_PARAM_CHAIN:
+                TestPhase("CONTAINER + ON_PARAM_SAME (chain, animated)",
+                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::ON_PARAM_SAME, 0,
+                    ChainStateA(), ChainStateB());
+                break;
+            case CASE_PER_EFFECT_ON_PARAM_CHAIN:
+                TestPhase("PER_EFFECT + ON_PARAM_SAME (chain, animated)",
+                    RSFrameCacheLevel::PER_EFFECT, RSFrameSkipMode::ON_PARAM_SAME, 0,
+                    ChainStateA(), ChainStateB());
+                break;
+            case CASE_NONE_CACHE:
+                TestPhaseNoCache("NONE (no cache, animated)",
+                    ShaderStateA(), ShaderStateB());
+                break;
+            case CASE_PER_EFFECT_CHAIN_B_ONLY:
+                TestPhase("PER_EFFECT + ON_PARAM_SAME (chain, A stable / B animated)",
+                    RSFrameCacheLevel::PER_EFFECT, RSFrameSkipMode::ON_PARAM_SAME, 0,
+                    ChainOnlyBChangeA(), ChainOnlyBChangeB());
+                break;
+            case CASE_CONTAINER_BG_ANIM:
+                TestBgColorAnimation("CONTAINER + ON_PARAM_SAME (shader fixed, bg color animated)",
+                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::ON_PARAM_SAME, 0,
+                    ShaderStateA(), SK_ColorRED, SK_ColorBLUE);
+                break;
+            default:
+                PrintUsage();
+                break;
+        }
+    }
+
+    // Cases 8-10: fixed-interval skip scenarios.
+    void DispatchFixedIntervalCase(int testCase)
+    {
+        switch (testCase) {
+            case CASE_FIXED_INTERVAL_POS_ANIM:
+                TestSkipFrameFixed("CONTAINER + FIXED_INTERVAL(skip=3), shader fixed, pos animated",
+                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::FIXED_INTERVAL, DEMO_SKIP_INTERVAL, ShaderStateA());
+                break;
+            case CASE_FIXED_INTERVAL_SHADER_ANIM:
+                TestPhase("CONTAINER + FIXED_INTERVAL(skip=3), shader animated", RSFrameCacheLevel::CONTAINER,
+                    RSFrameSkipMode::FIXED_INTERVAL, DEMO_SKIP_INTERVAL, ShaderStateA(), ShaderStateB());
+                break;
+            case CASE_FIXED_INTERVAL_NO_ANIM:
+                TestSkipFrameNoAnim("CONTAINER + FIXED_INTERVAL(skip=3), shader fixed, no anim",
+                    RSFrameCacheLevel::CONTAINER, RSFrameSkipMode::FIXED_INTERVAL, DEMO_SKIP_INTERVAL, ShaderStateA());
+                break;
+            default:
+                PrintUsage();
+                break;
+        }
+    }
+
+    void PrintUsage()
+    {
+        std::cout << "Usage: shader_cache_demo <case>" << std::endl;
+        std::cout << "  1: CONTAINER + ON_PARAM_SAME (single)" << std::endl;
+        std::cout << "  2: PER_EFFECT + ON_PARAM_SAME (single)" << std::endl;
+        std::cout << "  3: CONTAINER + ON_PARAM_SAME (chain, both change)" << std::endl;
+        std::cout << "  4: PER_EFFECT + ON_PARAM_SAME (chain, both change)" << std::endl;
+        std::cout << "  5: NONE (no cache)" << std::endl;
+        std::cout << "  6: PER_EFFECT + ON_PARAM_SAME (chain, A stable / B change)" << std::endl;
+        std::cout << "  7: CONTAINER + ON_PARAM_SAME (shader fixed, bg animated)" << std::endl;
+        std::cout << "  8: CONTAINER + FIXED_INTERVAL(skip=3), shader fixed, pos animated" << std::endl;
+        std::cout << "  9: CONTAINER + FIXED_INTERVAL(skip=3), shader animated" << std::endl;
+        std::cout << "  10: CONTAINER + FIXED_INTERVAL(skip=3), shader fixed, no anim" << std::endl;
+    }
     // Set shader A with cache, then start repeating animation to shader B.
     // Server-side interpolation drives param changes; client just sends commands.
     void TestPhase(const char* label, RSFrameCacheLevel level,
@@ -317,7 +356,7 @@ private:
         std::cout << "  animation A<->B started (repeat=-1, "
                   << ANIMATION_DURATION_MS << "ms)" << std::endl;
 
-        sleep(ANIMATION_DURATION_MS / 1000 * 2);
+        sleep(ANIMATION_DURATION_MS / MS_PER_SECOND * OBSERVE_ANIMATION_CYCLES);
 
         RSNode::CloseImplicitAnimation(uiContext_);
         std::cout << "  animation stopped" << std::endl;
@@ -342,7 +381,7 @@ private:
         rsUiDirector_->SendMessages();
         rsUiDirector_->FlushModifier();
         std::cout << "  animation started, no cache" << std::endl;
-        sleep(ANIMATION_DURATION_MS / 1000 * 2);
+        sleep(ANIMATION_DURATION_MS / MS_PER_SECOND * OBSERVE_ANIMATION_CYCLES);
         RSNode::CloseImplicitAnimation(uiContext_);
         canvasNode_->SetBackgroundNGShader(nullptr);
         rsUiDirector_->SendMessages();
@@ -381,7 +420,7 @@ private:
         rsUiDirector_->FlushModifier();
         std::cout << "  bg color A<->B started (shader fixed, expect cache hit)" << std::endl;
 
-        sleep(ANIMATION_DURATION_MS / 1000 * 2);
+        sleep(ANIMATION_DURATION_MS / MS_PER_SECOND * OBSERVE_ANIMATION_CYCLES);
 
         RSNode::CloseImplicitAnimation(uiContext_);
         std::cout << "  animation stopped" << std::endl;
@@ -410,15 +449,14 @@ private:
         protocol.SetDuration(ANIMATION_DURATION_MS);
         protocol.SetRepeatCount(-1);
 
-        RSNode::Animate(uiContext_, protocol, RSAnimationTimingCurve::EASE_IN_OUT, [&]() {
-            canvasNode_->SetBounds(50, 50, WINDOW_WIDTH, WINDOW_HEIGHT);
-        });
+        RSNode::Animate(uiContext_, protocol, RSAnimationTimingCurve::EASE_IN_OUT,
+            [&]() { canvasNode_->SetBounds(ANIMATED_NODE_OFFSET, ANIMATED_NODE_OFFSET, WINDOW_WIDTH, WINDOW_HEIGHT); });
 
         rsUiDirector_->SendMessages();
         rsUiDirector_->FlushModifier();
         std::cout << "  position animation started (shader fixed, canvasHash changes)" << std::endl;
 
-        sleep(ANIMATION_DURATION_MS / 1000 * 2);
+        sleep(ANIMATION_DURATION_MS / MS_PER_SECOND * OBSERVE_ANIMATION_CYCLES);
 
         RSNode::CloseImplicitAnimation(uiContext_);
         canvasNode_->SetBackgroundNGShader(nullptr);
@@ -445,7 +483,7 @@ private:
         std::cout << "  shader set (fixed, no animation), skipInterval=" << skipInterval
                   << " (expect first miss+update, then all hits)" << std::endl;
 
-        sleep(ANIMATION_DURATION_MS / 1000 * 2);
+        sleep(ANIMATION_DURATION_MS / MS_PER_SECOND * OBSERVE_ANIMATION_CYCLES);
 
         canvasNode_->SetBackgroundNGShader(nullptr);
         rsUiDirector_->SendMessages();
@@ -547,7 +585,7 @@ private:
 int main(int argc, char* argv[])
 {
     int testCase = 0;
-    if (argc >= 2) {
+    if (argc > 1) {
         testCase = std::atoi(argv[1]);
     }
     {
