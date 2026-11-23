@@ -21,6 +21,16 @@ namespace OHOS::Rosen {
 namespace {
 static std::atomic<bool> g_releaseResourceEnabled_ = true;
 }
+
+Drawing::GPUResourceTag RSTagTracker::GetCurrentGpuResourceTag(Drawing::GPUContext* gpuContext)
+{
+    Drawing::GPUResourceTag tag;
+#if defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)
+    tag = gpuContext->GetCurrentGpuResourceTag();
+#endif
+    return tag;
+}
+
 RSTagTracker::RSTagTracker(const std::shared_ptr<Drawing::GPUContext>& gpuContext,
     RSTagTracker::TAGTYPE tagType) : gpuContext_(gpuContext)
 {
@@ -93,7 +103,7 @@ std::string RSTagTracker::TagType2String(TAGTYPE type)
         case TAG_FILTER_CACHE :
             tagType = "filter_cache";
             break;
-        case TAG_FILTER_MATERIAL_CACHE :
+        case TAG_FILTER_MATERIAL_CACHE:
             tagType = "filter_material_cache";
             break;
         case TAG_CAPTURE :
@@ -123,10 +133,10 @@ std::string RSTagTracker::TagType2String(TAGTYPE type)
         case TAG_CANVAS_DRAWING_NODE :
             tagType = "canvas_drawing_node";
             break;
-        case TAG_FROSTEDGLASS_GEN_FILTERED_SNAPSHOT :
+        case TAG_FROSTEDGLASS_GEN_FILTERED_SNAPSHOT:
             tagType = "frostedglass_gen_filtered_snapshot";
             break;
-        case TAG_FROSTEDGLASS_EFFECT :
+        case TAG_FROSTEDGLASS_EFFECT:
             tagType = "frostedglass_effect";
             break;
         case TAG_WINDOW_SURFACE_CACHE :
@@ -199,14 +209,5 @@ RSTagTracker::~RSTagTracker()
         gpuContext_->SetCurrentGpuResourceTag(tagEnd);
     }
 #endif
-}
-
-Drawing::GPUResourceTag RSTagTracker::GetCurrentGpuResourceTag(Drawing::GPUContext* gpuContext)
-{
-    Drawing::GPUResourceTag tag;
-#if defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)
-    tag = gpuContext->GetCurrentGpuResourceTag();
-#endif
-    return tag;
 }
 } // namespace OHOS::Rosen

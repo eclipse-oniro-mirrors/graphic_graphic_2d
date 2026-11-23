@@ -26,7 +26,7 @@
 #include <sys/prctl.h>
 #include "include/core/SkGraphics.h"
 #include "rs_trace.h"
-#include "cJSON.h"
+#include "third_party/cJSON/cJSON.h"
 
 #include "memory/rs_dfx_string.h"
 #include "skia_adapter/rs_skia_memory_tracer.h"
@@ -1324,7 +1324,7 @@ bool MemoryManager::ReadQuotaFile(const std::string& filePath)
         return false;
     }
 
-    uint64_t size;
+    size_t size;
     time_t time;
     bool flag = ReadData(fin, time);
     for (size_t i = 0; i < QUOTA_SCREEN_OFF_AND_CHARGE; i++) {
