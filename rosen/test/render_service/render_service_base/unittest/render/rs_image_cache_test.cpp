@@ -1840,7 +1840,8 @@ HWTEST_F(RSImageCacheTest, ReserveImageInfoThreadSafe_002, TestSize.Level1)
 
     {
         std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
-        EXPECT_EQ(imageCache.rsImageInfoMap.count(firstLevelNodeId), 0u);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(firstLevelNodeId), 1u);
+        EXPECT_EQ(imageCache.rsImageInfoMap[firstLevelNodeId].size(), 1u);
         imageCache.rsImageInfoMap.clear();
     }
     EXPECT_TRUE(extendImageObject->IsImageInfoReserved());
