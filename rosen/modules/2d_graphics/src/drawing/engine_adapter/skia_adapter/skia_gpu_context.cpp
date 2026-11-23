@@ -385,6 +385,11 @@ void SkiaGPUContext::PurgeUnlockAndSafeCacheGpuResources()
     grContext_->purgeUnlockAndSafeCacheGpuResources();
 }
 
+void SkiaGPUContext::PurgeTrimMemory2InitState()
+{
+    LOGD("SkiaGPUContext::PurgeTrimMemory2InitState, not implement");
+}
+
 void SkiaGPUContext::PurgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<pid_t>& exitedPidSet,
     const std::set<pid_t>& protectedPidSet)
 {

@@ -297,6 +297,12 @@ public:
     void PurgeUnlockAndSafeCacheGpuResources();
 
     /**
+     * @brief                   Purge all unlocked GPU resources and reset the cache to its initial state.
+     *                          Triggered by midnight clean events to reclaim GPU memory accumulated over a day.
+     */
+    void PurgeTrimMemory2InitState();
+
+    /**
      * @brief                   Releases GPUResource objects and removes them from the cache by tag.
      * @param tag               GPU resource tag used to release.
      */

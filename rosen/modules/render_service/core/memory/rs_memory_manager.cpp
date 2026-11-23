@@ -17,10 +17,13 @@
 
 #include <ctime>
 #include <charconv>
+#include <chrono>
+#include <cinttypes>
 #include <dirent.h>
 #include <filesystem>
 #include <fstream>
 #include <malloc.h>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <sys/prctl.h>
@@ -49,10 +52,14 @@
 #include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
 #include "feature_cfg/feature_param/extend_feature/mem_param.h"
 #include "feature_cfg/graphic_feature_param_manager.h"
+#ifdef RES_SCHED_ENABLE
+#include "memory/rs_memory_res_sched_event_listener.h"
+#endif
 #include "memory/rs_tag_tracker.h"
 #include "render/rs_typeface_cache.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 
@@ -1010,8 +1017,34 @@ void MemoryManager::InitMemoryLimit()
 }
 // LCOV_EXCL_STOP
 
+void MemoryManager::PurgeMidnightClean()
+{
+    RSUniRenderThread::Instance().PostTask([]() {
+        auto uniRenderEngine = RSUniRenderThread::Instance().GetRenderEngine();
+        if (uniRenderEngine == nullptr) {
+            RS_LOGE("MemoryManager::PurgeMidnightClean render renderEngine is nullptr");
+            return;
+        }
+        auto uniRenderContext = uniRenderEngine->GetRenderContext();
+        if (uniRenderContext == nullptr) {
+            RS_LOGE("MemoryManager::PurgeMidnightClean render renderContext is nullptr");
+            return;
+        }
+        auto renderGpuContext = uniRenderContext->GetDrGPUContext();
+        if (renderGpuContext == nullptr) {
+            RS_LOGE("MemoryManager::PurgeMidnightClean render gpuContext is nullptr");
+            return;
+        }
+        renderGpuContext->PurgeTrimMemory2InitState();
+        RS_LOGI("MemoryManager::PurgeMidnightClean render thread purge done");
+    });
+}
+
 void MemoryManager::SetGpuMemoryLimit(Drawing::GPUContext* gpuContext)
 {
+#ifdef RES_SCHED_ENABLE
+    RSMemoryResSchedEventListener::GetInstance()->Init();    // gpu mem purge
+#endif
     if (gpuContext == nullptr || gpuMemoryControl_ == UINT64_MAX) {
         RS_LOGW("MemoryManager::SetGpuMemoryLimit gpuContext is nullptr or gpuMemoryControl_ is uninitialized");
         return;

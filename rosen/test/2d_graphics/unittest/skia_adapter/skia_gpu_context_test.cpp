@@ -412,6 +412,18 @@ HWTEST_F(SkiaGPUContextTest, RegisterCreatePipelineTimeCallback001, TestSize.Lev
     gpuContext->RegisterCreatePipelineTimeCallback(callback);
 }
 
+/**
+ * @tc.name: PurgeTrimMemory2InitState001
+ * @tc.desc: Test PurgeTrimMemory2InitState with default-constructed SkiaGPUContext.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SkiaGPUContextTest, PurgeTrimMemory2InitState001, TestSize.Level1)
+{
+    auto gpuContext = std::make_shared<SkiaGPUContext>();
+    ASSERT_TRUE(gpuContext != nullptr);
+    gpuContext->PurgeTrimMemory2InitState();
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
