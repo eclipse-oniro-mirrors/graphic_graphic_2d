@@ -19,9 +19,16 @@ import(
 
 module_output_path = "graphic_2d/graphic_2d"
 
+# Work around a clang-15 ThinLTO link failure (undefined .Ltmp symbols) that
+# hits this fuzzer when its sources are emitted as LTO bitcode.
+config("fuzz_no_lto_config") {
+  cflags = [ "-fno-lto" ]
+}
+
 ohos_fuzztest("RSDelegateCompositeBufferManagerFuzzTest") {
   fuzz_config_file = "//foundation/graphic/graphic_2d/rosen/modules/render_service_client/test/fuzztest/rsdelegatecompositebuffermanager_fuzzer"
   module_out_path = module_output_path
+  configs = [ ":fuzz_no_lto_config" ]
 
   include_dirs = [ "${graphic_2d_root}/rosen/modules/render_service_client/core/feature/delegate_composite" ]
   cflags = [
@@ -29,9 +36,20 @@ ohos_fuzztest("RSDelegateCompositeBufferManagerFuzzTest") {
     "-g",
     "-O0",
     "-Wno-unused-variable",
+    "-Dprivate=public",
+    "-Dprotected=public",
   ]
-  sources = [ "rsdelegatecompositebuffermanager_fuzzer.cpp" ]
-  deps = [ "${graphic_2d_root}/rosen/modules/render_service_client:librender_service_client" ]
+
+  # The manager class is not exported from librender_service_client, so compile
+  # its implementation into the fuzzer like rsanimation_fuzzer does.
+  sources = [
+    "${graphic_2d_root}/rosen/modules/render_service_client/core/feature/delegate_composite/rs_delegate_composite_buffer_manager.cpp",
+    "rsdelegatecompositebuffermanager_fuzzer.cpp",
+  ]
+  deps = [
+    "${graphic_2d_root}/rosen/modules/render_service_base:librender_service_base",
+    "${graphic_2d_root}/rosen/modules/render_service_client:librender_service_client",
+  ]
 
   external_deps = [
     "c_utils:utils",

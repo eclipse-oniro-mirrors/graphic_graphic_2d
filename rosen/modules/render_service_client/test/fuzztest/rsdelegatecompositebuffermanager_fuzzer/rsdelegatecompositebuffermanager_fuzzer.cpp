@@ -32,7 +32,6 @@ namespace {
 constexpr size_t STR_LEN = 16;
 constexpr uint32_t MAX_DAMAGE_RECTS = 16;
 constexpr uint32_t SET_BUFFER_REPEAT = 4;
-constexpr int INVALID_FD = -1;
 constexpr uint8_t MANAGER_COUNT = 2;
 } // namespace
 
