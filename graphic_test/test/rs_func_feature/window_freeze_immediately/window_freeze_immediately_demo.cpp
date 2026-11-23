@@ -17,6 +17,7 @@
 #include "image_source.h"
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
 #include "rs_graphic_test_utils.h"
 
@@ -77,12 +78,16 @@ public:
 
 class RSFreezeWindowTest : public RSGraphicTest {
 public:
+    static inline std::shared_ptr<RSRenderInterface> rsRenderInterface_ = nullptr;
     // called before each tests
     void BeforeEach() override
     {
         auto size = GetScreenSize();
         SetSurfaceBounds({0, 0, size.x_ / 2.0f, size.y_ / 2.0f});
         SetSurfaceColor(RSColor(0xffff0000));
+        auto screenId = OHOS::Rosen::RSInterfaces::GetInstance().GetDefaultScreenId();
+        auto connectToRender = RSInterfaces::GetInstance().GetConnectToRenderToken(screenId);
+        rsRenderInterface_ = std::make_shared<RSRenderInterface>(connectToRender);
     }
 
     // called after each tests
@@ -131,7 +136,7 @@ public:
         rsSurfaceNodeConfig1.isSync = false;
         RSSurfaceNodeType rsSurfaceNodeType = RSSurfaceNodeType::APP_WINDOW_NODE;
         auto surfaceNode = RSSurfaceNode::Create(rsSurfaceNodeConfig1, rsSurfaceNodeType, true, false,
-        RSGraphicTestDirector::Instance().GetRSUIContext());
+            RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({ 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
         surfaceNode->SetFrame({ 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
         surfaceNode->SetBackgroundColor(SK_ColorBLACK);
@@ -155,10 +160,10 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -199,14 +204,14 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->RSNode::AddChild(surfaceNode1);
     surfaceNode0->RSNode::AddChild(canvasNode0);
     surfaceNode1->RSNode::AddChild(canvasNode1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.blackList.push_back(surfaceNode0->GetId());
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode0);
     RegisterNode(canvasNode1);
@@ -239,13 +244,13 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     recordingCanvas->DrawTextBlob(textblob.get(), 50, 50);
     recordingCanvas->DetachBrush();
     canvasNode->FinishRecording();
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -265,13 +270,13 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetBackgroundColor(0x5500ff00);
     canvasNode->SetColorBlendMode(RSColorBlendMode::XOR);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -291,13 +296,13 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetBackgroundColor(0x5500ff00);
     canvasNode->SetColorBlendMode(RSColorBlendMode::XOR);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -317,13 +322,13 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetBackgroundColor(0x5500ff00);
     canvasNode->SetColorBlendMode(RSColorBlendMode::XOR);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -359,13 +364,13 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     rosenImage->SetImageRepeat(3);
     rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
     canvasNode->SetBgImage(rosenImage);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -391,13 +396,13 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
 
     surfaceNode->AddChild(canvasNode, -1);
     surfaceNode->AddChild(canvasNode02, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
     RegisterNode(canvasNode02);
@@ -417,14 +422,14 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetFrame({0, 0, 600, 600});
     canvasNode->SetBackgroundColor(SK_ColorRED);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.backGroundColor = Drawing::Color::COLOR_RED;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -444,13 +449,13 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetBackgroundColor(SK_ColorRED);
     canvasNode->SetRotation(45);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -476,13 +481,13 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode02->SetScale(0.5);
     surfaceNode->AddChild(canvasNode, -1);
     surfaceNode->AddChild(canvasNode02, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
     RegisterNode(canvasNode02);
@@ -508,13 +513,13 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode02->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(canvasNode02, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
     RegisterNode(canvasNode02);
@@ -540,12 +545,12 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode02->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(canvasNode02, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
     RegisterNode(canvasNode02);
@@ -572,12 +577,12 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(effectNode, -1);
     effectNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(effectNode);
     RegisterNode(canvasNode);
@@ -604,12 +609,12 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(effectNode, -1);
     effectNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(effectNode);
     RegisterNode(canvasNode);
@@ -635,14 +640,14 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode02->SetBackgroundColor(SK_ColorRED);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(canvasNode02, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.scaleX = 1.0f;
     captureConfig.scaleY = 1.0f;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
     RegisterNode(canvasNode02);
@@ -668,13 +673,13 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode02->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(canvasNode02, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.useDma = true;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
     RegisterNode(canvasNode02);
@@ -706,10 +711,10 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     testNodeBackGround->SetBackgroundBlurBrightness(brightness);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -740,10 +745,10 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     testNodeBackGround->SetBackgroundBlurBrightness(brightness);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -774,10 +779,10 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     testNodeBackGround->SetBackgroundBlurBrightness(brightness);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -796,14 +801,14 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetFrame({0, 0, 600, 600});
     canvasNode->SetBackgroundColor(SK_ColorRED);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.backGroundColor = Drawing::Color::COLOR_YELLOW;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -824,12 +829,12 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetFreeze(true);
     canvasNode->SetBackgroundColor(SK_ColorRED);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     canvasNode->SetFreeze(false);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -870,11 +875,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -915,11 +920,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -960,11 +965,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1003,11 +1008,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1046,11 +1051,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1089,11 +1094,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1132,11 +1137,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1175,11 +1180,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1218,11 +1223,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1261,11 +1266,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1306,11 +1311,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1351,11 +1356,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1396,11 +1401,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1441,11 +1446,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1486,11 +1491,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1531,11 +1536,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1576,11 +1581,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1621,11 +1626,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
 
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
@@ -1645,14 +1650,14 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetFrame({0, 0, 700, 700});
     canvasNode->SetBackgroundColor(SK_ColorCYAN);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.backGroundColor = Drawing::Color::COLOR_BLACK;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1671,14 +1676,14 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetFrame({0, 0, 700, 700});
     canvasNode->SetBackgroundColor(SK_ColorGREEN);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.backGroundColor = Drawing::Color::COLOR_LTGRAY;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1698,14 +1703,14 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     canvasNode->SetBackgroundColor(SK_ColorDKGRAY);
     surfaceNode->AddChild(canvasNode, -1);
     surfaceNode->SetRotation(45);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.backGroundColor = Drawing::Color::COLOR_MAGENTA;
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback, captureConfig);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1737,11 +1742,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
 
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1773,10 +1778,10 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1808,10 +1813,10 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1843,10 +1848,10 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1872,11 +1877,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     childNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1902,11 +1907,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     childNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1932,11 +1937,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     childNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1962,11 +1967,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     childNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -1992,11 +1997,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     childNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -2022,11 +2027,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     childNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -2052,11 +2057,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     childNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }
@@ -2082,11 +2087,11 @@ GRAPHIC_N_TEST(RSFreezeWindowTest, CONTENT_DISPLAY_TEST, WINDOW_FREEZE_IMMEDIATE
     childNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto surfaceCaptureCallback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
+    rsRenderInterface_->SetWindowFreezeImmediately(surfaceNode, true, surfaceCaptureCallback);
     CheckSurfaceCaptureCallback(surfaceCaptureCallback);
     RegisterNode(canvasNode);
 }

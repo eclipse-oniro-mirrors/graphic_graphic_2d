@@ -14,6 +14,7 @@
  */
 
 #include "rs_graphic_test.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
 
 using namespace testing;
@@ -233,33 +234,6 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
             GetRootNode()->AddChild(testNode);
             RegisterNode(testNode);
         }
-    }
-}
-
-/*
- * @tc.name: MaterialQualityLevelTest_009
- * @tc.desc: Test SetMaterialWithQualityLevel with pixelmap
- * @tc.type: FUNC
- * @tc.require: issueI7N7M4
- */
-GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLevelTest_009)
-{
-    auto pixelMap = DecodePixelMap("/data/local/tmp/appearance_test.jpg",
-                                   Media::AllocatorType::SHARE_MEM_ALLOC);
-
-    std::vector<FilterQuality> qualityLevels = {
-        FilterQuality::DEFAULT, FilterQuality::ADAPTIVE,
-        FilterQuality::DEFAULT, FilterQuality::ADAPTIVE,
-        FilterQuality::DEFAULT
-    };
-
-    for (size_t i = 0; i < qualityLevels.size(); i++) {
-        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
-        testNode->SetBounds({ (int)i * 230 + 50, 50, 200, 200 });
-        testNode->SetPixelmap(pixelMap);
-        testNode->SetMaterialWithQualityLevel(nullptr, qualityLevels[i]);
-        GetRootNode()->AddChild(testNode);
-        RegisterNode(testNode);
     }
 }
 

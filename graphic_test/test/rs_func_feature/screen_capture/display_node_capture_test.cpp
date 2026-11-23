@@ -18,6 +18,7 @@
 
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_utils.h"
 
 #include "token_setproc.h"
@@ -73,6 +74,7 @@ public:
 
 class RSScreenCaptureTest : public RSGraphicTest {
 public:
+    static inline std::shared_ptr<RSRenderInterface> rsRenderInterface_ = nullptr;
     // called before each tests
     void BeforeEach() override
     {
@@ -97,6 +99,9 @@ public:
         auto size = GetScreenSize();
         SetSurfaceBounds({0, 0, size.x_ / 2.0f, size.y_ / 2.0f});
         SetSurfaceColor(RSColor(0xffff0000));
+        auto screenId = OHOS::Rosen::RSInterfaces::GetInstance().GetDefaultScreenId();
+        auto connectToRender = RSInterfaces::GetInstance().GetConnectToRenderToken(screenId);
+        rsRenderInterface_ = std::make_shared<RSRenderInterface>(connectToRender);
     }
 
     // called after each tests
@@ -177,11 +182,11 @@ GRAPHIC_N_TEST(RSScreenCaptureTest, CONTENT_DISPLAY_TEST, DISPLAY_NODE_CAPTURE_T
     displayNode->RSNode::AddChild(surfaceNode1);
     displayNode->RSNode::AddChild(surfaceNode0);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode, callback);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }
@@ -246,14 +251,14 @@ GRAPHIC_N_TEST(RSScreenCaptureTest, CONTENT_DISPLAY_TEST, DISPLAY_NODE_CAPTURE_T
     displayNode->RSNode::AddChild(surfaceNode1);
     displayNode->RSNode::AddChild(surfaceNode0);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.blackList.push_back(surfaceNode0->GetId());
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback, captureConfig);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode, callback, captureConfig);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }

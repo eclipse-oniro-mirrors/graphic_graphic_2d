@@ -50,14 +50,6 @@ const RSHdrDarkenBlenderPara HDRDARKEN_PARAMS_FOUR = {
     2.0f,
     {1.0f, 2.0f, 3.0f}
 };
-
-void SetHdrDarkenBlender(RSCanvasNode::SharedPtr& node, const RSHdrDarkenBlenderPara& params)
-{
-    HdrDarkenBlender blender;
-    blender.SetHdrBrightnessRatio(params.hdrBrightnessRatio_);
-    blender.SetGrayscaleFactor(params.grayscaleFactor_);
-    node->SetBlender(&blender);
-}
 } // namespace
 
 class NGHdrDarkenBlenderTest : public RSGraphicTest {
@@ -127,7 +119,7 @@ GRAPHIC_TEST(NGHdrDarkenBlenderTest, EFFECT_TEST, Set_NG_HdrDarken_Blender_Test0
         testNodeBackGround->AddChild(childNode2);
         testNodeBackGround->AddChild(childNode3);
 
-        SetHdrDarkenBlender(testNodeBackGround, HDRDARKEN_DEFAULT_PARAMS);
+        testNodeBackGround->SetHdrDarkenBlenderParams(HDRDARKEN_DEFAULT_PARAMS);
         GetRootNode()->AddChild(testNodeBackGround);
         RegisterNode(testNodeBackGround);
     }
@@ -173,7 +165,7 @@ GRAPHIC_TEST(NGHdrDarkenBlenderTest, EFFECT_TEST, Set_NG_HdrDarken_Blender_Test0
         testNodeBackGround->AddChild(childNode1);
         testNodeBackGround->AddChild(childNode2);
 
-        SetHdrDarkenBlender(testNodeBackGround, HDRDARKEN_ONLYRATIO_PARAMS);
+        testNodeBackGround->SetHdrDarkenBlenderParams(HDRDARKEN_ONLYRATIO_PARAMS);
         GetRootNode()->AddChild(testNodeBackGround);
         RegisterNode(testNodeBackGround);
     }
@@ -219,7 +211,7 @@ GRAPHIC_TEST(NGHdrDarkenBlenderTest, EFFECT_TEST, Set_NG_HdrDarken_Blender_Test0
         testNodeBackGround->AddChild(childNode1);
         testNodeBackGround->AddChild(childNode2);
 
-        SetHdrDarkenBlender(testNodeBackGround, HDRDARKEN_PARAMS_ONE);
+        testNodeBackGround->SetHdrDarkenBlenderParams(HDRDARKEN_PARAMS_ONE);
         GetRootNode()->AddChild(testNodeBackGround);
         RegisterNode(testNodeBackGround);
     }
@@ -265,7 +257,7 @@ GRAPHIC_TEST(NGHdrDarkenBlenderTest, EFFECT_TEST, Set_NG_HdrDarken_Blender_Test0
         testNodeBackGround->AddChild(childNode1);
         testNodeBackGround->AddChild(childNode2);
 
-        SetHdrDarkenBlender(testNodeBackGround, HDRDARKEN_PARAMS_TWO);
+        testNodeBackGround->SetHdrDarkenBlenderParams(HDRDARKEN_PARAMS_TWO);
         GetRootNode()->AddChild(testNodeBackGround);
         RegisterNode(testNodeBackGround);
     }
@@ -311,7 +303,7 @@ GRAPHIC_TEST(NGHdrDarkenBlenderTest, EFFECT_TEST, Set_NG_HdrDarken_Blender_Test0
         testNodeBackGround->AddChild(childNode1);
         testNodeBackGround->AddChild(childNode2);
 
-        SetHdrDarkenBlender(testNodeBackGround, HDRDARKEN_PARAMS_THREE);
+        testNodeBackGround->SetHdrDarkenBlenderParams(HDRDARKEN_PARAMS_THREE);
         GetRootNode()->AddChild(testNodeBackGround);
         RegisterNode(testNodeBackGround);
     }
@@ -357,7 +349,7 @@ GRAPHIC_TEST(NGHdrDarkenBlenderTest, EFFECT_TEST, Set_NG_HdrDarken_Blender_Test0
         testNodeBackGround->AddChild(childNode1);
         testNodeBackGround->AddChild(childNode2);
 
-        SetHdrDarkenBlender(testNodeBackGround, HDRDARKEN_PARAMS_THREE);
+        testNodeBackGround->SetHdrDarkenBlenderParams(HDRDARKEN_PARAMS_THREE);
         GetRootNode()->AddChild(testNodeBackGround);
         RegisterNode(testNodeBackGround);
     }

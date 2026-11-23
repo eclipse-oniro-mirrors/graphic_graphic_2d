@@ -14,6 +14,7 @@
  */
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_utils.h"
 
 #include "pipeline/rs_dirty_region_manager.h"

@@ -84,7 +84,7 @@ private:
     std::pair<double, double> ReceiveTimeInfo() const { return {0.0, 0.0}; }
     bool HasSocketResult() const { return false; }
     uint32_t WaitForSocketResultWithTimeout(uint32_t timeoutMs) { return 0; }
-    void SetReconnectRequestCallback(FailureCallback callback) {}
+    void SetReconnectRequestCallback(FailureCallback /* callback */) {}
 #endif
 };
 

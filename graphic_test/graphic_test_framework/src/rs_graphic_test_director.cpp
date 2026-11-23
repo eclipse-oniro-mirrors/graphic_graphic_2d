@@ -264,7 +264,7 @@ void RSGraphicTestDirector::Run()
     if (defaultDisplay) {
         defaultScreenBounds = {0, 0, defaultDisplay->GetWidth(), defaultDisplay->GetHeight()};
     } else {
-        LOGE("RSGraphicTestDirector::Run GetDefaultDisplay failed");
+        LOGE("RSGraphicTestDirector::Run default display is null");
     }
     screenBounds_ = defaultScreenBounds;
     if (!isDynamicTest_) {
@@ -305,7 +305,7 @@ bool RSGraphicTestDirector::FlushMessageAndWait(int timeoutMs)
 
     auto state = std::make_shared<SyncState>();
 
-    //rs call this lambda after SendMessages
+    // rs call this lambda after SendMessages
     rsUiDirector_->SendMessages([state]() {
         std::cout << "=== CALLBACK CALLED! ===" << std::endl;
         std::lock_guard<std::mutex> lock(state->mtx);

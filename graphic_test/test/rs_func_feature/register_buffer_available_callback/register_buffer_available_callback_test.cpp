@@ -73,7 +73,7 @@ public:
         rsSurfaceNodeConfig1.isSync = false;
         RSSurfaceNodeType rsSurfaceNodeType = RSSurfaceNodeType::APP_WINDOW_NODE;
         auto surfaceNode = RSSurfaceNode::Create(rsSurfaceNodeConfig1, rsSurfaceNodeType, true, false,
-        RSGraphicTestDirector::Instance().GetRSUIContext());
+            RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({ 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
         surfaceNode->SetFrame({ 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
         surfaceNode->SetBackgroundColor(SK_ColorBLACK);
@@ -104,7 +104,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -112,7 +112,7 @@ GRAPHIC_TEST(
         canvasNode->SetFrame({ 0, 0, 300, 300 });
         canvasNode->SetBackgroundColor(SK_ColorRED);
         rootNode->AddChild(canvasNode, -1);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         // created node should be registered to preserve ref_count
         RegisterNode(canvasNode);
@@ -143,7 +143,7 @@ auto surfaceNode = CreateTestSurfaceNode();
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -152,7 +152,7 @@ auto surfaceNode = CreateTestSurfaceNode();
         canvasNode->SetBackgroundColor(SK_ColorGREEN);
         canvasNode->SetAlpha(0.5f);
         rootNode->AddChild(canvasNode, -1);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         // created node should be registered to preserve ref_count
         RegisterNode(canvasNode);
@@ -184,7 +184,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -193,7 +193,7 @@ GRAPHIC_TEST(
         canvasNode->SetBackgroundColor(0xc1cbd700);
         canvasNode->SetColorBlendMode(RSColorBlendMode::XOR);
         rootNode->AddChild(canvasNode, -1);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -226,7 +226,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -235,7 +235,7 @@ GRAPHIC_TEST(
         canvasNode->SetBackgroundColor(SK_ColorRED);
         canvasNode->SetRotation(45);
         rootNode->AddChild(canvasNode, -1);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -268,7 +268,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -294,7 +294,7 @@ GRAPHIC_TEST(
         rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
         canvasNode->SetBgImage(rosenImage);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
 
         // created node should be registered to preserve ref_count
@@ -327,7 +327,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -347,7 +347,7 @@ GRAPHIC_TEST(
         recordingCanvas->DrawTextBlob(textblob.get(), 50, 50);
         recordingCanvas->DetachBrush();
         canvasNode->FinishRecording();
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -380,7 +380,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -405,7 +405,7 @@ GRAPHIC_TEST(
         rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
         canvasNode->SetBgImage(rosenImage);
         canvasNode->SetTranslateX(50);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -438,7 +438,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -447,7 +447,7 @@ GRAPHIC_TEST(
         canvasNode->SetBackgroundColor(SK_ColorRED);
         canvasNode->SetScale(0.5);
         rootNode->AddChild(canvasNode, -1);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -480,7 +480,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -505,7 +505,7 @@ GRAPHIC_TEST(
         rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
         canvasNode->SetBgImage(rosenImage);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -538,7 +538,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -549,7 +549,7 @@ GRAPHIC_TEST(
         canvasNode->SetBorderColor(SK_ColorGREEN);
         canvasNode->SetBorderWidth({8, 8, 8, 8});
         rootNode->AddChild(canvasNode, -1);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -582,7 +582,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -597,7 +597,7 @@ GRAPHIC_TEST(
         canvasNode->AddChild(childNode);
         canvasNode->SetBackgroundColor(SK_ColorYELLOW);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -631,7 +631,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -644,7 +644,7 @@ GRAPHIC_TEST(
         childNode->SetFrame({ 100, 100, 300, 300 });
         childNode->SetBackgroundColor(SK_ColorBLUE);
         canvasNode->AddChild(childNode);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
 
         canvasNode->SetBackgroundColor(SK_ColorGREEN);
@@ -680,7 +680,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -718,7 +718,7 @@ GRAPHIC_TEST(
         rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
         childNode->SetBgImage(rosenImage);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -753,7 +753,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -771,7 +771,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -805,7 +805,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -823,7 +823,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -857,7 +857,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -880,7 +880,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -914,7 +914,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -937,7 +937,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -971,7 +971,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -994,7 +994,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1028,7 +1028,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1054,7 +1054,7 @@ GRAPHIC_TEST(
         rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
         canvasNode->SetBgImage(rosenImage);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
 
         // created node should be registered to preserve ref_count
@@ -1087,7 +1087,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1108,7 +1108,7 @@ GRAPHIC_TEST(
         childNode->AddChild(childNode1);
         childNode->SetBackgroundColor(SK_ColorWHITE);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1143,7 +1143,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1166,7 +1166,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1200,7 +1200,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1223,7 +1223,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1257,7 +1257,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1280,7 +1280,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1314,7 +1314,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1337,7 +1337,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1371,7 +1371,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1394,7 +1394,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1428,7 +1428,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1452,7 +1452,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1486,7 +1486,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1510,7 +1510,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1544,7 +1544,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1568,7 +1568,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1602,7 +1602,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1626,7 +1626,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1660,7 +1660,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1678,7 +1678,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1712,7 +1712,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1730,7 +1730,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1764,7 +1764,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1782,7 +1782,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1816,7 +1816,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1834,7 +1834,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1868,7 +1868,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1887,7 +1887,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1921,7 +1921,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1940,7 +1940,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -1974,7 +1974,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -1993,7 +1993,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2027,7 +2027,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2046,7 +2046,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2080,7 +2080,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2099,7 +2099,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2133,7 +2133,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2152,7 +2152,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2186,7 +2186,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2205,7 +2205,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2239,7 +2239,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2257,7 +2257,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2291,7 +2291,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2309,7 +2309,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2343,7 +2343,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2361,7 +2361,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2395,7 +2395,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2413,7 +2413,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2447,7 +2447,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2465,7 +2465,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2499,7 +2499,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2517,7 +2517,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2551,7 +2551,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2569,7 +2569,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2603,7 +2603,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2621,7 +2621,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2655,7 +2655,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2673,7 +2673,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2707,7 +2707,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2725,7 +2725,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2759,7 +2759,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2777,7 +2777,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2811,7 +2811,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2829,7 +2829,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2863,7 +2863,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2881,7 +2881,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2915,7 +2915,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2933,7 +2933,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
@@ -2967,7 +2967,7 @@ GRAPHIC_TEST(
     rootNode->SetFrame(0, 0, 1000, 1000);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_BLACK);
     GetRootNode()->AddChild(rootNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     if (execute) {
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
@@ -2985,7 +2985,7 @@ GRAPHIC_TEST(
 
         canvasNode->AddChild(testNodeBackGround);
 
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
         usleep(SLEEP_TIME_FOR_PROXY);
         
         // created node should be registered to preserve ref_count
