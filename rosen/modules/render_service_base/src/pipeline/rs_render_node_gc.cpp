@@ -279,9 +279,12 @@ void RSRenderNodeGC::ReleaseMainBucket(bool highPriority)
         remainBucketSize = nodeBucket_.size();
     }
     if (remainBucketSize == 0) {
-        // All node buckets drained — try to shrink the SCB memory pool
-        // to return fully-free chunks to the system (keeping >= INITIAL_SLOTS).
-        RSScbNodeMemoryPool::Instance().Shrink();
+        // All node buckets drained — only try to shrink the SCB memory pool when
+        // a slot was really returned via Deallocate() since the last attempt.
+        // Shrink() does several full traversals, so skip it otherwise.
+        if (RSScbNodeMemoryPool::Instance().ConsumeDeallocFlag()) {
+            RSScbNodeMemoryPool::Instance().Shrink();
+        }
         return;
     }
     if (mainTask_) {
