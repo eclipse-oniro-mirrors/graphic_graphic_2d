@@ -111,9 +111,10 @@ void HgmRPEnergy::SetVideoCallPid(pid_t pid)
     videoCallPid_.store(pid);
 }
 
-uint64_t HgmRPEnergy::GetVideoCallPtsOffset(pid_t pid, const std::string& bufferName)
+int64_t HgmRPEnergy::GetVideoCallPtsOffset(pid_t pid, const std::string& bufferName)
 {
-    if (videoCallPid_.load() == DEFAULT_PID || pid != videoCallPid_.load()) {
+    pid_t callPid = videoCallPid_.load();
+    if (callPid == DEFAULT_PID || pid != callPid) {
         return 0;
     }
     std::lock_guard<std::mutex> lock(mutex_);

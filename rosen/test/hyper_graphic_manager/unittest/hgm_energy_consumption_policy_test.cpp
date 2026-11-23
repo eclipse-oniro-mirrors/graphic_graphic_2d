@@ -576,7 +576,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_DisableVideoCall,
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -585,7 +585,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_DisableVideoCall,
     policy.videoCallMaxFrameRate_.store(60);
     policy.avcodeVideoCallEnable_.store(true);
     policy.isVideoCall_.store(true);
-    policy.isSyncVideoCallToRp_ = true;
+    policy.isSyncVideoCallToRp_.store(true);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -601,7 +601,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_DisableVideoCall,
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -621,7 +621,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_OnlyVideoCallFals
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -630,7 +630,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_OnlyVideoCallFals
     policy.videoCallMaxFrameRate_.store(60);
     policy.avcodeVideoCallEnable_.store(true);
     policy.isVideoCall_.store(true);
-    policy.isSyncVideoCallToRp_ = true;
+    policy.isSyncVideoCallToRp_.store(true);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -646,7 +646,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_OnlyVideoCallFals
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -666,7 +666,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_MaxFrameRateZero,
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -675,7 +675,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_MaxFrameRateZero,
     policy.videoCallMaxFrameRate_.store(0);
     policy.avcodeVideoCallEnable_.store(true);
     policy.isVideoCall_.store(true);
-    policy.isSyncVideoCallToRp_ = true;
+    policy.isSyncVideoCallToRp_.store(true);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -691,7 +691,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_MaxFrameRateZero,
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -711,7 +711,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_AvcodeDisable, Te
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -720,7 +720,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_AvcodeDisable, Te
     policy.videoCallMaxFrameRate_.store(60);
     policy.avcodeVideoCallEnable_.store(false);
     policy.isVideoCall_.store(true);
-    policy.isSyncVideoCallToRp_ = true;
+    policy.isSyncVideoCallToRp_.store(true);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -736,7 +736,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_AvcodeDisable, Te
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -756,7 +756,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_AvcodeEnable, Tes
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -765,7 +765,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_AvcodeEnable, Tes
     policy.videoCallMaxFrameRate_.store(60);
     policy.avcodeVideoCallEnable_.store(true);
     policy.isVideoCall_.store(true);
-    policy.isSyncVideoCallToRp_ = true;
+    policy.isSyncVideoCallToRp_.store(true);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -782,7 +782,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_AvcodeEnable, Tes
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -802,7 +802,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_VideoCallStateCha
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -811,7 +811,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_VideoCallStateCha
     policy.videoCallMaxFrameRate_.store(60);
     policy.avcodeVideoCallEnable_.store(true);
     policy.isVideoCall_.store(false);
-    policy.isSyncVideoCallToRp_ = true;
+    policy.isSyncVideoCallToRp_.store(true);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -819,7 +819,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_VideoCallStateCha
     bool result = policy.GetVideoCallFrameRate(pid, vsyncName, finalRange);
 
     ASSERT_TRUE(result);
-    ASSERT_FALSE(policy.isSyncVideoCallToRp_);
+    ASSERT_FALSE(policy.isSyncVideoCallToRp_.load());
     policy.videoCallPid_.store(savedVideoCallPid);
     policy.videoCallVsyncName_ = savedVideoCallVsyncName;
     policy.isEnableVideoCall_.store(savedIsEnableVideoCall);
@@ -827,7 +827,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_VideoCallStateCha
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -847,7 +847,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_VideoCallStateEqu
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -856,7 +856,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_VideoCallStateEqu
     policy.videoCallMaxFrameRate_.store(60);
     policy.avcodeVideoCallEnable_.store(true);
     policy.isVideoCall_.store(true);
-    policy.isSyncVideoCallToRp_ = true;
+    policy.isSyncVideoCallToRp_.store(true);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -864,7 +864,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_VideoCallStateEqu
     bool result = policy.GetVideoCallFrameRate(pid, vsyncName, finalRange);
 
     ASSERT_TRUE(result);
-    ASSERT_TRUE(policy.isSyncVideoCallToRp_);
+    ASSERT_TRUE(policy.isSyncVideoCallToRp_.load());
     policy.videoCallPid_.store(savedVideoCallPid);
     policy.videoCallVsyncName_ = savedVideoCallVsyncName;
     policy.isEnableVideoCall_.store(savedIsEnableVideoCall);
@@ -872,7 +872,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_VideoCallStateEqu
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -892,7 +892,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_IsVideoCallFalse,
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -901,7 +901,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_IsVideoCallFalse,
     policy.videoCallMaxFrameRate_.store(60);
     policy.avcodeVideoCallEnable_.store(true);
     policy.isVideoCall_.store(false);
-    policy.isSyncVideoCallToRp_ = true;
+    policy.isSyncVideoCallToRp_.store(true);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -917,7 +917,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_IsVideoCallFalse,
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -937,7 +937,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_IsVideoCallTrueNo
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -946,7 +946,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_IsVideoCallTrueNo
     policy.videoCallMaxFrameRate_.store(60);
     policy.avcodeVideoCallEnable_.store(true);
     policy.isVideoCall_.store(true);
-    policy.isSyncVideoCallToRp_ = false;
+    policy.isSyncVideoCallToRp_.store(false);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -955,7 +955,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_IsVideoCallTrueNo
 
     ASSERT_TRUE(result);
     ASSERT_TRUE(policy.isVideoCall_.load());
-    ASSERT_FALSE(policy.isSyncVideoCallToRp_);
+    ASSERT_FALSE(policy.isSyncVideoCallToRp_.load());
     policy.videoCallPid_.store(savedVideoCallPid);
     policy.videoCallVsyncName_ = savedVideoCallVsyncName;
     policy.isEnableVideoCall_.store(savedIsEnableVideoCall);
@@ -963,7 +963,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_IsVideoCallTrueNo
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -983,7 +983,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_FirstSyncToRp, Te
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -992,7 +992,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_FirstSyncToRp, Te
     policy.videoCallMaxFrameRate_.store(60);
     policy.avcodeVideoCallEnable_.store(true);
     policy.isVideoCall_.store(true);
-    policy.isSyncVideoCallToRp_ = false;
+    policy.isSyncVideoCallToRp_.store(false);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -1009,7 +1009,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_FirstSyncToRp, Te
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -1029,7 +1029,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_AlreadySynced, Te
     auto savedVideoCallMaxFrameRate = policy.videoCallMaxFrameRate_.load();
     auto savedAvcodeVideoCallEnable = policy.avcodeVideoCallEnable_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
 
     policy.videoCallPid_.store(1000);
     policy.videoCallVsyncName_ = "testVsync";
@@ -1038,7 +1038,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_AlreadySynced, Te
     policy.videoCallMaxFrameRate_.store(60);
     policy.avcodeVideoCallEnable_.store(true);
     policy.isVideoCall_.store(true);
-    policy.isSyncVideoCallToRp_ = true;
+    policy.isSyncVideoCallToRp_.store(true);
 
     pid_t pid = 1000;
     std::string vsyncName = "testVsync";
@@ -1055,7 +1055,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRate_AlreadySynced, Te
     policy.videoCallMaxFrameRate_.store(savedVideoCallMaxFrameRate);
     policy.avcodeVideoCallEnable_.store(savedAvcodeVideoCallEnable);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
 
 /**
@@ -1069,20 +1069,19 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallPid, TestSize.Level0)
     auto& policy = HgmEnergyConsumptionPolicy::Instance();
     auto savedVideoCallPid = policy.videoCallPid_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
-    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_;
-
+    auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
+ 
     policy.videoCallPid_.store(12345);
     policy.isVideoCall_.store(true);
     pid_t result = policy.GetVideoCallPid();
-
-    ASSERT_TRUE(policy.isSyncVideoCallToRp_);
+ 
+    ASSERT_TRUE(policy.isSyncVideoCallToRp_.load());
     ASSERT_EQ(result, 12345);
-
+ 
     policy.videoCallPid_.store(savedVideoCallPid);
     policy.isVideoCall_.store(savedIsVideoCall);
-    policy.isSyncVideoCallToRp_ = savedIsSyncVideoCallToRp;
+    policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
-
 /**
  * @tc.name: SetCurrentPkgNameTest
  * @tc.desc: test results of SetCurrentPkgNameTest
