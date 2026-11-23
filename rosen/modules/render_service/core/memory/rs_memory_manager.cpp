@@ -26,7 +26,7 @@
 #include <sys/prctl.h>
 #include "include/core/SkGraphics.h"
 #include "rs_trace.h"
-#include "third_party/cJSON/cJSON.h"
+#include "cJSON.h"
 
 #include "memory/rs_dfx_string.h"
 #include "skia_adapter/rs_skia_memory_tracer.h"
@@ -306,9 +306,9 @@ void MemoryManager::DumpMem(std::unordered_set<std::u16string>& argSets, std::st
     dumpString.append("dumpMem: " + type + "\n");
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     nodeMap.TraverseScreenNodes([&dumpString](const auto& screenNode) {
- 	    const auto& screenProperty = screenNode->GetScreenProperty();
+        const auto& screenProperty = screenNode->GetScreenProperty();
         dumpString.append("\nScreenResolution: " + std::to_string(screenProperty.GetPhyWidth()) + "x" +
- 	        std::to_string(screenProperty.GetPhyHeight()) + "\n");
+            std::to_string(screenProperty.GetPhyHeight()) + "\n");
     });
     dumpString.append(log.GetString());
     if (!isLite) {
@@ -1324,7 +1324,7 @@ bool MemoryManager::ReadQuotaFile(const std::string& filePath)
         return false;
     }
 
-    size_t size;
+    uint64_t size;
     time_t time;
     bool flag = ReadData(fin, time);
     for (size_t i = 0; i < QUOTA_SCREEN_OFF_AND_CHARGE; i++) {

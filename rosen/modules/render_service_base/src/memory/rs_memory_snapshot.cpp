@@ -118,7 +118,7 @@ void MemorySnapshot::EraseSnapshotInfoByPid(const std::set<pid_t>& exitedPidSet)
 }
 
 void MemorySnapshot::InitMemoryLimit(MemoryOverflowCalllback callback, uint64_t warning, uint64_t cpuOverflow,
-        uint64_t gpuOverflow, uint64_t totalSize)
+    uint64_t gpuOverflow, uint64_t totalSize)
 {
     if (memoryOverflowCallback_ == nullptr) {
         memoryOverflowCallback_ = callback;
