@@ -44,25 +44,6 @@ void RSTransactionDataTest::TearDownTestCase() {}
 void RSTransactionDataTest::SetUp() {}
 void RSTransactionDataTest::TearDown() {}
 
-namespace {
-// Writes the commit-transaction parcel head (parcelType + transaction version header) the same
-// way FillParcelWithTransactionData does, so the receiver's version check recognises the sender
-// as a new build that writes the per-command prefixEnabled flag.
-void WriteTransactionHead(Parcel& parcel)
-{
-    parcel.WriteInt32(0); // parcelType: 0 = normal parcel
-    RSMarshallingHelper::MarshallingTransactionVer(parcel);
-}
-
-// Consumes the head written by WriteTransactionHead before UnmarshallingCommand, mirroring the
-// stub side (ReadInt32 + UnmarshallingTransactionVer).
-void ReadTransactionHead(Parcel& parcel)
-{
-    parcel.ReadInt32(); // parcelType
-    RSMarshallingHelper::UnmarshallingTransactionVer(parcel);
-}
-} // namespace
-
 /**
  * @tc.name: ProcessTest
  * @tc.desc: test
@@ -114,10 +95,8 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand001, TestSize.Level1)
 {
     RSTransactionData src;
     Parcel parcel;
-    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
-    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_TRUE(dst.IsEmpty());
     EXPECT_EQ(dst.GetCommandCount(), 0u);
@@ -154,10 +133,8 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand002, TestSize.Level1)
     std::unique_ptr<RSCommand> cmd = std::make_unique<RSBaseNodeDestroy>(nodeId);
     src.AddCommand(cmd, nodeId, FollowType::FOLLOW_TO_PARENT);
     Parcel parcel;
-    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
-    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 1u);
     EXPECT_FALSE(dst.IsEmpty());
@@ -179,10 +156,8 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand003, TestSize.Level1)
     src.AddCommand(cmd1, nodeId1, FollowType::FOLLOW_TO_PARENT);
     src.AddCommand(cmd2, nodeId2, FollowType::FOLLOW_TO_PARENT);
     Parcel parcel;
-    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
-    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 2u);
 }
@@ -201,10 +176,8 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand004, TestSize.Level1)
     std::unique_ptr<RSCommand> cmd = std::make_unique<RSBaseNodeAddChild>(parentId, childId, 0);
     src.AddCommand(cmd, parentId, FollowType::FOLLOW_TO_PARENT);
     Parcel parcel;
-    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
-    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 1u);
 }
@@ -225,10 +198,8 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand005, TestSize.Level1)
     src.SetIndex(67890);
     src.SetSyncId(999);
     Parcel parcel;
-    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
-    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetTimestamp(), 12345u);
     EXPECT_EQ(dst.GetIndex(), 67890u);
@@ -282,10 +253,8 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand008, TestSize.Level1)
     std::unique_ptr<RSCommand> cmd = std::make_unique<RSBaseNodeDestroy>(nodeId);
     src.AddCommand(cmd, nodeId, FollowType::FOLLOW_TO_PARENT);
     Parcel parcel;
-    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
-    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 1u);
 }
@@ -301,10 +270,8 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand009, TestSize.Level1)
     RSTransactionData src;
     src.SetRSTransactionDataScene(RSTransactionDataScenes::Default);
     Parcel parcel;
-    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
-    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetRSTransactionDataScene(), RSTransactionDataScenes::Default);
 }
@@ -335,10 +302,8 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand011, TestSize.Level1)
     std::unique_ptr<RSCommand> cmd = std::make_unique<RSBaseNodeSetIsCrossNode>(nodeId, true);
     src.AddCommand(cmd, nodeId, FollowType::FOLLOW_TO_PARENT);
     Parcel parcel;
-    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
-    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetCommandCount(), 1u);
 }
@@ -357,10 +322,8 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand012, TestSize.Level1)
     src.AddCommand(cmd, nodeId, FollowType::FOLLOW_TO_PARENT);
     src.SetRSTransactionDataScene(RSTransactionDataScenes::Rebuild);
     Parcel parcel;
-    WriteTransactionHead(parcel);
     ASSERT_TRUE(src.Marshalling(parcel));
     RSTransactionData dst;
-    ReadTransactionHead(parcel);
     ASSERT_TRUE(dst.UnmarshallingCommand(parcel));
     EXPECT_EQ(dst.GetRSTransactionDataScene(), RSTransactionDataScenes::Rebuild);
 }
