@@ -79,7 +79,7 @@ void RSRenderServiceVisitor::PrepareScreenRenderNode(RSScreenRenderNode& node)
 void RSRenderServiceVisitor::PrepareLogicalDisplayRenderNode(RSLogicalDisplayRenderNode& node)
 {
     if (!curScreenNode_) {
-        RS_LOGE("PrepareLogicalDisplayRenderNode curScreenNode is nullptr");
+        RS_LOGI("PrepareLogicalDisplayRenderNode curScreenNode is nullptr");
         return;
     }
     isSecurityDisplay_ = node.GetSecurityDisplay();
@@ -112,7 +112,6 @@ void RSRenderServiceVisitor::PrepareLogicalDisplayRenderNode(RSLogicalDisplayRen
     PrepareChildren(node);
 }
 
-//todo:need to check
 void RSRenderServiceVisitor::ProcessScreenRenderNode(RSScreenRenderNode& node)
 {
     // need reset isSecurityDisplay_ on ProcessScreenRenderNode
@@ -161,7 +160,7 @@ void RSRenderServiceVisitor::ProcessLogicalDisplayRenderNode(RSLogicalDisplayRen
     } else {
         ProcessChildren(node);
     }
-    
+
     for (auto& [_, funcs] : foregroundSurfaces_) {
         for (const auto& func : funcs) {
             func();

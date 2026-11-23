@@ -131,21 +131,6 @@ void RSRenderPipelineClient::ClearSurfaceWatermarkForNodes(pid_t pid, const std:
 {
 }
 
-int32_t RSRenderPipelineClient::RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback)
-{
-    return {};
-}
-
-int32_t RSRenderPipelineClient::RegisterSurfaceOcclusionChangeCallback(
-    NodeId id, const SurfaceOcclusionChangeCallback& callback, std::vector<float>& partitionPoints)
-{
-    return {};
-}
-
-int32_t RSRenderPipelineClient::UnRegisterSurfaceOcclusionChangeCallback(NodeId id)
-{
-    return {};
-}
 
 void RSRenderPipelineClient::TriggerSurfaceCaptureCallback(NodeId id, const RSSurfaceCaptureConfig& captureConfig,
     std::shared_ptr<Media::PixelMap> pixelmap, CaptureError captureErrorCode,
@@ -154,6 +139,10 @@ void RSRenderPipelineClient::TriggerSurfaceCaptureCallback(NodeId id, const RSSu
 }
 
 void RSRenderPipelineClient::TriggerOnFinish(const FinishCallbackRet& ret) const
+{
+}
+
+void RSRenderPipelineClient::ClearUifirstCache(NodeId id)
 {
 }
 
@@ -264,8 +253,20 @@ void RSRenderPipelineClient::SetWindowContainer(NodeId nodeId, bool value)
 {
 }
 
-void RSRenderPipelineClient::ClearUifirstCache(NodeId id)
+int32_t RSRenderPipelineClient::RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback)
 {
+    return {};
+}
+
+int32_t RSRenderPipelineClient::RegisterSurfaceOcclusionChangeCallback(
+    NodeId id, const SurfaceOcclusionChangeCallback& callback, std::vector<float>& partitionPoints)
+{
+    return {};
+}
+
+int32_t RSRenderPipelineClient::UnRegisterSurfaceOcclusionChangeCallback(NodeId id)
+{
+    return {};
 }
 
 int32_t RSRenderPipelineClient::SetLogicalCameraRotationCorrection(ScreenId id, ScreenRotation logicalCorrection)

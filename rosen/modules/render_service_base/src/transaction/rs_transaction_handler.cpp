@@ -17,12 +17,13 @@
 
 #include <cstdlib>
 
+#include "command/rs_ui_director_command.h"
 #include "rs_trace.h"
 
-#include "command/rs_ui_director_command.h"
 #include "platform/common/rs_log.h"
 #include "transaction/rs_transaction_proxy.h"
 
+#ifndef gettid
 #ifdef _WIN32
 #include <windows.h>
 #define gettid GetCurrentThreadId
@@ -36,6 +37,7 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #define gettid []()->int32_t { return static_cast<int32_t>(syscall(SYS_gettid)); }
+#endif
 #endif
 
 namespace OHOS {
@@ -101,7 +103,9 @@ void RSTransactionHandler::MoveCommandByNodeId(std::shared_ptr<RSTransactionHand
         return;
     }
 
-    std::scoped_lock cmdLock(mutex_, transactionHandler->mutex_);
+    std::unique_lock<std::mutex> cmdLock(mutex_);
+    // Add a lock to the destination handler to prevent multiple threads from reading and writing commands.
+    std::unique_lock<std::mutex> dstHandlerCmdLock(transactionHandler->mutex_);
     if (renderPipelineClient_ != nullptr) {
         MoveRemoteCommandByNodeId(transactionHandler, nodeId);
     }
@@ -121,7 +125,8 @@ void RSTransactionHandler::MoveCommandByNodeIdExcludeTreeCommands(
         RS_LOGE("RSTransactionHandler::MoveCommandByNodeIdExcludeTreeCommands transactionHandler is nullptr");
         return;
     }
-    std::scoped_lock cmdLock(mutex_, transactionHandler->mutex_);
+    std::unique_lock<std::mutex> cmdLock(mutex_);
+    std::unique_lock<std::mutex> dstHandlerCmdLock(transactionHandler->mutex_);
     if (renderPipelineClient_ != nullptr) {
         MoveRemoteCommandByNodeIdExcludeTreeCommands(transactionHandler, nodeId);
     }
@@ -180,6 +185,7 @@ void RSTransactionHandler::FlushImplicitTransaction(uint64_t timestamp, const st
     }
 
     if (renderPipelineClient_ == nullptr || implicitRemoteTransactionData_->IsEmpty()) {
+        RS_TRACE_NAME("UI skip");
         return;
     }
 
