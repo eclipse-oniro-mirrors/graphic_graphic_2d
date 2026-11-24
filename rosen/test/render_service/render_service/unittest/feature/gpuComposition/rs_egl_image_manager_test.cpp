@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 #include <memory>
+#include <unistd.h>
 #include <vector>
 #include "gtest/gtest.h"
+#include "gpuComposition/rs_fence_wait_dfx.h"
 #include "surface_buffer_impl.h"
 
 #include "drawable/rs_screen_render_node_drawable.h"
@@ -885,7 +887,114 @@ HWTEST_F(RSEglImageManagerTest, MapImageFromSurfaceBuffer001, TestSize.Level1)
 HWTEST_F(RSEglImageManagerTest, WaitAcquireFence001, TestSize.Level1)
 {
     ASSERT_NE(eglImageManager_, nullptr);
-    eglImageManager_->WaitAcquireFence(nullptr);
+    eglImageManager_->WaitAcquireFence(nullptr, 0, 0);
+}
+
+/**
+ * @tc.name: WaitAcquireFence002
+ * @tc.desc: Wait acquirefence with invalid fence; SyncFence::Wait returns -1 immediately
+ *           (fd < 0) without blocking, and the non-zero result is reported to the fence-wait DFX
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSEglImageManagerTest, WaitAcquireFence002, TestSize.Level1)
+{
+    ASSERT_NE(eglImageManager_, nullptr);
+    auto& dfx = FenceWaitDfx::Instance();
+    {
+        std::lock_guard<std::mutex> lock(dfx.mutex_);
+        dfx.cntMap_.clear();
+        dfx.cntMapSize_.store(0);
+        dfx.lastLogMs_ = 0;
+    }
+    constexpr uint64_t bufferId = 555;
+    sptr<SyncFence> invalidFence = SyncFence::INVALID_FENCE;
+    eglImageManager_->WaitAcquireFence(invalidFence, bufferId, 0);
+    {
+        std::lock_guard<std::mutex> lock(dfx.mutex_);
+        // same branch as a real timeout: the non-zero wait result increments the per-buffer count
+        EXPECT_EQ(dfx.cntMap_[bufferId], 1);
+    }
+}
+
+/**
+ * @tc.name: WaitAcquireFence003
+ * @tc.desc: Timeout report path: the per-buffer consecutive count accumulates through the
+ *           report branches (first log, window-throttled retry, escalation boundary)
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSEglImageManagerTest, WaitAcquireFence003, TestSize.Level1)
+{
+    ASSERT_NE(eglImageManager_, nullptr);
+    auto& dfx = FenceWaitDfx::Instance();
+    {
+        std::lock_guard<std::mutex> lock(dfx.mutex_);
+        dfx.cntMap_.clear();
+        dfx.cntMapSize_.store(0);
+        dfx.lastLogMs_ = 0;
+    }
+    // the report is invoked directly for determinism: a real fence timeout needs a kernel
+    // fd that stays unready, while the report branches themselves are pure counters/logs
+    FenceWaitDfx::ReportFenceWaitTimeout("RSEglImageManagerTest", 0, 0, -1);
+    FenceWaitDfx::ReportFenceWaitTimeout("RSEglImageManagerTest", 0, 0, -1);
+    FenceWaitDfx::ReportFenceWaitTimeout("RSEglImageManagerTest", 0, 0, -1);
+    {
+        std::lock_guard<std::mutex> lock(dfx.mutex_);
+        EXPECT_EQ(dfx.cntMap_[0], FenceWaitDfx::FENCE_CONSECUTIVE_TIMEOUT_LIMIT);
+    }
+}
+
+/**
+ * @tc.name: FenceWaitDfxPerBuffer001
+ * @tc.desc: The consecutive-timeout counter is per-bufferId; a successful wait on one
+ *           buffer resets only that buffer's count
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSEglImageManagerTest, FenceWaitDfxPerBuffer001, TestSize.Level1)
+{
+    auto& dfx = FenceWaitDfx::Instance();
+    {
+        std::lock_guard<std::mutex> lock(dfx.mutex_);
+        dfx.cntMap_.clear();
+        dfx.cntMapSize_.store(0);
+        dfx.lastLogMs_ = 0;
+    }
+    constexpr uint64_t bufferA = 111;
+    constexpr uint64_t bufferB = 222;
+    // seed one timeout record for buffer B without a real fence wait (report invoked directly)
+    FenceWaitDfx::ReportFenceWaitTimeout("RSEglImageManagerTest", bufferB, 0, -1);
+    {
+        std::lock_guard<std::mutex> lock(dfx.mutex_);
+        EXPECT_EQ(dfx.cntMap_[bufferB], 1);
+    }
+    // one real timeout on buffer A: with the write end held open, an empty pipe read end
+    // stays unready so the poll inside SyncFence::Wait blocks until the fence times out;
+    // the SyncFence destructor closes the read-end fd
+    int pipeFds[2];
+    ASSERT_EQ(pipe(pipeFds), 0);
+    sptr<SyncFence> timeoutFenceA = new SyncFence(pipeFds[0]);
+    eglImageManager_->WaitAcquireFence(timeoutFenceA, bufferA, 0);
+    close(pipeFds[1]);
+    {
+        std::lock_guard<std::mutex> lock(dfx.mutex_);
+        EXPECT_EQ(dfx.cntMap_[bufferA], 1);
+        EXPECT_EQ(dfx.cntMap_[bufferB], 1);
+    }
+    // a real successful wait on buffer B resets only B: a pipe read end with data available
+    // polls ready immediately, SyncFence::Wait returns 0 and B's record is erased, A is unaffected
+    int okPipeFds[2];
+    ASSERT_EQ(pipe(okPipeFds), 0);
+    ASSERT_EQ(write(okPipeFds[1], "x", 1), 1);
+    close(okPipeFds[1]);
+    sptr<SyncFence> goodFenceB = new SyncFence(okPipeFds[0]);
+    eglImageManager_->WaitAcquireFence(goodFenceB, bufferB, 0);
+    {
+        std::lock_guard<std::mutex> lock(dfx.mutex_);
+        EXPECT_EQ(dfx.cntMap_[bufferA], 1);
+        EXPECT_EQ(dfx.cntMap_.count(bufferB), 0); // B's count erased by success
+    }
 }
 
 /**

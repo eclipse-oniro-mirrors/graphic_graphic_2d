@@ -21,6 +21,7 @@
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 #include "ui_effect/property/include/rs_ui_mask_base.h"
 #include "ui_effect/property/include/rs_ui_shape_base.h"
+#include "ui_effect/property/include/rs_ui_blender_base.h"
 
 #include "animation/rs_animation.h"
 #include "modifier/rs_property.h"
@@ -1180,6 +1181,101 @@ HWTEST_F(RSPropertyTest, Set004, TestSize.Level1)
 
     prop2->Set(nullptr);
     EXPECT_EQ(prop2->stagingValue_, nullptr);
+}
+
+/**
+ * @tc.name: OnAttachAndOnDetach005
+ * @tc.desc: Test OnAttach and OnDetach for RSProperty<std::shared_ptr<RSNGBlenderBase>>
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPropertyTest, OnAttachAndOnDetach005, TestSize.Level1)
+{
+    auto nullProp = std::make_shared<RSProperty<std::shared_ptr<RSNGBlenderBase>>>();
+    auto node = RSCanvasNode::Create();
+    nullProp->OnAttach(*node, {});
+    nullProp->OnDetach();
+
+    auto blender = std::make_shared<RSNGHdrDarkenBlender>();
+    auto blenderProp = blender->Getter<HdrDarkenBlenderHdrBrightnessRatioTag>();
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSNGBlenderBase>>>();
+    prop->Set(blender);
+
+    prop->OnAttach(*node, {});
+    EXPECT_NE(blenderProp->target_.lock(), nullptr);
+    prop->OnDetach();
+}
+
+/**
+ * @tc.name: Set005
+ * @tc.desc: Test Set for RSProperty<std::shared_ptr<RSNGBlenderBase>>, covering the
+ *           incremental SetValue path (same type and effect count, value-only update)
+ *           and the fallback replace path (different blender type).
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPropertyTest, Set005, TestSize.Level1)
+{
+    auto prop1 = std::make_shared<RSProperty<std::shared_ptr<RSNGBlenderBase>>>();
+    auto blender1 = std::make_shared<RSNGHdrDarkenBlender>();
+    prop1->Set(blender1);
+    EXPECT_EQ(prop1->stagingValue_, blender1);
+    prop1->Set(blender1);
+    EXPECT_EQ(prop1->stagingValue_, blender1);
+
+    // without node
+    auto prop2 = std::make_shared<RSProperty<std::shared_ptr<RSNGBlenderBase>>>();
+    auto blender2 = std::make_shared<RSNGHdrDarkenBlender>();
+    prop2->Set(blender2);
+    EXPECT_EQ(prop2->stagingValue_, blender2);
+
+    prop2->Set(blender1);
+    EXPECT_EQ(prop2->stagingValue_, blender1);
+
+    prop2->Set(nullptr);
+    EXPECT_EQ(prop2->stagingValue_, nullptr);
+
+    // with node, same blender type: incremental SetValue succeeds, only tag values are updated
+    auto node = RSCanvasNode::Create();
+    prop2 = std::make_shared<RSProperty<std::shared_ptr<RSNGBlenderBase>>>();
+    prop2->target_ = node;
+    blender1 = std::make_shared<RSNGHdrDarkenBlender>();
+    blender1->Setter<HdrDarkenBlenderHdrBrightnessRatioTag>(1.0f);
+    blender2 = std::make_shared<RSNGHdrDarkenBlender>();
+    blender2->Setter<HdrDarkenBlenderHdrBrightnessRatioTag>(2.0f);
+    prop2->Set(blender1);
+    EXPECT_EQ(prop2->stagingValue_, blender1);
+
+    prop2->Set(blender2);
+    EXPECT_EQ(prop2->stagingValue_, blender1); // Update value only
+    EXPECT_EQ(blender1->Getter<HdrDarkenBlenderHdrBrightnessRatioTag>()->Get(), 2.0f);
+
+    // different blender type: incremental update fails, fallback replaces the object
+    auto brightnessBlender = std::make_shared<RSNGBrightnessBlender>();
+    prop2->Set(brightnessBlender);
+    EXPECT_EQ(prop2->stagingValue_, brightnessBlender);
+
+    prop2->Set(nullptr);
+    EXPECT_EQ(prop2->stagingValue_, nullptr);
+}
+
+/**
+ * @tc.name: RSNGBlenderBaseGetRenderPropertyTest
+ * @tc.desc: Test GetRenderPropertyTest for RSProperty<std::shared_ptr<RSNGBlenderBase>>
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPropertyTest, RSNGBlenderBaseGetRenderPropertyTest, TestSize.Level1)
+{
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSNGBlenderBase>>>();
+    auto result = std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(
+        prop->GetRenderProperty());
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->stagingValue_, nullptr);
+
+    auto blender = std::make_shared<RSNGHdrDarkenBlender>();
+    prop->Set(blender);
+    result = std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(
+        prop->GetRenderProperty());
+    EXPECT_NE(result, nullptr);
+    EXPECT_NE(result->stagingValue_, nullptr);
 }
 
 /**

@@ -18,11 +18,14 @@
 
 #include <memory>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 #include "common/rs_macros.h"
 #include "params/rs_render_params.h"
 #include "params/rs_screen_render_params.h"
 namespace OHOS::Rosen {
+class RSSurfaceRenderNode;
 class RSB_EXPORT RSLogicalDisplayRenderParams : public RSRenderParams {
 public:
     explicit RSLogicalDisplayRenderParams(NodeId nodeId);
@@ -159,6 +162,55 @@ public:
         return fixedHeight_;
     }
 
+    // A record session is only active on a virtual MIRROR output: consumers gate on this instead
+    // of the raw config, so a display re-parented to a physical screen or changed to another mode
+    // falls back to normal drawing.
+    bool IsRecordSessionActive() const
+    {
+        return !windowRecordConfig_.surfaceNodeIds.empty() && isOnVirtualScreen_ && IsMirrorDisplay();
+    }
+    void SetOnVirtualScreen(bool onVirtualScreen)
+    {
+        if (isOnVirtualScreen_ == onVirtualScreen) {
+            return;
+        }
+        isOnVirtualScreen_ = onVirtualScreen;
+        needSync_ = true;
+    }
+    const RSWindowRecordConfig& GetWindowRecordConfig() const { return windowRecordConfig_; }
+    // Window-record snapshots resolved per frame on the RS main thread (see
+    // RSLogicalDisplayRenderNode::ResolveWindowRecordSnapshot). The render thread must never touch
+    // RSRenderNodeMap or RSRenderNode, whose state is main-thread exclusive and unlocked.
+    const std::vector<DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr>& GetRecordSurfaceDrawables() const
+    {
+        return recordSurfaceDrawables_;
+    }
+    const std::unordered_set<NodeId>& GetRecordWhiteListIds() const
+    {
+        return recordWhiteListIds_;
+    }
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetRecordSourceDisplayDrawable() const
+    {
+        return recordSourceDisplayDrawable_;
+    }
+    bool HasPaintableRecordSurface() const
+    {
+        return hasPaintableRecordSurface_;
+    }
+    // Called by RSLogicalDisplayRenderNode after writing the record snapshot fields (friend
+    // access).
+    void MarkWindowRecordSnapshotSynced() { needSync_ = true; }
+
+    // Per-frame callers pass the same resolved value; only an actual config change needs a sync.
+    void SetWindowRecordConfig(const RSWindowRecordConfig& config)
+    {
+        if (windowRecordConfig_ == config) {
+            return;
+        }
+        windowRecordConfig_ = config;
+        needSync_ = true;
+    }
+
 private:
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr ancestorScreenDrawable_;
     std::vector<Occlusion::Rect> topSurfaceOpaqueRects_;
@@ -188,6 +240,15 @@ private:
     float offsetY_ = 0.f;
     float fixedWidth_ = 0;
     float fixedHeight_ = 0;
+
+    RSWindowRecordConfig windowRecordConfig_;
+    bool isOnVirtualScreen_ = false;
+    // Main-thread resolved snapshots. The drawables are already filtered to paintable main
+    // windows under the anchor; the ids mix persistent and surface node ids for record-only matching.
+    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr> recordSurfaceDrawables_;
+    std::unordered_set<NodeId> recordWhiteListIds_;
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr recordSourceDisplayDrawable_;
+    bool hasPaintableRecordSurface_ = false;
 
     friend class RSLogicalDisplayRenderNode;
 };

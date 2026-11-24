@@ -593,7 +593,10 @@ ohos_unittest("RSBlurPixelMapTest") {
 ## Build RSDrmUtilTest
 ohos_unittest("RSDrmUtilTest") {
   module_out_path = module_output_path
-  sources = [ "drm/rs_drm_util_test.cpp" ]
+  sources = [
+    "$graphic_2d_root/rosen/test/unittest_main/test_main.cpp",
+    "drm/rs_drm_util_test.cpp",
+  ]
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
@@ -907,11 +910,7 @@ ohos_unittest("RSUifirstManagerTest") {
     cfi_cross_dso = true
     debug = true
   }
-  deps = [
-    ":rs_test_common",
-    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
-    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
-  ]
+  deps = [ ":rs_test_common" ]
   external_deps = [
     "eventhandler:libeventhandler",
     "c_utils:utils",

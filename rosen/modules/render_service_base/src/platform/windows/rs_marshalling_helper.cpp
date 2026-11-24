@@ -197,6 +197,17 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::Matrix& val)
     return {};
 }
 
+// Drawing::ColorMatrix
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const Drawing::ColorMatrix& val)
+{
+    return {};
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::ColorMatrix& val)
+{
+    return {};
+}
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSLinearGradientBlurPara>& val)
 {
     return {};
@@ -233,7 +244,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::vector<std::sha
 {
     return {};
 }
-
+ 
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::vector<std::shared_ptr<EmitterUpdater>>& val)
 {
     return {};
@@ -408,6 +419,16 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSNG
     return {};
 }
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRenderShapeBase>& val)
+{
+    return {};
+}
+
+// RSNGRenderBlenderBase
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSNGRenderBlenderBase>& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRenderBlenderBase>& val)
 {
     return {};
 }
@@ -607,6 +628,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderMaskBase>)          \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderShaderBase>)        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderShapeBase>)         \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderBlenderBase>)      \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSImage>)                     \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSMask>)                      \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSPath>)                      \
@@ -629,7 +651,8 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<Vector4f>)                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Media::PixelMap>)             \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>) \
-    EXPLICIT_INSTANTIATION(TEMPLATE, AtlasInfo)
+    EXPLICIT_INSTANTIATION(TEMPLATE, AtlasInfo)                                    \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Drawing::ColorMatrix)
 BATCH_EXPLICIT_INSTANTIATION(RSRenderProperty)
 
 #undef EXPLICIT_INSTANTIATION
@@ -703,6 +726,7 @@ bool RSMarshallingHelper::CheckReadPosition(Parcel& parcel)
 {
     return true;
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val)
 {
     return true;

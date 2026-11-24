@@ -42,12 +42,17 @@
 #include "memory/rs_memory_track.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "engine/rs_uni_render_engine.h"
+#include "command/rs_surface_node_command.h"
+#include "command/rs_delegate_composite_command.h"
+#include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
+#include "pipeline/main_thread/rs_uni_render_visitor.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "render_server/transaction/rs_client_to_service_connection.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
+#include "params/rs_screen_render_params.h"
 #include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
 #include "feature/tunnel_layer/rs_tunnel_route_arbiter.h"
 #include "platform/common/rs_innovation.h"
@@ -1653,6 +1658,272 @@ HWTEST_F(RSMainThreadTest, CompareTransactionDataSort, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ProcessCommandForUniRenderTest003
+ * @tc.desc: skip on a missing hole advances lastIndex to curIndex and consumes the transaction
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, ProcessCommandForUniRenderTest003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    constexpr uint32_t pid = 23456;
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_[pid] = 0;
+    mainThread->transactionDataLastLogTime_.erase(pid);
+    mainThread->effectiveTransactionDataIndexMap_[pid].first = 0;
+
+    NodeId nodeId = 1;
+    std::weak_ptr<RSContext> context = {};
+    auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(nodeId, context);
+    auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(rsCanvasDrawingRenderNode);
+    drawableNode->SetNeedDraw(true);
+    mainThread->context_->nodeMap.RegisterRenderNode(rsCanvasDrawingRenderNode);
+
+    // hole at index 1..6: transaction 7 waits
+    auto data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(7);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    uint64_t curTime = REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+
+    // wait exceeds the skip limit: lastIndex jumps to 7 and 7 is applied
+    // (31 full frames: waitedFrames must be strictly greater than the 30-frame limit)
+    curTime += REFRESH_PERIOD * (SKIP_COMMAND_FREQ_LIMIT + 1);
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], 0);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 7); // lastIndex advanced to curIndex
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), true);
+
+    // next consecutive index applies without any wait
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(8);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    curTime += REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 8);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), true);
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], 0);
+
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_.erase(pid);
+    mainThread->transactionDataLastLogTime_.erase(pid);
+}
+
+/**
+ * @tc.name: ProcessCommandForUniRenderTest004
+ * @tc.desc: skip on a late/duplicate transaction (curIndex <= lastIndex) rolls lastIndex back
+ *           to curIndex, forcing the next index into a new wait cycle (historical semantics)
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, ProcessCommandForUniRenderTest004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    constexpr uint32_t pid = 23457;
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_[pid] = 0;
+    mainThread->transactionDataLastLogTime_.erase(pid);
+    // index 1..5 already applied
+    mainThread->effectiveTransactionDataIndexMap_[pid].first = 5;
+
+    NodeId nodeId = 1;
+    std::weak_ptr<RSContext> context = {};
+    auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(nodeId, context);
+    auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(rsCanvasDrawingRenderNode);
+    drawableNode->SetNeedDraw(true);
+    mainThread->context_->nodeMap.RegisterRenderNode(rsCanvasDrawingRenderNode);
+
+    // late duplicate transaction 4 arrives: it enters the wait branch (existing semantics)
+    auto data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(4);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    uint64_t curTime = REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+
+    // after the skip timeout the late transaction is consumed and lastIndex rolls back to 4
+    // (31 full frames: waitedFrames must be strictly greater than the 30-frame limit)
+    curTime += REFRESH_PERIOD * (SKIP_COMMAND_FREQ_LIMIT + 1);
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], 0);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 4); // rolled back to curIndex
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), true);
+
+    // index 6 no longer follows the rolled-back lastIndex (still waiting for 5): a new wait
+    // cycle starts instead of applying immediately
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(6);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    curTime += REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 4); // unchanged while waiting
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_.erase(pid);
+    mainThread->transactionDataLastLogTime_.erase(pid);
+}
+
+/**
+ * @tc.name: ProcessCommandForUniRenderTest005
+ * @tc.desc: missing-index wait below the skip limit keeps waiting and requests next vsync for keep-alive
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, ProcessCommandForUniRenderTest005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    constexpr uint32_t pid = 23458;
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_[pid] = 0;
+    mainThread->transactionDataLastLogTime_.erase(pid);
+    mainThread->effectiveTransactionDataIndexMap_[pid].first = 0;
+
+    NodeId nodeId = 1;
+    std::weak_ptr<RSContext> context = {};
+    auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(nodeId, context);
+    auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(rsCanvasDrawingRenderNode);
+    drawableNode->SetNeedDraw(true);
+    mainThread->context_->nodeMap.RegisterRenderNode(rsCanvasDrawingRenderNode);
+
+    // hole at index 1: transaction 2 waits
+    auto data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(2);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    uint64_t curTime = REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+
+    // wait for 16 frames (< skip limit 30): still waiting, pending kept, timer advances with vsync
+    curTime += REFRESH_PERIOD * 16;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], REFRESH_PERIOD); // wait start unchanged
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 0); // lastIndex unchanged
+
+    // hole filled: transaction 1 arrives and both apply consecutively, timer cleared
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(1);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    curTime += REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].first, 2);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), true);
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], 0);
+
+    mainThread->effectiveTransactionDataIndexMap_.erase(pid);
+    mainThread->transactionDataLastWaitTime_.erase(pid);
+    mainThread->transactionDataLastLogTime_.erase(pid);
+}
+
+#ifdef RES_SCHED_ENABLE
+/**
+ * @tc.name: SubScribeSystemAbilityUniRenderThread001
+ * @tc.desc: Test RSUniRenderThread::SubScribeSystemAbility keeps the listener after subscribing
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, SubScribeSystemAbilityUniRenderThread001, TestSize.Level1)
+{
+    // bounded-retry subscribe against the real samgr: a successful subscribe keeps the
+    // listener registered; exhausted retries would clear it (see RetrySamgrCall)
+    auto& uniRenderThread = RSUniRenderThread::Instance();
+    uniRenderThread.SubScribeSystemAbility();
+    EXPECT_NE(uniRenderThread.saStatusChangeListener_, nullptr);
+    // re-subscribing installs a fresh listener and still succeeds
+    uniRenderThread.SubScribeSystemAbility();
+    EXPECT_NE(uniRenderThread.saStatusChangeListener_, nullptr);
+}
+#endif
+
+/**
+ * @tc.name: RequestNextVsyncForCachedCommand001
+ * @tc.desc: RequestNextVsyncForCachedCommand appends the cache marker and requests vsync safely
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, RequestNextVsyncForCachedCommand001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    pid_t pid = 23460;
+    uint64_t curIndex = 1;
+    std::string transactionFlags = "";
+    // null agent: falls into the plain "UI" vsync request branch
+    auto origAgent = mainThread->rsVsyncManagerAgent_;
+    mainThread->rsVsyncManagerAgent_ = nullptr;
+    mainThread->RequestNextVsyncForCachedCommand(transactionFlags, pid, curIndex);
+    EXPECT_NE(transactionFlags.find("cache"), std::string::npos);
+    // non-null agent: exercises the dvsync check before requesting vsync
+    transactionFlags = "";
+    mainThread->rsVsyncManagerAgent_ = origAgent;
+    mainThread->RequestNextVsyncForCachedCommand(transactionFlags, pid, curIndex);
+    EXPECT_NE(transactionFlags.find("cache"), std::string::npos);
+}
+
+/**
+ * @tc.name: NeedConsumeDVSyncCommand001
+ * @tc.desc: NeedConsumeDVSyncCommand detects descending timestamps and reports the boundary index
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSMainThreadTest, NeedConsumeDVSyncCommand001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    // ascending timestamps: no dvsync boundary detected
+    {
+        std::vector<std::unique_ptr<RSTransactionData>> transactionVec;
+        auto data = std::make_unique<RSTransactionData>();
+        data->SetTimestamp(100);
+        data->SetIndex(1);
+        transactionVec.emplace_back(std::move(data));
+        data = std::make_unique<RSTransactionData>();
+        data->SetTimestamp(200);
+        data->SetIndex(2);
+        transactionVec.emplace_back(std::move(data));
+        uint32_t endIndex = 0;
+        EXPECT_FALSE(mainThread->NeedConsumeDVSyncCommand(endIndex, transactionVec));
+        EXPECT_EQ(endIndex, 0);
+    }
+    // descending timestamps: the boundary transaction index is reported and time is marked updated
+    {
+        std::vector<std::unique_ptr<RSTransactionData>> transactionVec;
+        auto data = std::make_unique<RSTransactionData>();
+        data->SetTimestamp(200);
+        data->SetIndex(1);
+        transactionVec.emplace_back(std::move(data));
+        data = std::make_unique<RSTransactionData>();
+        data->SetTimestamp(100);
+        data->SetIndex(2);
+        transactionVec.emplace_back(std::move(data));
+        uint32_t endIndex = 0;
+        EXPECT_TRUE(mainThread->NeedConsumeDVSyncCommand(endIndex, transactionVec));
+        EXPECT_EQ(endIndex, 2);
+    }
+}
+
+/**
  * @tc.name: IsWatermarkFlagChanged
  * @tc.desc: IsWatermarkFlagChanged test
  * @tc.type: FUNC
@@ -2908,7 +3179,6 @@ HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp005, TestSize.Le
     ASSERT_NE(mainThread, nullptr);
     const sptr<ConsumerSurface> consumer = new ConsumerSurface("test5");
     consumer->Init();
-    int32_t pid = 12345;
     int64_t desiredPresentTimestamp = 100000000;
     int64_t getDesiredPresentTimestamp = -1;
     uint32_t seqId = 1;
@@ -2918,6 +3188,8 @@ HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp005, TestSize.Le
     consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].desiredPresentTimestamp = desiredPresentTimestamp;
 
     uint64_t vsyncRsTimestamp = mainThread->vsyncRsTimestamp_.load(); // record
+    int32_t pid = 12345;
+    mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp - 1);
     mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp - 1);
     mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp, pid);
     EXPECT_EQ(getDesiredPresentTimestamp, desiredPresentTimestamp);
@@ -2930,14 +3202,13 @@ HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp005, TestSize.Le
     mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp, pid);
     EXPECT_EQ(getDesiredPresentTimestamp, 0);
 
-    mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp + 1000000000); // add 1s
+    mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp + 1000000000); // add 1+s
     mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp, pid);
     EXPECT_EQ(getDesiredPresentTimestamp, 0);
 
     mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp + 1000000001); // add 1+s
     mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp, pid);
     EXPECT_EQ(getDesiredPresentTimestamp, 0);
-
     mainThread->vsyncRsTimestamp_.store(vsyncRsTimestamp); // reset
 }
 
@@ -2981,7 +3252,6 @@ HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp007, TestSize.Le
     const sptr<ConsumerSurface> consumer = new ConsumerSurface("test7");
     consumer->Init();
     uint32_t seqId = 1;
-    int32_t pid = 12345;
     int64_t desiredPresentTimestamp = 999999999; // 0.999ms
     consumer->consumer_->bufferQueue_->dirtyList_.clear();
     consumer->consumer_->bufferQueue_->dirtyList_.push_back(seqId);
@@ -2989,6 +3259,8 @@ HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp007, TestSize.Le
     consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].desiredPresentTimestamp = desiredPresentTimestamp;
 
     int64_t getDesiredPresentTimestamp = -1;
+    uint64_t vsyncRsTimestamp = mainThread->vsyncRsTimestamp_.load(); // record
+    int32_t pid = 12345;
 
     mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp / 2);
     mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp, pid);
@@ -2997,6 +3269,38 @@ HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp007, TestSize.Le
     desiredPresentTimestamp = 1100000000; // 1.1ms
     consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].desiredPresentTimestamp = desiredPresentTimestamp;
     mainThread->vsyncRsTimestamp_.store(0);
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp, pid);
+    EXPECT_EQ(getDesiredPresentTimestamp, 0);
+    mainThread->vsyncRsTimestamp_.store(vsyncRsTimestamp); // reset
+}
+
+/**
+ * @tc.name: GetFrontBufferDesiredPresentTimeStamp008
+ * @tc.desc: test GetFrontBufferDesiredPresentTimeStamp
+ * @tc.type: FUNC
+ * @tc.require: issueIAKQC3
+ */
+HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp008, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    const sptr<ConsumerSurface> consumer = new ConsumerSurface("test7");
+    consumer->Init();
+    uint32_t seqId = 1;
+    int64_t desiredPresentTimestamp = 999999999; // 0.999ms
+    consumer->consumer_->bufferQueue_->dirtyList_.clear();
+    consumer->consumer_->bufferQueue_->dirtyList_.push_back(seqId);
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].isAutoTimestamp = false;
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].desiredPresentTimestamp = desiredPresentTimestamp;
+
+    int64_t getDesiredPresentTimestamp = -1;
+    uint64_t vsyncRsTimestamp = mainThread->vsyncRsTimestamp_.load(); // record
+    int32_t pid = 12345;
+
+    mainThread->vsyncRsTimestamp_.store(INT64_MAX);
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp, pid);
+    EXPECT_EQ(getDesiredPresentTimestamp, 0);
+    mainThread->vsyncRsTimestamp_.store(vsyncRsTimestamp); // reset
 }
 
 /**
@@ -10500,6 +10804,301 @@ HWTEST_F(RSMainThreadTest, SetAdapterLtpoConfig_NullAndNotNull, TestSize.Level1)
     mainThread->SetAdapterLtpoConfig(config);
 
     mainThread->hgmRenderContext_ = savedHgmRenderContext;
+}
+HWTEST_F(RSMainThreadTest, PublishWindowRecordMirrorSourcesTest, TestSize.Level2)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    constexpr ScreenId outputScreenId = 7700;
+    constexpr NodeId outputScreenNodeId = 7701;
+    constexpr ScreenId sourceScreenId = 7702;
+    constexpr NodeId sourceScreenNodeId = 7703;
+    constexpr NodeId displayId = 7704;
+    constexpr NodeId anchorDisplayId = 7705;
+    constexpr NodeId mainId = 7706;
+    auto rsContext = std::make_shared<RSContext>();
+    auto outputScreen = std::make_shared<RSScreenRenderNode>(outputScreenNodeId, outputScreenId, rsContext);
+    outputScreen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    auto sourceScreen = std::make_shared<RSScreenRenderNode>(sourceScreenNodeId, sourceScreenId, rsContext);
+    sourceScreen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(sourceScreenNodeId);
+    auto sourceParams = static_cast<RSScreenRenderParams*>(sourceScreen->stagingRenderParams_.get());
+    ASSERT_NE(sourceParams, nullptr);
+
+    RSDisplayNodeConfig outputConfig;
+    outputConfig.screenId = outputScreenId;
+    outputConfig.displayMode = DisplayMode::MIRROR;
+    auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, outputConfig, rsContext);
+    display->SetDisplayMode(DisplayMode::MIRROR);
+
+    RSDisplayNodeConfig anchorConfig;
+    anchorConfig.screenId = sourceScreenId;
+    auto anchorDisplay = std::make_shared<RSLogicalDisplayRenderNode>(anchorDisplayId, anchorConfig, rsContext);
+    // The production factory creates the drawable and its params, as for any real display/window.
+    DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(anchorDisplay);
+    ASSERT_NE(anchorDisplay->GetRenderDrawable(), nullptr);
+    sourceScreen->AddChild(anchorDisplay);
+    RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
+    auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
+    DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(mainNode);
+    ASSERT_NE(mainNode->GetRenderDrawable(), nullptr);
+    mainNode->isOnTheTree_ = true;
+    anchorDisplay->AddChild(mainNode);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[ExtractPid(anchorDisplayId)][anchorDisplayId] = anchorDisplay;
+    nodeMap.renderNodeMap_[ExtractPid(mainId)][mainId] = mainNode;
+
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { mainId };
+    display->SetWindowRecordConfig(recordConfig);
+    outputScreen->AddChild(display);
+    // The main-thread node map is process global; keep the registration scoped so an aborted
+    // expectation cannot leak the output screen into later tests.
+    struct NodeMapRegistrationGuard {
+        RSRenderNodeMap& nodeMap;
+        NodeId id;
+        ~NodeMapRegistrationGuard()
+        {
+            nodeMap.UnregisterRenderNode(id);
+        }
+    };
+    auto& mainThreadNodeMap = mainThread->GetContext().GetMutableNodeMap();
+    mainThreadNodeMap.RegisterRenderNode(outputScreen);
+    NodeMapRegistrationGuard registrationGuard { mainThreadNodeMap, outputScreenNodeId };
+
+    mainThread->PublishWindowRecordMirrorSources();
+    EXPECT_EQ(display->GetMirrorSource().lock(), anchorDisplay);
+    EXPECT_TRUE(display->IsWindowRecordActive());
+    // Both layers are published in the same early main-thread step.
+    EXPECT_TRUE(outputScreen->IsMirrorScreen());
+    EXPECT_EQ(outputScreen->GetMirrorSource().lock(), sourceScreen);
+    EXPECT_EQ(sourceParams->mirrorDstCount_, 1u);
+}
+
+/**
+ * @tc.name: UpdateWillGoDirectCompositionFlag001
+ * @tc.desc: no web command keeps delegateModeSupport true and the collect flag off
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateWillGoDirectCompositionFlag001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isWebCommandOnly_ = false;
+    mainThread->doDirectComposition_ = true;
+    mainThread->GetContext().SetOnlyDelegateModeSetBufferCmdFlag(false);
+    bool willGoDirectComposition = true;
+    bool delegateModeSupport = false;
+    mainThread->UpdateWillGoDirectCompositionFlag(willGoDirectComposition, delegateModeSupport);
+    EXPECT_TRUE(delegateModeSupport);
+    EXPECT_TRUE(willGoDirectComposition);
+    EXPECT_FALSE(RsDelegateCompositeCallbackManager::GetInstance().needCollectHwcNodesInfoFlag_);
+}
+
+/**
+ * @tc.name: UpdateWillGoDirectCompositionFlag002
+ * @tc.desc: web setBuffer only commands keep direct composition and turn the collect flag off
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateWillGoDirectCompositionFlag002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isWebCommandOnly_ = true;
+    mainThread->doDirectComposition_ = true;
+    mainThread->GetContext().SetOnlyDelegateModeSetBufferCmdFlag(true);
+    bool willGoDirectComposition = true;
+    bool delegateModeSupport = false;
+    mainThread->UpdateWillGoDirectCompositionFlag(willGoDirectComposition, delegateModeSupport);
+    EXPECT_TRUE(delegateModeSupport);
+    EXPECT_TRUE(willGoDirectComposition);
+    // doDirectComposition true && willGo true && isWebCommandOnly true -> flag stays false
+    EXPECT_FALSE(RsDelegateCompositeCallbackManager::GetInstance().needCollectHwcNodesInfoFlag_);
+    mainThread->isWebCommandOnly_ = false;
+    mainThread->GetContext().SetOnlyDelegateModeSetBufferCmdFlag(false);
+}
+
+/**
+ * @tc.name: UpdateWillGoDirectCompositionFlag003
+ * @tc.desc: non setBuffer web commands block direct composition and arm the hardware composer collect flag
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateWillGoDirectCompositionFlag003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isWebCommandOnly_ = true;
+    mainThread->doDirectComposition_ = true;
+    mainThread->GetContext().SetOnlyDelegateModeSetBufferCmdFlag(false);
+    bool willGoDirectComposition = true;
+    bool delegateModeSupport = true;
+    mainThread->UpdateWillGoDirectCompositionFlag(willGoDirectComposition, delegateModeSupport);
+    EXPECT_FALSE(delegateModeSupport);
+    EXPECT_FALSE(willGoDirectComposition);
+    // doDirectComposition true && willGo false && isWebCommandOnly true -> collect flag armed
+    EXPECT_TRUE(RsDelegateCompositeCallbackManager::GetInstance().needCollectHwcNodesInfoFlag_);
+    mainThread->isWebCommandOnly_ = false;
+}
+
+/**
+ * @tc.name: UpdateWillGoDirectCompositionFlag004
+ * @tc.desc: the collect flag is not armed when doDirectComposition is already off
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateWillGoDirectCompositionFlag004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isWebCommandOnly_ = true;
+    mainThread->doDirectComposition_ = false;
+    mainThread->GetContext().SetOnlyDelegateModeSetBufferCmdFlag(false);
+    bool willGoDirectComposition = true;
+    bool delegateModeSupport = true;
+    mainThread->UpdateWillGoDirectCompositionFlag(willGoDirectComposition, delegateModeSupport);
+    EXPECT_FALSE(delegateModeSupport);
+    EXPECT_FALSE(willGoDirectComposition);
+    EXPECT_FALSE(RsDelegateCompositeCallbackManager::GetInstance().needCollectHwcNodesInfoFlag_);
+    mainThread->isWebCommandOnly_ = false;
+}
+
+/**
+ * @tc.name: UpdateDirectCompositionFlag001
+ * @tc.desc: without commands doDirectComposition stays untouched while the flag resets
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateDirectCompositionFlag001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+
+    mainThread->isWebCommandOnly_ = true;
+    mainThread->doDirectComposition_ = false;
+    mainThread->UpdateDirectCompositionFlagForDelegateMode();
+    EXPECT_FALSE(mainThread->isWebCommandOnly_);
+    EXPECT_FALSE(mainThread->doDirectComposition_);
+
+    mainThread->doDirectComposition_ = true;
+    mainThread->UpdateDirectCompositionFlagForDelegateMode();
+    EXPECT_TRUE(mainThread->doDirectComposition_);
+    mainThread->doDirectComposition_ = false;
+}
+
+/**
+ * @tc.name: UpdateDirectCompositionFlag002
+ * @tc.desc: setBuffer only commands keep doDirectComposition when it was enabled
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateDirectCompositionFlag002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    std::vector<RSTransactionConfig> emptyConfigs;
+    queue.push(std::make_unique<TransactionBufferCommand>(emptyConfigs, static_cast<NodeId>(960001)));
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+    EXPECT_TRUE(isSetBufferCmdOnly);
+
+    mainThread->doDirectComposition_ = true;
+    RsDelegateCompositeCallbackManager::GetInstance().doDirectCompositionSupportByCmd_ =
+        doDirectCompositionSupportByCmd;
+    mainThread->UpdateDirectCompositionFlagForDelegateMode();
+    EXPECT_TRUE(mainThread->isWebCommandOnly_);
+    EXPECT_TRUE(mainThread->doDirectComposition_);
+    mainThread->isWebCommandOnly_ = false;
+    mainThread->doDirectComposition_ = false;
+}
+
+/**
+ * @tc.name: UpdateDirectCompositionFlag003
+ * @tc.desc: non setBuffer commands disable doDirectComposition when it was enabled
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, UpdateDirectCompositionFlag003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    std::vector<RSTransactionConfig> emptyConfigs;
+    queue.push(std::make_unique<TransactionBufferCommand>(emptyConfigs, static_cast<NodeId>(960002)));
+    queue.push(std::make_unique<RSSurfaceNodeSetSnapshotSkipLayer>(static_cast<NodeId>(960002), false));
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+    EXPECT_FALSE(isSetBufferCmdOnly);
+
+    mainThread->doDirectComposition_ = true;
+    mainThread->UpdateDirectCompositionFlagForDelegateMode();
+    EXPECT_TRUE(mainThread->isWebCommandOnly_);
+    EXPECT_FALSE(mainThread->doDirectComposition_);
+    mainThread->isWebCommandOnly_ = false;
+}
+
+/**
+ * @tc.name: DoDirectCompositionForDelegateMode001
+ * @tc.desc: unset hardware composer support optional leaves doDirectComposition untouched
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, DoDirectCompositionForDelegateMode001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->doDirectComposition_ = false;
+    std::shared_ptr<RSBaseRenderNode> rootNode = nullptr;
+    mainThread->DoDirectCompositionForDelegateModeIfNeed(rootNode);
+    EXPECT_FALSE(mainThread->doDirectComposition_);
+
+    mainThread->doDirectComposition_ = true;
+    mainThread->DoDirectCompositionForDelegateModeIfNeed(rootNode);
+    // early return on nullopt: the flag stays untouched
+    EXPECT_TRUE(mainThread->doDirectComposition_);
+    mainThread->doDirectComposition_ = false;
+}
+
+/**
+ * @tc.name: DoDirectCompositionForDelegateMode002
+ * @tc.desc: cached false hardware composer support turns doDirectComposition off
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, DoDirectCompositionForDelegateMode002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    // build a cached false value through the collection path
+    auto context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(960101, 9601, context);
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(static_cast<NodeId>(960102), context);
+    hwcNode->isOnTheTree_ = true;
+    hwcNode->SetHardwareForcedDisabledState(true);
+    auto handler = hwcNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetBuffer(SurfaceBuffer::Create(), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    handler->SetCurrentFrameBufferConsumed();
+    screenNode->childHwcNodes_.emplace_back(hwcNode);
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(screenNode);
+    auto support = manager.GetDoDirectCompositionSupportByHwcEnable();
+    ASSERT_EQ(support.has_value(), true);
+    ASSERT_EQ(support.value(), false);
+    manager.SetCollectHwcNodesInfoFlag(false);
+
+    mainThread->doDirectComposition_ = true;
+    auto rootNode = std::make_shared<RSBaseRenderNode>(0);
+    mainThread->DoDirectCompositionForDelegateModeIfNeed(rootNode);
+    // cached false flips doDirectComposition off before the real composition path runs
+    EXPECT_FALSE(mainThread->doDirectComposition_);
 }
 } // namespace OHOS::Rosen
 #endif

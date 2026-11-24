@@ -25,11 +25,14 @@ ohos_unittest("RSUIEffectTest") {
       "rs_ui_effect_effect_test.cpp",
       "atlas_frame_mask_para_test.cpp",
       "glass_marble_effect_para_test.cpp",
+      "sticker_para_test.cpp",
+      "rs_ui_sticker_para_convert_test.cpp",
    ]
 
    configs = [ ":rs_ui_effect_test_config" ]
 
    deps = [
+      "$rosen_root/modules/render_service_base:librender_service_base",
       "$rosen_root/modules/render_service_client:librender_service_client",
       "$rosen_root/modules/2d_graphics:2d_graphics",
    ]
@@ -37,6 +40,7 @@ ohos_unittest("RSUIEffectTest") {
    external_deps = [
     "c_utils:utils",
     "googletest:gtest_main",
+    "hilog:libhilog",
     "image_framework:image_native",
    ]
 }

@@ -34,6 +34,9 @@ ohos_unittest("EffectTest") {
       "filter_common_unittest.cpp",
       "effect_image_chain_unittest.cpp",
       "effect_image_render_unittest.cpp",
+      "effect_tag_tracker_unittest.cpp",
+      "//foundation/graphic/graphic_2d/rosen/modules/effect/effect_ndk/src/filter/filter.cpp",
+      "effect_image_sticker_unittest.cpp",
       "$graphic_2d_root/rosen/modules/effect/effect_common/src/filter_common.cpp",
     ]
   }
@@ -83,6 +86,8 @@ config("effect_test_config") {
     "$graphic_2d_root/rosen/modules/effect/color_picker/include",
     "$graphic_2d_root/rosen/modules/effect/effect_common/include",
     "$graphic_2d_root/rosen/modules/effect/effect_ndk/include",
+    "$graphic_2d_root/rosen/modules/render_service_base/src",
+    "$graphic_2d_root/rosen/modules/effect/effect_ndk/src",
     "$graphic_2d_root/utils/color_manager/export",
     "$graphic_2d_root/rosen/modules/2d_graphics",
   ]

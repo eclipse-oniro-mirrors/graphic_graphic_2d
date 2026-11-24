@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 #include "common/rs_background_thread.h"
+#include <atomic>
+#include <chrono>
+#include <future>
 #include <iremote_stub.h>
 #include <message_option.h>
 #include <message_parcel.h>
@@ -57,6 +60,7 @@
 #include "render/rs_typeface_cache.h"
 #include "render_process/transaction/rs_service_to_render_connection.h"
 #include "render_server/transaction/rs_render_to_service_connection.h"
+#include "vsync_iconnection_token.h"
 #include "render_service/composer/composer_client/connection/rs_composer_to_render_connection.h"
 #include "transaction/rs_connect_to_render_process.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
@@ -3771,6 +3775,148 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetScreenChangeCallbackTest001, Te
     // restore screenManagerAgent
     connection->screenManagerAgent_ = screenManagerAgent;
     ASSERT_NE(connection->screenManagerAgent_, nullptr);
+}
+
+/**
+ * @tc.name: SetScreenChangeCallbackTest002
+ * @tc.desc: Test SetScreenChangeCallback when the main thread is stuck, bounded wait times out
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, SetScreenChangeCallbackTest002, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto* connection = static_cast<RSClientToServiceConnection*>(connectionStub_.GetRefPtr());
+    ASSERT_NE(connection, nullptr);
+    ASSERT_NE(connection->screenManagerAgent_, nullptr);
+    ASSERT_NE(connection->renderServiceAgent_, nullptr);
+    // agent bound to a handler whose runner is never started: the scheduled task never
+    // executes, so the bounded wait must time out and report MAIN_THREAD_NULL
+    RSRenderService stuckService;
+    auto stuckRunner = OHOS::AppExecFwk::EventRunner::Create(false);
+    stuckService.handler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(stuckRunner);
+    auto stuckAgent = sptr<RSRenderServiceAgent>::MakeSptr(stuckService);
+    auto origAgent = connection->renderServiceAgent_;
+    connection->renderServiceAgent_ = stuckAgent;
+    auto res = connection->SetScreenChangeCallback(nullptr);
+    EXPECT_EQ(res, StatusCode::MAIN_THREAD_NULL);
+    connection->renderServiceAgent_ = origAgent;
+    // the late task is still queued on the stuck runner and never runs; no dangling refs
+    // are touched because the result is returned by value
+}
+
+/**
+ * @tc.name: SetScreenPowerStatusTimeoutTest001
+ * @tc.desc: Test SetScreenPowerStatus non-uni-render branch when the main thread is stuck
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, SetScreenPowerStatusTimeoutTest001, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto* connection = static_cast<RSClientToServiceConnection*>(connectionStub_.GetRefPtr());
+    ASSERT_NE(connection, nullptr);
+    ASSERT_NE(connection->screenManagerAgent_, nullptr);
+    ASSERT_NE(connection->renderServiceAgent_, nullptr);
+    RSRenderService stuckService;
+    auto stuckRunner = OHOS::AppExecFwk::EventRunner::Create(false);
+    stuckService.handler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(stuckRunner);
+    auto stuckAgent = sptr<RSRenderServiceAgent>::MakeSptr(stuckService);
+    auto origAgent = connection->renderServiceAgent_;
+    auto preRenderType = RSUniRenderJudgement::uniRenderEnabledType_;
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
+    connection->renderServiceAgent_ = stuckAgent;
+    // bounded wait instead of blocking the binder thread forever
+    connection->SetScreenPowerStatus(INVALID_SCREEN_ID, ScreenPowerStatus::INVALID_POWER_STATUS);
+    RSUniRenderJudgement::uniRenderEnabledType_ = preRenderType;
+    connection->renderServiceAgent_ = origAgent;
+}
+
+/**
+ * @tc.name: SyncFrameRateRangeTimeoutTest001
+ * @tc.desc: Test SyncFrameRateRange bounded wait when the main thread is stuck
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, SyncFrameRateRangeTimeoutTest001, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto* connection = static_cast<RSClientToServiceConnection*>(connectionStub_.GetRefPtr());
+    ASSERT_NE(connection, nullptr);
+    RSRenderService stuckService;
+    auto stuckRunner = OHOS::AppExecFwk::EventRunner::Create(false);
+    stuckService.handler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(stuckRunner);
+    // dummy context: the scheduled task never runs on the stuck handler so it is not touched
+    auto dummyHandler = std::make_shared<OHOS::AppExecFwk::EventHandler>(stuckRunner);
+    auto dummyContext = std::make_shared<HgmContext>(dummyHandler, nullptr, nullptr, nullptr, nullptr);
+    auto stuckAgent = sptr<RSRenderServiceAgent>::MakeSptr(stuckService);
+    auto origAgent = connection->renderServiceAgent_;
+    auto origContext = connection->hgmContext_;
+    connection->renderServiceAgent_ = stuckAgent;
+    connection->hgmContext_ = dummyContext;
+    FrameRateRange range;
+    connection->SyncFrameRateRange(0, range, 0);
+    connection->UnregisterFrameRateLinker(0);
+    connection->renderServiceAgent_ = origAgent;
+    connection->hgmContext_ = origContext;
+}
+
+/**
+ * @tc.name: SetScreenPowerStatusNonUniRenderTest001
+ * @tc.desc: Test SetScreenPowerStatus non-uni-render branch with a live main handler: the
+ *           scheduled task executes within the bounded wait (success path)
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, SetScreenPowerStatusNonUniRenderTest001, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto* connection = static_cast<RSClientToServiceConnection*>(connectionStub_.GetRefPtr());
+    ASSERT_NE(connection, nullptr);
+    ASSERT_NE(connection->screenManagerAgent_, nullptr);
+    ASSERT_NE(connection->renderServiceAgent_, nullptr);
+    auto preRenderType = RSUniRenderJudgement::uniRenderEnabledType_;
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
+    // live agent on the fixture's running main handler: bounded wait completes successfully
+    connection->SetScreenPowerStatus(INVALID_SCREEN_ID, ScreenPowerStatus::INVALID_POWER_STATUS);
+    RSUniRenderJudgement::uniRenderEnabledType_ = preRenderType;
+}
+
+/**
+ * @tc.name: CreateVSyncConnectionTimeoutTest001
+ * @tc.desc: Test CreateVSyncConnection hgm linker creation when the main thread is stuck
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, CreateVSyncConnectionTimeoutTest001, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto* connection = static_cast<RSClientToServiceConnection*>(connectionStub_.GetRefPtr());
+    ASSERT_NE(connection, nullptr);
+    ASSERT_NE(connection->vsyncManagerAgent_, nullptr);
+    // id 0: ExtractPid(0) == remotePid_(0), so the isLinkerPid branch schedules the hgm linker
+    // creation to the (stuck) main handler and the bounded wait times out
+    RSRenderService stuckService;
+    auto stuckRunner = OHOS::AppExecFwk::EventRunner::Create(false);
+    stuckService.handler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(stuckRunner);
+    auto stuckAgent = sptr<RSRenderServiceAgent>::MakeSptr(stuckService);
+    auto dummyHandler = std::make_shared<OHOS::AppExecFwk::EventHandler>(stuckRunner);
+    auto dummyContext = std::make_shared<HgmContext>(dummyHandler, nullptr, nullptr, nullptr, nullptr);
+    auto origAgent = connection->renderServiceAgent_;
+    auto origContext = connection->hgmContext_;
+    connection->renderServiceAgent_ = stuckAgent;
+    connection->hgmContext_ = dummyContext;
+    sptr<VSyncIConnectionToken> vsyncToken = new IRemoteStub<VSyncIConnectionToken>();
+    sptr<IVSyncConnection> vsyncConn = nullptr;
+    VSyncConnParam vsyncConnParam;
+    vsyncConnParam.id = 0;
+    vsyncConnParam.fromXcomponent = false;
+    auto ret = connection->CreateVSyncConnection(vsyncConn, "timeoutTest", vsyncToken, vsyncConnParam);
+    // the vsync connection itself is created; only the deferred linker creation times out
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_NE(vsyncConn, nullptr);
+    connection->renderServiceAgent_ = origAgent;
+    connection->hgmContext_ = origContext;
 }
 
 /**
@@ -8128,6 +8274,197 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetApsConfigParams_FilterCacheFram
         { "FRAME_RATE", "30" } };
     auto ret = connectionStub_->SetApsConfigParams(ApsEventType::FILTER_CACHE_FRAME, params);
     EXPECT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: SyncFrameRateRangeNullAgentTest001
+ * @tc.desc: SyncFrameRateRange early-returns with a null agent; UnregisterFrameRateLinker
+ *           early-returns with a null hgm context
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, SyncFrameRateRangeNullAgentTest001, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto* connection = static_cast<RSClientToServiceConnection*>(connectionStub_.GetRefPtr());
+    ASSERT_NE(connection, nullptr);
+    auto origAgent = connection->renderServiceAgent_;
+    auto origContext = connection->hgmContext_;
+    // null agent: SyncFrameRateRange logs and returns without scheduling anything
+    connection->renderServiceAgent_ = nullptr;
+    connection->hgmContext_ = nullptr;
+    FrameRateRange range;
+    EXPECT_NO_FATAL_FAILURE(connection->SyncFrameRateRange(0, range, 0));
+    // null hgm context: UnregisterFrameRateLinker returns without touching the main thread
+    connection->renderServiceAgent_ = origAgent;
+    EXPECT_NO_FATAL_FAILURE(connection->UnregisterFrameRateLinker(0));
+    connection->hgmContext_ = origContext;
+}
+
+/**
+ * @tc.name: CleanAllIdempotentTest001
+ * @tc.desc: CleanAll early-returns when already cleaned and when the service agent is null
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, CleanAllIdempotentTest001, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto* connection = static_cast<RSClientToServiceConnection*>(connectionStub_.GetRefPtr());
+    ASSERT_NE(connection, nullptr);
+    {
+        std::lock_guard<std::mutex> lock(connection->mutex_);
+        connection->cleanDone_ = false;
+    }
+    // first call performs the cleanup
+    connection->CleanAll(true);
+    {
+        std::lock_guard<std::mutex> lock(connection->mutex_);
+        EXPECT_TRUE(connection->cleanDone_);
+    }
+    // second call hits the idempotent early-return
+    EXPECT_NO_FATAL_FAILURE(connection->CleanAll(true));
+    // null service agent: returns after the persistence-clear step, no crash
+    auto origAgent = connection->renderServiceAgent_;
+    {
+        std::lock_guard<std::mutex> lock(connection->mutex_);
+        connection->cleanDone_ = false;
+    }
+    connection->renderServiceAgent_ = nullptr;
+    EXPECT_NO_FATAL_FAILURE(connection->CleanAll(true));
+    connection->renderServiceAgent_ = origAgent;
+}
+
+/**
+ * @tc.name: DeathRecipientTokenMismatchTest001
+ * @tc.desc: OnRemoteDied with a mismatched token is ignored, a matching token triggers the clean
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, DeathRecipientTokenMismatchTest001, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto* connection = static_cast<RSClientToServiceConnection*>(connectionStub_.GetRefPtr());
+    ASSERT_NE(connection, nullptr);
+    ASSERT_NE(connection->connDeathRecipient_, nullptr);
+    {
+        std::lock_guard<std::mutex> lock(connection->mutex_);
+        connection->cleanDone_ = false;
+    }
+    // a different token object must not trigger the cleanup
+    sptr<RSIConnectionToken> otherToken = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
+    connection->connDeathRecipient_->OnRemoteDied(otherToken->AsObject());
+    {
+        std::lock_guard<std::mutex> lock(connection->mutex_);
+        EXPECT_FALSE(connection->cleanDone_);
+    }
+    // the matching token triggers the full clean path
+    connection->connDeathRecipient_->OnRemoteDied(connection->GetToken());
+    {
+        std::lock_guard<std::mutex> lock(connection->mutex_);
+        EXPECT_TRUE(connection->cleanDone_);
+        // reset so TearDownTestCase performs its own cleanup path (idempotent-safe)
+        connection->cleanDone_ = false;
+    }
+}
+
+/**
+ * @tc.name: DeathRecipientPromoteFailTest001
+ * @tc.desc: OnRemoteDied is a no-op when the connection weak reference cannot be promoted
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, DeathRecipientPromoteFailTest001, TestSize.Level2)
+{
+    ASSERT_NE(renderServiceAgent_, nullptr);
+    ASSERT_NE(screenManagerAgent_, nullptr);
+    ASSERT_NE(renderService_.vsyncManager_, nullptr);
+    // build a short-lived connection with its own token, then destroy it
+    sptr<RSIConnectionToken> localToken = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
+    sptr<RSClientToServiceConnection> localConn =
+        sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
+            renderProcessManagerAgent_, screenManagerAgent_, localToken->AsObject(),
+            renderService_.vsyncManager_->GetVsyncManagerAgent(), false);
+    ASSERT_NE(localConn, nullptr);
+    sptr<RSClientToServiceConnection::RSConnectionDeathRecipient> recipient = localConn->connDeathRecipient_;
+    ASSERT_NE(recipient, nullptr);
+    localConn = nullptr;
+    // the weak reference is dangling now: promote fails and the death event is a no-op
+    sptr<RSIConnectionToken> anyToken = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
+    EXPECT_NO_FATAL_FAILURE(recipient->OnRemoteDied(anyToken->AsObject()));
+}
+
+/**
+ * @tc.name: CleanForRefreshNullAgentTest001
+ * @tc.desc: CleanForRefresh is a silent no-op when the render service agent is null
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, CleanForRefreshNullAgentTest001, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto* connection = static_cast<RSClientToServiceConnection*>(connectionStub_.GetRefPtr());
+    ASSERT_NE(connection, nullptr);
+    auto origAgent = connection->renderServiceAgent_;
+    connection->renderServiceAgent_ = nullptr;
+    // early return before any cleanup step: no crash, nothing scheduled to the main thread
+    EXPECT_NO_FATAL_FAILURE(connection->CleanForRefresh());
+    connection->renderServiceAgent_ = origAgent;
+}
+
+/**
+ * @tc.name: CleanVirtualScreensNullAgentTest001
+ * @tc.desc: CleanVirtualScreens is a no-op when the screen manager agent is null
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, CleanVirtualScreensNullAgentTest001, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    auto* connection = static_cast<RSClientToServiceConnection*>(connectionStub_.GetRefPtr());
+    ASSERT_NE(connection, nullptr);
+    auto origScreenAgent = connection->screenManagerAgent_;
+    connection->screenManagerAgent_ = nullptr;
+    // null screen manager agent: the cleanup is skipped with a warning log
+    EXPECT_NO_FATAL_FAILURE(connection->CleanVirtualScreens());
+    connection->screenManagerAgent_ = origScreenAgent;
+}
+
+/**
+ * @tc.name: ScheduleUniRenderThreadTaskNull001
+ * @tc.desc: ScheduleUniRenderThreadTask with a null thread returns an immediately-ready future
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ScheduleUniRenderThreadTaskNull001, TestSize.Level2)
+{
+    // a pipeline without a uni render thread yields a satisfied future (old no-op semantics);
+    // the task itself is NOT executed - the promise is satisfied without calling the lambda
+    auto pipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(pipeline, nullptr);
+    std::atomic<bool> executed = false;
+    auto future = pipeline->ScheduleUniRenderThreadTask([&executed]() { executed.store(true); });
+    auto status = future.wait_for(std::chrono::milliseconds(100));
+    EXPECT_EQ(status, std::future_status::ready);
+    EXPECT_FALSE(executed.load()); // null path satisfies the promise, never runs the task
+}
+
+/**
+ * @tc.name: ScheduleUniRenderThreadTaskLive001
+ * @tc.desc: ScheduleUniRenderThreadTask posts to the live render thread and the task executes
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ScheduleUniRenderThreadTaskLive001, TestSize.Level2)
+{
+    auto pipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(pipeline, nullptr);
+    pipeline->uniRenderThread_ = &(RSUniRenderThread::Instance());
+    std::atomic<bool> executed = false;
+    auto future = pipeline->ScheduleUniRenderThreadTask([&executed]() { executed.store(true); });
+    // the fixture's render runner is live (RSSingleRenderProcessManagerMock started it)
+    ASSERT_EQ(future.wait_for(std::chrono::seconds(1)), std::future_status::ready);
+    EXPECT_TRUE(executed.load());
 }
 
 } // namespace OHOS::Rosen

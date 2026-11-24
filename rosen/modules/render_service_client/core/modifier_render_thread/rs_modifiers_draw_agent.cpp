@@ -26,15 +26,15 @@ RSModifiersDrawAgent::RSModifiersDrawAgent()
 RSModifiersDrawAgent::~RSModifiersDrawAgent() = default;
 
 void RSModifiersDrawAgent::CommitTransaction(std::shared_ptr<RSUIContext> uiContext,
-    std::shared_ptr<RSRenderPipelineClient> renderPiplineClient, std::unique_ptr<RSTransactionData>& transactionData,
+    std::shared_ptr<RSRenderPipelineClient> renderPipelineClient, std::unique_ptr<RSTransactionData>& transactionData,
     std::atomic<uint32_t>& transactionDataIndex, uint32_t commitIndex)
 {
     modifiersDraw_->ScheduleTask(
-        [modifiersDraw = modifiersDraw_, uiContext, renderPiplineClient, data = std::move(transactionData),
+        [modifiersDraw = modifiersDraw_, uiContext, renderPipelineClient, data = std::move(transactionData),
             &transactionDataIndex, index = commitIndex]() mutable {
             RS_TRACE_NAME_FMT("Do CommitTransaction, index=%u", index);
             modifiersDraw->CommitTransaction(
-                uiContext->GetCanvasModifiersDrawAgent(), renderPiplineClient, data, transactionDataIndex);
+                uiContext->GetCanvasModifiersDrawAgent(), renderPipelineClient, data, transactionDataIndex);
             // Move transactionData back to UI thread for destruction to avoid
             // releasing it on the ModifiersDraw thread.
             auto sharedData = std::shared_ptr<RSTransactionData>(std::move(data));

@@ -30,6 +30,7 @@
 #include "common/rs_vector3.h"
 #include "common/rs_vector4.h"
 #include "effect/color_filter.h"
+#include "effect/color_matrix.h"
 #include "property/rs_properties_def.h"
 #include "property/rs_spatial_effect_def.h"
 #include "render/rs_filter.h"
@@ -44,6 +45,7 @@ namespace OHOS {
 namespace Rosen {
 class RSNGRenderFilterBase;
 class RSNGRenderShaderBase;
+class RSNGRenderBlenderBase;
 class RSPath;
 class RSShader;
 
@@ -78,6 +80,8 @@ struct FilterEffectParams {
     std::shared_ptr<RSFilter> foregroundFilter_ = nullptr;
     std::shared_ptr<RSFilter> foregroundFilterCache_ = nullptr;
     std::shared_ptr<RSNGRenderFilterBase> fgNGRenderFilter_ = nullptr; // for foreground render
+    // Suppresses per-frame contentDirty_ (e.g. particle progress) from invalidating the subtree cache.
+    bool ignorePropertiesContentDirty_ = false;
 
     float foregroundEffectRadius_ = 0.f;
     bool foregroundEffectDirty_ = false;
@@ -104,6 +108,7 @@ struct FilterEffectParams {
     std::optional<float> invert_;
     std::optional<float> hueRotate_;
     std::optional<Color> colorBlend_;
+    std::optional<Drawing::ColorMatrix> colorMatrix_;
 
     // pixel stretch
     std::unique_ptr<RSPixelStretchPara> pixelStretchPara_ = nullptr;
@@ -133,10 +138,7 @@ struct ShaderEffectParams {
 };
 
 struct BlenderEffectParams {
-    std::optional<RSShadowBlenderPara> shadowBlenderParams_;
-    std::optional<RSHdrDarkenBlenderPara> hdrDarkenBlenderParams_;
-    std::unique_ptr<RSColorfulBrightnessBlenderPara> colorfulBrightnessBlenderParams_ = nullptr;
-    std::optional<RSDynamicBrightnessPara> fgBrightnessParams_;
+    std::shared_ptr<RSNGRenderBlenderBase> ngBlender_ = nullptr;
     std::optional<RSDynamicBrightnessPara> bgBrightnessParams_;
     int colorBlendMode_ = 0;
     int colorBlendApplyType_ = 0;
@@ -530,6 +532,10 @@ public:
     void SetColorBlend(const std::optional<Color>& colorBlend);
     const std::optional<Color>& GetColorBlend() const;
 
+    // colorMatrix_
+    void SetColorMatrix(const std::optional<Drawing::ColorMatrix>& colorMatrix);
+    const std::optional<Drawing::ColorMatrix>& GetColorMatrix() const;
+
     // pixelStretchPara_
     void SetPixelStretch(const std::optional<Vector4f>& stretchSize);
     void SetPixelStretchPercent(const std::optional<Vector4f>& stretchPercent);
@@ -616,53 +622,6 @@ public:
     std::shared_ptr<RSNGRenderShaderBase> GetOverlayNGShader() const;
 
     // blender effect params
-    // shadowBlenderParams_
-    void SetShadowBlenderParams(const std::optional<RSShadowBlenderPara>& params);
-    std::optional<RSShadowBlenderPara> GetShadowBlenderParams() const;
-    bool IsShadowBlenderValid() const;
-    std::string GetShadowBlenderDescription() const;
-
-    // hdrDarkenBlenderParams_
-    void SetHdrDarkenBlenderParams(const std::optional<RSHdrDarkenBlenderPara>& params);
-    std::optional<RSHdrDarkenBlenderPara> GetHdrDarkenBlenderParams() const;
-    bool IsHdrDarkenBlenderValid() const;
-    std::string GetHdrDarkenBlenderDescription() const;
-
-    // colorfulBrightnessBlenderParams_
-    void SetColorfulBrightnessBlenderParams(std::unique_ptr<RSColorfulBrightnessBlenderPara> params);
-    const RSColorfulBrightnessBlenderPara* GetColorfulBrightnessBlenderParams() const;
-    bool IsColorfulBrightnessBlenderValid() const;
-    std::string GetColorfulBrightnessBlenderDescription() const;
-
-    template <typename T>
-    void SetColorfulBrightnessBlenderMember(T RSColorfulBrightnessBlenderPara::* member, const T& val)
-    {
-        auto& blender = GetBlenderEffect();
-        if (!blender.colorfulBrightnessBlenderParams_) {
-            blender.colorfulBrightnessBlenderParams_ = std::make_unique<RSColorfulBrightnessBlenderPara>();
-        }
-        (*blender.colorfulBrightnessBlenderParams_).*member = val;
-    }
-
-    // fgBrightnessParams_
-    void SetFgBrightnessRates(const Vector4f& rates);
-    void SetFgBrightnessSaturation(const float& saturation);
-    void SetFgBrightnessPosCoeff(const Vector4f& coeff);
-    void SetFgBrightnessNegCoeff(const Vector4f& coeff);
-    void SetFgBrightnessFract(const float& fraction);
-    void SetFgBrightnessHdr(bool enableHdr);
-    void SetFgBrightnessParams(const std::optional<RSDynamicBrightnessPara>& params);
-    std::optional<RSDynamicBrightnessPara> GetFgBrightnessParams() const;
-    bool IsFgBrightnessValid() const;
-    bool GetFgBrightnessEnableEDR() const;
-    std::string GetFgBrightnessDescription() const;
-    Vector4f GetFgBrightnessRates() const;
-    float GetFgBrightnessSaturation() const;
-    Vector4f GetFgBrightnessPosCoeff() const;
-    Vector4f GetFgBrightnessNegCoeff() const;
-    float GetFgBrightnessFract() const;
-    bool GetFgBrightnessHdr() const;
-
     // bgBrightnessParams_
     void SetBgBrightnessRates(const Vector4f& rates);
     void SetBgBrightnessSaturation(const float& saturation);
@@ -789,6 +748,7 @@ private:
     void GenerateColorFilterByInvert();
     void GenerateColorFilterByHueRotate();
     void GenerateColorFilterByColorBlend();
+    void GenerateColorFilterByColorMatrix();
 
     // generation helpers split from the top-level generation functions
     void GenerateBackgroundFuzedBlurFilter();
@@ -806,8 +766,6 @@ private:
     std::unique_ptr<BlenderEffectParams> blenderEffect_ = nullptr;
     std::unique_ptr<NodesEffectParams> nodesEffect_ = nullptr;
     std::unique_ptr<DepthEffectParams> depthEffect_ = nullptr;
-
-    bool ignorePropertiesContentDirty_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

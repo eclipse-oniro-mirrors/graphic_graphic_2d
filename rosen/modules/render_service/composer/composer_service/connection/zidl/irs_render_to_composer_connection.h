@@ -41,6 +41,10 @@ public:
     virtual void MarkTunnelSurfaceInvalid(uint64_t surfaceId) = 0;
     virtual void SetActiveRectSwitchStatus(bool flag, const RectI& activeRect) = 0;
     virtual void SetSkipDelay(bool skipDelay) = 0;
+    virtual bool PostTask(const std::function<void()>& task)
+    {
+        return false;
+    }
     DECLARE_INTERFACE_DESCRIPTOR(u"IRSRenderToComposerConnection");
 
 protected:

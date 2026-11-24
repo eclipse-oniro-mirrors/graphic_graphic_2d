@@ -17,10 +17,12 @@
 
 #include <parameters.h>
 
+#include "common/rs_common_def.h"
 #include "common/rs_special_layer_manager.h"
 #include "composer/composer_client/pipeline/rs_composer_client_manager.h"
 #include "engine/rs_uni_render_engine.h"
 #include "drawable/rs_logical_display_render_node_drawable.h"
+#include "drawable/rs_render_node_drawable.h"
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
 #include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/multi_screen/rs_multi_screen_util.h"
@@ -37,6 +39,8 @@
 #include "render/rs_pixel_map_util.h"
 #include "screen_manager/rs_screen.h"
 #include "screen_manager/rs_screen_property.h"
+#include "screen_manager/screen_types.h"
+#include "utils/rect.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -49,10 +53,151 @@ constexpr NodeId SCREEN_NODE_ID = DEFAULT_ID + 1;
 constexpr NodeId DISPLAY_NODE_ID = DEFAULT_ID + 2;
 constexpr NodeId MIRROR_SOURCE_SCREEN_NODE_ID = DEFAULT_ID + 3;
 constexpr NodeId MIRROR_SOURCE_DISPLAY_NODE_ID = DEFAULT_ID + 4;
+constexpr NodeId RECORD_SURFACE_NODE_ID = DEFAULT_ID + 5;
 constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
 constexpr ScreenId SCREEN_ID = 10086;
 constexpr uint32_t DEFAULT_CANVAS_WIDTH = 800;
 constexpr uint32_t DEFAULT_CANVAS_HEIGHT = 600;
+
+void ExpectRect(const Drawing::RectI& rect, int32_t left, int32_t top, int32_t right, int32_t bottom)
+{
+    EXPECT_EQ(rect.GetLeft(), left);
+    EXPECT_EQ(rect.GetTop(), top);
+    EXPECT_EQ(rect.GetRight(), right);
+    EXPECT_EQ(rect.GetBottom(), bottom);
+}
+
+// Record capture reads and rewrites the thread-local capture param; start from a clean value and
+// restore the caller's state on every exit.
+class ScopedCaptureParam {
+public:
+    ScopedCaptureParam()
+        : saved_(RSUniRenderThread::GetCaptureParam())
+    {
+        RSUniRenderThread::SetCaptureParam(CaptureParam());
+    }
+    ~ScopedCaptureParam()
+    {
+        RSUniRenderThread::SetCaptureParam(saved_);
+    }
+    ScopedCaptureParam(const ScopedCaptureParam&) = delete;
+    ScopedCaptureParam& operator=(const ScopedCaptureParam&) = delete;
+
+private:
+    CaptureParam saved_;
+};
+
+// Mirror/record source capture rewrites the process-wide draw offsets; restore them on every exit
+// path so an aborted expectation cannot leak into later tests.
+class ScopedRenderNodeOffset {
+public:
+    ScopedRenderNodeOffset(int32_t offsetX, int32_t offsetY)
+        : savedX_(RSRenderNodeDrawable::offsetX_), savedY_(RSRenderNodeDrawable::offsetY_)
+    {
+        RSRenderNodeDrawable::offsetX_ = offsetX;
+        RSRenderNodeDrawable::offsetY_ = offsetY;
+    }
+    ~ScopedRenderNodeOffset()
+    {
+        RSRenderNodeDrawable::offsetX_ = savedX_;
+        RSRenderNodeDrawable::offsetY_ = savedY_;
+    }
+    ScopedRenderNodeOffset(const ScopedRenderNodeOffset&) = delete;
+    ScopedRenderNodeOffset& operator=(const ScopedRenderNodeOffset&) = delete;
+
+private:
+    int32_t savedX_;
+    int32_t savedY_;
+};
+
+// Successful virtual-mirror processor fixture: a real init needs an output surface and render
+// engine that this target does not provide, so count the shared lifecycle's publication directly.
+class CountingVirtualMirrorProcessor final : public RSUniRenderVirtualProcessor {
+public:
+    bool InitForRenderThread(DrawableV2::RSScreenRenderNodeDrawable&, std::shared_ptr<RSBaseRenderEngine>,
+        int32_t = 0) override
+    {
+        return true;
+    }
+    void PostProcess() override
+    {
+        ++postProcessCount_;
+    }
+    int postProcessCount_ = 0;
+};
+
+// Pushes a real cancel-capable frame so an aborted virtual pass can be observed through its surface.
+RSRenderFrame* PushVirtualMirrorFrame(RSUniRenderVirtualProcessor& processor)
+{
+    auto consumer = IConsumerSurface::Create("RSMultiScreenUtilVirtualFrame");
+    if (consumer == nullptr) {
+        return nullptr;
+    }
+    auto producer = consumer->GetProducer();
+    if (producer == nullptr) {
+        return nullptr;
+    }
+    auto surface = Surface::CreateSurfaceAsProducer(producer);
+    if (surface == nullptr) {
+        return nullptr;
+    }
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(surface);
+    if (rsSurface == nullptr) {
+        return nullptr;
+    }
+    auto rasterFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
+    SurfaceFrameConfig config;
+    config.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), std::move(rasterFrame));
+    auto* frame = config.frame.get();
+    processor.surfaceFrames_.push_back(std::move(config));
+    return frame;
+}
+
+// Pushes a real producer surface with no frame so SetScreenInfoForWindowRecord has a queue to
+// write producer metadata into, then the test reads it back through Surface::GetScreenInfo.
+sptr<Surface> PushScreenInfoSurface(RSUniRenderVirtualProcessor& processor)
+{
+    auto consumer = IConsumerSurface::Create("RSMultiScreenUtilScreenInfo");
+    if (consumer == nullptr) {
+        return nullptr;
+    }
+    auto producer = consumer->GetProducer();
+    if (producer == nullptr) {
+        return nullptr;
+    }
+    auto surface = Surface::CreateSurfaceAsProducer(producer);
+    if (surface == nullptr) {
+        return nullptr;
+    }
+    SurfaceFrameConfig config;
+    config.surface = surface;
+    processor.surfaceFrames_.push_back(std::move(config));
+    return surface;
+}
+
+// Reads back the producer metadata a record frame writes for the current and original rects.
+void ExpectSurfaceScreenInfo(const sptr<Surface>& surface, int32_t currentW, int32_t currentH,
+    int32_t originalW, int32_t originalH)
+{
+    if (surface == nullptr) {
+        ADD_FAILURE() << "screen-info surface is null";
+        return;
+    }
+    Rect currentRect = { -1, -1, -1, -1 };
+    Rect originalRect = { -1, -1, -1, -1 };
+    float angle = -1.0f;
+    EXPECT_EQ(surface->GetScreenInfo(currentRect, originalRect, angle), GSERROR_OK);
+    EXPECT_EQ(currentRect.x, 0);
+    EXPECT_EQ(currentRect.y, 0);
+    EXPECT_EQ(currentRect.w, currentW);
+    EXPECT_EQ(currentRect.h, currentH);
+    EXPECT_EQ(originalRect.x, 0);
+    EXPECT_EQ(originalRect.y, 0);
+    EXPECT_EQ(originalRect.w, originalW);
+    EXPECT_EQ(originalRect.h, originalH);
+    EXPECT_EQ(angle, 0.0f);
+}
 } // namespace
 class RSMultiScreenUtilTest : public testing::Test {
 public:
@@ -80,6 +225,17 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
+
+    // Arms the display-level record gates so a case can then break exactly one of them. The
+    // screen-visible child list and the output skip state stay in the test body: they are the
+    // preconditions a multi-display or repeated-call case varies.
+    void ArmWindowRecordDisplayGates(RSLogicalDisplayRenderParams& params,
+        const DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr& source,
+        const DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr& bbox);
+
+    // Arms an active record capture on a virtual MIRROR output with a distinct paintable source and
+    // the already published mirror relation.
+    void ArmWindowRecordCapture(RSLogicalDisplayRenderParams& params);
 };
 
 void RSMultiScreenUtilTest::SetUpTestCase()
@@ -207,6 +363,47 @@ void RSMultiScreenUtilTest::TearDown()
     RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
 }
 
+void RSMultiScreenUtilTest::ArmWindowRecordDisplayGates(RSLogicalDisplayRenderParams& params,
+    const DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr& source,
+    const DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr& bbox)
+{
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { RECORD_SURFACE_NODE_ID };
+    params.SetWindowRecordConfig(recordConfig);
+    params.SetOnVirtualScreen(true);
+    params.displayMode_ = DisplayMode::MIRROR;
+    params.SetShouldPaint(true);
+    params.recordSourceDisplayDrawable_ = source;
+    source->GetRenderParams()->SetShouldPaint(true);
+    params.recordWhiteListIds_ = { RECORD_SURFACE_NODE_ID };
+    params.hasPaintableRecordSurface_ = true;
+    params.recordSurfaceDrawables_ = { bbox };
+    bbox->GetRenderParams()->SetAbsDrawRect({ 0, 0, 100, 100 });
+}
+
+void RSMultiScreenUtilTest::ArmWindowRecordCapture(RSLogicalDisplayRenderParams& params)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayDrawable_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayParams_, nullptr);
+    displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { RECORD_SURFACE_NODE_ID };
+    params.SetWindowRecordConfig(recordConfig);
+    params.SetOnVirtualScreen(true);
+    params.displayMode_ = DisplayMode::MIRROR;
+    // The record display consumes the already published mirror relation; it must not select a
+    // second source during the draw pass.
+    params.mirrorSourceDrawable_ = mirrorSourceDisplayNode_->GetRenderDrawable();
+    params.recordWhiteListIds_ = { RECORD_SURFACE_NODE_ID };
+    params.recordSourceDisplayDrawable_ = mirrorSourceDisplayNode_->GetRenderDrawable();
+    // The cached output bbox skips recomputation so the source needs no surface rects.
+    params.recordSurfaceDrawables_.clear();
+    displayDrawable_->SetWindowRecordBBox(Drawing::RectI(0, 0, 100, 100));
+    mirrorSourceDisplayParams_->SetShouldPaint(true);
+}
+
 /**
  * @tc.name: RSMultiScreenUtilBasicTest001
  * @tc.desc: Test GetScreenParams and GetMirrorSourceParams, they are important and basic functions
@@ -330,26 +527,27 @@ HWTEST_F(RSMultiScreenUtilTest, HandleMirrorScreenTest001, TestSize.Level1)
 
     // when uniParam is nullptr
     RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
-    RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, *mirrorSourceScreenParams_, *screenParams_, processor);
+    RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, mirrorSourceScreenParams_, *screenParams_, processor);
 
     // restore uniParam for other test cases
     auto uniRenderThreadParams = std::make_unique<RSRenderThreadParams>();
     RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(uniRenderThreadParams));
 
     // when processor is nullptr
-    RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, *mirrorSourceScreenParams_, *screenParams_, nullptr);
+    RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, mirrorSourceScreenParams_, *screenParams_, nullptr);
 
     // when processor is not nullptr but init failed
     screenParams_->screenProperty_.Set<ScreenPropertyType::SCREEN_STATUS>(static_cast<uint32_t>(VIRTUAL_SCREEN_PAUSE));
     bool res = processor->InitForRenderThread(*screenDrawable_, RSUniRenderThread::Instance().GetRenderEngine());
     EXPECT_FALSE(res);
-    RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, *mirrorSourceScreenParams_, *screenParams_, processor);
+    RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, mirrorSourceScreenParams_, *screenParams_, processor);
     EXPECT_NE(mirrorSourceScreenParams_, nullptr);
 }
 
 /**
  * @tc.name: HandleMirrorScreenTest002
- * @tc.desc: Test HandleMirrorScreen
+ * @tc.desc: A post-request virtual skip cancels its acquired frame through the single shared guard,
+ * and a later successful pass publishes without cancelling
  * @tc.type: FUNC
  * @tc.require: #ICQ74B
  */
@@ -358,16 +556,38 @@ HWTEST_F(RSMultiScreenUtilTest, HandleMirrorScreenTest002, TestSize.Level1)
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     EXPECT_NE(uniParam, nullptr);
 
-    auto processor = std::make_shared<RSUniRenderVirtualProcessor>();
+    auto processor = std::make_shared<CountingVirtualMirrorProcessor>();
+    processor->canvas_ = paintFilterCanvas_;
+    screenParams_->hasWindowRecordDisplay_ = false;
 
-    screenParams_->screenProperty_.Set<ScreenPropertyType::SCREEN_STATUS>(static_cast<uint32_t>(VIRTUAL_SCREEN_PLAY));
-    bool res = processor->InitForRenderThread(*screenDrawable_, RSUniRenderThread::Instance().GetRenderEngine());
-    EXPECT_FALSE(res);
+    // A null source is only legal for the current muted record mask: an ordinary virtual call must
+    // be rejected before init/publication.
+    screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+    EXPECT_FALSE(RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, nullptr, *screenParams_, processor));
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+    EXPECT_EQ(processor->postProcessCount_, 0);
+
+    // The virtual pass acquires its frame first, then displaySkip requests an abort. The shared guard
+    // is the only cancel owner and the per-pass request is cleared for the next frame.
     processor->SetDisplaySkipInMirror(true);
-    RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, *mirrorSourceScreenParams_, *screenParams_, processor);
-    processor->SetDisplaySkipInMirror(false);
-    RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, *mirrorSourceScreenParams_, *screenParams_, processor);
-    EXPECT_NE(mirrorSourceScreenParams_, nullptr);
+    auto* canceledFrame = PushVirtualMirrorFrame(*processor);
+    ASSERT_NE(canceledFrame, nullptr);
+    EXPECT_FALSE(RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, mirrorSourceScreenParams_,
+        *screenParams_, processor));
+    EXPECT_EQ(processor->postProcessCount_, 0);
+    EXPECT_EQ(canceledFrame->GetSurface(), nullptr);
+    EXPECT_FALSE(processor->GetDisplaySkipInMirror());
+    processor->surfaceFrames_.clear();
+
+    // A later pass publishes once; the disarmed guard leaves the acquired frame to the pass.
+    auto* publishedFrame = PushVirtualMirrorFrame(*processor);
+    ASSERT_NE(publishedFrame, nullptr);
+    EXPECT_TRUE(RSMultiScreenUtil::HandleMirrorScreen(*screenDrawable_, mirrorSourceScreenParams_,
+        *screenParams_, processor));
+    EXPECT_EQ(processor->postProcessCount_, 1);
+    EXPECT_NE(publishedFrame->GetSurface(), nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::MIRROR_DRAWABLE_SKIP);
+    processor->surfaceFrames_.clear();
 }
 
 /**
@@ -1309,6 +1529,54 @@ HWTEST_F(RSMultiScreenUtilTest, DrawVirtualMirrorDisplayTest004, TestSize.Level1
 }
 
 /**
+ * @tc.name: HandleMirrorDisplayRecordForcesRebuildTest001
+ * @tc.desc: A record output always rebuilds its published source while ordinary mirror still selects the
+ *           whole-screen cache; the record whitelist is injected with the real security state
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleMirrorDisplayRecordForcesRebuildTest001, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayParams_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayNode_, nullptr);
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+    virtualProcessor_->canvas_ = paintFilterCanvas_;
+    auto surface = PushScreenInfoSurface(*virtualProcessor_);
+    ASSERT_NE(surface, nullptr);
+    mirrorSourceScreenDrawable_->cacheImgForCapture_ = std::make_shared<Drawing::Image>();
+    ASSERT_NE(mirrorSourceScreenDrawable_->GetCacheImgForCapture(), nullptr);
+
+    // Ordinary mirror keeps its cache/rebuild decision: a valid whole-screen cache selects FROM_CACHE.
+    displayParams_->SetWindowRecordConfig(RSWindowRecordConfig());
+    displayParams_->mirrorSourceDrawable_ = mirrorSourceDisplayNode_->GetRenderDrawable();
+    RSMultiScreenUtil::HandleMirrorDisplay(*displayDrawable_, *displayParams_, virtualProcessor_);
+    EXPECT_TRUE(virtualProcessor_->GetDrawVirtualMirrorCopy());
+    EXPECT_EQ(displayDrawable_->lastFrameRenderStrategy_, RenderStrategy::DRAW_VIRTUAL_MIRROR_FROM_CACHE);
+
+    // Record forces REBUILD even though the same cache image exists.
+    ArmWindowRecordDisplayGates(*displayParams_, mirrorSourceDisplayNode_->GetRenderDrawable(),
+        mirrorSourceDisplayNode_->GetRenderDrawable());
+    displayParams_->recordSurfaceDrawables_.clear();
+    displayDrawable_->SetWindowRecordBBox(Drawing::RectI(0, 0, 100, 100));
+    RSMultiScreenUtil::HandleMirrorDisplay(*displayDrawable_, *displayParams_, virtualProcessor_);
+    EXPECT_FALSE(virtualProcessor_->GetDrawVirtualMirrorCopy());
+    EXPECT_EQ(displayDrawable_->lastFrameRenderStrategy_, RenderStrategy::DRAW_VIRTUAL_MIRROR_REBUILD);
+    // The common special-layer state carries the record whitelist with the real (false) security state.
+    EXPECT_EQ(displayDrawable_->lastSpecialLayerRenderParam_.whiteList,
+        std::unordered_set<NodeId>({ RECORD_SURFACE_NODE_ID }));
+    EXPECT_FALSE(displayDrawable_->lastSpecialLayerRenderParam_.securityDisplay);
+
+    // Content keeps the existing producer metadata: original window bbox and current buffer rect.
+    ExpectSurfaceScreenInfo(surface, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE,
+        DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+}
+
+/**
  * @tc.name: DrawVirtualMirrorFromCacheTest001
  * @tc.desc: Test DrawVirtualMirrorFromCache when drawable or params is nullptr
  * @tc.type: FUNC
@@ -1786,6 +2054,60 @@ HWTEST_F(RSMultiScreenUtilTest, DrawVirtualMirrorRebuildTest004, TestSize.Level1
 }
 
 /**
+ * @tc.name: DrawVirtualMirrorRebuildHdrGateTest001
+ * @tc.desc: A record rebuild keeps SDR canvas handling and never enables the HDR virtual-screen canvas even
+ *           when the output screen reports HDRPresent, while an ordinary rebuild still enables it
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, DrawVirtualMirrorRebuildHdrGateTest001, TestSize.Level1)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+    ASSERT_NE(screenParams_, nullptr);
+    screenParams_->SetHDRPresent(true);
+    ASSERT_TRUE(screenParams_->GetHDRPresent());
+    ASSERT_FALSE(paintFilterCanvas_->GetHdrOn());
+    ASSERT_FALSE(paintFilterCanvas_->GetHDREnabledVirtualScreen());
+    const auto prevDisplayMode = displayParams_->displayMode_;
+
+    // Record rebuild: SDR-only canvas, flagged as a multi-screen draw.
+    {
+        RSRenderThreadParams uniParam;
+        ArmWindowRecordCapture(*displayParams_);
+        ASSERT_TRUE(displayParams_->IsRecordSessionActive());
+        RSMultiScreenUtil::DrawVirtualMirrorRebuild(*displayDrawable_, *displayParams_, virtualProcessor_, uniParam);
+        EXPECT_FALSE(paintFilterCanvas_->GetHdrOn());
+        EXPECT_FALSE(paintFilterCanvas_->GetHDREnabledVirtualScreen());
+        EXPECT_TRUE(paintFilterCanvas_->IsOnMultipleScreen());
+    }
+
+    // Leave the record session so the ordinary arm of the HDR gate runs.
+    displayParams_->SetWindowRecordConfig(RSWindowRecordConfig());
+    displayParams_->SetOnVirtualScreen(false);
+    displayParams_->displayMode_ = prevDisplayMode;
+    displayParams_->recordWhiteListIds_.clear();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    displayParams_->mirrorSourceDrawable_ = mirrorSourceDisplayNode_->GetRenderDrawable();
+    mirrorSourceDisplayParams_->SetShouldPaint(true);
+
+    // Ordinary rebuild with HDRPresent enables the HDR virtual-screen canvas.
+    {
+        RSRenderThreadParams uniParam;
+        uniParam.SetVirtualDirtyEnabled(false);
+        ASSERT_FALSE(displayParams_->IsRecordSessionActive());
+        RSMultiScreenUtil::DrawVirtualMirrorRebuild(*displayDrawable_, *displayParams_, virtualProcessor_, uniParam);
+        EXPECT_TRUE(paintFilterCanvas_->GetHdrOn());
+        EXPECT_TRUE(paintFilterCanvas_->GetHDREnabledVirtualScreen());
+    }
+
+    displayDrawable_->SetWindowRecordBBox(Drawing::RectI());
+    paintFilterCanvas_->SetHdrOn(false);
+    paintFilterCanvas_->SetHDREnabledVirtualScreen(false);
+    paintFilterCanvas_->SetOnMultipleScreen(false);
+}
+
+/**
  * @tc.name: DrawVirtualExtendTest001
  * @tc.desc: Test DrawVirtualExtend when drawable or params is nullptr
  * @tc.type: FUNC
@@ -1954,4 +2276,584 @@ HWTEST_F(RSMultiScreenUtilTest, GetMultiScreenParamsTest001, TestSize.Level1)
     RSMultiScreenUtil::GetMultiScreenParams(*displayParams_);
     EXPECT_EQ(screenDrawable_, nullptr);
 }
+
+/**
+ * @tc.name: ComputeGravityRectTest001
+ * @tc.desc: Invalid sizes return an empty rect, aspect-fit centers the content, and top-left placement maps
+ *           canvas (0,0) to a different buffer corner per rotation
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, ComputeGravityRectTest001, TestSize.Level1)
+{
+    // content size is the divisor: zero and negative values must not reach the float scale path
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 0, 300, WindowRecordFit::ASPECT_FIT), 0, 0, 0, 0);
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 300, -1, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
+        0, 0, 0, 0);
+    // canvas size is guarded here so every caller can rely on the returned rect
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, -600, 300, 300, WindowRecordFit::ASPECT_FIT), 0, 0, 0, 0);
+
+    // canvas 800x600, content 500x1000: scale 0.6 -> 300x600, centered horizontally; fit ignores rotation
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT),
+        250, 0, 550, 600);
+    // canvas 800x600, content 1000x500: scale 0.8 -> 800x400, centered vertically
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT),
+        0, 100, 800, 500);
+
+    // canvas 800x600, content 500x1000: scaled size 300x600; 0/90 and 180/270 coincide for this data set,
+    // but all four rotation arms must still execute.
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
+        0, 0, 300, 600);
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+        ScreenRotation::ROTATION_90), 0, 0, 300, 600);
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+        ScreenRotation::ROTATION_180), 500, 0, 800, 600);
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 500, 1000, WindowRecordFit::ASPECT_FIT_TOP_LEFT,
+        ScreenRotation::ROTATION_270), 500, 0, 800, 600);
+
+    // canvas 800x600, content 1000x500: scaled size 800x400 (distinct shape keeps the same placement rules)
+    ExpectRect(RSMultiScreenUtil::ComputeGravityRect(800, 600, 1000, 500, WindowRecordFit::ASPECT_FIT_TOP_LEFT),
+        0, 0, 800, 400);
+}
+
+/**
+ * @tc.name: HandleWindowRecordScreenGateLadderTest001
+ * @tc.desc: Screen-level record gates skip before a buffer request only for their own condition, and only an
+ *           all-gates-open frame reaches the processor check
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenGateLadderTest001, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(screenParams_, nullptr);
+    ASSERT_NE(displayParams_, nullptr);
+    ASSERT_NE(displayNode_, nullptr);
+    ASSERT_NE(screenNode_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayNode_, nullptr);
+    // The output display owns the record config; a distinct source drawable keeps the source
+    // paintability gate from being masked by the output gate.
+    auto sourceDrawable = mirrorSourceDisplayNode_->GetRenderDrawable();
+    auto bboxDrawable = sourceDrawable;
+    ASSERT_NE(sourceDrawable, nullptr);
+    ASSERT_NE(sourceDrawable->GetRenderParams(), nullptr);
+    const bool prevShouldPaint = sourceDrawable->GetRenderParams()->GetShouldPaint();
+    const RectI prevBBoxRect = sourceDrawable->GetRenderParams()->GetAbsDrawRect();
+    const auto prevDisplayMode = displayParams_->displayMode_;
+
+    auto arm = [&]() {
+        screenParams_->logicalDisplayNodeDrawables_ = { displayNode_->GetRenderDrawable() };
+        screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+        ArmWindowRecordDisplayGates(*displayParams_, sourceDrawable, bboxDrawable);
+    };
+    auto run = [&]() { RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr); };
+
+    // Record ids without the virtual-screen flag are not an active session; the source is cleared too.
+    arm();
+    displayParams_->SetOnVirtualScreen(false);
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    EXPECT_FALSE(displayParams_->IsRecordSessionActive());
+    ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // Two output displays are rejected before any display state or bbox cache is touched.
+    const Drawing::RectI ownerSentinel(1, 2, 3, 4);
+    const Drawing::RectI laterSentinel(11, 22, 33, 44);
+    arm();
+    displayDrawable_->SetWindowRecordBBox(ownerSentinel);
+    mirrorSourceDisplayDrawable_->SetWindowRecordBBox(laterSentinel);
+    screenParams_->logicalDisplayNodeDrawables_ =
+        { displayNode_->GetRenderDrawable(), mirrorSourceDisplayNode_->GetRenderDrawable() };
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+    EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), ownerSentinel);
+    EXPECT_EQ(mirrorSourceDisplayDrawable_->GetWindowRecordBBox(), laterSentinel);
+
+    // A null entry and a wrong-type entry are rejected independently before any downcast.
+    arm();
+    screenParams_->logicalDisplayNodeDrawables_ = { nullptr };
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    arm();
+    screenParams_->logicalDisplayNodeDrawables_ = { screenNode_->GetRenderDrawable() };
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // Active session and a populated whitelist, but no resolved source display: SKIP_FRAME.
+    arm();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    ASSERT_TRUE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+    ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // A source display that should not be painted skips before the processor gate.
+    arm();
+    sourceDrawable->GetRenderParams()->SetShouldPaint(false);
+    EXPECT_TRUE(displayParams_->GetShouldPaint());
+    EXPECT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // A non-paintable configured surface skips before the processor gate.
+    arm();
+    displayParams_->hasPaintableRecordSurface_ = false;
+    EXPECT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+    EXPECT_TRUE(sourceDrawable->GetRenderParams()->GetShouldPaint());
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // Live source snapshot with an empty whitelist: SKIP_FRAME.
+    arm();
+    displayParams_->recordWhiteListIds_.clear();
+    ASSERT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+    ASSERT_TRUE(displayParams_->GetRecordWhiteListIds().empty());
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // Every loop gate satisfied: execution reaches the processor gate.
+    arm();
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
+
+    displayParams_->recordWhiteListIds_.clear();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    displayParams_->SetWindowRecordConfig(RSWindowRecordConfig());
+    displayParams_->SetOnVirtualScreen(false);
+    displayParams_->displayMode_ = prevDisplayMode;
+    screenParams_->logicalDisplayNodeDrawables_ = { displayNode_->GetRenderDrawable() };
+    displayDrawable_->SetWindowRecordBBox(Drawing::RectI());
+    mirrorSourceDisplayDrawable_->SetWindowRecordBBox(Drawing::RectI());
+    sourceDrawable->GetRenderParams()->SetShouldPaint(prevShouldPaint);
+    sourceDrawable->GetRenderParams()->SetAbsDrawRect(prevBBoxRect);
+}
+
+/**
+ * @tc.name: HandleWindowRecordScreenBBoxTest001
+ * @tc.desc: Screen-level record geometry rejects a missing, empty or unrepresentable contributor and caches
+ *           only the merged valid window bbox
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenBBoxTest001, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(screenParams_, nullptr);
+    ASSERT_NE(displayParams_, nullptr);
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayNode_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayNode_, nullptr);
+    ASSERT_NE(screenNode_, nullptr);
+
+    auto sourceDrawable = displayNode_->GetRenderDrawable();
+    auto validRectDrawable = mirrorSourceDisplayNode_->GetRenderDrawable();
+    auto rejectedRectDrawable = screenNode_->GetRenderDrawable();
+    ASSERT_NE(sourceDrawable, nullptr);
+    ASSERT_NE(sourceDrawable->GetRenderParams(), nullptr);
+    ASSERT_NE(validRectDrawable, nullptr);
+    ASSERT_NE(validRectDrawable->GetRenderParams(), nullptr);
+    ASSERT_NE(rejectedRectDrawable, nullptr);
+    ASSERT_NE(rejectedRectDrawable->GetRenderParams(), nullptr);
+    auto& validRectParams = *validRectDrawable->GetRenderParams();
+    auto& rejectedRectParams = *rejectedRectDrawable->GetRenderParams();
+    const bool prevShouldPaint = sourceDrawable->GetRenderParams()->GetShouldPaint();
+    const RectI prevValidRect = validRectParams.GetAbsDrawRect();
+    const RectI prevRejectedRect = rejectedRectParams.GetAbsDrawRect();
+    const auto prevDisplayMode = displayParams_->displayMode_;
+
+    auto arm = [&]() {
+        screenParams_->logicalDisplayNodeDrawables_ = { displayNode_->GetRenderDrawable() };
+        screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+        ArmWindowRecordDisplayGates(*displayParams_, sourceDrawable, validRectDrawable);
+    };
+    auto run = [&]() { RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr); };
+
+    // A paintable surface snapshot without any main-window drawable yields no bbox.
+    arm();
+    displayParams_->recordSurfaceDrawables_.clear();
+    ASSERT_TRUE(displayParams_->HasPaintableRecordSurface());
+    ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // A zero-area sole contributor is skipped and still yields no bbox.
+    arm();
+    validRectParams.SetAbsDrawRect({ 0, 0, 0, 0 });
+    ASSERT_TRUE(validRectParams.GetAbsDrawRect().IsEmpty());
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // Valid geometry reaches the processor gate and is shared with the display pass.
+    arm();
+    validRectParams.SetAbsDrawRect({ 0, 0, 100, 100 });
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
+    EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), Drawing::RectI(0, 0, 100, 100));
+
+    // A positive-size contributor near INT32_MAX is not empty; its int64-widened right/bottom exceeds
+    // INT32_MAX and is dropped by that guard; the ordinary rect still owns the bbox.
+    constexpr int32_t NEAR_INT32_MAX = 0x7FFFFF00;
+    constexpr int32_t OVERFLOW_SIZE = 0x400;
+    validRectParams.SetAbsDrawRect({ 100, 100, 100, 100 });
+    rejectedRectParams.SetAbsDrawRect(RectI(NEAR_INT32_MAX, NEAR_INT32_MAX, OVERFLOW_SIZE, OVERFLOW_SIZE));
+    ASSERT_FALSE(rejectedRectParams.GetAbsDrawRect().IsEmpty());
+    displayParams_->recordSurfaceDrawables_ = { validRectDrawable, rejectedRectDrawable };
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
+    EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), Drawing::RectI(100, 100, 200, 200));
+
+    // No representable contributor: the frame is skipped and the cached bbox is cleared.
+    validRectParams.SetAbsDrawRect({ 0, 0, 0, 0 });
+    displayParams_->recordSurfaceDrawables_ = { validRectDrawable, rejectedRectDrawable };
+    run();
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+    EXPECT_EQ(displayDrawable_->GetWindowRecordBBox(), Drawing::RectI());
+
+    displayParams_->recordSurfaceDrawables_.clear();
+    displayParams_->recordWhiteListIds_.clear();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    displayParams_->SetWindowRecordConfig(RSWindowRecordConfig());
+    displayParams_->SetOnVirtualScreen(false);
+    displayParams_->displayMode_ = prevDisplayMode;
+    screenParams_->logicalDisplayNodeDrawables_ = { displayNode_->GetRenderDrawable() };
+    displayDrawable_->SetWindowRecordBBox(Drawing::RectI());
+    sourceDrawable->GetRenderParams()->SetShouldPaint(prevShouldPaint);
+    validRectParams.SetAbsDrawRect(prevValidRect);
+    rejectedRectParams.SetAbsDrawRect(prevRejectedRect);
+}
+
+/**
+ * @tc.name: HandleMirrorDisplayRecordGatesAndRotationTest001
+ * @tc.desc: Display-level record early returns keep the save stack, capture param and filter lists untouched,
+ *           while a passing frame follows first-time and changed source rotation
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleMirrorDisplayRecordGatesAndRotationTest001, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayParams_, nullptr);
+    ASSERT_NE(displayNode_, nullptr);
+    ASSERT_NE(screenNode_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayNode_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayDrawable_, nullptr);
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+
+    auto sourceDrawable = std::static_pointer_cast<RSRenderNodeDrawable>(
+        mirrorSourceDisplayNode_->GetRenderDrawable());
+    ASSERT_NE(sourceDrawable, nullptr);
+    ASSERT_NE(sourceDrawable->GetRenderParams(), nullptr);
+    const bool prevShouldPaint = sourceDrawable->GetRenderParams()->GetShouldPaint();
+    const auto prevOriginRotation = displayDrawable_->GetOriginScreenRotation();
+    const auto prevDisplayMode = displayParams_->displayMode_;
+    ScopedCaptureParam captureParamRestorer;
+
+    const uint32_t saveCount = paintFilterCanvas_->GetSaveCount();
+    const bool prevWindowRecordFlag = RSUniRenderThread::GetCaptureParam().isWindowRecord_;
+    const auto prevWhiteList = RSUniRenderThread::Instance().GetWhiteList();
+    auto expectNoSideEffect = [&]() {
+        EXPECT_EQ(paintFilterCanvas_->GetSaveCount(), saveCount);
+        EXPECT_EQ(RSUniRenderThread::GetCaptureParam().isWindowRecord_, prevWindowRecordFlag);
+        EXPECT_EQ(RSUniRenderThread::Instance().GetWhiteList(), prevWhiteList);
+        EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
+    };
+    auto arm = [&]() {
+        virtualProcessor_->canvas_ = paintFilterCanvas_;
+        ArmWindowRecordCapture(*displayParams_);
+        RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
+    };
+    auto run = [&]() {
+        RSMultiScreenUtil::HandleMirrorDisplay(*displayDrawable_, *displayParams_, virtualProcessor_);
+    };
+
+    // null canvas: return before any capture or canvas state is touched.
+    arm();
+    virtualProcessor_->canvas_ = nullptr;
+    run();
+    expectNoSideEffect();
+
+    // Empty record whitelist with a live, paintable source.
+    arm();
+    displayParams_->recordWhiteListIds_.clear();
+    ASSERT_TRUE(displayParams_->GetRecordWhiteListIds().empty());
+    ASSERT_FALSE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+    run();
+    expectNoSideEffect();
+
+    // Published source relation missing.
+    arm();
+    displayParams_->mirrorSourceDrawable_.reset();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    ASSERT_TRUE(displayParams_->GetMirrorSourceDrawable().expired());
+    ASSERT_FALSE(displayParams_->GetRecordWhiteListIds().empty());
+    run();
+    expectNoSideEffect();
+
+    // Source is a logical display but not paintable.
+    arm();
+    ASSERT_TRUE(sourceDrawable->ShouldPaint());
+    sourceDrawable->GetRenderParams()->SetShouldPaint(false);
+    ASSERT_FALSE(sourceDrawable->ShouldPaint());
+    run();
+    expectNoSideEffect();
+
+    // No cached or recomputable geometry: must fail before capture.
+    arm();
+    displayDrawable_->SetWindowRecordBBox(Drawing::RectI());
+    displayParams_->recordSurfaceDrawables_.clear();
+    run();
+    expectNoSideEffect();
+
+    // A passing frame follows the first-time source rotation.
+    mirrorSourceDisplayParams_->SetScreenRotation(ScreenRotation::ROTATION_0);
+    arm();
+    ASSERT_TRUE(displayParams_->IsRecordSessionActive());
+    run();
+    EXPECT_EQ(displayDrawable_->GetOriginScreenRotation(), ScreenRotation::ROTATION_0);
+
+    // A changed source rotation is followed by the same passing frame.
+    mirrorSourceDisplayParams_->SetScreenRotation(ScreenRotation::ROTATION_90);
+    arm();
+    ASSERT_TRUE(displayParams_->IsRecordSessionActive());
+    run();
+    EXPECT_EQ(displayDrawable_->GetOriginScreenRotation(), ScreenRotation::ROTATION_90);
+
+    displayDrawable_->SetOriginScreenRotation(prevOriginRotation);
+    displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
+    displayDrawable_->SetWindowRecordBBox(Drawing::RectI());
+    displayParams_->recordSurfaceDrawables_.clear();
+    displayParams_->recordWhiteListIds_.clear();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    displayParams_->SetWindowRecordConfig(RSWindowRecordConfig());
+    displayParams_->SetOnVirtualScreen(false);
+    displayParams_->displayMode_ = prevDisplayMode;
+    sourceDrawable->GetRenderParams()->SetShouldPaint(prevShouldPaint);
+    mirrorSourceDisplayParams_->SetScreenRotation(ScreenRotation::ROTATION_0);
+}
+
+/**
+ * @tc.name: HandleWindowRecordScreenOutputGateAndMuteTest001
+ * @tc.desc: Output paintability gates the record pass; a muted paintable output reaches the shared
+ * virtual-mirror lifecycle without a source while a non-mute source-less output skips before it.
+ * With the real virtual processor the mask stops at the common init failure; a successful fixture
+ * then publishes exactly one mask PostProcess. Record-to-ordinary sequencing is not asserted here.
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenOutputGateAndMuteTest001, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(screenParams_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayParams_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayDrawable_, nullptr);
+    auto outputDrawable = mirrorSourceDisplayNode_->GetRenderDrawable();
+    auto sourceDrawable = displayNode_->GetRenderDrawable();
+    ASSERT_NE(outputDrawable, nullptr);
+    ASSERT_NE(sourceDrawable, nullptr);
+    ASSERT_NE(outputDrawable->GetRenderParams(), nullptr);
+
+    // The output display owns the record config; the source display is a distinct paintable node.
+    screenParams_->logicalDisplayNodeDrawables_ = { outputDrawable };
+    screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+    ArmWindowRecordDisplayGates(*mirrorSourceDisplayParams_, sourceDrawable, sourceDrawable);
+
+    // A non-paintable output is rejected before the processor, muted or not.
+    mirrorSourceDisplayParams_->SetShouldPaint(false);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, nullptr);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // A muted paintable output needs no source and reaches the shared virtual-mirror lifecycle: the
+    // observable proof is that it passes the screen gate and the virtual-processor gate, then stops
+    // at the common processor init (RENDER_ENGINE_NULL), not at the content SKIP_FRAME gate.
+    mirrorSourceDisplayParams_->SetShouldPaint(true);
+    mirrorSourceDisplayParams_->virtualScreenMuteStatus_ = true;
+    mirrorSourceDisplayParams_->recordSourceDisplayDrawable_.reset();
+    mirrorSourceDisplayParams_->recordWhiteListIds_.clear();
+    mirrorSourceDisplayParams_->hasPaintableRecordSurface_ = false;
+    mirrorSourceDisplayParams_->recordSurfaceDrawables_.clear();
+    screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, virtualProcessor_);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
+    EXPECT_EQ(mirrorSourceDisplayDrawable_->GetWindowRecordBBox(), Drawing::RectI());
+
+    // The same source-less output without mute must not request a buffer even with a live processor.
+    mirrorSourceDisplayParams_->virtualScreenMuteStatus_ = false;
+    screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, virtualProcessor_);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // A successful processor fixture publishes the muted, source-less output exactly once.
+    auto maskProcessor = std::make_shared<CountingVirtualMirrorProcessor>();
+    maskProcessor->canvas_ = paintFilterCanvas_;
+    screenParams_->hasWindowRecordDisplay_ = true;
+    mirrorSourceDisplayParams_->virtualScreenMuteStatus_ = true;
+    screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+    RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, maskProcessor);
+    EXPECT_EQ(maskProcessor->postProcessCount_, 1);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::MIRROR_DRAWABLE_SKIP);
+    EXPECT_EQ(mirrorSourceDisplayDrawable_->GetWindowRecordBBox(), Drawing::RectI());
+}
+
+/**
+ * @tc.name: HandleWindowRecordScreenRejectsUnsupportedRotationTest001
+ * @tc.desc: A source rotation or source screen correction outside the four upright quadrants is skipped before
+ *           publishing the source, including INVALID and a wrapped negative value; ROTATION_0 stays valid
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleWindowRecordScreenRejectsUnsupportedRotationTest001, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(displayNode_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayNode_, nullptr);
+    ASSERT_NE(mirrorSourceDisplayParams_, nullptr);
+    ASSERT_NE(mirrorSourceScreenParams_, nullptr);
+    auto sourceAdapter = mirrorSourceDisplayNode_->GetRenderDrawable();
+    ASSERT_NE(sourceAdapter, nullptr);
+    ASSERT_NE(sourceAdapter->GetRenderParams(), nullptr);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+
+    auto processor = std::make_shared<CountingVirtualMirrorProcessor>();
+    processor->canvas_ = paintFilterCanvas_;
+    uniParam->SetRSProcessor(processor);
+    auto arm = [&]() {
+        screenParams_->logicalDisplayNodeDrawables_ = { displayNode_->GetRenderDrawable() };
+        screenParams_->hasWindowRecordDisplay_ = true;
+        screenDrawable_->SetDrawSkipType(DrawSkipType::NONE);
+        displayParams_->mirrorSourceDrawable_ = sourceAdapter;
+        ArmWindowRecordDisplayGates(*displayParams_, sourceAdapter, sourceAdapter);
+    };
+    auto run = [&](ScreenRotation rotation, ScreenRotation correction) {
+        arm();
+        mirrorSourceDisplayParams_->SetScreenRotation(rotation);
+        mirrorSourceScreenParams_->screenProperty_.Set<ScreenPropertyType::CORRECTION>(
+            static_cast<uint32_t>(correction));
+        processor->postProcessCount_ = 0;
+        RSMultiScreenUtil::HandleWindowRecordScreen(*screenDrawable_, *screenParams_, processor);
+    };
+
+    // Invalid source rotation, invalid source screen correction, and wrapped negative values all fail
+    // closed before SetWindowRecordSource or any buffer acquisition.
+    const std::pair<ScreenRotation, ScreenRotation> invalidCases[] = {
+        { ScreenRotation::INVALID_SCREEN_ROTATION, ScreenRotation::ROTATION_0 },
+        { static_cast<ScreenRotation>(-1), ScreenRotation::ROTATION_0 },
+        { ScreenRotation::ROTATION_0, ScreenRotation::INVALID_SCREEN_ROTATION },
+        { ScreenRotation::ROTATION_0, static_cast<ScreenRotation>(-1) },
+    };
+    for (const auto& [rotation, correction] : invalidCases) {
+        run(rotation, correction);
+        EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+        EXPECT_EQ(processor->postProcessCount_, 0);
+    }
+
+    // Valid control: upright source rotation and correction still reach the shared lifecycle.
+    run(ScreenRotation::ROTATION_270, ScreenRotation::ROTATION_90);
+    EXPECT_NE(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+    EXPECT_EQ(processor->postProcessCount_, 1);
+}
+
+/**
+ * @tc.name: WindowRecordMaskMetadataFailureRequestsCancelTest001
+ * @tc.desc: A record mask with a null canvas or an unplaceable zero-size canvas requests the shared virtual skip
+ *           instead of publishing mask content
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, WindowRecordMaskMetadataFailureRequestsCancelTest001, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayParams_, nullptr);
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+    const bool prevMute = displayParams_->GetVirtualScreenMuteStatus();
+    auto processor = std::make_shared<RSUniRenderVirtualProcessor>();
+    processor->SetDisplaySkipInMirror(false);
+    ArmWindowRecordCapture(*displayParams_);
+
+    // Null canvas: HandleMirrorDisplay hands the mask straight to the processor-owned cancel request.
+    displayParams_->virtualScreenMuteStatus_ = true;
+    displayDrawable_->virtualDirtyNeedRefresh_ = false;
+    processor->canvas_ = nullptr;
+    RSMultiScreenUtil::HandleMirrorDisplay(*displayDrawable_, *displayParams_, processor);
+    EXPECT_TRUE(processor->GetDisplaySkipInMirror());
+    EXPECT_FALSE(displayDrawable_->virtualDirtyNeedRefresh_);
+
+    // Unplaceable canvas: rebuild's record mask metadata path must also fail closed.
+    processor->SetDisplaySkipInMirror(false);
+    displayParams_->virtualScreenMuteStatus_ = true;
+    displayDrawable_->virtualDirtyNeedRefresh_ = false;
+    Drawing::Canvas zeroCanvas(0, 0);
+    auto zeroFilterCanvas = std::make_shared<RSPaintFilterCanvas>(&zeroCanvas);
+    processor->canvas_ = zeroFilterCanvas;
+    displayDrawable_->curCanvas_ = zeroFilterCanvas.get();
+    RSRenderThreadParams uniParam;
+    RSMultiScreenUtil::DrawVirtualMirrorRebuild(*displayDrawable_, *displayParams_, processor, uniParam);
+    EXPECT_TRUE(processor->GetDisplaySkipInMirror());
+    EXPECT_FALSE(displayDrawable_->virtualDirtyNeedRefresh_);
+
+    displayParams_->virtualScreenMuteStatus_ = prevMute;
+    displayParams_->recordWhiteListIds_.clear();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    displayParams_->SetWindowRecordConfig(RSWindowRecordConfig());
+    displayParams_->SetOnVirtualScreen(false);
+    displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
+    displayDrawable_->SetWindowRecordBBox(Drawing::RectI());
+}
+
+/**
+ * @tc.name: HandleMirrorDisplayRecordMaskWithoutSourceTest001
+ * @tc.desc: A muted record output draws its mask before any source lookup and reports full-output current
+ *           geometry plus an empty original-window rect
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSMultiScreenUtilTest, HandleMirrorDisplayRecordMaskWithoutSourceTest001, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayParams_, nullptr);
+    ASSERT_NE(displayNode_, nullptr);
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+
+    const bool prevMute = displayParams_->GetVirtualScreenMuteStatus();
+    auto surface = PushScreenInfoSurface(*virtualProcessor_);
+    ASSERT_NE(surface, nullptr);
+    virtualProcessor_->canvas_ = paintFilterCanvas_;
+
+    ArmWindowRecordDisplayGates(*displayParams_, displayNode_->GetRenderDrawable(), displayNode_->GetRenderDrawable());
+    displayParams_->recordWhiteListIds_.clear();
+    displayParams_->recordSourceDisplayDrawable_.reset();
+    displayParams_->recordSurfaceDrawables_.clear();
+    displayParams_->mirrorSourceDrawable_.reset();
+    displayDrawable_->SetWindowRecordBBox(Drawing::RectI());
+    ASSERT_TRUE(displayParams_->GetRecordSourceDisplayDrawable().expired());
+    ASSERT_TRUE(displayParams_->GetRecordWhiteListIds().empty());
+
+    // Muted output without resolvable content still draws the mask, without resolving a source.
+    displayParams_->virtualScreenMuteStatus_ = true;
+    displayDrawable_->virtualDirtyNeedRefresh_ = false;
+    paintFilterCanvas_->SetDisableFilterCache(true);
+    RSMultiScreenUtil::HandleMirrorDisplay(*displayDrawable_, *displayParams_, virtualProcessor_);
+    EXPECT_TRUE(displayDrawable_->virtualDirtyNeedRefresh_);
+    // No mask image: DrawSecurityMask clears to black and drops the filter cache.
+    EXPECT_FALSE(paintFilterCanvas_->GetDisableFilterCache());
+
+    ExpectSurfaceScreenInfo(surface, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE, 0, 0);
+
+    // Control: without mute the source-less relation cannot reach a rebuild, so the record filter
+    // state and dirty flag stay untouched.
+    displayParams_->virtualScreenMuteStatus_ = false;
+    displayDrawable_->virtualDirtyNeedRefresh_ = false;
+    paintFilterCanvas_->SetDisableFilterCache(true);
+    RSMultiScreenUtil::HandleMirrorDisplay(*displayDrawable_, *displayParams_, virtualProcessor_);
+    EXPECT_FALSE(displayDrawable_->virtualDirtyNeedRefresh_);
+    EXPECT_TRUE(paintFilterCanvas_->GetDisableFilterCache());
+
+    displayParams_->virtualScreenMuteStatus_ = prevMute;
+    displayDrawable_->curCanvas_ = paintFilterCanvas_.get();
+}
+
 } // namespace OHOS::Rosen

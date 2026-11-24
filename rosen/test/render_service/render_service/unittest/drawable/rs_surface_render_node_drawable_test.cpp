@@ -52,6 +52,30 @@ public:
     void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override {};
 };
 
+// CaptureParam and the render-thread white list are shared process state; install the record-capture
+// inputs here and restore the caller's values even when an expectation aborts the test.
+class ScopedCaptureWhiteList {
+public:
+    ScopedCaptureWhiteList(std::unordered_set<NodeId> whiteList, bool isWindowRecord)
+        : savedCaptureParam_(RSUniRenderThread::GetCaptureParam()),
+          savedWhiteList_(RSUniRenderThread::Instance().GetWhiteList())
+    {
+        RSUniRenderThread::Instance().SetWhiteList(std::move(whiteList));
+        RSUniRenderThread::GetCaptureParam().isWindowRecord_ = isWindowRecord;
+    }
+    ~ScopedCaptureWhiteList()
+    {
+        RSUniRenderThread::SetCaptureParam(savedCaptureParam_);
+        RSUniRenderThread::Instance().SetWhiteList(savedWhiteList_);
+    }
+    ScopedCaptureWhiteList(const ScopedCaptureWhiteList&) = delete;
+    ScopedCaptureWhiteList& operator=(const ScopedCaptureWhiteList&) = delete;
+
+private:
+    CaptureParam savedCaptureParam_;
+    std::unordered_set<NodeId> savedWhiteList_;
+};
+
 class RSSurfaceRenderNodeDrawableTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -184,6 +208,84 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId001, TestSize.
 }
 
 /**
+ * @tc.name: GetWhiteListPersistentId002
+ * @tc.desc: Test leashless node-id matching is limited to the window-record capture path
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId002, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    // A plain sub-window carries no leash persistent id and is not a cursor node.
+    surfaceParams->leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
+    ASSERT_NE(surfaceParams->GetSurfaceNodeType(), RSSurfaceNodeType::CURSOR_NODE);
+
+    // Phase 1: window-record capture lets the leashless surface match by its own node id.
+    {
+        ScopedCaptureWhiteList recordCaptureWhiteList({surfaceParams->GetId()}, true);
+        EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), surfaceParams->GetId());
+    }
+
+    // Phase 2: the same matching node id outside the window-record path keeps persistent-id-only matching.
+    {
+        ScopedCaptureWhiteList castCaptureWhiteList({surfaceParams->GetId()}, false);
+        EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), INVALID_LEASH_PERSISTENTID);
+    }
+}
+
+/**
+ * @tc.name: GetWhiteListPersistentId004
+ * @tc.desc: Test a matching leash persistent id still takes priority over the node-id fallback
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId004, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    const NodeId nodeId = surfaceParams->GetId();
+    const NodeId persistentId = nodeId + 1;
+    surfaceParams->leashPersistentId_ = persistentId;
+
+    // Both ids match: the first leash persistent id match must win over the node-id fallback.
+    ScopedCaptureWhiteList captureWhiteList({nodeId, persistentId}, true);
+    EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), persistentId);
+}
+
+/**
+ * @tc.name: GetWhiteListPersistentId006
+ * @tc.desc: Test parallel canvas keeps persistent-id-only matching even for window record
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetWhiteListPersistentId006, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
+
+    const bool savedParallelCanvas = canvas_->GetIsParallelCanvas();
+    ScopedCaptureWhiteList captureWhiteList({surfaceParams->GetId()}, true);
+
+    // The node-id fallback is record-only, but the parallel canvas must not use it.
+    canvas_->SetIsParallelCanvas(true);
+    EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), INVALID_LEASH_PERSISTENTID);
+
+    // The serial canvas takes the record fallback for the same inputs.
+    canvas_->SetIsParallelCanvas(false);
+    EXPECT_EQ(surfaceDrawable_->GetWhiteListPersistentId(*surfaceParams, *canvas_), surfaceParams->GetId());
+
+    canvas_->SetIsParallelCanvas(savedParallelCanvas);
+}
+
+/**
  * @tc.name: OnDraw001
  * @tc.desc: Test OnDraw
  * @tc.type: FUNC
@@ -242,11 +344,14 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw003, TestSize.Level1)
     RSUniRenderThread::ResetCaptureParam();
     auto params = std::make_unique<RSRenderThreadParams>();
     params->SetIsMirrorScreen(true);
+    params->SetSecurityDisplay(true);
     RSUniRenderThread::Instance().Sync(std::move(params));
     RSUniRenderThread::Instance().SetBlackList(blackList);
     ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
-    surfaceDrawable_->OnDraw(*drawingCanvas_);
-    RSUniRenderThread::Instance().SetBlackList({});
+    surfaceDrawable_->OnDraw(*canvas_);
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::SURFACE_SKIP_IN_MIRROR);
+    // restore
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
 
 /**
@@ -273,6 +378,37 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDrawRebuildingSkip, TestSize.Level1)
     EXPECT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::REBUILDING_SKIP);
 
     surfaceParams->SetRebuildingState(false);
+}
+
+/**
+ * @tc.name: OnDrawCursorHideSkip001
+ * @tc.desc: Test OnDraw skips a cursor node when cursorMode is HIDE on a mirror security display
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDrawCursorHideSkip001, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    drawable_->renderParams_->shouldPaint_ = true;
+    drawable_->renderParams_->contentEmpty_ = false;
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->rsSurfaceNodeType_ = RSSurfaceNodeType::CURSOR_NODE;
+    RSUniRenderThread::ResetCaptureParam();
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(true);
+    params->SetSecurityDisplay(true);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::HIDE);
+    surfaceDrawable_->OnDraw(*canvas_);
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::SURFACE_SKIP_IN_MIRROR);
+
+    // restore, renderThreadParams is thread_local and shared by the following cases
+    surfaceParams->rsSurfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::DEFAULT);
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
 
 /**
@@ -334,11 +470,14 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture003, TestSize.Level1)
     RSUniRenderThread::ResetCaptureParam();
     auto params = std::make_unique<RSRenderThreadParams>();
     params->SetIsMirrorScreen(true);
+    params->SetSecurityDisplay(true);
     RSUniRenderThread::Instance().Sync(std::move(params));
     RSUniRenderThread::Instance().SetBlackList(blackList);
     ASSERT_TRUE(RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     surfaceDrawable_->OnCapture(*canvas_);
-    RSUniRenderThread::Instance().SetBlackList({});
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::SURFACE_SKIP_IN_MIRROR);
+    // restore
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
 
 /**
@@ -437,6 +576,37 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture006, TestSize.Level1)
     surfaceParams->GetMultableSpecialLayerMgr().Set(HAS_GENERAL_SPECIAL, false);
     RSUniRenderThread::SetCaptureParam(CaptureParam());
     RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+}
+
+/**
+ * @tc.name: OnCaptureCursorHideSkip001
+ * @tc.desc: Test OnCapture skips a cursor node when cursorMode is HIDE on a mirror security display
+ * @tc.type: FUNC
+ * @tc.require: issue26859
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCaptureCursorHideSkip001, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    drawable_->renderParams_->shouldPaint_ = true;
+    drawable_->renderParams_->contentEmpty_ = false;
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->rsSurfaceNodeType_ = RSSurfaceNodeType::CURSOR_NODE;
+    RSUniRenderThread::ResetCaptureParam();
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(true);
+    params->SetSecurityDisplay(true);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::HIDE);
+    surfaceDrawable_->OnCapture(*canvas_);
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::SURFACE_SKIP_IN_MIRROR);
+
+    // restore, renderThreadParams is thread_local and shared by the following cases
+    surfaceParams->rsSurfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
+    RSUniRenderThread::Instance().SetCursorMode(RSVirtualScreenCursorMode::DEFAULT);
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
 
 /**

@@ -1512,5 +1512,42 @@ HWTEST_F(RSUnionRenderNodeTest, ProcessSDFShape_WrapsHomogeneousBasicTree, TestS
     ASSERT_NE(unionNode->renderProperties_.renderSDFShape_, nullptr);
     EXPECT_EQ(unionNode->renderProperties_.renderSDFShape_->GetType(), RSNGEffectType::SDF_UBER_SHAPE);
 }
+
+/**
+ * @tc.name: ProcessSDFShape_KeepsCascadeForTwoPathLeaves
+ * @tc.desc: test ProcessSDFShape keeps the cascade for a union of two path leaves because path is not uberable
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUnionRenderNodeTest, ProcessSDFShape_KeepsCascadeForTwoPathLeaves, TestSize.Level1)
+{
+    auto sContext = std::make_shared<RSContext>();
+    auto unionNode = std::make_shared<RSUnionRenderNode>(id, sContext);
+    EXPECT_NE(unionNode->GetContext().lock(), nullptr);
+    unionNode->renderProperties_.boundsGeo_ = CreateRSObjAbsGeometry();
+    constexpr int pathLeafCount = 2;
+    for (int index = 0; index < pathLeafCount; ++index) {
+        auto childId = static_cast<NodeId>(id + 1 + index);
+        auto child = std::make_shared<RSRenderNode>(childId, sContext);
+        sContext->nodeMap.RegisterRenderNode(child);
+        EXPECT_NE(sContext->GetNodeMap().GetRenderNode<RSRenderNode>(childId), nullptr);
+        unionNode->unionChildren_.emplace(childId);
+        child->renderProperties_.boundsGeo_ = CreateRSObjAbsGeometry();
+        child->parent_ = unionNode;
+        child->renderProperties_.renderSDFShape_ = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_PATH_SHAPE);
+    }
+    unionNode->renderProperties_.SetUnionSpacing(0.f);
+    unionNode->renderProperties_.SetSDFUnionMode(0);
+    std::unique_ptr<RSRenderParams> stagingRenderParams = std::make_unique<RSRenderParams>(id);
+    ASSERT_NE(stagingRenderParams, nullptr);
+    unionNode->stagingRenderParams_ = std::move(stagingRenderParams);
+
+    RSDirtyRegionManager dirtyManager;
+    unionNode->ProcessSDFShape(dirtyManager);
+
+    EXPECT_EQ(unionNode->uberType_, UberType::OTHER);
+    EXPECT_EQ(unionNode->uberLeafCount_, pathLeafCount);
+    ASSERT_NE(unionNode->renderProperties_.renderSDFShape_, nullptr);
+    EXPECT_EQ(unionNode->renderProperties_.renderSDFShape_->GetType(), RSNGEffectType::SDF_UNION_OP_SHAPE);
+}
 } // namespace Rosen
 } // namespace OHOS

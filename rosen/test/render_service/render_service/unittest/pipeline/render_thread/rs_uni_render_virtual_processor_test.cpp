@@ -1600,6 +1600,63 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetVirtualScreenSizeTest, TestSize.Lev
 
     screenDrawable->renderParams_ = nullptr;
     virtualProcessor->SetVirtualScreenSize(*screenDrawable);
+
+    // Record content resolves its source before sizing: a 90/270-degree source with auto buffer
+    // rotation swaps the buffer and virtual-screen extents, using the same rotation/correction as
+    // the record canvas. Record never calls CanvasInit(), so no second rotation is applied here.
+    auto sourceScreenNode = std::make_shared<RSScreenRenderNode>(11, 21);
+    sourceScreenNode->InitRenderParams();
+    ASSERT_NE(sourceScreenNode->renderDrawable_, nullptr);
+    auto sourceScreenDrawable = static_cast<RSScreenRenderNodeDrawable*>(sourceScreenNode->renderDrawable_.get());
+    auto sourceScreenParams = static_cast<RSScreenRenderParams*>(sourceScreenDrawable->GetRenderParams().get());
+    ASSERT_NE(sourceScreenParams, nullptr);
+    auto sourceDisplayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(sourceDisplayParams, nullptr);
+
+    auto recordScreenNode = std::make_shared<RSScreenRenderNode>(12, 22);
+    recordScreenNode->InitRenderParams();
+    ASSERT_NE(recordScreenNode->renderDrawable_, nullptr);
+    auto recordScreenDrawable = static_cast<RSScreenRenderNodeDrawable*>(recordScreenNode->renderDrawable_.get());
+    auto recordScreenParams = static_cast<RSScreenRenderParams*>(recordScreenDrawable->GetRenderParams().get());
+    ASSERT_NE(recordScreenParams, nullptr);
+    recordScreenParams->screenProperty_.Set<ScreenPropertyType::AUTO_BUFFER_ROTATION>(true);
+    recordScreenParams->screenProperty_.Set<ScreenPropertyType::RENDER_RESOLUTION>(
+        std::make_pair(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT));
+    recordScreenDrawable->SetFirstBufferRotation(ScreenRotation::ROTATION_0);
+
+    auto expectRecordBufferSwap = [&](ScreenRotation sourceRotation) {
+        sourceDisplayParams->SetScreenRotation(sourceRotation);
+        virtualProcessor->SetWindowRecordSource(*sourceDisplayParams, *sourceScreenParams);
+        virtualProcessor->renderFrameConfig_.width = static_cast<int32_t>(DEFAULT_CANVAS_WIDTH);
+        virtualProcessor->renderFrameConfig_.height = static_cast<int32_t>(DEFAULT_CANVAS_HEIGHT);
+        virtualProcessor->SetVirtualScreenSize(*recordScreenDrawable);
+        EXPECT_EQ(virtualProcessor->virtualScreenWidth_, static_cast<float>(DEFAULT_CANVAS_HEIGHT));
+        EXPECT_EQ(virtualProcessor->virtualScreenHeight_, static_cast<float>(DEFAULT_CANVAS_WIDTH));
+        EXPECT_EQ(virtualProcessor->renderFrameConfig_.width, static_cast<int32_t>(DEFAULT_CANVAS_HEIGHT));
+        EXPECT_EQ(virtualProcessor->renderFrameConfig_.height, static_cast<int32_t>(DEFAULT_CANVAS_WIDTH));
+    };
+    expectRecordBufferSwap(ScreenRotation::ROTATION_90);
+    expectRecordBufferSwap(ScreenRotation::ROTATION_270);
+
+    // A->B source replacement with a nonzero correction: B rotates 90 but corrects 90 back to 0, so
+    // sizing must not swap. Reusing A's (zero) correction or ignoring the correction would swap.
+    auto sourceScreenNodeB = std::make_shared<RSScreenRenderNode>(13, 23);
+    sourceScreenNodeB->InitRenderParams();
+    ASSERT_NE(sourceScreenNodeB->renderDrawable_, nullptr);
+    auto sourceScreenDrawableB = static_cast<RSScreenRenderNodeDrawable*>(sourceScreenNodeB->renderDrawable_.get());
+    auto sourceScreenParamsB = static_cast<RSScreenRenderParams*>(sourceScreenDrawableB->GetRenderParams().get());
+    ASSERT_NE(sourceScreenParamsB, nullptr);
+    sourceScreenParamsB->screenProperty_.Set<ScreenPropertyType::CORRECTION>(
+        static_cast<uint32_t>(ScreenRotation::ROTATION_90));
+    sourceDisplayParams->SetScreenRotation(ScreenRotation::ROTATION_90);
+    virtualProcessor->SetWindowRecordSource(*sourceDisplayParams, *sourceScreenParamsB);
+    virtualProcessor->renderFrameConfig_.width = static_cast<int32_t>(DEFAULT_CANVAS_WIDTH);
+    virtualProcessor->renderFrameConfig_.height = static_cast<int32_t>(DEFAULT_CANVAS_HEIGHT);
+    virtualProcessor->SetVirtualScreenSize(*recordScreenDrawable);
+    EXPECT_EQ(virtualProcessor->virtualScreenWidth_, static_cast<float>(DEFAULT_CANVAS_WIDTH));
+    EXPECT_EQ(virtualProcessor->virtualScreenHeight_, static_cast<float>(DEFAULT_CANVAS_HEIGHT));
+    EXPECT_EQ(virtualProcessor->renderFrameConfig_.width, static_cast<int32_t>(DEFAULT_CANVAS_WIDTH));
+    EXPECT_EQ(virtualProcessor->renderFrameConfig_.height, static_cast<int32_t>(DEFAULT_CANVAS_HEIGHT));
 }
 
 /**
@@ -2008,6 +2065,61 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetCropRectForMetadata004, TestSize.Le
 }
 
 /**
+ * @tc.name: SetScreenInfoForWindowRecord001
+ * @tc.desc: Test SetScreenInfoForWindowRecord with empty, null-surface and real surface entries
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, SetScreenInfoForWindowRecord001, TestSize.Level2)
+{
+    auto processor = std::make_shared<RSUniRenderVirtualProcessor>();
+    const Rect currentFrameRect = {0, 0, 100, 100};
+    const Rect originalRect = {0, 0, 100, 100};
+
+    // Phase 1: an empty frame list skips the loop and succeeds.
+    ASSERT_TRUE(processor->surfaceFrames_.empty());
+    EXPECT_EQ(processor->SetScreenInfoForWindowRecord(currentFrameRect, originalRect, 0.0f), GSERROR_OK);
+
+    // Phase 2: null-surface entries are skipped without failing the call.
+    SurfaceFrameConfig nullSurfaceConfig;
+    nullSurfaceConfig.surface = nullptr;
+    nullSurfaceConfig.frame = nullptr;
+    processor->surfaceFrames_.push_back(std::move(nullSurfaceConfig));
+    SurfaceFrameConfig secondNullSurfaceConfig;
+    secondNullSurfaceConfig.surface = nullptr;
+    processor->surfaceFrames_.push_back(std::move(secondNullSurfaceConfig));
+    ASSERT_EQ(processor->surfaceFrames_.size(), 2u);
+    EXPECT_EQ(processor->SetScreenInfoForWindowRecord(currentFrameRect, originalRect, 0.0f), GSERROR_OK);
+
+    // Phase 3: a real surface accumulates the screen info and keeps the result successful.
+    auto consumer = IConsumerSurface::Create("SetScreenInfoForWindowRecord");
+    ASSERT_NE(consumer, nullptr);
+    auto producer = consumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    sptr<Surface> surface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(surface, nullptr);
+    SurfaceFrameConfig surfaceConfig;
+    surfaceConfig.surface = surface;
+    processor->surfaceFrames_.push_back(std::move(surfaceConfig));
+    const Rect recordCurrentRect = {1, 2, 3, 4};
+    const Rect recordOriginalRect = {5, 6, 7, 8};
+    constexpr float recordAngle = 0.0f;
+    EXPECT_EQ(processor->SetScreenInfoForWindowRecord(recordCurrentRect, recordOriginalRect, recordAngle), GSERROR_OK);
+
+    Rect readCurrentRect;
+    Rect readOriginalRect;
+    float readAngle = 0.0f;
+    EXPECT_EQ(surface->GetScreenInfo(readCurrentRect, readOriginalRect, readAngle), GSERROR_OK);
+    EXPECT_EQ(readCurrentRect.x, recordCurrentRect.x);
+    EXPECT_EQ(readCurrentRect.y, recordCurrentRect.y);
+    EXPECT_EQ(readCurrentRect.w, recordCurrentRect.w);
+    EXPECT_EQ(readCurrentRect.h, recordCurrentRect.h);
+    EXPECT_TRUE(readOriginalRect == recordOriginalRect);
+    EXPECT_EQ(readAngle, recordAngle);
+    processor->surfaceFrames_.clear();
+}
+
+/**
  * @tc.name: CancelCurrentFrame_SurfaceFrames
  * @tc.desc: Test CancelCurrentFrame with surfaceFrames_ entries
  * @tc.type: FUNC
@@ -2034,8 +2146,13 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CancelCurrentFrame_SurfaceFrames, Test
         std::make_shared<Drawing::Surface>(), DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, DEFAULT_BUFFER_AGE);
     SurfaceFrameConfig config2;
     config2.frame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    auto renderFrame = config2.frame.get();
+    ASSERT_NE(renderFrame->targetSurface_, nullptr);
+    ASSERT_NE(renderFrame->surfaceFrame_, nullptr);
     virtualProcessor_->surfaceFrames_.push_back(std::move(config2));
     virtualProcessor_->CancelCurrentFrame();
+    EXPECT_EQ(renderFrame->targetSurface_, nullptr);
+    EXPECT_EQ(renderFrame->surfaceFrame_, nullptr);
 
     virtualProcessor_->surfaceFrames_.clear();
 #endif // RS_ENABLE_VK
@@ -2230,6 +2347,66 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThreadTest001, TestSize.L
     EXPECT_TRUE(result);
     virtualProcessor_->surfaceFrames_.clear();
 #endif // RS_ENABLE_VK
+}
+
+/**
+ * @tc.name: InitForRenderThread_WindowRecordKeepsSdrGamutTest001
+ * @tc.desc: A source-less record output with fixed 10-bit and HDRPresent keeps the fixed format and the
+ *           pre-Cast SDR/P3 gamut instead of switching the output to BT2100_HLG
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThread_WindowRecordKeepsSdrGamutTest001, TestSize.Level1)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(screenDrawable_->renderParams_, nullptr);
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    ASSERT_NE(params, nullptr);
+    // The fixture has no mirror source drawable, so this takes the source-less (expand) record branch.
+    params->hasWindowRecordDisplay_ = true;
+    params->SetFixVirtualBuffer10Bit(true);
+    params->SetHDRPresent(true);
+    params->SetNewColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    ASSERT_TRUE(params->HasWindowRecordDisplay());
+    ASSERT_TRUE(params->GetFixVirtualBuffer10Bit());
+    ASSERT_TRUE(params->GetHDRPresent());
+
+    auto engine = RSUniRenderThread::Instance().uniRenderEngine_;
+    ASSERT_NE(engine, nullptr);
+    // Buffer acquisition is environment dependent, but the frame config is resolved before it.
+    virtualProcessor_->InitForRenderThread(*screenDrawable_, engine);
+
+    EXPECT_EQ(virtualProcessor_->renderFrameConfig_.format, GRAPHIC_PIXEL_FMT_RGBA_1010102);
+    EXPECT_EQ(virtualProcessor_->renderFrameConfig_.colorGamut, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+}
+
+/**
+ * @tc.name: InitForRenderThread_OrdinaryExpandHDRCastTest001
+ * @tc.desc: The same fixed 10-bit and HDRPresent expand output without a record session still resolves
+ *           BT2100_HLG, keeping ordinary expand HDR behavior unchanged
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThread_OrdinaryExpandHDRCastTest001, TestSize.Level1)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(screenDrawable_->renderParams_, nullptr);
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    ASSERT_NE(params, nullptr);
+    params->hasWindowRecordDisplay_ = false;
+    params->SetFixVirtualBuffer10Bit(true);
+    params->SetHDRPresent(true);
+    params->SetNewColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    ASSERT_FALSE(params->HasWindowRecordDisplay());
+
+    auto engine = RSUniRenderThread::Instance().uniRenderEngine_;
+    ASSERT_NE(engine, nullptr);
+    virtualProcessor_->InitForRenderThread(*screenDrawable_, engine);
+
+    EXPECT_EQ(virtualProcessor_->renderFrameConfig_.format, GRAPHIC_PIXEL_FMT_RGBA_1010102);
+    EXPECT_EQ(virtualProcessor_->renderFrameConfig_.colorGamut, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2100_HLG);
 }
 
 /**
@@ -2949,4 +3126,5 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThread_TidPositive_SetPar
 
     EXPECT_TRUE(result || !result);
 }
+
 } // namespace OHOS::Rosen

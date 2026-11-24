@@ -2097,5 +2097,131 @@ HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0053, TestSize.L
     EXPECT_TRUE(skia::textlayout::nearlyEqual(typography->GetLongestLineWithIndent(), tightWidth));
 }
 
+/*
+ * @tc.name: OHDrawingTypographyRelayoutTest0054
+ * @tc.desc: Relayout with changed text direction must rebuild bidi order of mixed-direction text.
+ * @tc.type: FUNC
+ */
+HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0054, TestSize.Level0)
+{
+    double maxWidth = LAYOUT_WIDTH;
+    OHOS::Rosen::TypographyStyle typographyStyle;
+    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
+        OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+    // mixed direction text: ltr word "abc" followed by rtl hebrew word
+    std::u16string text = u"abc \u05D0\u05D1\u05D2";
+    OHOS::Rosen::TextStyle textStyle;
+    textStyle.fontSize = 14;
+    typographyCreate->PushStyle(textStyle);
+    typographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> typography = typographyCreate->CreateTypography();
+    typography->Layout(maxWidth);
+
+    auto ltrWordRects = typography->GetTextRectsByBoundary(0, 3, TextRectHeightStyle::TIGHT,
+        TextRectWidthStyle::TIGHT);
+    auto rtlWordRects = typography->GetTextRectsByBoundary(4, 7, TextRectHeightStyle::TIGHT,
+        TextRectWidthStyle::TIGHT);
+    ASSERT_FALSE(ltrWordRects.empty());
+    ASSERT_FALSE(rtlWordRects.empty());
+    // ltr paragraph: ltr word is displayed on the left side of rtl word
+    EXPECT_LT(ltrWordRects.front().rect.GetLeft(), rtlWordRects.front().rect.GetLeft());
+
+    typographyStyle.textDirection = TextDirection::RTL;
+    std::bitset<static_cast<size_t>(RelayoutParagraphStyleAttribute::PARAGRAPH_STYLE_ATTRIBUTE_BUTT)>
+        styleBitset;
+    styleBitset.set(static_cast<size_t>(RelayoutParagraphStyleAttribute::DIRECTION));
+    typographyStyle.relayoutChangeBitmap = styleBitset;
+    std::vector<OHOS::Rosen::TextStyle> relayoutTextStyles;
+    relayoutTextStyles.push_back(textStyle);
+    typography->Relayout(maxWidth, typographyStyle, relayoutTextStyles);
+
+    ltrWordRects = typography->GetTextRectsByBoundary(0, 3, TextRectHeightStyle::TIGHT,
+        TextRectWidthStyle::TIGHT);
+    rtlWordRects = typography->GetTextRectsByBoundary(4, 7, TextRectHeightStyle::TIGHT,
+        TextRectWidthStyle::TIGHT);
+    ASSERT_FALSE(ltrWordRects.empty());
+    ASSERT_FALSE(rtlWordRects.empty());
+    // rtl paragraph: bidi regions are rebuilt, ltr word must be reordered to the right side
+    EXPECT_GT(ltrWordRects.front().rect.GetLeft(), rtlWordRects.front().rect.GetLeft());
+}
+
+/*
+ * @tc.name: OHDrawingTypographyRelayoutTest0055
+ * @tc.desc: ApplyParagraphStyleChanges with changed text direction must reset state to kUnknown.
+ * @tc.type: FUNC
+ */
+HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0055, TestSize.Level0)
+{
+    double maxWidth = LAYOUT_WIDTH;
+    OHOS::Rosen::TypographyStyle typographyStyle;
+    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
+        OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+    std::u16string text = u"relayout test";
+    OHOS::Rosen::TextStyle textStyle;
+    textStyle.fontSize = 14;
+    typographyCreate->PushStyle(textStyle);
+    typographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> typography = typographyCreate->CreateTypography();
+    typography->Layout(maxWidth);
+    auto paragraphImpl = reinterpret_cast<OHOS::Rosen::SPText::ParagraphImpl*>(typography->GetParagraph());
+    ASSERT_NE(paragraphImpl, nullptr);
+    EXPECT_EQ(paragraphImpl->paragraph_->getState(), skia::textlayout::kFormatted);
+
+    OHOS::Rosen::SPText::ParagraphStyle paragraphStyle;
+    paragraphStyle.textDirection = OHOS::Rosen::SPText::TextDirection::RTL;
+    std::bitset<static_cast<size_t>(RelayoutParagraphStyleAttribute::PARAGRAPH_STYLE_ATTRIBUTE_BUTT)>
+        styleBitset;
+    styleBitset.set(static_cast<size_t>(RelayoutParagraphStyleAttribute::DIRECTION));
+    paragraphStyle.SetRelayoutBitMap(styleBitset);
+    paragraphImpl->ApplyParagraphStyleChanges(paragraphStyle);
+
+    // direction changed: state must be reset to kUnknown so bidi regions are recomputed
+    EXPECT_EQ(paragraphImpl->paragraph_->getState(), skia::textlayout::kUnknown);
+    EXPECT_EQ(paragraphImpl->paragraph_->getParagraphStyle().getTextDirection(),
+        skia::textlayout::TextDirection::kRtl);
+}
+
+/*
+ * @tc.name: OHDrawingTypographyRelayoutTest0056
+ * @tc.desc: ApplyParagraphStyleChanges with unchanged direction must keep state above kUnknown.
+ * @tc.type: FUNC
+ */
+HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0056, TestSize.Level0)
+{
+    double maxWidth = LAYOUT_WIDTH;
+    OHOS::Rosen::TypographyStyle typographyStyle;
+    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
+        OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+    std::u16string text = u"relayout test";
+    OHOS::Rosen::TextStyle textStyle;
+    textStyle.fontSize = 14;
+    typographyCreate->PushStyle(textStyle);
+    typographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> typography = typographyCreate->CreateTypography();
+    typography->Layout(maxWidth);
+    auto paragraphImpl = reinterpret_cast<OHOS::Rosen::SPText::ParagraphImpl*>(typography->GetParagraph());
+    ASSERT_NE(paragraphImpl, nullptr);
+    EXPECT_EQ(paragraphImpl->paragraph_->getState(), skia::textlayout::kFormatted);
+
+    OHOS::Rosen::SPText::ParagraphStyle paragraphStyle;
+    paragraphStyle.textDirection = OHOS::Rosen::SPText::TextDirection::LTR;
+    std::bitset<static_cast<size_t>(RelayoutParagraphStyleAttribute::PARAGRAPH_STYLE_ATTRIBUTE_BUTT)>
+        styleBitset;
+    styleBitset.set(static_cast<size_t>(RelayoutParagraphStyleAttribute::DIRECTION));
+    paragraphStyle.SetRelayoutBitMap(styleBitset);
+    paragraphImpl->ApplyParagraphStyleChanges(paragraphStyle);
+
+    // direction not changed: state must stay at kIndexed to reuse indexed text and avoid full rebuild
+    EXPECT_EQ(paragraphImpl->paragraph_->getState(), skia::textlayout::kIndexed);
+    EXPECT_EQ(paragraphImpl->paragraph_->getParagraphStyle().getTextDirection(),
+        skia::textlayout::TextDirection::kLtr);
+}
+
 } // namespace Rosen
 } // namespace OHOS

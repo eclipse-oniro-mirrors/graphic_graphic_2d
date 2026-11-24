@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 #include "common/rs_common_def.h"
+#include "common/rs_samgr_retry.h"
 #include "dfx/rs_service_dump_manager.h"
 #include "engine/rs_base_render_engine.h"
 #include "feature/tunnel_layer/rs_tunnel_layer_helper.h"
@@ -116,7 +117,10 @@ bool RSRenderService::Init()
     }
 
     // Create multi-process/single-process mode
-    RenderProcessManagerInit();
+    // some devices fail the screen pipeline init here (unsupported HDI registrations); exiting fails the boot
+    if (!RenderProcessManagerInit()) {
+        RS_LOGE("%{public}s: render process manager init failed", __func__);
+    }
 
     // Register with system ability manager
     if (!SAMgrRegister()) {
@@ -234,7 +238,7 @@ void RSRenderService::FeatureComponentInit()
     InitGameFrameHandler();
 }
 
-void RSRenderService::RenderProcessManagerInit()
+bool RSRenderService::RenderProcessManagerInit()
 {
     RS_LOGI("%{public}s:", __func__);
     HgmProcessCallback hgmProcessCallback = nullptr;
@@ -248,9 +252,12 @@ void RSRenderService::RenderProcessManagerInit()
     renderProcessManager_ = RSRenderProcessManager::Create(*this, std::move(hgmProcessCallback));
     auto screenManagerListener = sptr<ScreenManagerListener>::MakeSptr(*this);
     screenManager_->RegisterCoreListener(screenManagerListener);
-    if (screenManager_->Init(handler_)) {
-        RS_LOGI("%{public}s: ScreenManager init Success", __func__);
+    if (!screenManager_->Init(handler_)) {
+        RS_LOGE("%{public}s: ScreenManager init failed", __func__);
+        return false;
     }
+    RS_LOGI("%{public}s: ScreenManager init Success", __func__);
+    return true;
 }
 
 bool RSRenderService::SAMgrRegister()
@@ -263,14 +270,9 @@ bool RSRenderService::SAMgrRegister()
         return false;
     }
 
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgr == nullptr) {
-        RS_LOGE("%{public}s: GetSystemAbilityManager fail", __func__);
-        return false;
-    }
-    samgr->AddSystemAbility(RENDER_SERVICE, this);
-
-    return true;
+    return RetrySamgrCall(__func__, [this](const sptr<ISystemAbilityManager>& samgr) {
+        return samgr->AddSystemAbility(RENDER_SERVICE, this);
+    });
 }
 
 void RSRenderService::Run()
@@ -341,6 +343,9 @@ std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
     sptr<RSRenderPipelineAgent> renderPipelineAgent = new RSRenderPipelineAgent(renderPipeline_);
     sptr<RSIClientToRenderConnection> newRenderConn(
         new RSClientToRenderConnection(remotePid, renderPipelineAgent, tokenObj, needRefresh));
+    // Tag the construction-time default connection; on multi-display products the stub rejects
+    // any request on it (see RSClientToRenderConnectionStub::OnRemoteRequest).
+    newRenderConn->MarkAsDefaultConnection();
     if (needRefresh) {
         newConn->RegisterRemoteRefreshCallback();
         newRenderConn->RegisterRemoteRefreshCallback();
@@ -598,12 +603,6 @@ void RSRenderService::ScreenManagerListener::OnProcessDisconnected(ScreenId scre
 void RSRenderService::SubScribeSystemAbility()
 {
     RS_LOGI("%{public}s", __func__);
-    sptr<ISystemAbilityManager> systemAbilityManager =
-        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (!systemAbilityManager) {
-        RS_LOGE("%{public}s failed to get system ability manager client", __func__);
-        return;
-    }
     std::string threadName = "RSMainThread";
     std::string strUid = std::to_string(getuid());
     std::string strPid = std::to_string(getpid());
@@ -614,9 +613,11 @@ void RSRenderService::SubScribeSystemAbility()
         RS_LOGE("SubScribeSystemAbility new VSyncSystemAbilityListener failed");
         return;
     }
-    int32_t ret = systemAbilityManager->SubscribeSystemAbility(RES_SCHED_SYS_ABILITY_ID, saStatusChangeListener_);
-    if (ret != ERR_OK) {
-        RS_LOGE("%{public}s subscribe system ability %{public}d failed.", __func__, RES_SCHED_SYS_ABILITY_ID);
+    if (!RetrySamgrCall(__func__, [listener = saStatusChangeListener_](
+        const sptr<ISystemAbilityManager>& samgr) {
+        return samgr->SubscribeSystemAbility(RES_SCHED_SYS_ABILITY_ID, listener);
+    })) {
+        // subscription failure is not fatal; resched qos features stay unavailable for this thread
         saStatusChangeListener_ = nullptr;
     }
 }

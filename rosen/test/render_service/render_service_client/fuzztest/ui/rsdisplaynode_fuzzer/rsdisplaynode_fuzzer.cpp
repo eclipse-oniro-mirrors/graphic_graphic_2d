@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <securec.h>
 
+#include "common/rs_common_def.h"
 #include "ui/rs_display_node.h"
 
 namespace OHOS {
@@ -46,6 +47,20 @@ T GetData()
     }
     g_pos += objectSize;
     return object;
+}
+
+RSWindowRecordConfig GetWindowRecordConfigFromData()
+{
+    RSWindowRecordConfig recordConfig;
+    // Read one byte and use the lowest bit: a bool copy of 0x02 is a UBSan trap before business code.
+    const uint8_t renderFitBits = GetData<uint8_t>();
+    recordConfig.renderFit = (renderFitBits & 1) ? WindowRecordFit::ASPECT_FIT : WindowRecordFit::ASPECT_FIT_TOP_LEFT;
+    // Bounded id count; includes the over-cap MAX_WINDOW_RECORD_SURFACE_NUM + 1 value.
+    size_t idCount = GetData<uint16_t>() % (MAX_WINDOW_RECORD_SURFACE_NUM + 2);
+    for (size_t i = 0; i < idCount; ++i) {
+        recordConfig.surfaceNodeIds.push_back(GetData<NodeId>());
+    }
+    return recordConfig;
 }
 
 inline RSDisplayNodeConfig GetRSDisplayNodeConfigFromData()
@@ -207,6 +222,18 @@ bool DoSetVirtualScreenMuteStatus()
     
     return true;
 }
+
+bool DoSetWindowRecordConfig()
+{
+    RSDisplayNodeConfig config;
+    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
+    RSWindowRecordConfig recordConfig = GetWindowRecordConfigFromData();
+    displayNode->SetWindowRecordConfig(recordConfig);
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS
 
@@ -228,5 +255,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSetBootAnimation();
     OHOS::Rosen::DoCreateNode();
     OHOS::Rosen::DoSetVirtualScreenMuteStatus();
+    OHOS::Rosen::DoSetWindowRecordConfig();
     return 0;
 }

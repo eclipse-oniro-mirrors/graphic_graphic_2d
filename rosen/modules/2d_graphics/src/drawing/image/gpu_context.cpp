@@ -203,6 +203,12 @@ void GPUContext::PurgeUnlockAndSafeCacheGpuResources()
 {
     impl_->PurgeUnlockAndSafeCacheGpuResources();
 }
+
+void GPUContext::PurgeTrimMemory2InitState()
+{
+    impl_->PurgeTrimMemory2InitState();
+}
+
 void GPUContext::PurgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<pid_t>& exitedPidSet,
     const std::set<pid_t>& protectedPidSet)
 {

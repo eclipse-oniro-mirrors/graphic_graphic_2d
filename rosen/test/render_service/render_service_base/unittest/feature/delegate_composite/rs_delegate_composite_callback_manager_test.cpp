@@ -15,11 +15,14 @@
 
 #include <gtest/gtest.h>
 
+#include "command/rs_node_command.h"
+#include "command/rs_surface_node_command.h"
 #include "command/rs_delegate_composite_command.h"
 #include "common/rs_common_def.h"
 #include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
 #include "iconsumer_surface.h"
 #include "ipc_callbacks/rs_delegate_composite_callback.h"
+#include "modifier_ng/rs_modifier_ng_type.h"
 #include "iremote_stub.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_effect_render_node.h"
@@ -73,8 +76,8 @@ public:
 
     static std::unique_ptr<RSTransactionData> MakeTransactionData(
         pid_t sendingPid, pid_t sendingTid, uint64_t index);
-    static std::unique_ptr<TransactionBufferCommand> MakeBufferCmd(NodeId nodeId, uint32_t sequence);
-    static std::unique_ptr<TransactionBufferCommand> MakeRectCmd(NodeId nodeId, bool isSrcRect);
+    static std::unique_ptr<RSCommand> MakeBufferCmd(NodeId nodeId, uint32_t sequence);
+    static std::unique_ptr<RSCommand> MakeRectCmd(NodeId nodeId, bool isSrcRect);
     static std::shared_ptr<RSSurfaceRenderNode> RegisterDelegateSurfaceNode(
         const std::shared_ptr<RSContext>& context, NodeId nodeId);
     static std::shared_ptr<RSSurfaceRenderNode> MakeNamedSurfaceNode(
@@ -96,6 +99,13 @@ void RSDelegateCompositeCallbackManagerTest::TearDown()
     auto context = std::make_shared<RSContext>();
     DrainCmdQueues(*context);
     RsDelegateCompositeCallbackManager::GetInstance().NotifyCurrentSurfaceNodeBufferReleaseCallback();
+    // reset direct-composition flags and hardware composer collection state for other tests
+    bool hasCommandProcess = false;
+    bool doDirectCompositionSupport = false;
+    RsDelegateCompositeCallbackManager::GetInstance().QueryAndResetCommandProcessFlag(
+        hasCommandProcess, doDirectCompositionSupport);
+    auto resetContext = std::make_shared<RSContext>();
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessDelegateCompositeCommand(*resetContext);
 }
 
 std::unique_ptr<RSTransactionData> RSDelegateCompositeCallbackManagerTest::MakeTransactionData(
@@ -108,7 +118,7 @@ std::unique_ptr<RSTransactionData> RSDelegateCompositeCallbackManagerTest::MakeT
     return data;
 }
 
-std::unique_ptr<TransactionBufferCommand> RSDelegateCompositeCallbackManagerTest::MakeBufferCmd(
+std::unique_ptr<RSCommand> RSDelegateCompositeCallbackManagerTest::MakeBufferCmd(
     NodeId nodeId, uint32_t sequence)
 {
     RSTransactionConfig config;
@@ -121,7 +131,7 @@ std::unique_ptr<TransactionBufferCommand> RSDelegateCompositeCallbackManagerTest
     return std::make_unique<TransactionBufferCommand>(configs, nodeId);
 }
 
-std::unique_ptr<TransactionBufferCommand> RSDelegateCompositeCallbackManagerTest::MakeRectCmd(
+std::unique_ptr<RSCommand> RSDelegateCompositeCallbackManagerTest::MakeRectCmd(
     NodeId nodeId, bool isSrcRect)
 {
     RectF rect(5.0f, 6.0f, 7.0f, 8.0f);
@@ -639,6 +649,760 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, UpdateHardWareForcedDisabledSta
     auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
     manager.UpdateHardWareForcedDisabledStateForDelegateMode(hwcNode);
     EXPECT_FALSE(hwcNode->IsHardwareForcedDisabled());
+}
+static std::shared_ptr<RSSurfaceRenderNode> MakeNodeWithDirtyTypes(const std::shared_ptr<RSContext>& context,
+    NodeId nodeId, const std::vector<ModifierNG::RSModifierType>& dirtyTypes)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(nodeId, context);
+    for (auto type : dirtyTypes) {
+        node->AddDirtyType(type);
+    }
+    return node;
+}
+
+static void ExpectQueryFlags(bool expectHasCommand, bool expectSupport)
+{
+    bool hasCommandProcess = false;
+    bool doDirectCompositionSupport = false;
+    RsDelegateCompositeCallbackManager::GetInstance().QueryAndResetCommandProcessFlag(
+        hasCommandProcess, doDirectCompositionSupport);
+    EXPECT_EQ(hasCommandProcess, expectHasCommand);
+    EXPECT_EQ(doDirectCompositionSupport, expectSupport);
+}
+
+static void ExpectHwcOptionalState(bool expectHasValue, bool expectValue)
+{
+    auto value = RsDelegateCompositeCallbackManager::GetInstance().GetDoDirectCompositionSupportByHwcEnable();
+    ASSERT_EQ(value.has_value(), expectHasValue);
+    if (expectHasValue) {
+        EXPECT_EQ(value.value(), expectValue);
+    }
+}
+
+/**
+ * @tc.name: IsDoDirectCompositionSupportByCmd001
+ * @tc.desc: any delegate composite subType supports direct composition
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, IsDoDirectCompositionSupportByCmd001, TestSize.Level1)
+{
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_TRUE(manager.IsDoDirectCompositionSupportByCmd(RSCommandType::DELEGATE_COMPOSITE,
+        RSDelegateCompositeCommandType::TRANSACTION_BUFFER, nullptr));
+    EXPECT_TRUE(manager.IsDoDirectCompositionSupportByCmd(RSCommandType::DELEGATE_COMPOSITE,
+        RSDelegateCompositeCommandType::TRANSACTION_BUFFER_SRC_RECT, nullptr));
+    EXPECT_TRUE(manager.IsDoDirectCompositionSupportByCmd(RSCommandType::DELEGATE_COMPOSITE,
+        RSDelegateCompositeCommandType::TRANSACTION_BUFFER_DST_RECT, nullptr));
+}
+
+/**
+ * @tc.name: IsDoDirectCompositionSupportByCmd002
+ * @tc.desc: surface node command supports direct composition only for surface size update
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, IsDoDirectCompositionSupportByCmd002, TestSize.Level1)
+{
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_TRUE(manager.IsDoDirectCompositionSupportByCmd(RSCommandType::SURFACE_NODE,
+        RSSurfaceNodeCommandType::SURFACE_NODE_UPDATE_SURFACE_SIZE, nullptr));
+    EXPECT_FALSE(manager.IsDoDirectCompositionSupportByCmd(RSCommandType::SURFACE_NODE,
+        RSSurfaceNodeCommandType::SURFACE_NODE_SET_SNAPSHOT_SKIP_LAYER, nullptr));
+}
+
+/**
+ * @tc.name: IsDoDirectCompositionSupportByCmd003
+ * @tc.desc: rs node commands need the modifier subTypes and a valid node
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, IsDoDirectCompositionSupportByCmd003, TestSize.Level1)
+{
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_FALSE(manager.IsDoDirectCompositionSupportByCmd(RSCommandType::RS_NODE, 0x0b02, nullptr));
+    EXPECT_FALSE(manager.IsDoDirectCompositionSupportByCmd(
+        RSCommandType::RS_NODE, RSNodeCommandType::ADD_MODIFIER_NG, nullptr));
+}
+
+/**
+ * @tc.name: IsDoDirectCompositionSupportByCmd004
+ * @tc.desc: modifier rs node commands follow the node dirty types
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, IsDoDirectCompositionSupportByCmd004, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto boundsNode = MakeNodeWithDirtyTypes(context, 910001, { ModifierNG::RSModifierType::BOUNDS });
+    auto transformNode = MakeNodeWithDirtyTypes(context, 910002, { ModifierNG::RSModifierType::TRANSFORM });
+    auto bothNode = MakeNodeWithDirtyTypes(context, 910003,
+        { ModifierNG::RSModifierType::BOUNDS, ModifierNG::RSModifierType::TRANSFORM });
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_TRUE(manager.IsDoDirectCompositionSupportByCmd(
+        RSCommandType::RS_NODE, RSNodeCommandType::ADD_MODIFIER_NG, boundsNode));
+    EXPECT_TRUE(manager.IsDoDirectCompositionSupportByCmd(
+        RSCommandType::RS_NODE, RSNodeCommandType::REMOVE_MODIFIER_NG, transformNode));
+    EXPECT_TRUE(manager.IsDoDirectCompositionSupportByCmd(
+        RSCommandType::RS_NODE, RSNodeCommandType::UPDATE_MODIFIER_VECTOR4F, bothNode));
+}
+
+/**
+ * @tc.name: IsDoDirectCompositionSupportByCmd005
+ * @tc.desc: non delegate composite command types never support direct composition
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, IsDoDirectCompositionSupportByCmd005, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto boundsNode = MakeNodeWithDirtyTypes(context, 910011, { ModifierNG::RSModifierType::BOUNDS });
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_FALSE(manager.IsDoDirectCompositionSupportByCmd(
+        RSCommandType::ANIMATION, RSNodeCommandType::ADD_MODIFIER_NG, boundsNode));
+}
+
+/**
+ * @tc.name: CheckRSNodeCommandSubType001
+ * @tc.desc: non modifier rs node subTypes never support direct composition
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckRSNodeCommandSubType001, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto node = MakeNodeWithDirtyTypes(context, 910021, { ModifierNG::RSModifierType::BOUNDS });
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_FALSE(manager.CheckRSNodeCommandSubType(0x0b02, node));
+    EXPECT_FALSE(manager.CheckRSNodeCommandSubType(0x0001, node));
+}
+
+/**
+ * @tc.name: CheckRSNodeCommandSubType002
+ * @tc.desc: null node and empty dirty types do not support direct composition
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckRSNodeCommandSubType002, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto emptyNode = MakeNodeWithDirtyTypes(context, 910022, {});
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_FALSE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::ADD_MODIFIER_NG, nullptr));
+    EXPECT_FALSE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::ADD_MODIFIER_NG, emptyNode));
+}
+
+/**
+ * @tc.name: CheckRSNodeCommandSubType003
+ * @tc.desc: a single bounds or transform dirty type supports direct composition
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckRSNodeCommandSubType003, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto boundsNode = MakeNodeWithDirtyTypes(context, 910023, { ModifierNG::RSModifierType::BOUNDS });
+    auto transformNode = MakeNodeWithDirtyTypes(context, 910024, { ModifierNG::RSModifierType::TRANSFORM });
+    auto alphaNode = MakeNodeWithDirtyTypes(context, 910025, { ModifierNG::RSModifierType::ALPHA });
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_TRUE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::ADD_MODIFIER_NG, boundsNode));
+    EXPECT_TRUE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::ADD_MODIFIER_NG, transformNode));
+    EXPECT_FALSE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::ADD_MODIFIER_NG, alphaNode));
+}
+
+/**
+ * @tc.name: CheckRSNodeCommandSubType004
+ * @tc.desc: exactly bounds plus transform supports direct composition, other pairs do not
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckRSNodeCommandSubType004, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto bothNode = MakeNodeWithDirtyTypes(context, 910026,
+        { ModifierNG::RSModifierType::BOUNDS, ModifierNG::RSModifierType::TRANSFORM });
+    auto boundsAlphaNode = MakeNodeWithDirtyTypes(context, 910027,
+        { ModifierNG::RSModifierType::BOUNDS, ModifierNG::RSModifierType::ALPHA });
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_TRUE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::ADD_MODIFIER_NG, bothNode));
+    EXPECT_FALSE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::ADD_MODIFIER_NG, boundsAlphaNode));
+}
+
+/**
+ * @tc.name: CheckRSNodeCommandSubType005
+ * @tc.desc: three or more dirty types never support direct composition
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckRSNodeCommandSubType005, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto tripleNode = MakeNodeWithDirtyTypes(context, 910028,
+        { ModifierNG::RSModifierType::BOUNDS, ModifierNG::RSModifierType::TRANSFORM,
+          ModifierNG::RSModifierType::ALPHA });
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_FALSE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::ADD_MODIFIER_NG, tripleNode));
+}
+
+/**
+ * @tc.name: CheckRSNodeCommandSubType006
+ * @tc.desc: remove and update modifier vector4f subTypes share the same dirty type rule
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckRSNodeCommandSubType006, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto boundsNode = MakeNodeWithDirtyTypes(context, 910029, { ModifierNG::RSModifierType::BOUNDS });
+    auto transformNode = MakeNodeWithDirtyTypes(context, 910030, { ModifierNG::RSModifierType::TRANSFORM });
+    auto boundsAlphaNode = MakeNodeWithDirtyTypes(context, 910031,
+        { ModifierNG::RSModifierType::BOUNDS, ModifierNG::RSModifierType::ALPHA });
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_TRUE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::REMOVE_MODIFIER_NG, boundsNode));
+    EXPECT_TRUE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::UPDATE_MODIFIER_VECTOR4F, transformNode));
+    EXPECT_FALSE(manager.CheckRSNodeCommandSubType(RSNodeCommandType::UPDATE_MODIFIER_VECTOR4F, boundsAlphaNode));
+}
+/**
+ * @tc.name: GetRSCommandInfo001
+ * @tc.desc: transaction buffer command keeps setBufferCmdOnly and fills command info
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, GetRSCommandInfo001, TestSize.Level1)
+{
+    constexpr NodeId infoNodeId = 920001;
+    std::unique_ptr<RSCommand> cmd = MakeBufferCmd(infoNodeId, CLEAN_BUFFER_SEQ);
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    uint16_t cmdType = UINT16_MAX;
+    uint16_t cmdSubType = UINT16_MAX;
+    NodeId nodeId = 0;
+    bool isSetBufferCmdOnly = true;
+    manager.GetRSCommandInfo(cmd, cmdType, cmdSubType, nodeId, isSetBufferCmdOnly);
+    EXPECT_EQ(cmdType, RSCommandType::DELEGATE_COMPOSITE);
+    EXPECT_EQ(cmdSubType, RSDelegateCompositeCommandType::TRANSACTION_BUFFER);
+    EXPECT_EQ(nodeId, infoNodeId);
+    EXPECT_TRUE(isSetBufferCmdOnly);
+    ExpectQueryFlags(true, false);
+}
+
+/**
+ * @tc.name: GetRSCommandInfo002
+ * @tc.desc: surface transaction command keeps setBufferCmdOnly
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, GetRSCommandInfo002, TestSize.Level1)
+{
+    constexpr NodeId infoNodeId = 920002;
+    std::unique_ptr<RSCommand> cmd = std::make_unique<SurfaceTransactionCommand>(1, 2, 3, 4, infoNodeId);
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    uint16_t cmdType = UINT16_MAX;
+    uint16_t cmdSubType = UINT16_MAX;
+    NodeId nodeId = 0;
+    bool isSetBufferCmdOnly = true;
+    manager.GetRSCommandInfo(cmd, cmdType, cmdSubType, nodeId, isSetBufferCmdOnly);
+    EXPECT_EQ(cmdType, RSCommandType::DELEGATE_COMPOSITE);
+    EXPECT_EQ(cmdSubType, RSDelegateCompositeCommandType::SURFACE_TRANSACTION_CMD);
+    EXPECT_EQ(nodeId, infoNodeId);
+    EXPECT_TRUE(isSetBufferCmdOnly);
+    ExpectQueryFlags(true, false);
+}
+
+/**
+ * @tc.name: GetRSCommandInfo003
+ * @tc.desc: set rect subType clears setBufferCmdOnly
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, GetRSCommandInfo003, TestSize.Level1)
+{
+    constexpr NodeId infoNodeId = 920003;
+    std::unique_ptr<RSCommand> cmd = MakeRectCmd(infoNodeId, true);
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    uint16_t cmdType = UINT16_MAX;
+    uint16_t cmdSubType = UINT16_MAX;
+    NodeId nodeId = 0;
+    bool isSetBufferCmdOnly = true;
+    manager.GetRSCommandInfo(cmd, cmdType, cmdSubType, nodeId, isSetBufferCmdOnly);
+    EXPECT_EQ(cmdSubType, RSDelegateCompositeCommandType::TRANSACTION_BUFFER_SRC_RECT);
+    EXPECT_FALSE(isSetBufferCmdOnly);
+    ExpectQueryFlags(true, false);
+}
+
+/**
+ * @tc.name: GetRSCommandInfo004
+ * @tc.desc: surface node command clears setBufferCmdOnly
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, GetRSCommandInfo004, TestSize.Level1)
+{
+    constexpr NodeId infoNodeId = 920004;
+    std::unique_ptr<RSCommand> cmd = std::make_unique<RSSurfaceNodeUpdateSurfaceDefaultSize>(infoNodeId, 1.0f, 1.0f);
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    uint16_t cmdType = UINT16_MAX;
+    uint16_t cmdSubType = UINT16_MAX;
+    NodeId nodeId = 0;
+    bool isSetBufferCmdOnly = true;
+    manager.GetRSCommandInfo(cmd, cmdType, cmdSubType, nodeId, isSetBufferCmdOnly);
+    EXPECT_EQ(cmdType, RSCommandType::SURFACE_NODE);
+    EXPECT_EQ(cmdSubType, RSSurfaceNodeCommandType::SURFACE_NODE_UPDATE_SURFACE_SIZE);
+    EXPECT_FALSE(isSetBufferCmdOnly);
+    ExpectQueryFlags(true, false);
+}
+
+/**
+ * @tc.name: GetRSCommandInfo005
+ * @tc.desc: setBufferCmdOnly stays false once cleared
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, GetRSCommandInfo005, TestSize.Level1)
+{
+    constexpr NodeId infoNodeId = 920005;
+    std::unique_ptr<RSCommand> cmd = MakeBufferCmd(infoNodeId, CLEAN_BUFFER_SEQ);
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    uint16_t cmdType = UINT16_MAX;
+    uint16_t cmdSubType = UINT16_MAX;
+    NodeId nodeId = 0;
+    bool isSetBufferCmdOnly = false;
+    manager.GetRSCommandInfo(cmd, cmdType, cmdSubType, nodeId, isSetBufferCmdOnly);
+    EXPECT_FALSE(isSetBufferCmdOnly);
+    ExpectQueryFlags(true, false);
+}
+
+/**
+ * @tc.name: QueryAndResetCommandProcessFlag001
+ * @tc.desc: clean manager reports no command and stays clean after reset
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, QueryAndResetCommandProcessFlag001, TestSize.Level1)
+{
+    ExpectQueryFlags(false, false);
+    ExpectQueryFlags(false, false);
+}
+
+/**
+ * @tc.name: QueryAndResetCommandProcessFlag002
+ * @tc.desc: flags are reset after one query
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, QueryAndResetCommandProcessFlag002, TestSize.Level1)
+{
+    constexpr NodeId infoNodeId = 920006;
+    std::unique_ptr<RSCommand> cmd = MakeBufferCmd(infoNodeId, CLEAN_BUFFER_SEQ);
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    uint16_t cmdType = UINT16_MAX;
+    uint16_t cmdSubType = UINT16_MAX;
+    NodeId nodeId = 0;
+    bool isSetBufferCmdOnly = true;
+    manager.GetRSCommandInfo(cmd, cmdType, cmdSubType, nodeId, isSetBufferCmdOnly);
+    ExpectQueryFlags(true, false);
+    ExpectQueryFlags(false, false);
+    EXPECT_EQ(cmd->GetNodeId(), nodeId);
+    EXPECT_EQ(cmd->GetType(), cmdType);
+    EXPECT_EQ(cmd->GetSubType(), cmdSubType);
+}
+
+/**
+ * @tc.name: CollectHwcNodesInfo001
+ * @tc.desc: collection disabled or null screen leaves the optional unset
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CollectHwcNodesInfo001, TestSize.Level1)
+{
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(false);
+    EXPECT_EQ(manager.needCollectHwcNodesInfoFlag_, false);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(nullptr);
+    ExpectHwcOptionalState(false, false);
+}
+
+/**
+ * @tc.name: CollectHwcNodesInfo002
+ * @tc.desc: null screen node with the flag on leaves the optional unset
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CollectHwcNodesInfo002, TestSize.Level1)
+{
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    EXPECT_EQ(manager.needCollectHwcNodesInfoFlag_, true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(nullptr);
+    ExpectHwcOptionalState(false, false);
+    manager.SetCollectHwcNodesInfoFlag(false);
+    EXPECT_EQ(manager.needCollectHwcNodesInfoFlag_, false);
+}
+
+/**
+ * @tc.name: CollectHwcNodesInfo003
+ * @tc.desc: screen without hardware composer children leaves the optional unset
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CollectHwcNodesInfo003, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(930001, 9301, context);
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    EXPECT_EQ(manager.needCollectHwcNodesInfoFlag_, true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(screenNode);
+    ExpectHwcOptionalState(false, false);
+    manager.SetCollectHwcNodesInfoFlag(false);
+    EXPECT_EQ(manager.needCollectHwcNodesInfoFlag_, false);
+}
+
+/**
+ * @tc.name: CollectHwcNodesInfo004
+ * @tc.desc: all skipped hardware composer nodes leave the optional unset
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CollectHwcNodesInfo004, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(930002, 9302, context);
+    {
+        // expired weak handle in the hardware composer list
+        auto expired = MakeNamedSurfaceNode(context, 930003, "expired");
+        expired->isOnTheTree_ = true;
+        screenNode->childHwcNodes_.emplace_back(expired);
+    }
+    auto offTreeNode = MakeNamedSurfaceNode(context, 930004, "off_tree");
+    offTreeNode->isOnTheTree_ = false;
+    screenNode->childHwcNodes_.emplace_back(offTreeNode);
+    auto noBufferNode = MakeNamedSurfaceNode(context, 930005, "no_buffer");
+    noBufferNode->isOnTheTree_ = true;
+    screenNode->childHwcNodes_.emplace_back(noBufferNode);
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    EXPECT_EQ(manager.needCollectHwcNodesInfoFlag_, true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(screenNode);
+    ExpectHwcOptionalState(false, false);
+    manager.SetCollectHwcNodesInfoFlag(false);
+    EXPECT_EQ(manager.needCollectHwcNodesInfoFlag_, false);
+}
+
+/**
+ * @tc.name: CollectHwcNodesInfo005
+ * @tc.desc: buffered enabled hardware composer node makes the support optional true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CollectHwcNodesInfo005, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(930006, 9306, context);
+    auto hwcNode = MakeNamedSurfaceNode(context, 930007, "enabled");
+    hwcNode->isOnTheTree_ = true;
+    auto handler = hwcNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetBuffer(new SurfaceBufferImpl(0), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    screenNode->childHwcNodes_.emplace_back(hwcNode);
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(screenNode);
+    ExpectHwcOptionalState(true, true);
+    manager.SetCollectHwcNodesInfoFlag(false);
+}
+
+/**
+ * @tc.name: CollectHwcNodesInfo006
+ * @tc.desc: consumed buffer on a forced disabled node blocks direct composition
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CollectHwcNodesInfo006, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(930008, 9308, context);
+    auto hwcNode = MakeNamedSurfaceNode(context, 930009, "consumed");
+    hwcNode->isOnTheTree_ = true;
+    hwcNode->SetHardwareForcedDisabledState(true);
+    auto handler = hwcNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetBuffer(new SurfaceBufferImpl(0), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    handler->SetCurrentFrameBufferConsumed();
+    screenNode->childHwcNodes_.emplace_back(hwcNode);
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(screenNode);
+    ExpectHwcOptionalState(true, false);
+    manager.SetCollectHwcNodesInfoFlag(false);
+}
+
+/**
+ * @tc.name: CollectHwcNodesInfo007
+ * @tc.desc: last frame hardware composer enabled with forced disabled node blocks direct composition
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CollectHwcNodesInfo007, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(930010, 9310, context);
+    auto hwcNode = MakeNamedSurfaceNode(context, 930011, "last_frame");
+    hwcNode->isOnTheTree_ = true;
+    hwcNode->SetHardwareForcedDisabledState(true);
+    auto handler = hwcNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetBuffer(new SurfaceBufferImpl(0), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    hwcNode->SetIsLastFrameHwcEnabled(true);
+    screenNode->childHwcNodes_.emplace_back(hwcNode);
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(screenNode);
+    ExpectHwcOptionalState(true, false);
+    manager.SetCollectHwcNodesInfoFlag(false);
+}
+
+/**
+ * @tc.name: CollectHwcNodesInfo008
+ * @tc.desc: forced disabled node without consumed buffer or last frame hardware composer keeps support
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CollectHwcNodesInfo008, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(930012, 9312, context);
+    auto hwcNode = MakeNamedSurfaceNode(context, 930013, "disabled_unconsumed");
+    hwcNode->isOnTheTree_ = true;
+    hwcNode->SetHardwareForcedDisabledState(true);
+    auto handler = hwcNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetBuffer(new SurfaceBufferImpl(0), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    screenNode->childHwcNodes_.emplace_back(hwcNode);
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(screenNode);
+    ExpectHwcOptionalState(true, true);
+    manager.SetCollectHwcNodesInfoFlag(false);
+}
+
+/**
+ * @tc.name: CollectHwcNodesInfo009
+ * @tc.desc: a cached false value short circuits the next collection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CollectHwcNodesInfo009, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(930014, 9314, context);
+    auto hwcNode = MakeNamedSurfaceNode(context, 930015, "blocked");
+    hwcNode->isOnTheTree_ = true;
+    hwcNode->SetHardwareForcedDisabledState(true);
+    auto handler = hwcNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetBuffer(new SurfaceBufferImpl(0), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    handler->SetCurrentFrameBufferConsumed();
+    screenNode->childHwcNodes_.emplace_back(hwcNode);
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(screenNode);
+    ExpectHwcOptionalState(true, false);
+    // cached false short circuits: the healthy node on a new screen cannot revive the flag
+    auto healthyNode = MakeNamedSurfaceNode(context, 930016, "healthy");
+    healthyNode->isOnTheTree_ = true;
+    auto healthyHandler = healthyNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(healthyHandler, nullptr);
+    healthyHandler->SetBuffer(new SurfaceBufferImpl(0), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    auto healthyScreen = std::make_shared<RSScreenRenderNode>(930017, 9317, context);
+    healthyScreen->childHwcNodes_.emplace_back(healthyNode);
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(healthyScreen);
+    ExpectHwcOptionalState(true, false);
+    manager.SetCollectHwcNodesInfoFlag(false);
+}
+
+/**
+ * @tc.name: CollectHwcNodesInfo010
+ * @tc.desc: a cached true value still re-evaluates and can flip to false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CollectHwcNodesInfo010, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    auto goodScreen = std::make_shared<RSScreenRenderNode>(930018, 9318, context);
+    auto goodNode = MakeNamedSurfaceNode(context, 930019, "good");
+    goodNode->isOnTheTree_ = true;
+    auto goodHandler = goodNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(goodHandler, nullptr);
+    goodHandler->SetBuffer(new SurfaceBufferImpl(0), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    goodScreen->childHwcNodes_.emplace_back(goodNode);
+
+    auto badScreen = std::make_shared<RSScreenRenderNode>(930020, 9320, context);
+    auto badNode = MakeNamedSurfaceNode(context, 930021, "bad");
+    badNode->isOnTheTree_ = true;
+    badNode->SetHardwareForcedDisabledState(true);
+    auto badHandler = badNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(badHandler, nullptr);
+    badHandler->SetBuffer(new SurfaceBufferImpl(0), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    badHandler->SetCurrentFrameBufferConsumed();
+    badScreen->childHwcNodes_.emplace_back(badNode);
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(goodScreen);
+    ExpectHwcOptionalState(true, true);
+    // cached true does not short circuit: re-evaluation flips the value to false
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(badScreen);
+    ExpectHwcOptionalState(true, false);
+    manager.SetCollectHwcNodesInfoFlag(false);
+}
+/**
+ * @tc.name: ProcessEachCommandQueue001
+ * @tc.desc: empty queue keeps the flags untouched
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessEachCommandQueue001, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+    EXPECT_TRUE(isSetBufferCmdOnly);
+    EXPECT_TRUE(doDirectCompositionSupportByCmd);
+    ExpectQueryFlags(false, false);
+}
+
+/**
+ * @tc.name: ProcessEachCommandQueue002
+ * @tc.desc: null commands are skipped without touching the flags
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessEachCommandQueue002, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    queue.push(nullptr);
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+    EXPECT_TRUE(isSetBufferCmdOnly);
+    EXPECT_TRUE(doDirectCompositionSupportByCmd);
+    ExpectQueryFlags(false, false);
+}
+
+/**
+ * @tc.name: ProcessEachCommandQueue003
+ * @tc.desc: commands with invalid calling pid are skipped
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessEachCommandQueue003, TestSize.Level1)
+{
+    constexpr NodeId queueNodeId = 940001;
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    auto cmd = MakeBufferCmd(queueNodeId, CLEAN_BUFFER_SEQ);
+    cmd->SetCallingPidValid(false);
+    queue.push(std::move(cmd));
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+    EXPECT_TRUE(queue.empty());
+    EXPECT_TRUE(isSetBufferCmdOnly);
+    EXPECT_TRUE(doDirectCompositionSupportByCmd);
+    ExpectQueryFlags(false, false);
+}
+
+/**
+ * @tc.name: ProcessEachCommandQueue004
+ * @tc.desc: buffer only queue keeps setBufferCmdOnly true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessEachCommandQueue004, TestSize.Level1)
+{
+    constexpr NodeId queueNodeId = 940002;
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    queue.push(MakeBufferCmd(queueNodeId, CLEAN_BUFFER_SEQ));
+    queue.push(std::make_unique<SurfaceTransactionCommand>(1, 2, 3, 4, queueNodeId));
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+    EXPECT_TRUE(queue.empty());
+    EXPECT_TRUE(isSetBufferCmdOnly);
+    EXPECT_TRUE(doDirectCompositionSupportByCmd);
+    ExpectQueryFlags(true, false);
+}
+
+/**
+ * @tc.name: ProcessEachCommandQueue005
+ * @tc.desc: surface size update clears setBufferCmdOnly while keeping cmd support
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessEachCommandQueue005, TestSize.Level1)
+{
+    constexpr NodeId queueNodeId = 940003;
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    queue.push(MakeBufferCmd(queueNodeId, CLEAN_BUFFER_SEQ));
+    queue.push(std::make_unique<RSSurfaceNodeUpdateSurfaceDefaultSize>(queueNodeId, 1.0f, 1.0f));
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+    EXPECT_TRUE(queue.empty());
+    EXPECT_FALSE(isSetBufferCmdOnly);
+    EXPECT_TRUE(doDirectCompositionSupportByCmd);
+    ExpectQueryFlags(true, false);
+}
+
+/**
+ * @tc.name: ProcessEachCommandQueue006
+ * @tc.desc: an unsupported surface node command flips the accumulated support to false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessEachCommandQueue006, TestSize.Level1)
+{
+    constexpr NodeId queueNodeId = 940004;
+    auto context = std::make_shared<RSContext>();
+    std::queue<std::unique_ptr<RSCommand>> queue;
+    queue.push(MakeBufferCmd(queueNodeId, CLEAN_BUFFER_SEQ));
+    queue.push(std::make_unique<RSSurfaceNodeSetSnapshotSkipLayer>(queueNodeId, false));
+    bool isSetBufferCmdOnly = true;
+    bool doDirectCompositionSupportByCmd = true;
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessEachCommandQueue(
+        queue, *context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd);
+    EXPECT_TRUE(queue.empty());
+    EXPECT_FALSE(isSetBufferCmdOnly);
+    EXPECT_FALSE(doDirectCompositionSupportByCmd);
+    ExpectQueryFlags(true, false);
+}
+
+/**
+ * @tc.name: ProcessDelegateCompositeCommandInner001
+ * @tc.desc: empty command map keeps setBufferCmdOnly true and marks cmd support
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessDelegateCompositeCommandInner001, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    std::unordered_map<pid_t, RsDelegateCompositeCallbackManager::singlePidCmdMap> emptyMap;
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.ProcessDelegateCompositeCommandInner(*context, emptyMap);
+    EXPECT_TRUE(context->GetOnlyDelegateModeSetBufferCmdFlag());
+    bool hasCommandProcess = false;
+    bool doDirectCompositionSupport = false;
+    manager.QueryAndResetCommandProcessFlag(hasCommandProcess, doDirectCompositionSupport);
+    EXPECT_FALSE(hasCommandProcess);
+    EXPECT_TRUE(doDirectCompositionSupport);
+}
+
+/**
+ * @tc.name: ProcessDelegateCompositeCommandInner002
+ * @tc.desc: mixed queue sets both the context flag and the accumulated support result
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessDelegateCompositeCommandInner002, TestSize.Level1)
+{
+    constexpr NodeId innerNodeId = 940101;
+    auto context = std::make_shared<RSContext>();
+    std::unordered_map<pid_t, RsDelegateCompositeCallbackManager::singlePidCmdMap> cmdMap;
+    RsDelegateCompositeCallbackManager::singlePidCmdMap &inner = cmdMap[95001];
+    inner[1].push(MakeBufferCmd(innerNodeId, CLEAN_BUFFER_SEQ));
+    inner[1].push(std::make_unique<RSSurfaceNodeSetSnapshotSkipLayer>(innerNodeId, false));
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.ProcessDelegateCompositeCommandInner(*context, cmdMap);
+    EXPECT_FALSE(context->GetOnlyDelegateModeSetBufferCmdFlag());
+    bool hasCommandProcess = false;
+    bool doDirectCompositionSupport = false;
+    manager.QueryAndResetCommandProcessFlag(hasCommandProcess, doDirectCompositionSupport);
+    EXPECT_TRUE(hasCommandProcess);
+    EXPECT_FALSE(doDirectCompositionSupport);
 }
 #endif // ROSEN_CROSS_PLATFORM
 } // namespace Rosen

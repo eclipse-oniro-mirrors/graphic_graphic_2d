@@ -506,6 +506,34 @@ ohos_executable("render_service_client_rs_animation_demo") {
   subsystem_name = "graphic"
 }
 
+ohos_executable("render_service_client_ui_context_message_callback_demo") {
+  sources = [ "render_service_client_ui_context_message_callback_demo.cpp" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "$public_deps_skia",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "safwk:system_ability_fwk",
+    "zlib:libz",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
 ohos_executable("surface_capture_demo") {
   sources = [ "surface_capture_test.cpp" ]
 
@@ -1472,6 +1500,86 @@ ohos_executable("render_service_client_cosmos_ring_demo") {
     "image_framework:image_native",
   ]
 
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("blur_tracker_demo") {
+  sources = [ "blur_tracker_demo.cpp" ]
+  testonly = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  include_dirs = [
+    "$graphic_2d_root/rosen/modules/effect/effect_ndk/include",
+    "$graphic_2d_root/rosen/modules/effect/effect_ndk/src/filter",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/rosen/modules/2d_graphics/include",
+  ]
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/effect/effect_ndk:native_effect_ndk",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "image_framework:image",
+    "image_framework:pixelmap",
+    "image_framework:image_native",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("render_service_client_sticker_laser_shader_demo") {
+  sources = [ "render_service_client_sticker_laser_shader_demo.cpp" ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "window_manager:libwm",
+  ]
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("render_service_client_sticker_emboss_demo") {
+  sources = [ "render_service_client_sticker_emboss_demo.cpp" ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "window_manager:libwm",
+  ]
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }

@@ -423,6 +423,11 @@ ohos_shared_library("librender_service") {
     sources += [ "core/feature/rdo/rs_rdo.cpp", ]
   }
 
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.resourceschedule_resource_schedule_service)) {
+    sources += [ "core/memory/rs_memory_res_sched_event_listener.cpp", ]
+  }
+
   if (graphic_2d_feature_enable_drm) {
     defines += [ "IS_ENABLE_DRM" ]
   }

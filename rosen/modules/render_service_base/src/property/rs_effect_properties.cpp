@@ -310,6 +310,21 @@ const std::optional<float>& RSEffectProperties::GetGrayScale() const
     return defaultValue;
 }
 
+void RSEffectProperties::SetColorMatrix(
+    const std::optional<Drawing::ColorMatrix>& colorMatrix)
+{
+    GetFilterEffect().colorMatrix_ = colorMatrix;
+}
+
+const std::optional<Drawing::ColorMatrix>& RSEffectProperties::GetColorMatrix() const
+{
+    static const RS_HIDDEN std::optional<Drawing::ColorMatrix> defaultValue = std::nullopt;
+    if (filterEffect_ != nullptr) {
+        return filterEffect_->colorMatrix_;
+    }
+    return defaultValue;
+}
+
 void RSEffectProperties::SetBrightness(const std::optional<float>& brightness)
 {
     GetFilterEffect().brightness_ = brightness;
@@ -433,7 +448,7 @@ bool RSEffectProperties::GenerateColorFilter()
 {
     WITH_FILTER_EFFECT(colorFilter_ = nullptr);
     if (!GetGrayScale() && !GetBrightness() && !GetContrast() && !GetSaturate() && !GetSepia() &&
-        !GetInvert() && !GetHueRotate() && !GetColorBlend()) {
+        !GetInvert() && !GetHueRotate() && !GetColorBlend() && !GetColorMatrix().has_value()) {
         return false;
     }
     GenerateColorFilterByGrayScale();
@@ -444,7 +459,20 @@ bool RSEffectProperties::GenerateColorFilter()
     GenerateColorFilterByInvert();
     GenerateColorFilterByHueRotate();
     GenerateColorFilterByColorBlend();
+    GenerateColorFilterByColorMatrix();
     return true;
+}
+
+void RSEffectProperties::GenerateColorFilterByColorMatrix()
+{
+    const auto& colorMatrix = GetColorMatrix();
+    if (!colorMatrix.has_value()) {
+        return;
+    }
+    float matrix[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    colorMatrix->GetArray(matrix);
+    GetFilterEffect().colorFilter_ =
+        Drawing::ColorFilter::CreateFloatColorFilter(matrix, Drawing::Clamp::NO_CLAMP);
 }
 
 void RSEffectProperties::GenerateColorFilterByGrayScale()
@@ -1000,12 +1028,15 @@ std::shared_ptr<RSNGRenderFilterBase> RSEffectProperties::GetForegroundNGFilter(
 
 bool RSEffectProperties::IgnorePropertiesContentDirty() const
 {
-    return ignorePropertiesContentDirty_;
+    if (filterEffect_ != nullptr) {
+        return filterEffect_->ignorePropertiesContentDirty_;
+    }
+    return false;
 }
 
 void RSEffectProperties::SetIgnorePropertiesContentDirty(bool ignore)
 {
-    ignorePropertiesContentDirty_ = ignore;
+    GetFilterEffect().ignorePropertiesContentDirty_ = ignore;
 }
 
 void RSEffectProperties::SetMaterialNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& filter)
@@ -2471,131 +2502,6 @@ const std::shared_ptr<ParticleFieldCollection>& RSEffectProperties::GetParticleF
 }
 
 // blender effect params
-void RSEffectProperties::SetFgBrightnessRates(const Vector4f& rates)
-{
-    if (!GetFgBrightnessParams().has_value()) {
-        GetBlenderEffect().fgBrightnessParams_ = std::make_optional<RSDynamicBrightnessPara>();
-    }
-    GetBlenderEffect().fgBrightnessParams_->rates_ = rates;
-}
-
-void RSEffectProperties::SetFgBrightnessSaturation(const float& saturation)
-{
-    if (!GetFgBrightnessParams().has_value()) {
-        GetBlenderEffect().fgBrightnessParams_ = std::make_optional<RSDynamicBrightnessPara>();
-    }
-    GetBlenderEffect().fgBrightnessParams_->saturation_ = saturation;
-}
-
-void RSEffectProperties::SetFgBrightnessPosCoeff(const Vector4f& coeff)
-{
-    if (!GetFgBrightnessParams().has_value()) {
-        GetBlenderEffect().fgBrightnessParams_ = std::make_optional<RSDynamicBrightnessPara>();
-    }
-    GetBlenderEffect().fgBrightnessParams_->posCoeff_ = coeff;
-}
-
-void RSEffectProperties::SetFgBrightnessNegCoeff(const Vector4f& coeff)
-{
-    if (!GetFgBrightnessParams().has_value()) {
-        GetBlenderEffect().fgBrightnessParams_ = std::make_optional<RSDynamicBrightnessPara>();
-    }
-    GetBlenderEffect().fgBrightnessParams_->negCoeff_ = coeff;
-}
-
-void RSEffectProperties::SetFgBrightnessFract(const float& fraction)
-{
-    if (!GetFgBrightnessParams().has_value()) {
-        GetBlenderEffect().fgBrightnessParams_ = std::make_optional<RSDynamicBrightnessPara>();
-    }
-    GetBlenderEffect().fgBrightnessParams_->fraction_ = fraction;
-}
-
-void RSEffectProperties::SetFgBrightnessHdr(bool enableHdr)
-{
-    if (!GetFgBrightnessParams().has_value()) {
-        GetBlenderEffect().fgBrightnessParams_ = std::make_optional<RSDynamicBrightnessPara>();
-    }
-    GetBlenderEffect().fgBrightnessParams_->enableHdr_ = enableHdr;
-}
-
-void RSEffectProperties::SetFgBrightnessParams(const std::optional<RSDynamicBrightnessPara>& params)
-{
-    GetBlenderEffect().fgBrightnessParams_ = params;
-}
-
-std::optional<RSDynamicBrightnessPara> RSEffectProperties::GetFgBrightnessParams() const
-{
-    if (blenderEffect_ != nullptr) {
-        return blenderEffect_->fgBrightnessParams_;
-    }
-    return std::nullopt;
-}
-
-bool RSEffectProperties::IsFgBrightnessValid() const
-{
-    const auto& fgBrightnessParams = GetFgBrightnessParams();
-    return fgBrightnessParams.has_value() && fgBrightnessParams->IsValid();
-}
-
-bool RSEffectProperties::GetFgBrightnessEnableEDR() const
-{
-    const auto& fgBrightnessParams = GetFgBrightnessParams();
-    return fgBrightnessParams.has_value() && fgBrightnessParams->enableHdr_ && IsFgBrightnessValid();
-}
-
-std::string RSEffectProperties::GetFgBrightnessDescription() const
-{
-    const auto& fgBrightnessParams = GetFgBrightnessParams();
-    if (!fgBrightnessParams.has_value()) {
-        return "fgBrightnessParams_ is nullopt";
-    }
-    std::string description =
-        "ForegroundBrightness, cubicCoeff: " + std::to_string(fgBrightnessParams->rates_.x_) +
-        ", quadCoeff: " + std::to_string(fgBrightnessParams->rates_.y_) +
-        ", rate: " + std::to_string(fgBrightnessParams->rates_.z_) +
-        ", lightUpDegree: " + std::to_string(fgBrightnessParams->rates_.w_) +
-        ", saturation: " + std::to_string(fgBrightnessParams->saturation_) +
-        ", fgBrightnessFract: " + std::to_string(fgBrightnessParams->fraction_) +
-        ", fgBrightnessHdr: " + std::to_string(fgBrightnessParams->enableHdr_);
-    return description;
-}
-
-Vector4f RSEffectProperties::GetFgBrightnessRates() const
-{
-    const auto& fgBrightnessParams = GetFgBrightnessParams();
-    return fgBrightnessParams ? fgBrightnessParams->rates_ : Vector4f();
-}
-
-float RSEffectProperties::GetFgBrightnessSaturation() const
-{
-    return GetFgBrightnessParams() ? GetFgBrightnessParams()->saturation_ : 0.0f;
-}
-
-Vector4f RSEffectProperties::GetFgBrightnessPosCoeff() const
-{
-    const auto& fgBrightnessParams = GetFgBrightnessParams();
-    return fgBrightnessParams ? fgBrightnessParams->posCoeff_ : Vector4f();
-}
-
-Vector4f RSEffectProperties::GetFgBrightnessNegCoeff() const
-{
-    const auto& fgBrightnessParams = GetFgBrightnessParams();
-    return fgBrightnessParams ? fgBrightnessParams->negCoeff_ : Vector4f();
-}
-
-float RSEffectProperties::GetFgBrightnessFract() const
-{
-    const auto& fgBrightnessParams = GetFgBrightnessParams();
-    return fgBrightnessParams ? fgBrightnessParams->fraction_ : 1.0f;
-}
-
-bool RSEffectProperties::GetFgBrightnessHdr() const
-{
-    const auto& fgBrightnessParams = GetFgBrightnessParams();
-    return fgBrightnessParams ? fgBrightnessParams->enableHdr_ : false;
-}
-
 void RSEffectProperties::SetBgBrightnessRates(const Vector4f& rates)
 {
     if (!GetBgBrightnessParams().has_value()) {
@@ -2700,115 +2606,6 @@ bool RSEffectProperties::IsBgBrightnessValid() const
 {
     const auto& bgBrightnessParams = GetBgBrightnessParams();
     return bgBrightnessParams.has_value() && bgBrightnessParams->IsValid();
-}
-
-void RSEffectProperties::SetShadowBlenderParams(const std::optional<RSShadowBlenderPara>& params)
-{
-    GetBlenderEffect().shadowBlenderParams_ = params;
-}
-
-std::optional<RSShadowBlenderPara> RSEffectProperties::GetShadowBlenderParams() const
-{
-    if (blenderEffect_ != nullptr) {
-        return blenderEffect_->shadowBlenderParams_;
-    }
-    return std::nullopt;
-}
-
-bool RSEffectProperties::IsShadowBlenderValid() const
-{
-    const auto& shadowBlenderParams = GetShadowBlenderParams();
-    return shadowBlenderParams.has_value() && shadowBlenderParams->IsValid();
-}
-
-std::string RSEffectProperties::GetShadowBlenderDescription() const
-{
-    const auto& shadowBlenderParams = GetShadowBlenderParams();
-    if (!shadowBlenderParams.has_value()) {
-        return "shadowBlenderParams_ is nullopt";
-    }
-    std::string description =
-        "ShadowBlender, cubic: " + std::to_string(shadowBlenderParams->cubic_) +
-        ", quadratic: " + std::to_string(shadowBlenderParams->quadratic_) +
-        ", linear: " + std::to_string(shadowBlenderParams->linear_) +
-        ", constant: " + std::to_string(shadowBlenderParams->constant_);
-    return description;
-}
-
-void RSEffectProperties::SetHdrDarkenBlenderParams(const std::optional<RSHdrDarkenBlenderPara>& params)
-{
-    GetBlenderEffect().hdrDarkenBlenderParams_ = params;
-}
-
-std::optional<RSHdrDarkenBlenderPara> RSEffectProperties::GetHdrDarkenBlenderParams() const
-{
-    if (blenderEffect_ != nullptr) {
-        return blenderEffect_->hdrDarkenBlenderParams_;
-    }
-    return std::nullopt;
-}
-
-bool RSEffectProperties::IsHdrDarkenBlenderValid() const
-{
-    const auto& hdrDarkenBlenderParams = GetHdrDarkenBlenderParams();
-    return hdrDarkenBlenderParams.has_value();
-}
-
-std::string RSEffectProperties::GetHdrDarkenBlenderDescription() const
-{
-    const auto& hdrDarkenBlenderParams = GetHdrDarkenBlenderParams();
-    if (!hdrDarkenBlenderParams.has_value()) {
-        return "hdrDarkenBlenderParams is nullopt";
-    }
-    std::string description =
-        "HdrDarkenBlender, hdrBrightnessRatio: " + std::to_string(hdrDarkenBlenderParams->hdrBrightnessRatio_) +
-        ", grayscaleFactor.r: " + std::to_string(hdrDarkenBlenderParams->grayscaleFactor_.x_) +
-        ", grayscaleFactor.g: " + std::to_string(hdrDarkenBlenderParams->grayscaleFactor_.y_) +
-        ", grayscaleFactor.b: " + std::to_string(hdrDarkenBlenderParams->grayscaleFactor_.z_);
-    return description;
-}
-
-void RSEffectProperties::SetColorfulBrightnessBlenderParams(std::unique_ptr<RSColorfulBrightnessBlenderPara> params)
-{
-    GetBlenderEffect().colorfulBrightnessBlenderParams_ = std::move(params);
-}
-
-const RSColorfulBrightnessBlenderPara* RSEffectProperties::GetColorfulBrightnessBlenderParams() const
-{
-    if (blenderEffect_ && blenderEffect_->colorfulBrightnessBlenderParams_) {
-        return blenderEffect_->colorfulBrightnessBlenderParams_.get();
-    }
-    return nullptr;
-}
-
-bool RSEffectProperties::IsColorfulBrightnessBlenderValid() const
-{
-    return GetColorfulBrightnessBlenderParams() != nullptr;
-}
-
-std::string RSEffectProperties::GetColorfulBrightnessBlenderDescription() const
-{
-    const auto* params = GetColorfulBrightnessBlenderParams();
-    if (params == nullptr) {
-        return "colorfulBrightnessBlenderParams is nullopt";
-    }
-    return "ColorfulBrightnessBlender, darkenWeight: " + std::to_string(params->darkenWeight_) +
-           ", fraction: " + std::to_string(params->fraction_) +
-           ", cubicRate: " + std::to_string(params->cubicRate_) +
-           ", quadRate: " + std::to_string(params->quadRate_) +
-           ", linearRate: " + std::to_string(params->linearRate_) +
-           ", degree: " + std::to_string(params->degree_) +
-           ", saturation: " + std::to_string(params->saturation_) +
-           ", positiveCoeff.x: " + std::to_string(params->positiveCoeff_.x_) +
-           ", positiveCoeff.y: " + std::to_string(params->positiveCoeff_.y_) +
-           ", positiveCoeff.z: " + std::to_string(params->positiveCoeff_.z_) +
-           ", negativeCoeff.x: " + std::to_string(params->negativeCoeff_.x_) +
-           ", negativeCoeff.y: " + std::to_string(params->negativeCoeff_.y_) +
-           ", negativeCoeff.z: " + std::to_string(params->negativeCoeff_.z_) +
-           ", vibrancyStrength: " + std::to_string(params->vibrancyStrength_) +
-           ", lumaDiff: " + std::to_string(params->lumaDiff_) +
-           ", hdrEnabled: " + std::to_string(params->hdrEnabled_) +
-           ", tintedColorPercent: " + std::to_string(params->tintedColorPercent_);
 }
 
 void RSEffectProperties::SetColorBlendMode(int colorBlendMode)

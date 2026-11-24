@@ -143,22 +143,22 @@ public:
         }
         std::string extInfo = "";
         if (type_ & RS_ANIMATION_FRAME_RATE_TYPE) {
-            extInfo = "RS_ANIMATION";
+            extInfo = "RS_AN";
         } else if (type_ & UI_ANIMATION_FRAME_RATE_TYPE) {
-            extInfo = "UI_ANIMATION";
+            extInfo = "UI_AN";
         } else if (type_ & DISPLAY_SYNC_FRAME_RATE_TYPE) {
-            extInfo = "DISPLAY_SYNC";
+            extInfo = "SYNC";
         } else if (type_ & ACE_COMPONENT_FRAME_RATE_TYPE) {
-            extInfo = "ACE_COMPONENT";
+            extInfo = "ACE";
         } else if (type_ & DISPLAY_SOLOIST_FRAME_RATE_TYPE) {
-            extInfo = "DISPLAY_SOLOIST";
+            extInfo = "SOLOIST";
         } else if (type_ & NATIVE_VSYNC_FRAME_RATE_TYPE) {
-            extInfo = "NATIVE_VSYNC";
+            extInfo = "NATIVE";
         }
         if ((type_ & ANIMATION_STATE_FIRST_FRAME) != 0) {
-            extInfo += "_FIRST_UI_ANIMATION_FRAME";
+            extInfo += "_FIRST";
         }
-        return extInfo + (isEnergyAssurance_ ? "_ENERGY_ASSURANCE" : "");
+        return extInfo + (isEnergyAssurance_ ? "_ENERGY" : "");
     }
 
     static std::string FrameRateType2Str(uint32_t frameRateType)

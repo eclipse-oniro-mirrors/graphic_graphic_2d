@@ -348,7 +348,7 @@ HWTEST_F(HgmRPEnergyTest, GetVideoCallPtsOffset_DefaultPid, TestSize.Level1)
     hgmRPEnergy_->videoCallPid_.store(DEFAULT_PID);
     hgmRPEnergy_->videoCallLayerConfig_ = { { "package1", "layer1" } };
 
-    uint64_t result = hgmRPEnergy_->GetVideoCallPtsOffset(12345, "layer1");
+    int64_t result = hgmRPEnergy_->GetVideoCallPtsOffset(12345, "layer1");
 
     ASSERT_EQ(result, 0);
 }
@@ -366,7 +366,7 @@ HWTEST_F(HgmRPEnergyTest, GetVideoCallPtsOffset_PidMismatch, TestSize.Level1)
     hgmRPEnergy_->videoCallPid_.store(1000);
     hgmRPEnergy_->videoCallLayerConfig_ = { { "package1", "layer1" } };
 
-    uint64_t result = hgmRPEnergy_->GetVideoCallPtsOffset(9999, "layer1");
+    int64_t result = hgmRPEnergy_->GetVideoCallPtsOffset(9999, "layer1");
 
     ASSERT_EQ(result, 0);
 }
@@ -384,7 +384,7 @@ HWTEST_F(HgmRPEnergyTest, GetVideoCallPtsOffset_EmptyConfig, TestSize.Level1)
     hgmRPEnergy_->videoCallPid_.store(1000);
     hgmRPEnergy_->videoCallLayerConfig_.clear();
 
-    uint64_t result = hgmRPEnergy_->GetVideoCallPtsOffset(1000, "layer1");
+    int64_t result = hgmRPEnergy_->GetVideoCallPtsOffset(1000, "layer1");
 
     ASSERT_EQ(result, 0);
 }
@@ -402,7 +402,7 @@ HWTEST_F(HgmRPEnergyTest, GetVideoCallPtsOffset_LayerNotFound, TestSize.Level1)
     hgmRPEnergy_->videoCallPid_.store(1000);
     hgmRPEnergy_->videoCallLayerConfig_ = { { "package1", "layer1" } };
 
-    uint64_t result = hgmRPEnergy_->GetVideoCallPtsOffset(1000, "wrongLayer");
+    int64_t result = hgmRPEnergy_->GetVideoCallPtsOffset(1000, "wrongLayer");
 
     ASSERT_EQ(result, 0);
 }
@@ -420,7 +420,7 @@ HWTEST_F(HgmRPEnergyTest, GetVideoCallPtsOffset_LayerFound, TestSize.Level1)
     hgmRPEnergy_->videoCallPid_.store(1000);
     hgmRPEnergy_->videoCallLayerConfig_ = { { "package1", "videoLayer" } };
 
-    uint64_t result = hgmRPEnergy_->GetVideoCallPtsOffset(1000, "test_videoLayer_buffer");
+    int64_t result = hgmRPEnergy_->GetVideoCallPtsOffset(1000, "test_videoLayer_buffer");
 
     ASSERT_EQ(result, 50000000);
 }

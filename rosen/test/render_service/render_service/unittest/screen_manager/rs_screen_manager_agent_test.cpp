@@ -575,7 +575,7 @@ HWTEST_F(RSScreenManagerAgentTest, SetVirtualScreenBlackList001, TestSize.Level1
  * @tc.name: SetVirtualScreenCursorMode001
  * @tc.desc: Test SetVirtualScreenCursorMode with the three modes and the invalid argument paths
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issue26859
  */
 HWTEST_F(RSScreenManagerAgentTest, SetVirtualScreenCursorMode001, TestSize.Level1)
 {

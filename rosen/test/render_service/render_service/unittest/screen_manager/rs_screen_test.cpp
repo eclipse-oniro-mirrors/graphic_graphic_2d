@@ -1768,6 +1768,8 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_003, testing::ext::TestSize.Level1)
             gamuts.resize(modeIdx - 1);
             return GRAPHIC_DISPLAY_SUCCESS;
         });
+    std::vector<GraphicColorGamut> hdiGamuts;
+    rsScreen->hdiScreen_->GetScreenSupportedColorGamuts(hdiGamuts);
 
     ASSERT_EQ(rsScreen->SetScreenColorGamut(modeIdx), StatusCode::SUCCESS);
 }
@@ -1814,6 +1816,7 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_005, testing::ext::TestSize.Level1)
     ASSERT_NE(nullptr, rsScreen);
 
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    rsScreen->supportedPhysicalColorGamuts_ = rsScreen->supportedVirtualColorGamuts_;
 
     // modeIdx >=0
     int32_t modeIdx = 2;
@@ -1825,6 +1828,8 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_005, testing::ext::TestSize.Level1)
             gamuts.resize(modeIdx + 1);
             return GRAPHIC_DISPLAY_SUCCESS;
         });
+    std::vector<GraphicColorGamut> hdiGamuts;
+    rsScreen->hdiScreen_->GetScreenSupportedColorGamuts(hdiGamuts);
 
     // result != GRAPHIC_DISPLAY_SUCCESS
     EXPECT_CALL(*hdiDeviceMock_, SetScreenColorGamut(_, _))
@@ -1888,6 +1893,7 @@ HWTEST_F(RSScreenTest, SetScreenColorGamut_007, testing::ext::TestSize.Level1)
     ASSERT_NE(nullptr, rsScreen);
 
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    rsScreen->supportedPhysicalColorGamuts_ = rsScreen->supportedVirtualColorGamuts_;
 
     // modeIdx >=0
     int32_t modeIdx = 2;
@@ -3849,5 +3855,27 @@ HWTEST_F(RSScreenTest, SetIsRogResolution006, testing::ext::TestSize.Level1)
     EXPECT_EQ(rsScreen->isRogResolution_, false);
     EXPECT_EQ(rsScreen->property_.GetHdiRogEnable(), false);
     EXPECT_EQ(rsScreen->property_.IsRogResolution(), false);
+}
+
+/**
+ * @tc.name: IsDeviceAvailable001
+ * @tc.desc: HdiScreen::IsDeviceAvailable reflects whether the HdiScreen currently holds a device
+ * @tc.type: FUNC
+ * @tc.require: issue#26808
+ */
+HWTEST_F(RSScreenTest, IsDeviceAvailable001, testing::ext::TestSize.Level1)
+{
+    auto rsScreen = std::make_shared<RSScreen>(mockScreenId_);
+    ASSERT_NE(rsScreen, nullptr);
+    ASSERT_NE(rsScreen->hdiScreen_, nullptr);
+    // no device held: unavailable (rs_screen gives up the following HDI queries in this case)
+    auto origDevice = rsScreen->hdiScreen_->device_;
+    rsScreen->hdiScreen_->device_ = nullptr;
+    EXPECT_EQ(rsScreen->hdiScreen_->IsDeviceAvailable(), false);
+    // after injecting a mock device, the device is available (rs_screen distinguishes
+    // "device unavailable" from "init partially failed" through this accessor)
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    EXPECT_EQ(rsScreen->hdiScreen_->IsDeviceAvailable(), true);
+    rsScreen->hdiScreen_->device_ = origDevice;
 }
 } // namespace OHOS::Rosen

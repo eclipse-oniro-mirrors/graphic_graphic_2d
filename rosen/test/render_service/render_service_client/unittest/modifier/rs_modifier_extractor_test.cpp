@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "effect/color_matrix.h"
 #include "modifier/rs_modifier_extractor.h"
 #include "ui/rs_canvas_node.h"
 #include "ui/rs_node.h"
@@ -795,5 +796,44 @@ HWTEST_F(RSModifierExtractorTest, GetLightUpEffectDegreeTest011, TestSize.Level1
     node->SetGrayScale(0.5f);
     RSModifierExtractor extractor(node->GetId());
     EXPECT_FLOAT_EQ(extractor.GetLightUpEffectDegree(), 0.f);
+}
+
+/**
+ * @tc.name: GetColorMatrix001
+ * @tc.desc: Cover all branches of GetColorMatrix: missing node, node without
+ *           COMPOSITING_FILTER modifier, modifier without COLOR_MATRIX property,
+ *           and modifier with COLOR_MATRIX property set
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSModifierExtractorTest, GetColorMatrix001, TestSize.Level1)
+{
+    Drawing::ColorMatrix defaultMatrix;
+
+    // Branch: node does not exist
+    NodeId missingId = 1;
+    RSModifierExtractor missingNodeExtractor(missingId);
+    EXPECT_EQ(missingNodeExtractor.GetColorMatrix(), defaultMatrix);
+
+    // Branch: node exists but has no COMPOSITING_FILTER modifier
+    auto emptyNode = RSCanvasNode::Create();
+    ASSERT_NE(emptyNode, nullptr);
+    RSModifierExtractor emptyNodeExtractor(emptyNode->GetId());
+    EXPECT_EQ(emptyNodeExtractor.GetColorMatrix(), defaultMatrix);
+
+    // Branch: COMPOSITING_FILTER modifier exists but COLOR_MATRIX property is absent
+    auto grayScaleNode = RSCanvasNode::Create();
+    ASSERT_NE(grayScaleNode, nullptr);
+    grayScaleNode->SetGrayScale(0.5f);
+    RSModifierExtractor grayScaleExtractor(grayScaleNode->GetId());
+    EXPECT_EQ(grayScaleExtractor.GetColorMatrix(), defaultMatrix);
+
+    // Branch: COLOR_MATRIX property is present and returned
+    auto colorMatrixNode = RSCanvasNode::Create();
+    ASSERT_NE(colorMatrixNode, nullptr);
+    Drawing::ColorMatrix colorMatrix;
+    colorMatrix.SetIdentity();
+    colorMatrixNode->SetColorMatrix(colorMatrix);
+    RSModifierExtractor colorMatrixExtractor(colorMatrixNode->GetId());
+    EXPECT_EQ(colorMatrixExtractor.GetColorMatrix(), colorMatrix);
 }
 } // namespace OHOS::Rosen

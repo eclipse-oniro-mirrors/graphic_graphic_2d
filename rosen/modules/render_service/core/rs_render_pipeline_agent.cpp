@@ -97,6 +97,9 @@ const std::string REGISTER_NODE = "RegisterNode";
 constexpr uint32_t MEM_BYTE_TO_MB = 1024 * 1024;
 constexpr uint32_t PIDLIST_SIZE_MAX = 128;
 constexpr uint64_t MAX_TIME_OUT_NS = 1e9;
+// bounded wait for binder/death-recipient Clean paths; separate from MAX_TIME_OUT_NS
+// so ExecuteSynchronousTask keeps its own cap
+constexpr uint64_t CLEAN_TASK_TIMEOUT_NS = 3e9; // 3s
 constexpr int64_t MAX_FREEZE_SCREEN_TIME = 3000;
 constexpr int MAX_VALID_RATE = 120;
 const std::string UNFREEZE_SCREEN_TASK_NAME = "UNFREEZE_SCREEN_TASK";
@@ -2481,19 +2484,28 @@ void RSRenderPipelineAgent::Clean(pid_t pid, bool forRefresh)
     RS_LOGD("Clean() start, remotePid: %{public}s, forRefresh: %{public}d", std::to_string(pid).c_str(), forRefresh);
     RS_TRACE_NAME("RSRenderPipelineAgent::Clean begin, remotePid: " + std::to_string(pid));
     RsCommandVerifyHelper::GetInstance().RemoveCntWithPid(pid);
-    pipeline
-        ->ScheduleMainThreadTask([mainThread = pipeline->GetMainThread(), pid, forRefresh]() {
-            if (mainThread == nullptr) {
-                return;
-            }
-            mainThread->CleanResources(pid, forRefresh);
-            mainThread->RemoveBundleNameFromCache(pid);
-        }).wait();
+    // binder/death-recipient threads must not block forever; CleanResources is idempotent per pid
+    auto cleanFuture = pipeline->ScheduleMainThreadTask([mainThread = pipeline->GetMainThread(), pid,
+        forRefresh]() {
+        if (mainThread == nullptr) {
+            return;
+        }
+        mainThread->CleanResources(pid, forRefresh);
+        mainThread->RemoveBundleNameFromCache(pid);
+    });
+    if (cleanFuture.wait_for(std::chrono::nanoseconds(CLEAN_TASK_TIMEOUT_NS)) != std::future_status::ready) {
+        RS_LOGE("%{public}s wait main thread timeout, remotePid: %{public}d", __func__, pid);
+    }
     RSSurfaceBufferCallbackManager::Instance().UnregisterSurfaceBufferCallback(pid);
     RSTypefaceCache::Instance().RemoveDrawingTypefacesByPid(pid);
-    pipeline->PostUniRenderThreadSyncTask([pid]() {
+    // second bounded wait on the uni render thread; on timeout the task stays queued and
+    // completes once the render thread recovers (the watchdog restarts the process if not)
+    auto renderFuture = pipeline->ScheduleUniRenderThreadTask([pid]() {
         RSFrameStabilityManager::GetInstance().CleanResourcesByPid(pid);
     });
+    if (renderFuture.wait_for(std::chrono::nanoseconds(CLEAN_TASK_TIMEOUT_NS)) != std::future_status::ready) {
+        RS_LOGE("%{public}s wait render thread timeout, remotePid: %{public}d", __func__, pid);
+    }
 #if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
     RsDelegateCompositeCallbackManager::GetInstance().RemoveAllListenerbyPid(pid);
 #endif

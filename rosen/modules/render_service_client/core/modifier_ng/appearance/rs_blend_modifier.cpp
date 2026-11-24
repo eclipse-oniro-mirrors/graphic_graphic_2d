@@ -15,6 +15,8 @@
 
 #include "modifier_ng/appearance/rs_blend_modifier.h"
 
+#include "ui_effect/property/include/rs_ui_blender_base.h"
+
 namespace OHOS::Rosen::ModifierNG {
 void RSBlendModifier::SetColorBlendMode(RSColorBlendMode colorBlendMode)
 {
@@ -36,139 +38,9 @@ RSColorBlendApplyType RSBlendModifier::GetColorBlendApplyType() const
     return static_cast<RSColorBlendApplyType>(Getter(RSPropertyType::COLOR_BLEND_APPLY_TYPE, 0));
 }
 
-void RSBlendModifier::SetFgBrightnessRates(const Vector4f& rates)
+void RSBlendModifier::SetNGBlenderBase(std::shared_ptr<RSNGBlenderBase> blender)
 {
-    Setter(RSPropertyType::FG_BRIGHTNESS_RATES, rates);
-}
-
-Vector4f RSBlendModifier::GetFgBrightnessRates() const
-{
-    return Getter(RSPropertyType::FG_BRIGHTNESS_RATES, Vector4f());
-}
-
-void RSBlendModifier::SetFgBrightnessSaturation(float saturation)
-{
-    Setter(RSPropertyType::FG_BRIGHTNESS_SATURATION, saturation);
-}
-
-float RSBlendModifier::GetFgBrightnessSaturation() const
-{
-    return Getter(RSPropertyType::FG_BRIGHTNESS_SATURATION, 0.f);
-}
-
-void RSBlendModifier::SetFgBrightnessPosCoeff(const Vector4f& coeff)
-{
-    Setter(RSPropertyType::FG_BRIGHTNESS_POSCOEFF, coeff);
-}
-
-Vector4f RSBlendModifier::GetFgBrightnessPosCoeff() const
-{
-    return Getter(RSPropertyType::FG_BRIGHTNESS_POSCOEFF, Vector4f());
-}
-
-void RSBlendModifier::SetFgBrightnessNegCoeff(const Vector4f& coeff)
-{
-    Setter(RSPropertyType::FG_BRIGHTNESS_NEGCOEFF, coeff);
-}
-
-Vector4f RSBlendModifier::GetFgBrightnessNegCoeff() const
-{
-    return Getter(RSPropertyType::FG_BRIGHTNESS_NEGCOEFF, Vector4f());
-}
-
-void RSBlendModifier::SetFgBrightnessFract(float fract)
-{
-    Setter(RSPropertyType::FG_BRIGHTNESS_FRACTION, fract);
-}
-
-float RSBlendModifier::GetFgBrightnessFract() const
-{
-    return Getter(RSPropertyType::FG_BRIGHTNESS_FRACTION, 1.f);
-}
-
-void RSBlendModifier::SetFgBrightnessHdr(bool hdr)
-{
-    Setter<RSProperty>(RSPropertyType::FG_BRIGHTNESS_HDR, hdr);
-}
-
-bool RSBlendModifier::GetFgBrightnessHdr() const
-{
-    return Getter(RSPropertyType::FG_BRIGHTNESS_HDR, false);
-}
-
-void RSBlendModifier::SetShadowBlenderParams(const std::optional<RSShadowBlenderPara>& params)
-{
-    SetterOptional(RSPropertyType::SHADOW_BLENDER_PARAMS, params);
-}
-
-std::optional<RSShadowBlenderPara> RSBlendModifier::GetShadowBlenderParams() const
-{
-    return GetterOptional<RSShadowBlenderPara>(RSPropertyType::SHADOW_BLENDER_PARAMS);
-}
-
-void RSBlendModifier::SetHdrDarkenBlenderParams(const std::optional<RSHdrDarkenBlenderPara>& params)
-{
-    SetterOptional(RSPropertyType::HDR_DARKEN_BLENDER_PARAMS, params);
-}
-
-std::optional<RSHdrDarkenBlenderPara> RSBlendModifier::GetHdrDarkenBlenderParams() const
-{
-    return GetterOptional<RSHdrDarkenBlenderPara>(RSPropertyType::HDR_DARKEN_BLENDER_PARAMS);
-}
-
-void RSBlendModifier::SetColorfulBrightnessDarkenWeight(float val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_DARKEN_WEIGHT, val);
-}
-void RSBlendModifier::SetColorfulBrightnessFraction(float val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_FRACTION, val);
-}
-void RSBlendModifier::SetColorfulBrightnessCubicRate(float val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_CUBIC_RATE, val);
-}
-void RSBlendModifier::SetColorfulBrightnessQuadRate(float val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_QUAD_RATE, val);
-}
-void RSBlendModifier::SetColorfulBrightnessLinearRate(float val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_LINEAR_RATE, val);
-}
-void RSBlendModifier::SetColorfulBrightnessDegree(float val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_DEGREE, val);
-}
-void RSBlendModifier::SetColorfulBrightnessSaturation(float val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_SATURATION, val);
-}
-void RSBlendModifier::SetColorfulBrightnessPositiveCoeff(const Vector3f& val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_POSITIVE_COEFF, val);
-}
-void RSBlendModifier::SetColorfulBrightnessNegativeCoeff(const Vector3f& val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_NEGATIVE_COEFF, val);
-}
-void RSBlendModifier::SetColorfulBrightnessVibrancyStrength(float val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_VIBRANCY_STRENGTH, val);
-}
-void RSBlendModifier::SetColorfulBrightnessLumaDiff(float val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_LUMA_DIFF, val);
-}
-
-void RSBlendModifier::SetColorfulBrightnessHdrEnabled(bool val)
-{
-    Setter<RSProperty>(RSPropertyType::COLORFUL_BRIGHTNESS_HDR_ENABLED, val);
-}
-
-void RSBlendModifier::SetColorfulBrightnessTintedColorPercent(float val)
-{
-    Setter(RSPropertyType::COLORFUL_BRIGHTNESS_TINTED_COLOR_PERCENT, val);
+    Setter<RSProperty>(RSPropertyType::FOREGROUND_NG_BLENDER, blender);
 }
 
 } // namespace OHOS::Rosen::ModifierNG

@@ -607,19 +607,24 @@ HWTEST_F(RSColorPickerDrawableTest, IsDrawingOffscreenMirror, TestSize.Level1)
     auto filterCanvas = std::make_shared<RSPaintFilterCanvas>(canvas.get());
     auto rect = std::make_shared<Drawing::Rect>();
 
+    // Keep the drawable eligible so the test also proves OnDraw does not consume the pick request.
+    drawable->needColorPick_ = true;
+
     // Set IsDrawingOffscreenMirror to true to trigger early return
     filterCanvas->SetIsDrawingOffscreenMirror(true);
 
     // OnDraw should return early without executing color picking
     drawable->OnDraw(filterCanvas.get(), rect.get());
 
-    // Verify the flag was set correctly
+    // Verify the flag was set correctly and the drawable state was left for the next frame
     EXPECT_TRUE(filterCanvas->GetIsDrawingOffscreenMirror());
+    EXPECT_TRUE(drawable->needColorPick_);
 
     // Test with IsDrawingOffscreenMirror set to false (normal case)
     filterCanvas->SetIsDrawingOffscreenMirror(false);
     drawable->OnDraw(filterCanvas.get(), rect.get());
     EXPECT_FALSE(filterCanvas->GetIsDrawingOffscreenMirror());
+    EXPECT_TRUE(drawable->needColorPick_);
 }
 
 /**

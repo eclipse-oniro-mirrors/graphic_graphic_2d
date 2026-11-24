@@ -63,7 +63,7 @@ bool RSLayerCacheManagerBase::CheckNodeUnSupportLayer(RSRenderNode& node)
             properties.NeedFilter() || properties.GetUseEffect() || properties.HasHarmonium() ||
             node.ChildHasVisibleEffect() || properties.GetSandBox().has_value() || properties.IsShadowValid() ||
             properties.IsColorBlendModeValid() || properties.IsColorBlendApplyTypeOffscreen() ||
-            properties.GetLinearGradientBlurPara() != nullptr || properties.IsFgBlenderEffectValid() ||
+            properties.GetLinearGradientBlurPara() != nullptr || properties.IsNGBlenderValid() ||
             properties.GetForegroundFilter() != nullptr || properties.GetCompositingFilter() != nullptr ||
             node.GetNodeGroupType() != RSRenderNode::NodeGroupType::NONE);
 }

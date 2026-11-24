@@ -4356,6 +4356,15 @@ void RSRenderNode::CollectAllChildren(
         ROSEN_LOGD("RSRenderNode::CollectAllChildren node is nullptr");
         return;
     }
+    // External commands may build a cyclic node tree (a child is also an ancestor).
+    // Mark the node while it is on the traversal path: re-entering a marked node means the
+    // tree contains a cycle, stop that branch to avoid unbounded recursion.
+    RSRenderNodeCycleGuard guard(node->inTraversalPath_);
+    if (guard.HasCycle()) {
+        ROSEN_LOGE("RSRenderNode::CollectAllChildren cycle detected, skip nodeId:%{public}" PRIu64,
+            node->GetId());
+        return;
+    }
     vec.push_back(node->GetId());
     for (auto& child : *node->GetSortedChildren()) {
         child->CollectAllChildren(child, vec);

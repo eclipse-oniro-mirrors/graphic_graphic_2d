@@ -550,6 +550,28 @@ int RSModifierExtractor::GetColorBlendApplyType() const
         int, BLENDER, COLOR_BLEND_APPLY_TYPE, static_cast<int>(RSColorBlendApplyType::FAST), =);
 }
 
+Drawing::ColorMatrix RSModifierExtractor::GetColorMatrix() const
+{
+    auto context = rsUIContext_.lock();
+    auto node = context ? context->GetNodeMap().GetNode<RSNode>(id_)
+                        : RSNodeMap::Instance().GetNode<RSNode>(id_);
+    if (!node) {
+        return {};
+    }
+    std::unique_lock<std::recursive_mutex> lock(node->GetPropertyMutex());
+    for (auto& [_, modifier] : node->modifiersNG_) {
+        if (modifier->GetType() == ModifierNG::RSModifierType::COMPOSITING_FILTER) {
+            auto property = std::static_pointer_cast<RSProperty<Drawing::ColorMatrix>>(
+                modifier->GetProperty(ModifierNG::RSPropertyType::COLOR_MATRIX));
+            if (property == nullptr) {
+                continue;
+            }
+            return property->Get();
+        }
+    }
+    return {};
+}
+
 TransformPropertyValues RSModifierExtractor::GetAllTransformPropertyValues() const
 {
     auto node = rsUIContext_.lock() ? rsUIContext_.lock()->GetNodeMap().GetNode<RSNode>(id_)

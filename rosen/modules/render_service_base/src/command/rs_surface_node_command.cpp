@@ -607,6 +607,7 @@ void SurfaceNodeCommandHelper::RecreateNodeAndSurface(
         }
     }
 
+    node->RestoreTunnelRuntimeState();
     context.InvokeRecreateNodeCallBack(nodeId, std::weak_ptr<RSSurfaceBufferInterface>(node));
     context.GetMutableNodeMap().RegisterRenderNode(node);
     node->UpdateBufferInfo(surfaceHandler->GetBuffer(), surfaceHandler->GetBufferOwnerCount(),

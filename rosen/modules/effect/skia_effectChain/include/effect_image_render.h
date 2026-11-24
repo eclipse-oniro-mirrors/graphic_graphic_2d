@@ -41,6 +41,10 @@ public:
         const std::shared_ptr<Drawing::GEWaterGlassDataParams>& params);
     static std::shared_ptr<EffectImageFilter> ReededGlass(
         const std::shared_ptr<Drawing::GEReededGlassDataParams>& params);
+    static std::shared_ptr<EffectImageFilter> StickerEmboss(
+        const std::shared_ptr<Drawing::GEStickerEmbossFilterParams>& params);
+    static std::shared_ptr<EffectImageFilter> StickerLaserShader(
+        const std::shared_ptr<Drawing::GEStickerLaserShaderParams>& params);
     static std::shared_ptr<EffectImageFilter> MaskTransition(const std::shared_ptr<Media::PixelMap>& topLayerMap,
         const std::shared_ptr<Drawing::GEShaderMask>& mask, float factor, bool inverse);
     static std::shared_ptr<EffectImageFilter> WaterDropletTransition(
@@ -168,6 +172,32 @@ private:
     std::shared_ptr<Drawing::GEReededGlassDataParams> reededGlassData_;
 };
 
+class EffectImageStickerEmbossFilter : public EffectImageFilter {
+public:
+    EffectImageStickerEmbossFilter(const std::shared_ptr<Drawing::GEStickerEmbossFilterParams>& stickerEmbossData)
+        : stickerEmbossData_(stickerEmbossData)
+    {}
+    ~EffectImageStickerEmbossFilter() override = default;
+
+    DrawingError Apply(const std::shared_ptr<EffectImageChain>& image) override;
+
+private:
+    std::shared_ptr<Drawing::GEStickerEmbossFilterParams> stickerEmbossData_;
+};
+
+class EffectImageStickerLaserShaderFilter : public EffectImageFilter {
+public:
+    EffectImageStickerLaserShaderFilter(const std::shared_ptr<Drawing::GEStickerLaserShaderParams>& stickerLaserData)
+        : stickerLaserData_(stickerLaserData)
+    {}
+    ~EffectImageStickerLaserShaderFilter() override = default;
+
+    DrawingError Apply(const std::shared_ptr<EffectImageChain>& image) override;
+
+private:
+    std::shared_ptr<Drawing::GEStickerLaserShaderParams> stickerLaserData_;
+};
+
 class EffectImageMaskTransitionFilter : public EffectImageFilter {
 public:
     EffectImageMaskTransitionFilter(const std::shared_ptr<Media::PixelMap>& topLayerMap,
@@ -250,13 +280,17 @@ public:
 
     DrawingError Render(const std::shared_ptr<Media::PixelMap>& srcPixelMap,
         const std::vector<std::shared_ptr<EffectImageFilter>>& effectFilters, bool forceCPU,
-        std::shared_ptr<Media::PixelMap>& dstPixelMap);
+        std::shared_ptr<Media::PixelMap>& dstPixelMap,
+        uint32_t customTagId = 0, const std::string& customTagName = "",
+        std::string* gpuMemoryStatistics = nullptr);
 #ifndef ROSEN_ARKUI_X
     DrawingError RenderNativeBuffer(const std::shared_ptr<Media::PixelMap>& srcPixelMap,
         std::shared_ptr<OH_NativeBuffer>& dstNativeBuffer,
         const std::vector<std::shared_ptr<EffectImageFilter>>& effectFilters,
         int32_t* syncFenceFd,
-        bool releaseGpuContext);
+        bool releaseGpuContext,
+        uint32_t customTagId = 0, const std::string& customTagName = "",
+        std::string* gpuMemoryStatistics = nullptr);
 #endif
 };
 } // namespace OHOS::Rosen

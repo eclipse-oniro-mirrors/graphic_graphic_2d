@@ -100,6 +100,8 @@ public:
 
     virtual void PurgeUnlockAndSafeCacheGpuResources() = 0;
 
+    virtual void PurgeTrimMemory2InitState() = 0;
+
     virtual void ReleaseByTag(const GPUResourceTag &tag) = 0;
 
     virtual void ResetContext() = 0;

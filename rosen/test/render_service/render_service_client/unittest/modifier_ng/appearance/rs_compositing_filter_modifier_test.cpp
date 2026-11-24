@@ -23,6 +23,7 @@
 #include "message_parcel.h"
 
 #include "common/rs_vector4.h"
+#include "effect/color_matrix.h"
 #include "modifier_ng/appearance/rs_compositing_filter_modifier.h"
 #include "ui_effect/property/include/rs_ui_filter_base.h"
 
@@ -148,5 +149,23 @@ HWTEST_F(RSCompositingFilterModifierNGTypeTest, SetColorNGFilterNullptr, TestSiz
     EXPECT_EQ(modifier->GetColorNGFilter(), filter);
     modifier->SetColorNGFilter(nullptr);
     EXPECT_EQ(modifier->GetColorNGFilter(), nullptr);
+}
+
+/**
+ * @tc.name: SetAndGetColorMatrix001
+ * @tc.desc: GetColorMatrix returns the default (identity) matrix before setting; after
+ *           SetColorMatrix it returns the stored matrix
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCompositingFilterModifierNGTypeTest, SetAndGetColorMatrix001, TestSize.Level1)
+{
+    auto modifier = std::make_shared<ModifierNG::RSCompositingFilterModifier>();
+    Drawing::ColorMatrix defaultMatrix;
+    EXPECT_EQ(modifier->GetColorMatrix(), defaultMatrix);
+
+    Drawing::ColorMatrix colorMatrix;
+    colorMatrix.SetIdentity();
+    modifier->SetColorMatrix(colorMatrix);
+    EXPECT_EQ(modifier->GetColorMatrix(), colorMatrix);
 }
 } // namespace OHOS::Rosen

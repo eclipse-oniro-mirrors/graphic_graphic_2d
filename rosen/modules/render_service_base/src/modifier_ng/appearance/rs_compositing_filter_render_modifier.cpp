@@ -63,6 +63,9 @@ const RSCompositingFilterRenderModifier::LegacyPropertyApplierMap
         { RSPropertyType::COLOR_NG_FILTER,
             RSRenderModifier::PropertyApplyHelper<std::shared_ptr<RSNGRenderFilterBase>,
                 &RSProperties::SetColorNGFilter> },
+        { RSPropertyType::COLOR_MATRIX,
+            RSRenderModifier::PropertyApplyHelper<Drawing::ColorMatrix,
+                &RSProperties::SetColorMatrix> },
     };
 
 void RSCompositingFilterRenderModifier::ResetProperties(RSProperties& properties)
@@ -75,6 +78,7 @@ void RSCompositingFilterRenderModifier::ResetProperties(RSProperties& properties
     properties.SetInvert(std::nullopt);
     properties.SetHueRotate(std::nullopt);
     properties.SetColorBlend(std::nullopt);
+    properties.SetColorMatrix(std::nullopt);
     properties.SetLinearGradientBlurPara(nullptr);
     properties.SetCompositingBlurRadius(0.f);
     properties.SetCompositingBlurSaturation(1.f);

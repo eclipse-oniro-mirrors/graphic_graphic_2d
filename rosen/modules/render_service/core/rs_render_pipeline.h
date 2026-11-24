@@ -17,7 +17,9 @@
 #define RS_RENDER_PIPELINE_H
 
 #include <event_handler.h>
+#include <future>
 #include <map>
+#include <type_traits>
 #include <unordered_set>
 
 #include "common/rs_common_def.h"
@@ -83,7 +85,7 @@ public:
 
     bool PostMainThreadSyncTask(RSTaskMessage::RSTask task);
 
-    void PostUniRenderThreadSyncTask(RSTaskMessage::RSTask task);
+    void PostUniRenderThreadSyncTask(const std::function<void()>& task);
 
     void PostMainThreadTask(RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
         AppExecFwk::EventQueue::Priority priority);
@@ -91,8 +93,28 @@ public:
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleMainThreadTask(Task&& task)
     {
-        auto [scheduledTask, taskFuture] = ST::ScheduledTask<Task>::Create(std::move(task));
+        auto [scheduledTask, taskFuture] = ST::ScheduledTask<Task>::Create(std::forward<Task&&>(task));
         PostMainThreadTask([t(std::move(scheduledTask))]() { t->Run(); });
+        return std::move(taskFuture);
+    }
+
+    // schedules to the uni render thread and returns the future for a bounded wait; on timeout
+    // the task stays queued (wait_for never cancels it) and completes once the thread recovers;
+    // a null thread yields an immediately-ready future so callers keep their old no-op semantics
+    template<typename Task, typename Return = std::invoke_result_t<Task>>
+    std::future<Return> ScheduleUniRenderThreadTask(Task&& task)
+    {
+        if (uniRenderThread_ == nullptr) {
+            std::promise<Return> promise;
+            if constexpr (std::is_void_v<Return>) {
+                promise.set_value();
+            } else {
+                promise.set_value(Return{});
+            }
+            return promise.get_future();
+        }
+        auto [scheduledTask, taskFuture] = ST::ScheduledTask<Task>::Create(std::move(task));
+        PostUniRenderThreadTask([t(std::move(scheduledTask))]() { t->Run(); });
         return std::move(taskFuture);
     }
 
@@ -123,7 +145,7 @@ private:
     bool RemoveConnection(pid_t remotePid, const sptr<RSIConnectionToken>& token);
     std::pair<sptr<RSIClientToRenderConnection>, uint64_t> AddConnection(pid_t remotePid, uint64_t tokenMaskId,
         sptr<IRemoteObject>& token, sptr<RSIClientToRenderConnection> connectToRenderConnection);
-    std::pair<sptr<RSIClientToRenderConnection>, uint64_t> FindClientToRenderConnection(uint64_t remotePid);
+    std::pair<sptr<RSIClientToRenderConnection>, uint64_t> FindClientToRenderConnection(pid_t remotePid);
     void AddTransactionDataPidInfo(pid_t remotePid);
     RSMainThread* GetMainThread()
     {

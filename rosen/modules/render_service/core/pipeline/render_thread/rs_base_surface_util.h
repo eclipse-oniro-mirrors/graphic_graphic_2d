@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace Rosen {
-using GetVideoCallOffset = std::function<uint64_t(pid_t, const std::string&)>;
+using GetVideoCallOffset = std::function<int64_t(pid_t, const std::string&)>;
 
 class RSBaseSurfaceUtil {
 private:

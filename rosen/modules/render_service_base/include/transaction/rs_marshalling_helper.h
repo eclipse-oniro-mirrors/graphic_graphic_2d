@@ -58,6 +58,7 @@ class Bitmap;
 class Typeface;
 class ColorSpace;
 class Matrix;
+class ColorMatrix;
 struct SharedTypeface;
 }
 namespace ModifierNG {
@@ -68,6 +69,7 @@ class RSNGRenderFilterBase;
 class RSNGRenderMaskBase;
 class RSNGRenderShaderBase;
 class RSNGRenderShapeBase;
+class RSNGRenderBlenderBase;
 class RSImage;
 class RSImageBase;
 class RSMask;
@@ -279,6 +281,7 @@ public:
     // skia types
     DECLARE_FUNCTION_OVERLOAD(Drawing::Matrix)
     DECLARE_FUNCTION_OVERLOAD(Drawing::Bitmap)
+    DECLARE_FUNCTION_OVERLOAD(Drawing::ColorMatrix)
     // RS types
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSShader>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSPath>)
@@ -297,6 +300,7 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSNGRenderMaskBase>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSNGRenderShaderBase>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSNGRenderShapeBase>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSNGRenderBlenderBase>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSMask>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImage>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImageBase>)
@@ -542,6 +546,28 @@ public:
     static bool Unmarshalling(Parcel& parcel, std::pair<T1, T2>& val)
     {
         return Unmarshalling(parcel, val.first) && Unmarshalling(parcel, val.second);
+    }
+
+    static bool Marshalling(Parcel& parcel, const RSWindowRecordConfig& val)
+    {
+        return Marshalling(parcel, static_cast<int32_t>(val.renderFit)) &&
+               Marshalling(parcel, val.surfaceNodeIds, MAX_WINDOW_RECORD_SURFACE_NUM);
+    }
+
+    static bool Unmarshalling(Parcel& parcel, RSWindowRecordConfig& val)
+    {
+        int32_t renderFit = 0;
+        if (!Unmarshalling(parcel, renderFit) ||
+            renderFit < static_cast<int32_t>(WindowRecordFit::ASPECT_FIT_TOP_LEFT) ||
+            renderFit > static_cast<int32_t>(WindowRecordFit::ASPECT_FIT)) {
+            return false; // out-of-range enum from an untrusted parcel: drop the config
+        }
+        val.renderFit = static_cast<WindowRecordFit>(renderFit);
+        if (!Unmarshalling(parcel, val.surfaceNodeIds, MAX_WINDOW_RECORD_SURFACE_NUM)) {
+            val.surfaceNodeIds.clear();
+            return false;
+        }
+        return true;
     }
 
     template<typename T, typename... Args>

@@ -94,11 +94,6 @@ public:
         return persistentPropertyManager_;
     }
 
-    std::set<NodeId>& GetWebNodeMap()
-    {
-        return webNodeIds;
-    }
-
     const std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>>& GetAnimatingNodeList() const
     {
         return animatingNodeList_;
@@ -303,6 +298,16 @@ public:
     bool IsSceneBoardToken(pid_t pid, uint64_t token) const;
 
     std::unordered_map<std::string, pid_t> GetUIFrameworkDirtyNodeNameMap();
+
+    void SetOnlyDelegateModeSetBufferCmdFlag(bool flag)
+    {
+        onlyDelegateModeSetBufferCmd_ = flag;
+    }
+
+    bool GetOnlyDelegateModeSetBufferCmdFlag()
+    {
+        return onlyDelegateModeSetBufferCmd_;
+    }
 private:
     // This function is used for initialization, should be called once after constructor.
     void Initialize();
@@ -315,7 +320,7 @@ private:
     // The root of render node tree, Note: this node is not the animation fallback node.
     std::shared_ptr<RSBaseRenderNode> globalRootRenderNode_ = std::make_shared<RSRenderNode>(0, true);
     RSRenderNodeMap nodeMap;
-    std::set<NodeId> webNodeIds;
+    bool onlyDelegateModeSetBufferCmd_ = false;
     std::vector<std::string> uiFrameworkTypeTable_;
     std::vector<std::weak_ptr<RSRenderNode>> uiFrameworkDirtyNodes_;
     std::unordered_set<FrameRateLinkerId> frameRateLinkerDestroyIds_;

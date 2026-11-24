@@ -26,6 +26,7 @@
 #include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_shape_base.h"
+#include "feature/particle/rs_particles_painter.h"
 #include "memory/rs_tag_tracker.h"
 #include "params/rs_depth_render_params.h"
 #include "pipeline/rs_recording_canvas.h"
@@ -36,7 +37,6 @@
 #include "property/rs_spatial_effect_manager.h"
 #include "render/rs_drawing_filter.h"
 #include "render/rs_effect_luminance_manager.h"
-#include "render/rs_particles_drawable.h"
 
 namespace OHOS::Rosen {
 namespace DrawableV2 {
@@ -64,6 +64,7 @@ bool RSColorFilterDrawable::OnUpdate(const RSRenderNode& node)
     needSync_ = true;
     stagingFilter_ = colorFilter;
     stagingColorNGFilter_ = colorNGFilter;
+    stagingIsColorMatrixFilter_ = node.GetRenderProperties().GetColorMatrix().has_value();
     return true;
 }
 
@@ -74,6 +75,7 @@ void RSColorFilterDrawable::OnSync()
     }
     filter_ = std::move(stagingFilter_);
     colorNGFilter_ = std::move(stagingColorNGFilter_);
+    isColorMatrixFilter_ = stagingIsColorMatrixFilter_;
     if (colorNGFilter_) {
         RSNGRenderFilterHelper::GenerateGEVisualEffect(colorNGFilter_);
         auto visualEffectContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
@@ -92,7 +94,7 @@ void RSColorFilterDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect*
         RSTagTracker::SOURCETYPE::SOURCE_RSCOLORFILTERDRAWABLE);
 #endif
     if (filter_) {
-        RSPropertyDrawableUtils::DrawColorFilter(canvas, filter_);
+        RSPropertyDrawableUtils::DrawColorFilter(canvas, filter_, isColorMatrixFilter_);
     }
     if (colorNGFilter_ && visualEffectContainer_) {
         RSEffectDrawableUtils::DrawColorNGFilter(
@@ -550,13 +552,13 @@ bool RSParticleDrawable::OnUpdate(const RSRenderNode& node)
     auto imageCount = particleVector.GetParticleImageCount();
     auto& imageVector = particleVector.GetParticleImageVector();
 
-    if (cachedDrawable_ == nullptr) {
-        cachedDrawable_ = std::make_shared<RSParticlesDrawable>(pool, imageVector, imageCount);
+    if (cachedPainter_ == nullptr) {
+        cachedPainter_ = std::make_shared<RSParticlesPainter>(pool, imageVector, imageCount);
     } else {
-        cachedDrawable_->UpdateData(pool, imageVector, imageCount);
+        cachedPainter_->UpdateData(pool, imageVector, imageCount);
     }
 
-    cachedDrawable_->Draw(canvas, bounds);
+    cachedPainter_->Draw(canvas, bounds);
     return true;
 }
 

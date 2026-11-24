@@ -20,6 +20,7 @@
 #include <parameter.h>
 #include <parameters.h>
 #include "common/rs_optional_trace.h"
+#include "gpuComposition/rs_fence_wait_dfx.h"
 #include "include/core/SkColorSpace.h"
 #include "native_buffer_inner.h"
 #include "params/rs_surface_render_params.h"
@@ -42,12 +43,18 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-void WaitAcquireFence(const sptr<SyncFence>& acquireFence)
+
+void WaitAcquireFence(const sptr<SyncFence>& acquireFence, uint64_t bufferId, uint32_t seqNum)
 {
     if (acquireFence == nullptr) {
         return;
     }
-    acquireFence->Wait(3000); // 3000ms
+    int32_t ret = acquireFence->Wait(FenceWaitDfx::FENCE_WAIT_TIMEOUT_MS);
+    if (ret == 0) {
+        FenceWaitDfx::ResetFenceWaitTimeoutCount(bufferId);
+        return;
+    }
+    FenceWaitDfx::ReportFenceWaitTimeout("RSVkImageManager::WaitAcquireFence", bufferId, seqNum, ret);
 }
 
 constexpr size_t MAX_CACHE_SIZE = 16;
@@ -140,7 +147,7 @@ std::shared_ptr<VkImageResource> RSVkImageManager::MapVkImageFromSurfaceBuffer(
         return nullptr;
     }
     if (!ENABLE_SEMAPHORE || !WaitVKSemaphore(drawingSurface, acquireFence)) {
-        WaitAcquireFence(acquireFence);
+        WaitAcquireFence(acquireFence, buffer->GetBufferId(), buffer->GetSeqNum());
     }
     std::lock_guard<std::mutex> lock(opMutex_);
     bool isProtectedFromContext = false;
@@ -181,7 +188,9 @@ std::shared_ptr<VkImageResource> RSVkImageManager::MapVkImageFromSurfaceBuffer(
 std::shared_ptr<VkImageResource> RSVkImageManager::CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer> buffer,
     const sptr<SyncFence>& acquireFence)
 {
-    WaitAcquireFence(acquireFence);
+    uint64_t bufferId = (buffer != nullptr) ? buffer->GetBufferId() : 0;
+    uint32_t seqNum = (buffer != nullptr) ? buffer->GetSeqNum() : 0;
+    WaitAcquireFence(acquireFence, bufferId, seqNum);
     if (buffer == nullptr) {
         ROSEN_LOGE("RSVkImageManager::CreateImageCacheFromBuffer buffer is nullptr");
         return nullptr;
@@ -190,7 +199,6 @@ std::shared_ptr<VkImageResource> RSVkImageManager::CreateImageCacheFromBuffer(co
         ROSEN_LOGE("RSVkImageManager::CreateImageCacheFromBuffer renderContext_ is nullptr");
         return nullptr;
     }
-    auto bufferId = buffer->GetBufferId();
     auto imageCache =
         VkImageResource::Create(buffer, RsVulkanContext::Get(renderContext_->GetType()).GetRsVulkanInterface());
     if (imageCache == nullptr) {

@@ -22,6 +22,7 @@
 #include "ui_effect/effect/include/color_gradient_effect_para.h"
 #include "ui_effect/effect/include/frosted_glass_effect_para.h"
 #include "ui_effect/effect/include/harmonium_effect_para.h"
+#include "ui_effect/effect/include/sticker_laser_shader_effect_para.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -35,6 +36,10 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
     },
     {RSNGEffectType::DOT_MATRIX_SHADER, [] {
             return std::make_shared<RSNGDotMatrixShader>();
+        }
+    },
+    {RSNGEffectType::FLOW_LIGHT_SWEEP, [] {
+            return std::make_shared<RSNGFlowLightSweep>();
         }
     },
     {RSNGEffectType::WAVY_RIPPLE_LIGHT, [] {
@@ -115,6 +120,10 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
     },
     {RSNGEffectType::COSMOS_RING_SHADOW, [] {
             return std::make_shared<RSNGCosmosRingShadow>();
+        }
+    },
+    {RSNGEffectType::STICKER_LASER_SHADER, [] {
+            return std::make_shared<RSNGStickerLaserShader>();
         }
     },
 };
@@ -340,12 +349,37 @@ std::shared_ptr<RSNGShaderBase> ConvertGlassMarbleEffectPara(std::shared_ptr<Vis
 }
 }
 
+std::shared_ptr<RSNGShaderBase> ConvertStickerLaserShaderPara(std::shared_ptr<VisualEffectPara> effectPara)
+{
+    auto effect = RSNGShaderBase::Create(RSNGEffectType::STICKER_LASER_SHADER);
+    if (effect == nullptr) {
+        return nullptr;
+    }
+    auto stickerLaserShaderEffect = std::static_pointer_cast<RSNGStickerLaserShader>(effect);
+    auto stickerLaserShaderEffectPara = std::static_pointer_cast<StickerLaserShaderEffectPara>(effectPara);
+    stickerLaserShaderEffect->Setter<StickerLaserShaderStickerTag>(stickerLaserShaderEffectPara->GetSticker());
+    stickerLaserShaderEffect->Setter<StickerLaserShaderOutlineWidthTag>(
+        stickerLaserShaderEffectPara->GetOutlineWidth());
+    stickerLaserShaderEffect->Setter<StickerLaserShaderFrequencyTag>(stickerLaserShaderEffectPara->GetFrequency());
+    stickerLaserShaderEffect->Setter<StickerLaserShaderDirectionTag>(stickerLaserShaderEffectPara->GetDirection());
+    stickerLaserShaderEffect->Setter<StickerLaserShaderProgressTag>(stickerLaserShaderEffectPara->GetProgress());
+    stickerLaserShaderEffect->Setter<StickerLaserShaderLightDirTag>(stickerLaserShaderEffectPara->GetLightDir());
+    stickerLaserShaderEffect->Setter<StickerLaserShaderElevationShadowColorTag>(
+        stickerLaserShaderEffectPara->GetElevationShadowColor());
+    stickerLaserShaderEffect->Setter<StickerLaserShaderElevationShadowRadiusTag>(
+        stickerLaserShaderEffectPara->GetElevationShadowRadius());
+    stickerLaserShaderEffect->Setter<StickerLaserShaderElevationShadowDistanceTag>(
+        stickerLaserShaderEffectPara->GetElevationShadowDistance());
+    return stickerLaserShaderEffect;
+}
+
 static std::unordered_map<VisualEffectPara::ParaType, ShaderConvertor> convertorLUT = {
     { VisualEffectPara::ParaType::COLOR_GRADIENT_EFFECT, ConvertColorGradientEffectPara },
     { VisualEffectPara::ParaType::BORDER_LIGHT_EFFECT, ConvertBorderLightPara },
     { VisualEffectPara::ParaType::HARMONIUM_EFFECT, ConvertHarmoniumEffectPara },
     { VisualEffectPara::ParaType::FROSTED_GLASS_EFFECT, ConvertFrostedGlassEffectPara },
     { VisualEffectPara::ParaType::GLASS_MARBLE_EFFECT, ConvertGlassMarbleEffectPara },
+    { VisualEffectPara::ParaType::STICKER_LASER_SHADER, ConvertStickerLaserShaderPara },
 };
 
 std::shared_ptr<RSNGShaderBase> RSNGShaderBase::Create(RSNGEffectType type)

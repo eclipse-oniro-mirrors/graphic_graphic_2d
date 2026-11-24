@@ -84,6 +84,10 @@ interface HdrDarkenBlender: Blender {
   @set setGrayscaleFactor(grayscaleFactor: Optional<Tuple3F>): void;
 }
 
+@class
+interface BlenderBase: Blender {
+}
+
 struct Color {
   red: f64;
   green: f64;
@@ -285,6 +289,28 @@ function CreateBrightnessBlender(param: BrightnessBlenderParam): BrightnessBlend
 function CreateHdrBrightnessBlender(param: BrightnessBlenderParam): HdrBrightnessBlender;
 
 function CreateHdrDarkenBlender(ratio: f64, factors: Optional<Tuple3F>): HdrDarkenBlender;
+
+struct ColorfulBrightnessBlenderOptions {
+  @optional darkenWeight: Optional<f64>;
+  @optional vibrancyStrength: Optional<f64>;
+  @optional lumaDiff: Optional<f64>;
+  @optional hdrEnabled: Optional<bool>;
+  @optional tintedColorPercent: Optional<f64>;
+}
+
+@static("BlenderBase")
+@rename("createBrightnessBlender")
+function CreateBrightnessBlenderBase(param: BrightnessBlenderParam,
+  @optional hdrEnabled: Optional<bool>): BlenderBase;
+
+@static("BlenderBase")
+@rename("createColorfulBrightnessBlender")
+function CreateColorfulBrightnessBlenderBase(param: BrightnessBlenderParam,
+  @optional options: Optional<ColorfulBrightnessBlenderOptions>): BlenderBase;
+
+@static("BlenderBase")
+@rename("createHdrDarkenBlender")
+function CreateHdrDarkenBlenderBase(ratio: f64, @optional factors: Optional<Tuple3F>): BlenderBase;
 
 function CreateFilter(): Filter;
 function CreateEffect(): VisualEffect;

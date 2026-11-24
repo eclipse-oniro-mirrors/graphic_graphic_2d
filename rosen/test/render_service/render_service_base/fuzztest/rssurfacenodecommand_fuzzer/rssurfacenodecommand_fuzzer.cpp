@@ -119,7 +119,7 @@ bool DoCreateWithConfig(const uint8_t* data, size_t size)
     uint8_t type = GetData<uint8_t>();
     enum SurfaceWindowType windowType = SurfaceWindowType::DEFAULT_WINDOW;
     if (!RsCommandVerifyHelper::GetInstance().IsSurfaceNodeCreateCommandVaild(ExtractPid(id))) {
-        SurfaceNodeCommandHelper::CreateWithConfig(context, id, name, type, windowType);
+        SurfaceNodeCommandHelper::CreateWithConfig(context, id, name, type, windowType, GetData<uint64_t>());
     }
     return true;
 }

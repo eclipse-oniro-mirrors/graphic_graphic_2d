@@ -1485,7 +1485,7 @@
     "inputParams": "WriteRSTransactionData",
     "writeInterfaceToken": false,
     "messageOption": "TF_ASYNC",
-    "commandList": "RSUpdatePropertyShadowBlenderPara*100",
+    "commandList": "RSUpdatePropertyNGBlenderBase*100",
     "commandListRepeat": 1,
     "connectionType": 0
   },
@@ -1788,15 +1788,6 @@
     "commandList": "RSMarkLayerPartRender*100",
     "commandListRepeat": 1,
     "connectionType": 0
-  },
-  {
-    "testCaseDesc": "COMMIT_TRANSACTION_TEST_184",
-    "interfaceName": "COMMIT_TRANSACTION",
-    "inputParams": "WriteRSTransactionData",
-    "writeInterfaceToken": false,
-    "messageOption": "TF_ASYNC",
-    "commandList": "RSUpdatePropertyHdrDarkenBlenderPara*100",
-    "commandListRepeat": 1
   },
   {
     "testCaseDesc": "COMMIT_TRANSACTION_TEST_185",

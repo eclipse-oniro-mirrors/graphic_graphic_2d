@@ -123,7 +123,8 @@ CM_INLINE bool RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfa
     // check presentWhen conversion validation range
     bool presentWhenValid = presentWhen <= static_cast<uint64_t>(INT64_MAX);
     const auto callback = getVideoCallOffset_;
-    uint64_t videoCallPtsOffset = (callback != nullptr) ?
+    // Fixing the video call delay
+    int64_t videoCallPtsOffset = (callback != nullptr) ?
         callback(ExtractPid(surfaceHandler.GetNodeId()), consumer->GetName()) : 0;
     uint64_t acquireTimeStamp = presentWhen;
     if (!presentWhenValid || !acqiureWithPTSEnable || videoCallPtsOffset != 0) {

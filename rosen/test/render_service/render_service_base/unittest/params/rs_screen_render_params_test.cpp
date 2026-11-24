@@ -473,4 +473,44 @@ HWTEST_F(RSScreenRenderParamsTest, SetUIMode3D_004, TestSize.Level1)
     params.SetUIMode3D(UIMode3D::MODE_2D);
     EXPECT_EQ(params.GetUIMode3D(), UIMode3D::MODE_2D);
 }
+
+/**
+ * @tc.name: WindowRecordFieldsOnSync
+ * @tc.desc: Verify OnSync copies the effective white list and window record display flag
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSScreenRenderParamsTest, WindowRecordFieldsOnSync, TestSize.Level1)
+{
+    constexpr NodeId id = TestSrc::limitNumber::Uint64[1];
+    constexpr NodeId firstId = TestSrc::limitNumber::Uint64[4];
+    constexpr NodeId secondId = TestSrc::limitNumber::Uint64[5];
+    RSScreenRenderParams source(id);
+    source.hasWindowRecordDisplay_ = true;
+    source.SetEffectiveWhiteList({ firstId, secondId });
+
+    std::unique_ptr<RSRenderParams> target = std::make_unique<RSScreenRenderParams>(id);
+    source.OnSync(target);
+    auto targetParams = static_cast<RSScreenRenderParams*>(target.get());
+    EXPECT_TRUE(targetParams->HasWindowRecordDisplay());
+    EXPECT_EQ(targetParams->GetEffectiveWhiteList(), source.GetEffectiveWhiteList());
+}
+
+/**
+ * @tc.name: OnSyncHasPrivacyLayer
+ * @tc.desc: test OnSync syncs hasPrivacyLayer_ to target
+ * @tc.type: FUNC
+ * @tc.require: issue26721
+ */
+HWTEST_F(RSScreenRenderParamsTest, OnSyncHasPrivacyLayer, TestSize.Level1)
+{
+    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
+    RSScreenRenderParams params(id);
+    params.SetHasPrivacyLayer(true);
+    std::unique_ptr<RSRenderParams> target = std::make_unique<RSScreenRenderParams>(id);
+    ASSERT_NE(target, nullptr);
+    EXPECT_FALSE(static_cast<RSScreenRenderParams*>(target.get())->GetHasPrivacyLayer());
+    params.OnSync(target);
+    EXPECT_TRUE(static_cast<RSScreenRenderParams*>(target.get())->GetHasPrivacyLayer());
+}
 } // namespace OHOS::Rosen

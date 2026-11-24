@@ -69,6 +69,9 @@ public:
 
     /* only used for mock and fuzz tests */
     bool SetHdiDevice(HdiDevice* device);
+    // used to distinguish "device unavailable" (caller must give up) from "init partially
+    // failed" (e.g. VBlank callback registration failed, but queries can still proceed)
+    bool IsDeviceAvailable() const { return device_ != nullptr; }
 
 private:
     uint32_t screenId_;

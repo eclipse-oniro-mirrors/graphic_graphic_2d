@@ -680,6 +680,77 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawSpecialFoldPixelFormatOverrideSki
 }
 
 /**
+ * @tc.name: PauseVirtualMirrorOutputStates
+ * @tc.desc: OnDraw pauses a virtual MIRROR output without usable source params, including a muted
+ * empty+no-source output and a source drawable with no params, while live ordinary mirror and muted
+ * record routes take their own paths.
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, PauseVirtualMirrorOutputStates, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayRenderNode_, nullptr);
+    ASSERT_NE(mirroredNode_, nullptr);
+    ASSERT_NE(mirroredDisplayNode_, nullptr);
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    ASSERT_NE(params, nullptr);
+    auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(displayParams, nullptr);
+    auto sourceDrawable = mirroredDisplayNode_->GetRenderDrawable();
+    ASSERT_NE(sourceDrawable, nullptr);
+    ASSERT_NE(sourceDrawable->GetRenderParams(), nullptr);
+    params->screenProperty_.Set<ScreenPropertyType::STATE>(
+        static_cast<uint8_t>(ScreenState::HDI_OUTPUT_ENABLE));
+    params->compositeType_ = CompositeType::UNI_RENDER_VIRTUAL_MIRROR_COMPOSITE;
+    params->childDisplayCount_ = 1;
+    params->logicalDisplayNodeDrawables_ = { displayRenderNode_->GetRenderDrawable() };
+    Drawing::Canvas canvas;
+
+    // Empty config + no source: paused before virtual buffer acquisition/PostProcess, even muted.
+    params->mirrorSourceDrawable_.reset();
+    params->hasWindowRecordDisplay_ = false;
+    displayParams->virtualScreenMuteStatus_ = true;
+    screenDrawable_->OnDraw(canvas);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+
+    // Ordinary mirror with a live source proceeds through the common mirror path, not the pause.
+    params->mirrorSourceDrawable_ = mirroredNode_->GetRenderDrawable();
+    displayParams->virtualScreenMuteStatus_ = false;
+    screenDrawable_->OnDraw(canvas);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
+
+    // Nonempty record config + no source with mute: the record mask path runs, not the pause path.
+    params->mirrorSourceDrawable_.reset();
+    params->hasWindowRecordDisplay_ = true;
+    constexpr NodeId recordId = DEFAULT_ID + 4;
+    RSWindowRecordConfig recordConfig;
+    recordConfig.surfaceNodeIds = { recordId };
+    displayParams->SetWindowRecordConfig(recordConfig);
+    displayParams->SetOnVirtualScreen(true);
+    displayParams->displayMode_ = DisplayMode::MIRROR;
+    displayParams->SetShouldPaint(true);
+    displayParams->virtualScreenMuteStatus_ = true;
+    displayParams->recordSourceDisplayDrawable_.reset();
+    displayParams->recordWhiteListIds_.clear();
+    displayParams->recordSurfaceDrawables_.clear();
+    displayParams->hasPaintableRecordSurface_ = false;
+    screenDrawable_->OnDraw(canvas);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_ENGINE_NULL);
+
+    // A source drawable whose params are not ready must also skip before generic buffer output.
+    auto nullParamsNode = std::make_shared<RSScreenRenderNode>(DEFAULT_ID + 5, DEFAULT_SCREEN_ID + 5);
+    auto nullParamsDrawable = RSRenderNodeDrawableAdapter::OnGenerate(nullParamsNode);
+    ASSERT_NE(nullParamsDrawable, nullptr);
+    ASSERT_EQ(nullParamsDrawable->GetRenderParams(), nullptr);
+    params->hasWindowRecordDisplay_ = false;
+    params->mirrorSourceDrawable_ = nullParamsDrawable;
+    screenDrawable_->OnDraw(canvas);
+    EXPECT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SKIP_FRAME);
+}
+
+/**
  * @tc.name: DrawEdgeGradientStripTopGeBottom
  * @tc.desc: Smoke test: DrawEdgeGradientStrip with top >= bottom
  * @tc.type: FUNC

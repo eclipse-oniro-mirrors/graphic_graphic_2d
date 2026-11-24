@@ -79,6 +79,7 @@ class RSPath;
 class RSNGFilterBase;
 class RSNGMaskBase;
 class RSNGShapeBase;
+class RSNGBlenderBase;
 class RSLinearGradientBlurPara;
 class MotionBlurParam;
 class ParticleNoiseFields;
@@ -349,6 +350,11 @@ struct RSRenderPropertyTraits<std::shared_ptr<RSNGShapeBase>> {
     using Type = RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>;
 };
 
+template<>
+struct RSRenderPropertyTraits<std::shared_ptr<RSNGBlenderBase>> {
+    using Type = RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>;
+};
+
 
 // Helper class to deduce the property type
 template<typename T>
@@ -367,11 +373,13 @@ struct RSPropertyTypeTraits {
 #define SHADER_PTR std::shared_ptr<RSNGShaderBase>
 #define MASK_PTR std::shared_ptr<RSNGMaskBase>
 #define SHAPE_PTR std::shared_ptr<RSNGShapeBase>
+#define BLENDER_PTR std::shared_ptr<RSNGBlenderBase>
 
 #include "modifier/rs_property_def.in"
 
 #undef FILTER_PTR
 #undef SHAPE_PTR
+#undef BLENDER_PTR
 #undef SHADER_PTR
 #undef MASK_PTR
 
@@ -995,6 +1003,16 @@ RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShapeBase>>::Set(const std::share
     bool affectsRendering);
 template<>
 RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGShapeBase>>::GetRenderProperty();
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGBlenderBase>>::OnAttach(RSNode& node,
+    std::weak_ptr<ModifierNG::RSModifier> modifier);
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGBlenderBase>>::OnDetach();
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGBlenderBase>>::Set(const std::shared_ptr<RSNGBlenderBase>& value,
+    bool affectsRendering);
+template<>
+RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGBlenderBase>>::GetRenderProperty();
 
 template<>
 RSC_EXPORT bool RSProperty<float>::IsValid(const float& value);
@@ -1012,11 +1030,13 @@ RSC_EXPORT bool RSProperty<Vector4f>::IsValid(const Vector4f& value);
 #define SHADER_PTR std::shared_ptr<RSNGShaderBase>
 #define MASK_PTR std::shared_ptr<RSNGMaskBase>
 #define SHAPE_PTR std::shared_ptr<RSNGShapeBase>
+#define BLENDER_PTR std::shared_ptr<RSNGBlenderBase>
 
 #include "modifier/rs_property_def.in"
 
 #undef MASK_PTR
 #undef SHAPE_PTR
+#undef BLENDER_PTR
 #undef SHADER_PTR
 #undef FILTER_PTR
 #undef DECLARE_PROPERTY

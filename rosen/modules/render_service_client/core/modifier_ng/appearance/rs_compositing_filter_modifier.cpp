@@ -106,6 +106,18 @@ std::shared_ptr<RSLinearGradientBlurPara> RSCompositingFilterModifier::GetLinear
     return Getter<std::shared_ptr<RSLinearGradientBlurPara>>(RSPropertyType::LINEAR_GRADIENT_BLUR_PARA, nullptr);
 }
 
+void RSCompositingFilterModifier::SetColorMatrix(
+    const Drawing::ColorMatrix& colorMatrix)
+{
+    Setter<RSProperty>(RSPropertyType::COLOR_MATRIX, colorMatrix);
+}
+
+Drawing::ColorMatrix RSCompositingFilterModifier::GetColorMatrix() const
+{
+    return Getter<Drawing::ColorMatrix>(
+        RSPropertyType::COLOR_MATRIX, Drawing::ColorMatrix {});
+}
+
 void RSCompositingFilterModifier::SetForegroundBlurRadius(float radius)
 {
     Setter(RSPropertyType::FOREGROUND_BLUR_RADIUS, radius);

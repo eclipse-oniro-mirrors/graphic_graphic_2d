@@ -23,6 +23,7 @@
 
 namespace OHOS::Rosen {
 class Blender;
+class BlenderBase;
 class BrightnessBlender;
 class HdrDarkenBlender;
 }
@@ -92,6 +93,14 @@ public:
 
 private:
     OHOS::Rosen::HdrDarkenBlender* GetHdrDarkenBlender();
+};
+
+// Taihe container of the NG blender path (see BlenderBase).
+class BlenderBaseImpl : public BlenderImpl {
+public:
+    BlenderBaseImpl();
+    explicit BlenderBaseImpl(std::shared_ptr<OHOS::Rosen::BlenderBase> blender);
+    ~BlenderBaseImpl() override;
 };
 
 } // namespace ANI::UIEffect

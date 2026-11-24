@@ -22,6 +22,7 @@ text_unittest("rosen_text_adapt_test") {
     "orphan_char_optimization_test.cpp",
     "punctuation_overflow_test.cpp",
     "run_test.cpp",
+    "sk_lru_cache_test.cpp",
     "style_copy_test.cpp",
     "text_line_base_test.cpp",
     "typography_character_index_test.cpp",
@@ -51,6 +52,7 @@ text_unittest("rosen_text_adapt_test") {
     "image_framework:image_native",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "skia:skia_canvaskit",
     "skia:skia_paragraph_ohos_new",
   ]
 }

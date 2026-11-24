@@ -111,10 +111,10 @@ DisplaySpecialLayerState RSSpecialLayerUtils::GetSpecialLayerStateInVisibleRect(
     ScreenId screenId = displayParams->GetScreenId();
     const auto& screenProperty = screenParams->GetScreenProperty();
     bool hideCursor = screenProperty.GetCursorMode() == RSVirtualScreenCursorMode::HIDE;
-    bool hasGeneralSpecialLayer = !screenProperty.GetWhiteList().empty() ||
+    bool hasGeneralSpecialLayer = !screenParams->GetEffectiveWhiteList().empty() ||
         hideCursor || specialLayerManager.GetHasSlInVisibleRect(screenId);
     RS_LOGD("%{public}sWhiteList:%{public}d, HideCursor:%{public}d, "
-        "HasSlInVisibleRect:%{public}d", __func__, !screenProperty.GetWhiteList().empty(),
+        "HasSlInVisibleRect:%{public}d", __func__, !screenParams->GetEffectiveWhiteList().empty(),
         hideCursor, specialLayerManager.GetHasSlInVisibleRect(screenId));
     
     return hasGeneralSpecialLayer ? DisplaySpecialLayerState::HAS_SPECIAL_LAYER :
@@ -138,7 +138,7 @@ DisplaySpecialLayerState RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(
         hasGeneralSpecialLayer |= (specialLayerManager.Find(SpecialLayerType::HAS_SNAPSHOT_SKIP) ||
             uniRenderThread.IsCurtainScreenOn());
     } else {
-        hasGeneralSpecialLayer |= !screenProperty.GetWhiteList().empty()
+        hasGeneralSpecialLayer |= !screenParams->GetEffectiveWhiteList().empty()
             || screenProperty.GetCursorMode() == RSVirtualScreenCursorMode::HIDE
             || specialLayerManager.FindWithScreen(screenId, SpecialLayerType::HAS_BLACK_LIST);
     }
@@ -385,29 +385,18 @@ DrawType RSSpecialLayerUtils::GetDrawTypeInSnapshot(const RSSurfaceRenderParams&
     return DrawType::NONE;
 }
 
-const RSScreenProperty* RSSpecialLayerUtils::GetAncestorScreenProperty(const RSSurfaceRenderParams& surfaceParams)
+bool RSSpecialLayerUtils::IsSpecialLayerEnable()
 {
-    auto screenDrawable = surfaceParams.GetAncestorScreenDrawable().lock();
-    if (screenDrawable == nullptr) {
-        return nullptr;
-    }
-    auto* screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
-    return screenParams != nullptr ? &screenParams->GetScreenProperty() : nullptr;
-}
-
-bool RSSpecialLayerUtils::IsSpecialLayerEnable(const RSScreenProperty* screenProperty)
-{
-    // check screenshot first because isMirrorScreen_ may be left over by the previous screen of this frame
     const auto& captureParam = RSUniRenderThread::GetCaptureParam();
     if (captureParam.isSnapshot_ && !captureParam.isSingleSurface_) {
         return true;
     }
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    if (uniParam == nullptr || screenProperty == nullptr) {
+    if (uniParam == nullptr) {
         return false;
     }
-    bool isVirtualOrMirrorScreen = uniParam->IsMirrorScreen() || screenProperty->IsVirtual();
-    return isVirtualOrMirrorScreen && uniParam->IsSecurityDisplay();
+    bool isVirtual = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(uniParam->GetRSProcessor()) != nullptr;
+    return (isVirtual || uniParam->IsMirrorScreen()) && uniParam->IsSecurityDisplay();
 }
 
 bool RSSpecialLayerUtils::IsSurfaceInBlackList(const RSSurfaceRenderParams& surfaceParams)
@@ -460,7 +449,7 @@ bool RSSpecialLayerUtils::IsWhiteListNode()
 bool RSSpecialLayerUtils::CheckIfSurfaceSkipInMirrorOrScreenshot(
     const RSSurfaceRenderParams& surfaceParams, const RSPaintFilterCanvas& canvas)
 {
-    if (!IsSpecialLayerEnable(GetAncestorScreenProperty(surfaceParams))) {
+    if (!IsSpecialLayerEnable() && !RSUniRenderThread::GetCaptureParam().isWindowRecord_) {
         return false;
     }
     // Rule priority: id blackList > cursorMode > id whiteList.

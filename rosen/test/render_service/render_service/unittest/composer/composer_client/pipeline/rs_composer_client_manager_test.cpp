@@ -1120,4 +1120,125 @@ HWTEST_F(RSComposerClientManagerTest, ComposerContext_SetSkipDelay_NullConnectio
     EXPECT_NO_FATAL_FAILURE(ctx->SetSkipDelay(true));
 }
 
+class PostTaskStubConnection final : public RSRenderToComposerConnectionStub {
+public:
+    bool CommitLayers(std::unique_ptr<RSLayerTransactionData>& transactionData) override
+    {
+        return false;
+    }
+
+    void CleanLayerBufferBySurfaceId(uint64_t surfaceId) override {}
+
+    int32_t CommitTunnelLayerBySurfaceId(uint64_t surfaceId, uint64_t tunnelLayerId,
+        const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence, sptr<SyncFence>& releaseFence) override
+    {
+        return GRAPHIC_DISPLAY_SUCCESS;
+    }
+
+    void ClearFrameBuffers() override {}
+    void ClearRedrawGPUCompositionCache(const std::unordered_set<uint64_t>& bufferIds) override {}
+    void SetScreenBacklight(uint32_t level) override {}
+    void SetScreenLinearMatrix(const std::vector<float>& matirx) override {}
+    void SetComposerToRenderConnection(const sptr<IRSComposerToRenderConnection>& composerToRenderConn) override {}
+    void PreAllocProtectedFrameBuffers(const sptr<SurfaceBuffer>& buffer) override {}
+    void MarkTunnelSurfaceInvalid(uint64_t surfaceId) override {}
+    void SetActiveRectSwitchStatus(bool flag, const RectI& activeRect) override {}
+    void SetSkipDelay(bool skipDelay) override {}
+
+    bool PostTask(const std::function<void()>& task) override
+    {
+        postTaskCalled = true;
+        return true;
+    }
+
+    sptr<IRemoteObject> AsObject() override
+    {
+        return nullptr;
+    }
+
+    bool postTaskCalled = false;
+};
+
+/**
+ * @tc.name: PostTaskToComposer001
+ * @tc.desc: Test RSComposerClient::PostTaskToComposer with a null connection returns false.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerClientManagerTest, PostTaskToComposer001, TestSize.Level1)
+{
+    auto client = MakeClient();
+    ASSERT_NE(client, nullptr);
+
+    EXPECT_FALSE(client->PostTaskToComposer([]() {}));
+}
+
+/**
+ * @tc.name: PostTaskToComposer002
+ * @tc.desc: Test RSComposerClient::PostTaskToComposer forwards the task to the connection and returns
+ *           the connection result.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerClientManagerTest, PostTaskToComposer002, TestSize.Level1)
+{
+    auto conn = sptr<PostTaskStubConnection>::MakeSptr();
+    ASSERT_NE(conn, nullptr);
+    auto client = RSComposerClient::Create(conn, nullptr);
+    ASSERT_NE(client, nullptr);
+
+    EXPECT_FALSE(conn->postTaskCalled);
+    EXPECT_TRUE(client->PostTaskToComposer([]() {}));
+    EXPECT_TRUE(conn->postTaskCalled);
+}
+
+/**
+ * @tc.name: PostTaskToComposer003
+ * @tc.desc: Test RSComposerClientManager::PostTaskToComposer with no client for the screen returns false.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerClientManagerTest, PostTaskToComposer003, TestSize.Level1)
+{
+    RSComposerClientManager mgr;
+    constexpr ScreenId screenId = 9500;
+
+    EXPECT_FALSE(mgr.PostTaskToComposer(screenId, []() {}));
+    EXPECT_EQ(mgr.GetComposerClient(screenId), nullptr);
+}
+
+/**
+ * @tc.name: PostTaskToComposer004
+ * @tc.desc: Test RSComposerClientManager::PostTaskToComposer with a client holding a null connection
+ *           returns false.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerClientManagerTest, PostTaskToComposer004, TestSize.Level1)
+{
+    RSComposerClientManager mgr;
+    constexpr ScreenId screenId = 9501;
+    mgr.AddComposerClient(screenId, MakeClient());
+    ASSERT_NE(mgr.GetComposerClient(screenId), nullptr);
+
+    EXPECT_FALSE(mgr.PostTaskToComposer(screenId, []() {}));
+}
+
+/**
+ * @tc.name: PostTaskToComposer005
+ * @tc.desc: Test RSComposerClientManager::PostTaskToComposer with a client holding a task-posting
+ *           connection returns true and the connection receives the task.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerClientManagerTest, PostTaskToComposer005, TestSize.Level1)
+{
+    auto conn = sptr<PostTaskStubConnection>::MakeSptr();
+    ASSERT_NE(conn, nullptr);
+    auto client = RSComposerClient::Create(conn, nullptr);
+    ASSERT_NE(client, nullptr);
+    RSComposerClientManager mgr;
+    constexpr ScreenId screenId = 9502;
+    mgr.AddComposerClient(screenId, client);
+
+    EXPECT_FALSE(conn->postTaskCalled);
+    EXPECT_TRUE(mgr.PostTaskToComposer(screenId, []() {}));
+    EXPECT_TRUE(conn->postTaskCalled);
+}
+
 } // namespace OHOS::Rosen

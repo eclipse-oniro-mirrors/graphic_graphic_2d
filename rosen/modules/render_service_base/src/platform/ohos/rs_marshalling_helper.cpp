@@ -53,6 +53,7 @@
 #include "effect/rs_render_mask_base.h"
 #include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_shape_base.h"
+#include "effect/rs_render_blender_base.h"
 #include "EGL/egl.h"
 #include "memory/rs_memory_flow_control.h"
 #include "memory/rs_memory_track.h"
@@ -1024,6 +1025,35 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::Matrix& val)
         free(static_cast<void*>(const_cast<Drawing::scalar*>(data)));
         data = nullptr;
     }
+    return true;
+}
+
+// Drawing::ColorMatrix
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const Drawing::ColorMatrix& val)
+{
+    Drawing::scalar array[Drawing::ColorMatrix::MATRIX_SIZE];
+    val.GetArray(array);
+    bool ret = parcel.WriteUnpadBuffer(array, sizeof(array));
+    if (!ret) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::ColorMatrix");
+    }
+    return ret;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::ColorMatrix& val)
+{
+    const uint8_t* buff = parcel.ReadUnpadBuffer(sizeof(Drawing::scalar) * Drawing::ColorMatrix::MATRIX_SIZE);
+    if (buff == nullptr) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling Drawing::ColorMatrix");
+        return false;
+    }
+    Drawing::scalar array[Drawing::ColorMatrix::MATRIX_SIZE];
+    auto ret = memcpy_s(array, sizeof(array), buff, sizeof(array));
+    if (ret != EOK) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling Drawing::ColorMatrix memcpy_s");
+        return false;
+    }
+    val.SetArray(array);
     return true;
 }
 
@@ -2220,6 +2250,33 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRend
     bool success = RSNGRenderShapeBase::Unmarshalling(parcel, val);
     if (!success) {
         ROSEN_LOGE("RSMarshallingHelper::Unmarshalling RSNGRenderShapeBase failed");
+    }
+    return success;
+}
+
+// RSNGRenderBlenderBase
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSNGRenderBlenderBase>& val)
+{
+    if (val == nullptr) {
+        ROSEN_LOGD("RSMarshallingHelper::Marshalling RSNGRenderBlenderBase is nullptr");
+        if (!RSMarshallingHelper::Marshalling(parcel, END_OF_CHAIN)) {
+            ROSEN_LOGE("RSMarshallingHelper::Marshalling RSNGRenderBlenderBase write end failed");
+            return false;
+        }
+        return true;
+    }
+    bool success = val->Marshalling(parcel);
+    if (!success) {
+        ROSEN_LOGE("RSMarshallingHelper::Marshalling RSNGRenderBlenderBase failed");
+    }
+    return success;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRenderBlenderBase>& val)
+{
+    bool success = RSNGRenderBlenderBase::Unmarshalling(parcel, val);
+    if (!success) {
+        ROSEN_LOGE("RSMarshallingHelper::Unmarshalling RSNGRenderBlenderBase failed");
     }
     return success;
 }
@@ -3442,6 +3499,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderMaskBase>)          \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderShaderBase>)        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderShapeBase>)         \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderBlenderBase>)      \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSImage>)                     \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSMask>)                      \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSPath>)                      \
@@ -3468,7 +3526,8 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)        \
     EXPLICIT_INSTANTIATION(TEMPLATE, DepthCameraPara)                              \
     EXPLICIT_INSTANTIATION(TEMPLATE, DepthLightPara)                              \
-    EXPLICIT_INSTANTIATION(TEMPLATE, AtlasInfo)
+    EXPLICIT_INSTANTIATION(TEMPLATE, AtlasInfo)                                    \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Drawing::ColorMatrix)
 
 BATCH_EXPLICIT_INSTANTIATION(RSRenderProperty)
 

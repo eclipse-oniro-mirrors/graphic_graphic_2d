@@ -909,7 +909,7 @@ ErrCode RSServiceToRenderConnectionProxy::GetSurfaceRootNodeId(NodeId& windowNod
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    option.SetFlags(MessageOption::TF_ASYNC);
+    option.SetFlags(MessageOption::TF_SYNC);
     if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
         ROSEN_LOGE("%{public}s: WriteInterfaceToken GetDescriptor err.", __func__);
         return ERR_INVALID_VALUE;

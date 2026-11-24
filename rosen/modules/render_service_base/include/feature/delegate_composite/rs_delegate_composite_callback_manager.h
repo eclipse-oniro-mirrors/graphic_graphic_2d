@@ -23,6 +23,7 @@
 #include "transaction/rs_transaction_data.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_screen_render_node.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -66,10 +67,17 @@ public:
         sptr<SurfaceBuffer> buffer, sptr<SyncFence> releaseFence, pid_t clientPid);
     bool ProcessBufferReleaseInfo(uint64_t bufferId);
     void OnCleanCacheForBufferInfoMap(std::vector<CleanCacheBufferInfo>& infos, NodeId nodeId, uint64_t queueId);
-    void ProcessEachCommandQueue(std::queue<std::unique_ptr<RSCommand>>& cmdqueue, RSContext& context);
-    bool QueryAndResetCommandProcessFlag();
+    void ProcessEachCommandQueue(std::queue<std::unique_ptr<RSCommand>>& cmdqueue, RSContext& context,
+        bool& isSetBufferCmdOnly, bool& doDirectCompositionSupportByCmd);
+    void QueryAndResetCommandProcessFlag(bool& hasCommandProcess, bool& doDirectCompositionSupport);
     void UpdateHardWareForcedDisabledStateForDelegateMode(std::shared_ptr<RSSurfaceRenderNode> hwcNodePtr);
+    void SetCollectHwcNodesInfoFlag(bool flag);
+    void CollectHwcNodesHardwareForcedDisabledInfo(std::shared_ptr<RSScreenRenderNode> screenNode);
+    std::optional<bool> GetDoDirectCompositionSupportByHwcEnable();
 private:
+    using singlePidCmdMap = std::map<uint64_t, std::queue<std::unique_ptr<RSCommand>>>;
+    using surfaceTransactionCmdMap = std::map<uint64_t, singlePidCmdMap>;
+
     void AddBufferReleaseInfoInner(pid_t pid, OnCompletedRet& ret);
     void GetBufferReleaseInfo(std::map<pid_t, std::queue<OnCompletedRet>>& outmap);
     void GetSurfaceTransactionCmdInfoLocked(std::map<uint64_t, std::queue<uint64_t>>& targetsListenerMap);
@@ -77,6 +85,12 @@ private:
     void CleanDelegateCompositeCommandInner(NodeId nodeId, std::queue<std::unique_ptr<RSCommand>>& queue);
     void PrepareDelegateCompositeCommandInner(std::unique_ptr<RSTransactionData>& transactionData,
         std::queue<std::unique_ptr<RSCommand>> &cmdQueue);
+    void ProcessDelegateCompositeCommandInner(RSContext& context,
+        std::unordered_map<pid_t, singlePidCmdMap> &allPidProcessCmdMap);
+    bool IsDoDirectCompositionSupportByCmd(uint16_t cmdType, uint16_t cmdSubType, std::shared_ptr<RSRenderNode> node);
+    bool CheckRSNodeCommandSubType(uint16_t cmdSubType, std::shared_ptr<RSRenderNode> node);
+    void GetRSCommandInfo(std::unique_ptr<RSCommand>& cmd, uint16_t& cmdType,
+        uint16_t& cmdSubType, NodeId& nodeId, bool& isSetBufferCmdOnly);
     pid_t webProxyComposerTid_ = 0;
 
     std::mutex surfaceNodeBufferReleaseCallbackMapMutex_;
@@ -90,11 +104,12 @@ private:
     std::map<pid_t, std::map<uint64_t, sptr<RSISurfaceTransactionListener>>> surfaceTransactionListenerMap_;
 
     std::mutex cmdMapMutex_;
-    using singlePidCmdMap = std::map<uint64_t, std::queue<std::unique_ptr<RSCommand>>>;
-    using surfaceTransactionCmdMap = std::map<uint64_t, singlePidCmdMap>;
     std::unordered_map<pid_t, surfaceTransactionCmdMap> allPidCmdMap_;
 
     bool hasCommandProcess_ = false; // must use it in rsMainThread
+    bool doDirectCompositionSupportByCmd_ = false;
+    std::optional<bool> doDirectCompositionSupportByHwcEnable_ = std::nullopt;
+    bool needCollectHwcNodesInfoFlag_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

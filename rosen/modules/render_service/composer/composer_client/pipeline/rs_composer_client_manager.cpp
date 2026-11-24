@@ -272,5 +272,14 @@ void RSComposerClientManager::SetSkipDelay(ScreenId screenId, bool skipDelay)
         client->SetSkipDelay(skipDelay);
     }
 }
+
+bool RSComposerClientManager::PostTaskToComposer(ScreenId screenId, const std::function<void()>& task)
+{
+    auto client = GetComposerClient(screenId);
+    if (client == nullptr) {
+        return false;
+    }
+    return client->PostTaskToComposer(task);
+}
 } // namespace Rosen
 } // namespace OHOS

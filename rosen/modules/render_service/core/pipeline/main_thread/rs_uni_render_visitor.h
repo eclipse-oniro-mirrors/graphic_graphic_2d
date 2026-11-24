@@ -189,7 +189,6 @@ public:
 
     void UpdateOffscreenCanvasNodeId(RSCanvasRenderNode& node);
 
-    bool InitForDelegateMode(RSScreenRenderNode& node, std::shared_ptr<RSBaseRenderEngine> renderEngine);
     void GetScreenRotation(RSScreenRenderNode& node);
 private:
     /* Prepare relevant calculation */

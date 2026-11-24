@@ -73,8 +73,7 @@ public:
 private:
     static bool CheckCurrentTypeIntersectVisibleRect(const std::unordered_set<NodeId>& nodeIds,
         uint32_t currentType, const RectI& visibleRect);
-    static bool IsSpecialLayerEnable(const RSScreenProperty* screenProperty);
-    static const RSScreenProperty* GetAncestorScreenProperty(const RSSurfaceRenderParams& surfaceParams);
+    static bool IsSpecialLayerEnable();
     static bool IsSurfaceInBlackList(const RSSurfaceRenderParams& surfaceParams);
     static std::optional<bool> GetCursorModeSkipDecision(const RSSurfaceRenderParams& surfaceParams);
     static void UpdateScreenSpecialLayersRecord(RSSurfaceRenderNode& sourceNode,

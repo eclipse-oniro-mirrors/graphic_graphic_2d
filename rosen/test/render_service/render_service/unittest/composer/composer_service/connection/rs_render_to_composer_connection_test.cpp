@@ -278,4 +278,31 @@ HWTEST_F(RSRenderToComposerConnectionTest, Connection_SetSkipDelay_ValidAgent_Fo
     ASSERT_NE(agent, nullptr);
     ASSERT_EQ(agent->rsRenderComposer_, nullptr);
 }
+
+/**
+ * @tc.name: PostTask001
+ * @tc.desc: Test PostTask with a null agent returns false.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderToComposerConnectionTest, PostTask001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderComposerAgent> agent = nullptr;
+    RSRenderToComposerConnection conn("conn", 15u, agent);
+
+    EXPECT_FALSE(conn.PostTask([]() {}));
+}
+
+/**
+ * @tc.name: PostTask002
+ * @tc.desc: Test PostTask with a valid agent forwards the task to the agent and returns true.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderToComposerConnectionTest, PostTask002, TestSize.Level1)
+{
+    auto agent = std::make_shared<RSRenderComposerAgent>(std::shared_ptr<RSRenderComposer>(nullptr));
+    ASSERT_NE(agent, nullptr);
+    RSRenderToComposerConnection conn("conn", 16u, agent);
+
+    EXPECT_TRUE(conn.PostTask([]() {}));
+}
 } // namespace OHOS::Rosen

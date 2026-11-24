@@ -255,6 +255,7 @@ ohos_unittest("RSScreenPreprocessorTest") {
   module_out_path = module_output_path
 
   sources = [
+    "../pipeline/mock/mock_hdi_device.cpp",
     "rs_screen_preprocessor_test.cpp",
   ]
 
@@ -282,6 +283,7 @@ ohos_unittest("RSScreenPreprocessorTest") {
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/utils",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/frame_rate_vote",
     "$graphic_2d_root/rosen/modules/render_service/vsync",
+    "$graphic_2d_root/rosen/test/render_service/render_service/unittest/pipeline/mock",
   ]
 
   deps = [

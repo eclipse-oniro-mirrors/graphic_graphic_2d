@@ -15,12 +15,21 @@
 
 #include "rs_render_service_agent.h"
 #include "hgm_core.h"
+#include "platform/common/rs_log.h"
+#include "rs_trace.h"
 
 #undef LOG_TAG
 #define LOG_TAG "RSRenderServiceAgent"
 
 namespace OHOS {
 namespace Rosen {
+void RSRenderServiceAgent::ReportSyncTaskTimeout(int64_t timeoutMs)
+{
+    RS_TRACE_NAME_FMT("RSRenderServiceAgent sync task timeout, waitMs: %ld", static_cast<long>(timeoutMs));
+    RS_LOGE("%{public}s: wait main thread task timeout after [%{public}ld] ms, main thread may be stuck",
+        __func__, static_cast<long>(timeoutMs));
+}
+
 void RSRenderServiceAgent::PostTaskImmediate(const std::function<void()>& task)
 {
     auto& handler = renderService_.handler_;

@@ -208,7 +208,12 @@ void HdiBackend::OnHdiBackendConnected(uint32_t screenId, bool connected)
 void HdiBackend::CreateHdiOutput(uint32_t screenId)
 {
     OutputPtr newOutput = HdiOutput::CreateHdiOutput(screenId);
-    newOutput->Init();
+    RosenError ret = newOutput->Init();
+    if (ret != ROSEN_ERROR_OK) {
+        // keep the output registered as before (hotplug chain expects it), but make the
+        // half-initialized state visible; device dead/restore will recreate it via ResetDevice
+        HLOGE("Init HdiOutput failed, ret is %{public}d, screenId[%{public}u]", static_cast<int32_t>(ret), screenId);
+    }
     outputs_.emplace(screenId, newOutput);
 }
 

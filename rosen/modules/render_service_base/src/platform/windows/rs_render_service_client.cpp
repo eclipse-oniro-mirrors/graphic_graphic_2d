@@ -19,6 +19,7 @@
 #include "rs_surface_windows.h"
 #include "rs_vsync_client_windows.h"
 #include "transaction/rs_render_pipeline_client.h"
+
 namespace OHOS {
 namespace Rosen {
 std::shared_ptr<RSIRenderClient> RSIRenderClient::CreateRenderServiceClient()
@@ -282,6 +283,10 @@ void RSRenderServiceClient::MarkPowerOffNeedProcessOneFrame()
 }
 
 void RSRenderServiceClient::RepaintEverything()
+{
+}
+
+void RSRenderServiceClient::ForceRefreshOneFrameWithNextVSync()
 {
 }
 
@@ -554,10 +559,6 @@ int32_t RSRenderServiceClient::RegisterHgmConfigChangeCallback(const HgmConfigCh
     return {};
 }
 
-void RSRenderServiceClient::ForceRefreshOneFrameWithNextVSync()
-{
-}
-
 int32_t RSRenderServiceClient::RegisterHgmRefreshRateModeChangeCallback(
     const HgmRefreshRateModeChangeCallback& callback)
 {
@@ -767,7 +768,7 @@ void RSRenderServiceClient::SetHdrForceHwcEnabled(const std::string &nodeIdStr, 
 {
 }
 
-void RSRenderServiceClient::SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh)
+void RSRenderServiceClient::SetForceRefresh(const std::string& nodeIdStr, bool isForceRefresh)
 {
 }
 
@@ -790,7 +791,7 @@ int32_t RSRenderServiceClient::UnRegisterSelfDrawingNodeRectChangeCallback()
     return {};
 }
 
-void RSRenderServiceClient::NotifyPageName(const std::string &packageName,
+void RSRenderServiceClient::NotifyPageName(const std::string& packageName,
     const std::string &pageName, bool isEnter)
 {
 }

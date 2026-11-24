@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#define private public
+
 #include <gtest/gtest.h>
 
 #include "property/rs_properties.h"
@@ -41,6 +43,13 @@ void RSPropertiesTest::SetUpTestCase() {}
 void RSPropertiesTest::TearDownTestCase() {}
 void RSPropertiesTest::SetUp() {}
 void RSPropertiesTest::TearDown() {}
+
+Drawing::ColorMatrix MakeIdentityColorMatrix()
+{
+    Drawing::ColorMatrix matrix;
+    matrix.SetIdentity();
+    return matrix;
+}
 
 /**
  * @tc.name: SetSublayerTransform001
@@ -1546,174 +1555,6 @@ HWTEST_F(RSPropertiesTest, SetDynamicLightUpDegree001, TestSize.Level1)
     properties.SetDynamicLightUpDegree(lightUpDegree);
     EXPECT_EQ(properties.filterNeedUpdate_, true);
     EXPECT_EQ(properties.GetDynamicLightUpDegree(), lightUpDegree.value());
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessParams001
- * @tc.desc: test results of SetNGetFgBrightnessParams001
- * @tc.type: FUNC
- * @tc.require: issueI9QKVM
- */
-HWTEST_F(RSPropertiesTest, SetNGetFgBrightnessParams001, TestSize.Level1)
-{
-    RSProperties properties;
-    RSDynamicBrightnessPara para;
-    std::optional<RSDynamicBrightnessPara> params;
-    properties.SetFgBrightnessParams(params);
-    EXPECT_EQ(params.has_value(), false);
-
-    params = para;
-    properties.SetFgBrightnessParams(params);
-    EXPECT_EQ(params.has_value(), true);
-}
-
-/**
- * @tc.name: GetFgBrightnessEnableEDR001
- * @tc.desc: test results of GetFgBrightnessEnableEDR
- * @tc.type: FUNC
- */
-HWTEST_F(RSPropertiesTest, GetFgBrightnessEnableEDR001, TestSize.Level1)
-{
-    RSProperties properties;
-    EXPECT_FALSE(properties.GetFgBrightnessEnableEDR());
-
-    RSDynamicBrightnessPara para;
-    std::optional<RSDynamicBrightnessPara> params;
-    params = para;
-    properties.SetFgBrightnessParams(params);
-    EXPECT_FALSE(properties.GetFgBrightnessEnableEDR());
-
-    para.enableHdr_ = true;
-    para.fraction_ = 1.0f;
-    params = para;
-    EXPECT_FALSE(properties.GetFgBrightnessEnableEDR());
-
-    para.fraction_ = 0.5f;
-    params = para;
-    properties.SetFgBrightnessParams(params);
-    EXPECT_TRUE(properties.GetFgBrightnessEnableEDR());
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessRates001
- * @tc.desc: test results of SetNGetFgBrightnessRates001
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSPropertiesTest, SetNGetFgBrightnessRates001, TestSize.Level1)
-{
-    RSProperties properties;
-    Vector4f value {0.5f, 0.5f, 0.5f, 0.5f};
-    properties.SetFgBrightnessRates(value);
-    EXPECT_EQ(properties.filterNeedUpdate_, true);
-
-    auto valueGet = properties.GetFgBrightnessRates();
-    EXPECT_EQ(valueGet, value);
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessSaturation001
- * @tc.desc: test results of SetNGetFgBrightnessSaturation001
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSPropertiesTest, SetNGetFgBrightnessSaturation001, TestSize.Level1)
-{
-    RSProperties properties;
-    properties.SetFgBrightnessSaturation(0.5f);
-    EXPECT_EQ(properties.filterNeedUpdate_, true);
-
-    auto valueGet = properties.GetFgBrightnessSaturation();
-    EXPECT_EQ(valueGet, 0.5f);
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessPosCoeff001
- * @tc.desc: test results of SetNGetFgBrightnessPosCoeff001
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSPropertiesTest, SetNGetFgBrightnessPosCoeff001, TestSize.Level1)
-{
-    RSProperties properties;
-    Vector4f value {0.5f, 0.5f, 0.5f, 0.5f};
-    properties.SetFgBrightnessPosCoeff(value);
-    EXPECT_EQ(properties.filterNeedUpdate_, true);
-
-    auto valueGet = properties.GetFgBrightnessPosCoeff();
-    EXPECT_EQ(valueGet, value);
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessNegCoeff001
- * @tc.desc: test results of SetNGetFgBrightnessNegCoeff001
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSPropertiesTest, SetNGetFgBrightnessNegCoeff001, TestSize.Level1)
-{
-    RSProperties properties;
-    Vector4f value {0.5f, 0.5f, 0.5f, 0.5f};
-    properties.SetFgBrightnessNegCoeff(value);
-    EXPECT_EQ(properties.filterNeedUpdate_, true);
-
-    auto valueGet = properties.GetFgBrightnessNegCoeff();
-    EXPECT_EQ(valueGet, value);
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessFract001
- * @tc.desc: test results of SetNGetFgBrightnessFract001
- * @tc.type: FUNC
- * @tc.require: issueI9QKVM
- */
-HWTEST_F(RSPropertiesTest, SetNGetFgBrightnessFract001, TestSize.Level1)
-{
-    RSProperties properties;
-    properties.SetFgBrightnessFract(0.5f);
-    EXPECT_EQ(properties.filterNeedUpdate_, true);
-
-    auto valueGet = properties.GetFgBrightnessFract();
-    EXPECT_EQ(valueGet, 0.5f);
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessHdr001
- * @tc.desc: test results of SetNGetFgBrightnessHdr001
- * @tc.type: FUNC
- * @tc.require: issueI9QKVM
- */
-HWTEST_F(RSPropertiesTest, SetNGetFgBrightnessHdr001, TestSize.Level1)
-{
-    RSProperties properties;
-    properties.SetFgBrightnessHdr(false);
-    EXPECT_EQ(properties.filterNeedUpdate_, true);
-
-    properties.SetFgBrightnessHdr(true);
-    auto valueGet = properties.GetFgBrightnessHdr();
-    EXPECT_EQ(valueGet, true);
-}
-
-/**
- * @tc.name: SetNGetFgBrightnessParams002
- * @tc.desc: test results of SetNGetFgBrightnessParams002
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSPropertiesTest, SetNGetFgBrightnessParams002, TestSize.Level1)
-{
-    RSProperties properties;
-    Vector4f value {0.5f, 0.5f, 0.5f, 0.5f};
-    properties.SetFgBrightnessRates(value);
-    properties.SetFgBrightnessSaturation(0.5f);
-    properties.SetFgBrightnessPosCoeff(value);
-    properties.SetFgBrightnessNegCoeff(value);
-    properties.SetFgBrightnessFract(0.5f);
-    EXPECT_EQ(properties.filterNeedUpdate_, true);
-
-    auto valueGet = properties.GetFgBrightnessParams();
-    EXPECT_EQ(valueGet.has_value(), true);
-    EXPECT_EQ(properties.IsFgBrightnessValid(), true);
 }
 
 /**
@@ -5194,6 +5035,189 @@ HWTEST_F(RSPropertiesTest, IgnorePropertiesContentDirtyReset001, TestSize.Level1
     // ResetDirty should restore ignorePropertiesContentDirty_ to false (normal consideration)
     properties.ResetDirty();
     EXPECT_FALSE(properties.IgnorePropertiesContentDirty());
+}
+
+/**
+ * @tc.name: SetColorMatrix001
+ * @tc.desc: SetColorMatrix then GetColorMatrix returns the set value
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, SetColorMatrix001, TestSize.Level1)
+{
+    RSProperties properties;
+    auto identityMatrix = MakeIdentityColorMatrix();
+    std::optional<Drawing::ColorMatrix> colorMatrix = identityMatrix;
+    properties.SetColorMatrix(colorMatrix);
+    ASSERT_TRUE(properties.GetColorMatrix().has_value());
+    EXPECT_EQ(properties.GetColorMatrix().value(), identityMatrix);
+}
+
+/**
+ * @tc.name: SetColorMatrix002
+ * @tc.desc: SetColorMatrix sets colorFilterNeedUpdate_ to true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, SetColorMatrix002, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.colorFilterNeedUpdate_ = false;
+    auto identityMatrix = MakeIdentityColorMatrix();
+    std::optional<Drawing::ColorMatrix> colorMatrix = identityMatrix;
+    properties.SetColorMatrix(colorMatrix);
+    EXPECT_TRUE(properties.colorFilterNeedUpdate_);
+}
+
+/**
+ * @tc.name: GetColorMatrixDefault001
+ * @tc.desc: Without setting, GetColorMatrix returns nullopt
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, GetColorMatrixDefault001, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_FALSE(properties.GetColorMatrix().has_value());
+}
+
+/**
+ * @tc.name: GenerateColorFilterColorMatrixOnly001
+ * @tc.desc: Only set ColorMatrix, colorFilter_ is generated from ColorMatrix
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, GenerateColorFilterColorMatrixOnly001, TestSize.Level1)
+{
+    RSProperties properties;
+    auto identityMatrix = MakeIdentityColorMatrix();
+    std::optional<Drawing::ColorMatrix> colorMatrix = identityMatrix;
+    properties.SetColorMatrix(colorMatrix);
+    properties.GenerateColorFilter();
+    EXPECT_NE(properties.GetColorFilter(), nullptr);
+}
+
+/**
+ * @tc.name: GenerateColorFilterColorMatrixMutexGrayScale001
+ * @tc.desc: Set both ColorMatrix and GrayScale, colorFilter_ only from ColorMatrix
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, GenerateColorFilterColorMatrixMutexGrayScale001, TestSize.Level1)
+{
+    RSProperties properties;
+    auto identityMatrix = MakeIdentityColorMatrix();
+    std::optional<Drawing::ColorMatrix> colorMatrix = identityMatrix;
+    properties.SetColorMatrix(colorMatrix);
+    std::optional<float> grayScale = std::optional<float>(1.0f);
+    properties.SetGrayScale(grayScale);
+    properties.GenerateColorFilter();
+    EXPECT_NE(properties.GetColorFilter(), nullptr);
+}
+
+/**
+ * @tc.name: GenerateColorFilterColorMatrixMutexBrightness001
+ * @tc.desc: Set both ColorMatrix and Brightness, colorFilter_ only from ColorMatrix
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, GenerateColorFilterColorMatrixMutexBrightness001, TestSize.Level1)
+{
+    RSProperties properties;
+    auto identityMatrix = MakeIdentityColorMatrix();
+    std::optional<Drawing::ColorMatrix> colorMatrix = identityMatrix;
+    properties.SetColorMatrix(colorMatrix);
+    constexpr float BRIGHTNESS_TEST_VALUE = 2.0f;
+    std::optional<float> brightness = std::optional<float>(BRIGHTNESS_TEST_VALUE);
+    properties.SetBrightness(brightness);
+    properties.GenerateColorFilter();
+    EXPECT_NE(properties.GetColorFilter(), nullptr);
+}
+
+/**
+ * @tc.name: GenerateColorFilterGrayScaleOnly001
+ * @tc.desc: Only set GrayScale (no ColorMatrix), colorFilter_ from GrayScale
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, GenerateColorFilterGrayScaleOnly001, TestSize.Level1)
+{
+    RSProperties properties;
+    std::optional<float> grayScale = std::optional<float>(1.0f);
+    properties.SetGrayScale(grayScale);
+    properties.GenerateColorFilter();
+    EXPECT_NE(properties.GetColorFilter(), nullptr);
+}
+
+/**
+ * @tc.name: GenerateColorFilterClearMatrixThenGrayScale001
+ * @tc.desc: Clear ColorMatrix then set GrayScale, colorFilter_ from GrayScale
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, GenerateColorFilterClearMatrixThenGrayScale001, TestSize.Level1)
+{
+    RSProperties properties;
+    auto identityMatrix = MakeIdentityColorMatrix();
+    std::optional<Drawing::ColorMatrix> colorMatrix = identityMatrix;
+    properties.SetColorMatrix(colorMatrix);
+    properties.GenerateColorFilter();
+    EXPECT_NE(properties.GetColorFilter(), nullptr);
+
+    std::optional<Drawing::ColorMatrix> nulloptMatrix = std::nullopt;
+    properties.SetColorMatrix(nulloptMatrix);
+    std::optional<float> grayScale = std::optional<float>(1.0f);
+    properties.SetGrayScale(grayScale);
+    properties.GenerateColorFilter();
+    EXPECT_NE(properties.GetColorFilter(), nullptr);
+}
+
+/**
+ * @tc.name: GenerateColorFilterZeroMatrix001
+ * @tc.desc: Passing all-zero matrix does not crash
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, GenerateColorFilterZeroMatrix001, TestSize.Level1)
+{
+    RSProperties properties;
+    Drawing::ColorMatrix zeroMatrix;
+    Drawing::scalar zeroArray[Drawing::ColorMatrix::MATRIX_SIZE] = { 0.0f };
+    zeroMatrix.SetArray(zeroArray);
+    std::optional<Drawing::ColorMatrix> colorMatrix = zeroMatrix;
+    properties.SetColorMatrix(colorMatrix);
+    properties.GenerateColorFilter();
+    EXPECT_NE(properties.GetColorFilter(), nullptr);
+}
+
+/**
+ * @tc.name: GenerateColorFilterWithColorMatrix001
+ * @tc.desc: Cover the ColorMatrix branches of GenerateColorFilter: no effect clears the filter;
+ *           ColorMatrix set builds the filter; clearing ColorMatrix clears the filter again
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, GenerateColorFilterWithColorMatrix001, TestSize.Level1)
+{
+    RSProperties properties;
+
+    // No color effect: GenerateColorFilter takes the "no effect" branch and clears the filter
+    properties.GenerateColorFilter();
+    EXPECT_EQ(properties.GetColorFilter(), nullptr);
+
+    // Only GrayScale set (no ColorMatrix): GenerateColorFilter does not return early, it calls
+    // GenerateColorFilterByColorMatrix(), which takes the !has_value() early-return branch and
+    // leaves the GrayScale-generated filter untouched
+    std::optional<float> grayScale = std::optional<float>(0.5f);
+    properties.SetGrayScale(grayScale);
+    properties.GenerateColorFilter();
+    EXPECT_NE(properties.GetColorFilter(), nullptr);
+
+    // Clear GrayScale so the following "ColorMatrix only" segment keeps its original meaning
+    properties.SetGrayScale(std::nullopt);
+
+    // Only ColorMatrix set: the ColorMatrix branch builds the filter
+    auto identityMatrix = MakeIdentityColorMatrix();
+    std::optional<Drawing::ColorMatrix> colorMatrix = identityMatrix;
+    properties.SetColorMatrix(colorMatrix);
+    properties.GenerateColorFilter();
+    EXPECT_NE(properties.GetColorFilter(), nullptr);
+
+    // Clear ColorMatrix with no other effect: back to the "no effect" branch, filter cleared
+    std::optional<Drawing::ColorMatrix> nulloptMatrix = std::nullopt;
+    properties.SetColorMatrix(nulloptMatrix);
+    properties.GenerateColorFilter();
+    EXPECT_EQ(properties.GetColorFilter(), nullptr);
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -42,6 +42,12 @@ DECLARE_SHADER(DotMatrixShader, DOT_MATRIX_SHADER,
     ADD_PROPERTY_TAG(DotMatrixShader, Progress)
 );
 
+DECLARE_SHADER(FlowLightSweep, FLOW_LIGHT_SWEEP,
+    ADD_PROPERTY_TAG(FlowLightSweep, EffectColors),
+    ADD_PROPERTY_TAG(FlowLightSweep, EffectStops),
+    ADD_PROPERTY_TAG(FlowLightSweep, Progress)
+);
+
 DECLARE_SHADER(WavyRippleLight, WAVY_RIPPLE_LIGHT,
     ADD_PROPERTY_TAG(WavyRippleLight, Center),
     ADD_PROPERTY_TAG(WavyRippleLight, Radius),
@@ -482,4 +488,16 @@ DECLARE_SHADER(CosmosRingShadow, COSMOS_RING_SHADOW,
     ADD_PROPERTY_TAG(CosmosRingShadow, Softness),
     ADD_PROPERTY_TAG(CosmosRingShadow, ShadowOffset),
     ADD_PROPERTY_TAG(CosmosRingShadow, ShadowColor)
+);
+
+DECLARE_SHADER(StickerLaserShader, STICKER_LASER_SHADER,
+    ADD_PROPERTY_TAG(StickerLaserShader, Sticker),
+    ADD_PROPERTY_TAG(StickerLaserShader, OutlineWidth),
+    ADD_PROPERTY_TAG(StickerLaserShader, Frequency),
+    ADD_PROPERTY_TAG(StickerLaserShader, Direction),
+    ADD_PROPERTY_TAG(StickerLaserShader, Progress),
+    ADD_PROPERTY_TAG(StickerLaserShader, LightDir),
+    ADD_PROPERTY_TAG(StickerLaserShader, ElevationShadowColor),
+    ADD_PROPERTY_TAG(StickerLaserShader, ElevationShadowRadius),
+    ADD_PROPERTY_TAG(StickerLaserShader, ElevationShadowDistance)
 );

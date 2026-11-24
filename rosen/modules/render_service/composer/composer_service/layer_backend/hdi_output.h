@@ -54,6 +54,11 @@ struct LayerCreatedInfo {
     uint64_t tunnelLayerGeneration = 0;
 };
 
+struct PresentFenceMeta {
+    uint64_t flushTs = 0;
+    NodeId nodeId = 0;
+};
+
 using OnPrepareCompleteFunc = std::function<void(sptr<Surface>& surface,
                                                  const PrepareCompleteParam &param, void* data)>;
 using OnLayerCreatedFunc = std::function<void(
@@ -65,6 +70,7 @@ public:
     virtual ~HdiOutput();
 
     static constexpr uint32_t COMPOSITION_RECORDS_NUM = HdiLayer::FRAME_RECORDS_NUM;
+    static constexpr uint32_t PRESENT_TIME_AVERAGE_DIVISOR = 2;
 
     /* for RS begin */
     void SetRSLayers(const std::vector<std::shared_ptr<RSLayer>>& rsLayers);
@@ -155,9 +161,10 @@ public:
     {
         return thirdFrameAheadPresentTime_;
     }
-    void UpdateThirdFrameAheadPresentFence(sptr<SyncFence>& fbFence);
+    void UpdateThirdFrameAheadPresentFence(const sptr<SyncFence>& fbFence, const PresentFenceMeta& meta = {});
     int32_t GetDisplayClientTargetProperty(int32_t& pixelFormat, int32_t& dataspace);
     int32_t GetLayerSolidFilledColor(uint64_t layerId, uint32_t& solidFilledColor);
+    void FinalizePostCommit(bool commitSucceeded = true);
 
 private:
     HdiDevice *device_ = nullptr;
@@ -166,7 +173,9 @@ private:
     sptr<VSyncSampler> sampler_ = nullptr;
 
     std::vector<sptr<SyncFence>> historicalPresentfences_;
+    std::vector<PresentFenceMeta> historicalPresentFencesMeta_;
     sptr<SyncFence> thirdFrameAheadPresentFence_ = SyncFence::InvalidFence();
+    PresentFenceMeta thirdFrameAheadPresentMeta_ = {};
     int32_t presentFenceIndex_ = 0;
 
     sptr<SurfaceBuffer> currFrameBuffer_ = nullptr;
@@ -215,6 +224,8 @@ private:
     void DestroyLayerBySurfaceIdLocked(uint64_t surfaceId);
     void UnregisterGlobalTunnelLayersLocked() const;
     void UpdateRSLayerLocked(const std::shared_ptr<RSLayer>& rsLayer, bool tunnelBatchExceeded = false);
+    void UpdateExistingLayerLocked(uint64_t surfaceId, const std::shared_ptr<RSLayer>& rsLayer,
+        const std::shared_ptr<HdiLayer>& hdiLayer, bool fallbackRequested);
     bool UpdateSolidColorLayerLocked(const std::shared_ptr<RSLayer>& rsLayer);
     void DeletePrevLayersLocked();
     void ResetLayerStatusLocked();
@@ -254,8 +265,21 @@ private:
         const std::shared_ptr<RSLayer>& rsLayer, bool tunnelBatchExceeded = false) const;
     void MarkTunnelDeclinedLocked(uint64_t surfaceId, uint64_t generation);
     void ClearTunnelDeclinedLocked(uint64_t surfaceId);
-    void FinalizePostCommit(bool commitSucceeded = true);
     void InitTunnelProperty();
+    void RecordTunnelPresentTimeAfterCommit(const std::shared_ptr<HdiLayer>& hdiLayer,
+                                            const sptr<SyncFence>& releaseFence, const PresentFenceMeta& meta);
+    void RecordTunnelFramePresent(const PresentFenceMeta& meta, const sptr<SyncFence>& presentFence, int64_t timestamp);
+    struct PresentPipelineDecision {
+        bool reportValid = false;
+        uint64_t reportTs = 0;
+    };
+    PresentPipelineDecision ProcessPresentPipelineLocked(const PresentFenceMeta& meta, int64_t timestamp);
+    void RecordPresentTimeForLayersLocked(
+        int64_t reportValue, bool isTunnelMeta, const PresentPipelineDecision& decision);
+    uint64_t pendingPresentTs_ = 0;
+    uint64_t lastMainPresentTs_ = 0;
+    bool lastReadWasTunnel_ = false;
+    bool IsLastTunnelFrameInRingLocked() const;
 
     bool isActiveRectSwitching_ = false;
     void DirtyRegions(const std::shared_ptr<RSLayer>& rsLayer);

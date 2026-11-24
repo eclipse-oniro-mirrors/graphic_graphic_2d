@@ -499,5 +499,14 @@ void RSRenderComposerAgent::SetActiveRectSwitchStatus(bool flag, const RectI& ac
         }
     );
 }
+
+void RSRenderComposerAgent::PostTask(const std::function<void()>& task)
+{
+    if (rsRenderComposer_ == nullptr) {
+        RS_LOGE("%{public}s rsRenderComposer is nullptr", __func__);
+        return;
+    }
+    rsRenderComposer_->PostTask(task);
+}
 } // namespace Rosen
 } // namespace OHOS

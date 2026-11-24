@@ -17,12 +17,15 @@
 #include <parameters.h>
 #include <thread>
 
+#include "common/rs_common_def.h"
+#include "common/rs_special_layer_manager.h"
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "drawable/rs_render_node_drawable.h"
 #include "feature/uifirst/rs_sub_thread.h"
 #include "graphic_feature_param_manager.h"
 #include "memory/rs_memory_manager.h"
+#include "params/rs_render_thread_params.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "engine/rs_base_render_engine.h"
@@ -37,6 +40,54 @@ using namespace testing::ext;
 using namespace OHOS::Rosen::DrawableV2;
 
 namespace OHOS::Rosen {
+namespace {
+constexpr NodeId SPECIAL_LAYER_CAPTURE_GUARD_WHITE_OUTER = 101;
+constexpr NodeId SPECIAL_LAYER_CAPTURE_GUARD_BLACK_OUTER = 102;
+constexpr NodeId SPECIAL_LAYER_CAPTURE_GUARD_WHITE_INNER = 103;
+constexpr NodeId SPECIAL_LAYER_CAPTURE_GUARD_BLACK_INNER = 104;
+
+// SpecialLayerCaptureGuard protects per-frame global state shared by every screen on the render thread.
+// These tests install a non-null RSRenderThreadParams, then restore the exact prior special-layer param
+// and capture param. A params object created here is removed on scope exit so tests that expect the
+// default null thread-local state are unaffected.
+class ScopedSpecialLayerCaptureGuardState {
+public:
+    ScopedSpecialLayerCaptureGuardState()
+        : savedCaptureParam_(RSUniRenderThread::GetCaptureParam())
+    {
+        createdParams_ = RSUniRenderThread::Instance().GetRSRenderThreadParams() == nullptr;
+        if (createdParams_) {
+            RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(
+                std::make_unique<RSRenderThreadParams>());
+        }
+        savedSpecialLayerParam_ = Params().GetSpecialLayerRenderParam();
+    }
+
+    ~ScopedSpecialLayerCaptureGuardState()
+    {
+        RSUniRenderThread::SetCaptureParam(savedCaptureParam_);
+        if (createdParams_) {
+            RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
+        } else {
+            Params().GetMutableSpecialLayerRenderParam() = savedSpecialLayerParam_;
+        }
+    }
+
+    ScopedSpecialLayerCaptureGuardState(const ScopedSpecialLayerCaptureGuardState&) = delete;
+    ScopedSpecialLayerCaptureGuardState& operator=(const ScopedSpecialLayerCaptureGuardState&) = delete;
+
+    RSRenderThreadParams& Params()
+    {
+        return *RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    }
+
+private:
+    CaptureParam savedCaptureParam_;
+    SpecialLayerRenderParam savedSpecialLayerParam_;
+    bool createdParams_ = false;
+};
+} // namespace
+
 class RSUniRenderThreadTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -105,6 +156,54 @@ HWTEST_F(RSUniRenderThreadTest, SetAndGetCaptureParam001, TestSize.Level1)
     param.isSingleSurface_ = true;
     instance.SetCaptureParam(param);
     EXPECT_TRUE(instance.GetCaptureParam().isSingleSurface_);
+}
+
+/**
+ * @tc.name: SpecialLayerCaptureGuardRestoresSharedState001
+ * @tc.desc: Test SpecialLayerCaptureGuard restores the whole special-layer state and record flag
+ * @tc.type: FUNC
+ * @tc.require: issues/26744
+ */
+HWTEST_F(RSUniRenderThreadTest, SpecialLayerCaptureGuardRestoresSharedState001, TestSize.Level1)
+{
+    ScopedSpecialLayerCaptureGuardState guardState;
+    auto& params = guardState.Params();
+    const SpecialLayerRenderParam outerState {
+        .blackList = { SPECIAL_LAYER_CAPTURE_GUARD_BLACK_OUTER },
+        .whiteList = { SPECIAL_LAYER_CAPTURE_GUARD_WHITE_OUTER },
+        .cursorMode = RSVirtualScreenCursorMode::HIDE,
+        .securityDisplay = true,
+        .secExemption = true,
+    };
+    const SpecialLayerRenderParam innerState {
+        .blackList = { SPECIAL_LAYER_CAPTURE_GUARD_BLACK_INNER },
+        .whiteList = { SPECIAL_LAYER_CAPTURE_GUARD_WHITE_INNER },
+        .cursorMode = RSVirtualScreenCursorMode::FORCE_RENDER,
+        .securityDisplay = false,
+        .secExemption = false,
+    };
+    params.GetMutableSpecialLayerRenderParam() = outerState;
+    CaptureParam outerCapture(true, true, true);
+    outerCapture.virtualScreenId_ = SPECIAL_LAYER_CAPTURE_GUARD_WHITE_OUTER;
+    outerCapture.endNodeId_ = SPECIAL_LAYER_CAPTURE_GUARD_BLACK_OUTER;
+    outerCapture.isSelfCapture_ = true;
+    outerCapture.isWindowRecord_ = true;
+    RSUniRenderThread::SetCaptureParam(outerCapture);
+    {
+        RSUniRenderThread::SpecialLayerCaptureGuard guard;
+        params.GetMutableSpecialLayerRenderParam() = innerState;
+        RSUniRenderThread::SetCaptureParam(CaptureParam{});
+        EXPECT_EQ(params.GetSpecialLayerRenderParam(), innerState);
+        EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
+    }
+    EXPECT_EQ(params.GetSpecialLayerRenderParam(), outerState);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isWindowRecord_);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSnapshot_);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSingleSurface_);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isMirror_);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().isSelfCapture_);
+    EXPECT_EQ(RSUniRenderThread::GetCaptureParam().virtualScreenId_, SPECIAL_LAYER_CAPTURE_GUARD_WHITE_OUTER);
+    EXPECT_EQ(RSUniRenderThread::GetCaptureParam().endNodeId_, SPECIAL_LAYER_CAPTURE_GUARD_BLACK_OUTER);
 }
 
 /**
@@ -325,7 +424,7 @@ HWTEST_F(RSUniRenderThreadTest, Render001, TestSize.Level1)
 #ifdef RES_SCHED_ENABLE
 /**
  * @tc.name: SubScribeSystemAbility001
- * @tc.desc: Test SubScribeSystemAbility
+ * @tc.desc: Test SubScribeSystemAbility keeps the listener after subscribing
  * @tc.type: FUNC
  * @tc.require: issueIAE59W
  */
@@ -333,7 +432,11 @@ HWTEST_F(RSUniRenderThreadTest, SubScribeSystemAbility001, TestSize.Level1)
 {
     RSUniRenderThread& instance = RSUniRenderThread::Instance();
     instance.SubScribeSystemAbility();
-    EXPECT_TRUE(instance.rootNodeDrawable_);
+    // a successful subscribe keeps the listener registered; exhausted retries would clear it
+    EXPECT_NE(instance.saStatusChangeListener_, nullptr);
+    // re-subscribing installs a fresh listener and still succeeds
+    instance.SubScribeSystemAbility();
+    EXPECT_NE(instance.saStatusChangeListener_, nullptr);
 }
 #endif
 

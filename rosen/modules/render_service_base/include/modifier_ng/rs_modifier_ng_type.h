@@ -208,33 +208,11 @@ public:
             case RSPropertyType::LINEAR_GRADIENT_BLUR_PARA: return "LinearGradientBlurPara";
             case RSPropertyType::DYNAMIC_LIGHT_UP_RATE: return "DynamicLightUpRate";
             case RSPropertyType::DYNAMIC_LIGHT_UP_DEGREE: return "DynamicLightUpDegree";
-            case RSPropertyType::FG_BRIGHTNESS_RATES: return "FgBrightnessRates";
-            case RSPropertyType::FG_BRIGHTNESS_SATURATION: return "FgBrightnessSaturation";
-            case RSPropertyType::FG_BRIGHTNESS_POSCOEFF: return "FgBrightnessPoscoeff";
-            case RSPropertyType::FG_BRIGHTNESS_NEGCOEFF: return "FgBrightnessNegcoeff";
-            case RSPropertyType::FG_BRIGHTNESS_FRACTION: return "FgBrightnessFraction";
-            case RSPropertyType::FG_BRIGHTNESS_HDR: return "FgBrightnessHdr";
             case RSPropertyType::BG_BRIGHTNESS_RATES: return "BgBrightnessRates";
             case RSPropertyType::BG_BRIGHTNESS_SATURATION: return "BgBrightnessSaturation";
             case RSPropertyType::BG_BRIGHTNESS_POSCOEFF: return "BgBrightnessPoscoeff";
             case RSPropertyType::BG_BRIGHTNESS_NEGCOEFF: return "BgBrightnessNegcoeff";
             case RSPropertyType::BG_BRIGHTNESS_FRACTION: return "BgBrightnessFraction";
-            case RSPropertyType::SHADOW_BLENDER_PARAMS: return "ShadowBlenderParams";
-            case RSPropertyType::HDR_DARKEN_BLENDER_PARAMS: return "HdrDarkenBlenderParams";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_DARKEN_WEIGHT: return "ColorfulBrightnessDarkenWeight";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_FRACTION: return "ColorfulBrightnessFraction";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_CUBIC_RATE: return "ColorfulBrightnessCubicRate";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_QUAD_RATE: return "ColorfulBrightnessQuadRate";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_LINEAR_RATE: return "ColorfulBrightnessLinearRate";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_DEGREE: return "ColorfulBrightnessDegree";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_SATURATION: return "ColorfulBrightnessSaturation";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_POSITIVE_COEFF: return "ColorfulBrightnessPositiveCoeff";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_NEGATIVE_COEFF: return "ColorfulBrightnessNegativeCoeff";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_VIBRANCY_STRENGTH: return "ColorfulBrightnessVibrancyStrength";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_LUMA_DIFF: return "ColorfulBrightnessLumaDiff";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_HDR_ENABLED: return "ColorfulBrightnessHdrEnabled";
-            case RSPropertyType::COLORFUL_BRIGHTNESS_TINTED_COLOR_PERCENT:
-                return "ColorfulBrightnessTintedColorPercent";
             case RSPropertyType::FRAME_GRAVITY: return "FrameGravity";
             case RSPropertyType::CLIP_RRECT: return "ClipRrect";
             case RSPropertyType::CLIP_BOUNDS: return "ClipBounds";
@@ -371,6 +349,8 @@ public:
             case RSPropertyType::MATERIAL_SHADER: return "MaterialShader";
             case RSPropertyType::OVERLAY_NG_SHADER: return "OverlayNGShader";
             case RSPropertyType::CLIP_SHAPE: return "ClipShape";
+            case RSPropertyType::FOREGROUND_NG_BLENDER: return "ForegroundNGBlender";
+            case RSPropertyType::COLOR_MATRIX: return "ColorMatrix";
             default: return "Unknown";
         }
         return "Unknown";

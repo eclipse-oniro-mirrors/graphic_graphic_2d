@@ -32,6 +32,8 @@ namespace OHOS::Rosen {
 namespace NativeBufferUtils {
 namespace {
 constexpr uint32_t FORMAT_R10G10B10A8 = 0x7FFFFFFF - 255;
+// bounded fence wait in error-degradation paths, aligned with FENCE_WAIT_TIME used by draw paths
+constexpr int32_t FENCE_WAIT_TIMEOUT_MS = 3000; // 3s
 
 bool CheckNativeBufferSizeSufficient(std::shared_ptr<RsVulkanInterface>& vkInterface, VkDevice device, VkImage image,
     VkDeviceMemory memory, VkDeviceSize allocationSize, const char* caller)
@@ -713,7 +715,10 @@ VkResult CreateVkSemaphore(std::shared_ptr<RsVulkanInterface>& vkInterface,
     if (res != VK_SUCCESS) {
         RS_LOGE("CreateVkSemaphore vkCreateSemaphore failed %{public}d", res);
         semaphore = VK_NULL_HANDLE;
-        nativeSurface.fence->Wait(-1);
+        // an invalid fence (fd < 0) has nothing to wait for and must not be reported as a timeout
+        if (nativeSurface.fence->IsValid() && nativeSurface.fence->Wait(FENCE_WAIT_TIMEOUT_MS) != 0) {
+            RS_LOGE("CreateVkSemaphore wait acquire fence timeout after [%{public}d] ms", FENCE_WAIT_TIMEOUT_MS);
+        }
         return res;
     }
 
@@ -730,7 +735,10 @@ VkResult CreateVkSemaphore(std::shared_ptr<RsVulkanInterface>& vkInterface,
         vkInterface->vkDestroySemaphore(vkInterface->GetDevice(), semaphore, nullptr);
         semaphore = VK_NULL_HANDLE;
         close(importSemaphoreFdInfo.fd);
-        nativeSurface.fence->Wait(-1);
+        // an invalid fence (fd < 0) has nothing to wait for and must not be reported as a timeout
+        if (nativeSurface.fence->IsValid() && nativeSurface.fence->Wait(FENCE_WAIT_TIMEOUT_MS) != 0) {
+            RS_LOGE("ImportSemaphoreFd wait acquire fence timeout after [%{public}d] ms", FENCE_WAIT_TIMEOUT_MS);
+        }
     }
     return res;
 }

@@ -14,23 +14,177 @@
  */
 
 #include "rs_drm_util.h"
+#include <algorithm>
+#include <cmath>
 #include <parameters.h>
+#include <string>
 #include "common/rs_background_thread.h"
+#include "common/rs_obj_abs_geometry.h"
+#include "common/rs_optional_trace.h"
+#include "feature/hwc/rs_uni_hwc_compute_util.h"
 #include "graphic_feature_param_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_effect_render_node.h"
 #include "rs_render_composer_manager.h"
+#include "screen_manager/screen_types.h"
 
 namespace OHOS {
 namespace Rosen {
 constexpr const int BLUR_MIN_ALPHA = 100;
 
+namespace {
+constexpr float NORMALIZED_MAX = 1.0f;
+constexpr float NORMALIZED_MIN = 0.0f;
+
+bool CalcLayerMatrix(const RSSurfaceRenderNode& node, Drawing::Matrix& matrix)
+{
+    const auto geo = node.GetRenderProperties().GetBoundsGeometry();
+    if (geo == nullptr) {
+        return false;
+    }
+    matrix = geo->GetMatrix();
+    for (auto parent = node.GetParent().lock(); parent != nullptr; parent = parent->GetParent().lock()) {
+        if (parent->GetRenderProperties().GetBoundsGeometry() == nullptr) {
+            return false;
+        }
+        if (parent->GetRenderProperties().GetSandBox().has_value()) {
+            auto ancestor = parent->GetParent().lock();
+            if (ancestor != nullptr && ancestor->GetRenderProperties().GetBoundsGeometry() == nullptr) {
+                return false;
+            }
+        }
+        if (auto relativeMatrix = RSUniHwcComputeUtil::GetMatrix(parent)) {
+            matrix.PostConcat(*relativeMatrix);
+        }
+        if (parent->GetType() == RSRenderNodeType::SCREEN_NODE) {
+            break;
+        }
+    }
+    return true;
+}
+
+void RecordLayerConversion(RSSurfaceRenderNode& node, NodeId screenNodeId, const Drawing::Matrix& conversion)
+{
+    node.UpdateCrossNodeLayerConversionMatrices(screenNodeId, conversion);
+    auto params = static_cast<RSSurfaceRenderParams*>(node.GetStagingRenderParams().get());
+    if (params != nullptr) {
+        params->SetCrossNodeLayerConversionMatrix(screenNodeId, conversion);
+    }
+    node.AddToPendingSyncList();
+}
+
+// Absolute matrix of the source node under the parent of the clone, in the frame of the display composing the clone.
+Drawing::Matrix CalcCloneDisplayAbsMatrix(const RSSurfaceRenderNode& sourceNode, const RSSurfaceRenderNode& cloneNode,
+    const RSScreenRenderNode& screenNode)
+{
+    auto geo = sourceNode.GetRenderProperties().GetBoundsGeometry();
+    Drawing::Matrix absMatrix = geo ? geo->GetMatrix() : Drawing::Matrix();
+    if (sourceNode.GetGlobalPositionEnabled()) {
+        const auto& screenProperty = screenNode.GetScreenProperty();
+        absMatrix.PostTranslate(-screenProperty.GetOffsetX(), -screenProperty.GetOffsetY());
+    }
+    if (auto parent = cloneNode.GetParent().lock()) {
+        auto parentGeo = parent->GetRenderProperties().GetBoundsGeometry();
+        absMatrix.PostConcat(parentGeo ? parentGeo->GetAbsMatrix() : Drawing::Matrix());
+    }
+    return absMatrix;
+}
+
+// Map a point of the destination rect, expressed in normalized coordinates of the whole displayed rect, onto the
+// normalized coordinates of the source rect. The hardware applies transformType to the source image before scaling it
+// into the destination rect, so the cropped part of the destination rect has to be mapped in the same way.
+// transformType follows RSBaseRenderUtil::RotateEnumToInt, where GRAPHIC_ROTATE_270 is produced by the layer matrix
+// [0 1; -1 0]: the source x axis points up on the screen, so the left edge of the source is at the bottom of the
+// destination rect. GRAPHIC_ROTATE_90 is the opposite rotation.
+void MapNormalizedPointToSrc(float dstU, float dstV, GraphicTransformType transformType, float& srcU, float& srcV)
+{
+    switch (RSBaseRenderUtil::GetRotateTransform(transformType)) {
+        case GraphicTransformType::GRAPHIC_ROTATE_90: {
+            srcU = dstV;
+            srcV = NORMALIZED_MAX - dstU;
+            break;
+        }
+        case GraphicTransformType::GRAPHIC_ROTATE_180: {
+            srcU = NORMALIZED_MAX - dstU;
+            srcV = NORMALIZED_MAX - dstV;
+            break;
+        }
+        case GraphicTransformType::GRAPHIC_ROTATE_270: {
+            srcU = NORMALIZED_MAX - dstV;
+            srcV = dstU;
+            break;
+        }
+        default: {
+            srcU = dstU;
+            srcV = dstV;
+            break;
+        }
+    }
+    const auto flip = RSBaseRenderUtil::GetFlipTransform(transformType);
+    if (flip == GraphicTransformType::GRAPHIC_FLIP_H) {
+        srcU = NORMALIZED_MAX - srcU;
+    } else if (flip == GraphicTransformType::GRAPHIC_FLIP_V) {
+        srcV = NORMALIZED_MAX - srcV;
+    }
+}
+
+// Map the cropped part of the destination rect, expressed in normalized coordinates, onto the bounding rect of the
+// source rect. The bounding rect is used so that the mapping does not depend on the direction of the rotation.
+void MapDstRectToSrcBounds(float left, float top, float right, float bottom, GraphicTransformType transformType,
+    float& minU, float& maxU, float& minV, float& maxV)
+{
+    minU = NORMALIZED_MAX;
+    maxU = NORMALIZED_MIN;
+    minV = NORMALIZED_MAX;
+    maxV = NORMALIZED_MIN;
+    for (const float dstU : { left, right }) {
+        for (const float dstV : { top, bottom }) {
+            float srcU = NORMALIZED_MIN;
+            float srcV = NORMALIZED_MIN;
+            MapNormalizedPointToSrc(dstU, dstV, transformType, srcU, srcV);
+            minU = std::min(minU, srcU);
+            maxU = std::max(maxU, srcU);
+            minV = std::min(minV, srcV);
+            maxV = std::max(maxV, srcV);
+        }
+    }
+}
+
+// Map the destination rect with the outward rounding used for the draw areas of the nodes.
+GraphicIRect MapCrossNodeDstRect(const Drawing::Matrix& matrix, const GraphicIRect& dstRect)
+{
+    const RectI mapped = RSObjAbsGeometry::MapRect(RectF(static_cast<float>(dstRect.x),
+        static_cast<float>(dstRect.y), static_cast<float>(dstRect.w), static_cast<float>(dstRect.h)), matrix);
+    return { mapped.left_, mapped.top_, mapped.width_, mapped.height_ };
+}
+
+// Same truncation as the layer size handed to the composer by RSUniRenderProcessor::GetLayerInfo.
+GraphicIRect ToGraphicIRect(const Drawing::Rect& rect)
+{
+    return { static_cast<int32_t>(rect.GetLeft()), static_cast<int32_t>(rect.GetTop()),
+        static_cast<int32_t>(rect.GetWidth()), static_cast<int32_t>(rect.GetHeight()) };
+}
+} // namespace
+
 void RSDrmUtil::ClearDrmNodes()
 {
     drmNodes_.clear();
 }
+
+bool RSDrmUtil::IsDrmNode(const RSRenderNode& node)
+{
+    const auto it = drmNodes_.find(node.GetFirstLevelNodeId());
+    if (it == drmNodes_.end()) {
+        return false;
+    }
+    return std::any_of(it->second.begin(), it->second.end(),
+        [&node](const std::shared_ptr<RSSurfaceRenderNode>& drmNode) {
+            return drmNode != nullptr && drmNode->GetId() == node.GetId();
+        });
+}
+
 void RSDrmUtil::CollectDrmNodes(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
 {
     auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(
@@ -58,6 +212,134 @@ void RSDrmUtil::AddDrmCloneCrossNode(const std::shared_ptr<RSSurfaceRenderNode>&
             }
         }
     }
+}
+
+bool RSDrmUtil::CalcCrossNodeLayerConversion(const RSSurfaceRenderNode& sourceNode,
+    const RSSurfaceRenderNode& cloneNode, const RSScreenRenderNode& screenNode, Drawing::Matrix& conversion)
+{
+    if (drmNodes_.find(sourceNode.GetFirstLevelNodeId()) == drmNodes_.end()) {
+        return false;
+    }
+    Drawing::Matrix ownMatrix;
+    if (!CalcLayerMatrix(sourceNode, ownMatrix) || !ownMatrix.Invert(conversion)) {
+        return false;
+    }
+    const Drawing::Matrix cloneMatrix = CalcCloneDisplayAbsMatrix(sourceNode, cloneNode, screenNode);
+    conversion.PostConcat(cloneMatrix);
+    return true;
+}
+
+void RSDrmUtil::UpdateDrmCrossNodeConversion(const RSSurfaceRenderNode& crossNode, NodeId screenNodeId,
+    const Drawing::Matrix& conversion)
+{
+    // The drm nodes are collected before the prepare, while the layer conversion of the cross node is calculated
+    // during the cross node prepare of this frame. Delivering it here keeps it in the same frame as the dst rect of the
+    // drm layers. Delivering it before the prepare uses the conversion of the last frame, which is missing on the
+    // first cross screen frame and moves the drm layers off the screen for one frame.
+    const auto it = drmNodes_.find(crossNode.GetFirstLevelNodeId());
+    if (it == drmNodes_.end()) {
+        return;
+    }
+    for (const auto& node : it->second) {
+        if (node == nullptr || !node->IsOnTheTree()) {
+            continue;
+        }
+        // The drm nodes are prepared under the cross node before this call, so their params are already filled.
+        // Record the matrix on the params directly, otherwise it would only reach the render thread a frame later.
+        RecordLayerConversion(*node, screenNodeId, conversion);
+    }
+}
+
+void RSDrmUtil::RecordDstRectDisplay(RSSurfaceRenderNode& node,
+    const std::shared_ptr<RSScreenRenderNode>& screenNode)
+{
+    node.SetDstRectDisplay(INVALID_NODEID);
+    if (screenNode == nullptr || !node.GetHwcGlobalPositionEnabled() || !IsDrmNode(node)) {
+        return;
+    }
+    Drawing::Matrix layerMatrix;
+    Drawing::Matrix conversion;
+    if (!CalcLayerMatrix(node, layerMatrix) || !layerMatrix.Invert(conversion)) {
+        return;
+    }
+    const auto& prepareMatrix = node.GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix();
+    conversion.PostConcat(prepareMatrix);
+    Drawing::Matrix inverse;
+    if (!conversion.Invert(inverse)) {
+        return;
+    }
+    // Cp = Mp * inverse(Mg).
+    RecordLayerConversion(node, screenNode->GetId(), conversion);
+    node.SetDstRectDisplay(screenNode->GetId());
+}
+
+bool RSDrmUtil::ConvertCrossNodeLayerInfo(const RSSurfaceRenderParams& params, NodeId screenNodeId,
+    RSLayerInfo& layerInfo)
+{
+    const NodeId dstDisplayId = params.GetLayerDstDisplayNodeId();
+    if (dstDisplayId == INVALID_NODEID) {
+        return false;
+    }
+    const auto& conversionMatrices = params.GetCrossNodeLayerConversionMatrices();
+    const auto prepared = conversionMatrices.find(dstDisplayId);
+    const auto target = conversionMatrices.find(screenNodeId);
+    Drawing::Matrix dstConversion;
+    Drawing::Matrix inverseTarget;
+    if (prepared == conversionMatrices.end() || target == conversionMatrices.end() ||
+        !prepared->second.Invert(dstConversion) || !target->second.Invert(inverseTarget)) {
+        return false;
+    }
+    if (dstDisplayId != screenNodeId) {
+        // Dt = Ct * inverse(Cp) * Dprepare.
+        dstConversion.PostConcat(target->second);
+        layerInfo.dstRect = MapCrossNodeDstRect(dstConversion, layerInfo.dstRect);
+    }
+    layerInfo.matrix.PostConcat(target->second);
+    layerInfo.transformType = RSBaseRenderUtil::RotateEnumToInt(
+        RSUniRenderUtil::GetRotationFromMatrix(layerInfo.matrix) % RS_ROTATION_360,
+        RSBaseRenderUtil::GetFlipTransform(layerInfo.transformType));
+    RS_OPTIONAL_TRACE_NAME_FMT("cross node layer convert, dstRect:[%d, %d, %d, %d] transformType:%d",
+        layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h,
+        static_cast<int32_t>(layerInfo.transformType));
+    return true;
+}
+
+void RSDrmUtil::CropCrossNodeLayerInfo(const Drawing::Rect& composedDstRect, const Drawing::Rect& screenRect,
+    RSLayerInfo& layerInfo)
+{
+    Drawing::Rect clippedRect = composedDstRect;
+    if (!clippedRect.Intersect(screenRect)) {
+        return; // The layer is out of the screen, the destination rect is not clipped either.
+    }
+    const GraphicIRect composed = ToGraphicIRect(composedDstRect);
+    const GraphicIRect cropped = ToGraphicIRect(clippedRect);
+    const auto srcRect = layerInfo.srcRect;
+    if ((cropped.x == composed.x && cropped.y == composed.y && cropped.w == composed.w && cropped.h == composed.h) ||
+        composed.w <= 0 || composed.h <= 0 || srcRect.w <= 0 || srcRect.h <= 0) {
+        return;
+    }
+    layerInfo.dstRect = cropped;
+    float minU = NORMALIZED_MIN;
+    float maxU = NORMALIZED_MIN;
+    float minV = NORMALIZED_MIN;
+    float maxV = NORMALIZED_MIN;
+    MapDstRectToSrcBounds(static_cast<float>(cropped.x - composed.x) / composed.w,
+        static_cast<float>(cropped.y - composed.y) / composed.h,
+        static_cast<float>(cropped.x + cropped.w - composed.x) / composed.w,
+        static_cast<float>(cropped.y + cropped.h - composed.y) / composed.h, layerInfo.transformType,
+        minU, maxU, minV, maxV);
+    const int32_t srcLeft = srcRect.x + static_cast<int32_t>(std::floor(minU * static_cast<float>(srcRect.w)));
+    const int32_t srcTop = srcRect.y + static_cast<int32_t>(std::floor(minV * static_cast<float>(srcRect.h)));
+    const int32_t srcRight = std::clamp(srcLeft + static_cast<int32_t>(std::ceil((maxU - minU) *
+        static_cast<float>(srcRect.w))), srcRect.x, srcRect.x + srcRect.w);
+    const int32_t srcBottom = std::clamp(srcTop + static_cast<int32_t>(std::ceil((maxV - minV) *
+        static_cast<float>(srcRect.h))), srcRect.y, srcRect.y + srcRect.h);
+    const int32_t leftInSrc = std::clamp(srcLeft, srcRect.x, srcRect.x + srcRect.w);
+    const int32_t topInSrc = std::clamp(srcTop, srcRect.y, srcRect.y + srcRect.h);
+    layerInfo.srcRect = { leftInSrc, topInSrc, srcRight - leftInSrc, srcBottom - topInSrc };
+    RS_OPTIONAL_TRACE_NAME_FMT("cross node layer crop, dstRect:[%d, %d, %d, %d] srcRect:[%d, %d, %d, %d]",
+        layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h,
+        layerInfo.srcRect.x, layerInfo.srcRect.y, layerInfo.srcRect.w, layerInfo.srcRect.h);
 }
 
 void RSDrmUtil::DRMCreateLayer(std::shared_ptr<RSProcessor> processor, Drawing::Matrix canvasMatrix)

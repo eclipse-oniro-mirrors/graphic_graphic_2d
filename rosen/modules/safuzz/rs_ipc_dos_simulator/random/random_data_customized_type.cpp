@@ -32,6 +32,7 @@
 #include "customized/random_rs_ng_mask.h"
 #include "customized/random_rs_ng_shader.h"
 #include "customized/random_rs_ng_shape.h"
+#include "customized/random_rs_ng_blender.h"
 #include "customized/random_rs_path.h"
 #include "customized/random_rs_render_modifier_ng.h"
 #include "customized/random_rs_render_particle.h"
@@ -352,6 +353,11 @@ std::shared_ptr<RSNGRenderShapeBase> RandomDataCustomizedType::GetRandomRSNGShap
     return RandomRSNGShapePtr::GetRandomValue();
 }
 
+std::shared_ptr<RSNGRenderBlenderBase> RandomDataCustomizedType::GetRandomRSNGBlenderPtr()
+{
+    return RandomRSNGBlenderPtr::GetRandomValue();
+}
+
 RSDisplayNodeConfig RandomDataCustomizedType::GetRandomRSDisplayNodeConfig()
 {
     RSDisplayNodeConfig data = {
@@ -531,18 +537,6 @@ std::vector<float> RandomDataCustomizedType::GetRandomSmallFloatVector()
 std::shared_ptr<Media::PixelMap> RandomDataCustomizedType::GetRandomPixelMap()
 {
     return RandomPixelMap::GetRandomPixelMap();
-}
-
-
-RSShadowBlenderPara RandomDataCustomizedType::GetRandomRSShadowBlenderPara()
-{
-    return {RandomDataBasicType::GetRandomFloat(), RandomDataBasicType::GetRandomFloat(),
-            RandomDataBasicType::GetRandomFloat(), RandomDataBasicType::GetRandomFloat()};
-}
-
-RSHdrDarkenBlenderPara RandomDataCustomizedType::GetRandomRSHdrDarkenBlenderPara()
-{
-    return {RandomDataBasicType::GetRandomFloat(), RandomDataCustomizedType::GetRandomVector3f()};
 }
 
 AtlasInfo RandomDataCustomizedType::GetRandomAtlasInfo()

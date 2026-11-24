@@ -328,16 +328,15 @@ const std::shared_ptr<RSPath> RSPathAnimation::PreProcessPath(const std::string&
         ROSEN_LOGE("RSPathAnimation::PreProcessPath, startValue or endValue is null");
         return {};
     }
-    auto startVector2f = startValue->CastToPropertyOf<Vector2f>(__func__);
-    auto endVector2f = endValue->CastToPropertyOf<Vector2f>(__func__);
-    if (startVector2f != nullptr && endVector2f != nullptr) {
+    auto propertyType = startValue->GetPropertyType();
+    if (propertyType == RSPropertyType::VECTOR2F && endValue->GetPropertyType() == propertyType) {
+        auto startVector2f = startValue->CastToPropertyOf<Vector2f>(__func__);
+        auto endVector2f = endValue->CastToPropertyOf<Vector2f>(__func__);
         return ProcessPath(path, startVector2f->Get()[0], startVector2f->Get()[1], endVector2f->Get()[0],
             endVector2f->Get()[1]);
-    }
-
-    auto startVector4f = startValue->CastToPropertyOf<Vector4f>(__func__);
-    auto endVector4f = endValue->CastToPropertyOf<Vector4f>(__func__);
-    if (startVector4f != nullptr && endVector4f != nullptr) {
+    } else if (propertyType == RSPropertyType::VECTOR4F && endValue->GetPropertyType() == propertyType) {
+        auto startVector4f = startValue->CastToPropertyOf<Vector4f>(__func__);
+        auto endVector4f = endValue->CastToPropertyOf<Vector4f>(__func__);
         return ProcessPath(path, startVector4f->Get()[0], startVector4f->Get()[1], endVector4f->Get()[0],
             endVector4f->Get()[1]);
     }
@@ -352,9 +351,10 @@ void RSPathAnimation::InitNeedPath(const std::shared_ptr<RSPropertyBase>& startV
         ROSEN_LOGD("Input is invaild, failed to InitNeedPath.");
         return;
     }
-    auto startVector4f = startValue->CastToPropertyOf<Vector4f>(__func__);
-    auto endVector4f = endValue->CastToPropertyOf<Vector4f>(__func__);
-    if (startVector4f != nullptr && endVector4f != nullptr) {
+    if (startValue->GetPropertyType() == RSPropertyType::VECTOR4F &&
+        endValue->GetPropertyType() == RSPropertyType::VECTOR4F) {
+        auto startVector4f = startValue->CastToPropertyOf<Vector4f>(__func__);
+        auto endVector4f = endValue->CastToPropertyOf<Vector4f>(__func__);
         Vector2f start(startVector4f->Get()[0], startVector4f->Get()[1]);
         Vector2f end(endVector4f->Get()[0], endVector4f->Get()[1]);
         isNeedPath_ = (start != end);

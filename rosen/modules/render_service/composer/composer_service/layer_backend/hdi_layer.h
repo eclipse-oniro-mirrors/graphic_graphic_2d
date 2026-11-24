@@ -55,6 +55,7 @@ public:
     int32_t SetHdiLayerInfo(bool isActiveRectSwitching = false);
     uint32_t GetLayerId() const;
     bool RecordPresentTime(int64_t timestamp);
+    void RecordTunnelPresentTime(int64_t timestamp);
     void RecordMergedPresentTime(int64_t timestamp); // used for uni render layer
     void Dump(std::string& result) const;
     void DumpMergedResult(std::string& result) const;  // used for uni render layer
@@ -65,6 +66,9 @@ public:
     void SavePrevRSLayer();
     void DumpByName(std::string windowName, std::string& result);
     void SelectHitchsInfo(std::string windowName, std::string& result);
+    std::array<FPSInfo, FRAME_RECORDS_NUM> GetPresentTimeRecords() const;
+    uint32_t GetCount() const;
+    void RestorePresentTimeRecords(const std::array<FPSInfo, FRAME_RECORDS_NUM>& records, uint32_t count);
     void MarkPendingTunnelLayerCreated(uint64_t tunnelLayerGeneration);
     bool TakePendingTunnelLayerCreated(uint64_t& tunnelLayerGeneration);
 

@@ -14,6 +14,7 @@
  */
 #include "rs_uni_hwc_visitor.h"
 
+#include "feature/drm/rs_drm_util.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/hwc/rs_uni_hwc_compute_util.h"
 #include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
@@ -138,6 +139,7 @@ void RSUniHwcVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absR
     // Set the destination rectangle of the node
     node.SetDstRect(dstRect);
     node.SetDstRectWithoutRenderFit(dstRect);
+    RSDrmUtil::RecordDstRectDisplay(node, uniRenderVisitor_.curScreenNode_);
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix)
@@ -1585,23 +1587,7 @@ void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
         return;
     }
     UpdateHwcNodeByTransform(node, absMatrix);
-    // dstRect transform to global position after UpdateHwcNodeByTransform
-    UpdateDstRectByGlobalPosition(node);
     UpdateHwcNodeEnableByBufferSize(node);
-}
-
-void RSUniHwcVisitor::UpdateDstRectByGlobalPosition(RSSurfaceRenderNode& node)
-{
-    // dstRect transform to globalposition when node is move
-    if (node.GetHwcGlobalPositionEnabled()) {
-        auto dstRect = node.GetDstRect();
-        const auto& screenProperty = uniRenderVisitor_.curScreenNode_->GetScreenProperty();
-        dstRect.left_ += screenProperty.GetOffsetX();
-        dstRect.top_ += screenProperty.GetOffsetY();
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " dstRect:[%s]",
-            node.GetName().c_str(), node.GetId(), dstRect.ToString().c_str());
-        node.SetDstRect(dstRect);
-    }
 }
 
 void RSUniHwcVisitor::UpdateRectInfoForDelegateMode(RSSurfaceRenderNode& node,

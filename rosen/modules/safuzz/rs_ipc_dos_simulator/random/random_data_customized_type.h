@@ -70,6 +70,7 @@ public:
     static std::shared_ptr<RSNGRenderMaskBase> GetRandomRSNGMaskPtr();
     static std::shared_ptr<RSNGRenderShaderBase> GetRandomRSNGShaderPtr();
     static std::shared_ptr<RSNGRenderShapeBase> GetRandomRSNGShapePtr();
+    static std::shared_ptr<RSNGRenderBlenderBase> GetRandomRSNGBlenderPtr();
 
     // RSDisplayNodeCommand params
     static RSDisplayNodeConfig GetRandomRSDisplayNodeConfig();
@@ -94,8 +95,6 @@ public:
     static std::vector<Vector2f> GetRandomSmallVectorVector2f();
     static std::vector<Vector4f> GetRandomSmallVectorVector4f();
     static std::shared_ptr<Media::PixelMap> GetRandomPixelMap();
-    static RSShadowBlenderPara GetRandomRSShadowBlenderPara();
-    static RSHdrDarkenBlenderPara GetRandomRSHdrDarkenBlenderPara();
     static AtlasInfo GetRandomAtlasInfo();
 
 #ifndef ROSEN_CROSS_PLATFORM

@@ -15,7 +15,7 @@
 
 #include "feature/tunnel_layer/rs_tunnel_layer_helper.h"
 
-#include <algorithm>
+#include <chrono>
 #include <cinttypes>
 
 #include "feature/tunnel_layer/rs_tunnel_layer_utils.h"
@@ -30,6 +30,7 @@
 #include "platform/common/rs_log.h"
 #include "rs_composer_client_manager.h"
 #include "rs_trace.h"
+#include "frame_report.h"
 #include "common/rs_optional_trace.h"
 
 namespace OHOS {
@@ -84,7 +85,7 @@ bool RejectDirectCommit(NodeId nodeId, const char* reason, uint64_t tunnelLayerI
     return false;
 }
 
-bool CanCommitBufferDirect(const std::shared_ptr<RSSurfaceRenderNode>& node,
+bool IsNeedDisableTunnelStatus(const std::shared_ptr<RSSurfaceRenderNode>& node,
     RSTunnelRuntimeState& tunnelRuntime, uint64_t& tunnelLayerId, uint32_t& property)
 {
     if (node == nullptr) {
@@ -99,15 +100,6 @@ bool CanCommitBufferDirect(const std::shared_ptr<RSSurfaceRenderNode>& node,
     if (consumer == nullptr) {
         return RejectDirectCommit(nodeId, "consumer_null");
     }
-    if (!tunnelRuntime.IsTunnelDirectAllowed()) {
-        return RejectDirectCommit(nodeId, "runtime_not_active");
-    }
-    if (!node->IsOnTheTree()) {
-        return RejectDirectCommit(nodeId, "not_on_tree");
-    }
-    if (RSTunnelRouteArbiter::IsGlobalRouteForcedNormal()) {
-        return RejectDirectCommit(nodeId, "global_trigger");
-    }
     if (node->IsHardwareForcedDisabled()) {
         return RejectDirectCommit(nodeId, "hwc_disabled");
     }
@@ -121,6 +113,25 @@ bool CanCommitBufferDirect(const std::shared_ptr<RSSurfaceRenderNode>& node,
     }
     if (tunnelLayerId == 0 || !IsNewTunnelProperty(property)) {
         return RejectDirectCommit(nodeId, "invalid_layer_info", tunnelLayerId, property);
+    }
+    return true;
+}
+
+bool IsNeedResetTunnelStatus(const std::shared_ptr<RSSurfaceRenderNode>& node,
+    RSTunnelRuntimeState& tunnelRuntime)
+{
+    if (node == nullptr) {
+        return RejectDirectCommit(0, "node_null");
+    }
+    NodeId nodeId = node->GetId();
+    if (!tunnelRuntime.IsTunnelDirectAllowed()) {
+        return RejectDirectCommit(nodeId, "runtime_not_active");
+    }
+    if (!node->IsOnTheTree()) {
+        return RejectDirectCommit(nodeId, "not_on_tree");
+    }
+    if (RSTunnelRouteArbiter::IsGlobalRouteForcedNormal()) {
+        return RejectDirectCommit(nodeId, "global_trigger");
     }
     /**
      * The tunnel can be directly output only when the tunnel layer is sent to display (thrad-safe reading of bool).
@@ -195,7 +206,8 @@ bool RSTunnelLayerHelper::TryCommitBufferDirect(const std::shared_ptr<RSSurfaceR
     }
     uint64_t tunnelLayerId = 0;
     uint32_t property = TUNNEL_PROP_INVALID;
-    if (!CanCommitBufferDirect(node, tunnelRuntime, tunnelLayerId, property)) {
+    if (!IsNeedDisableTunnelStatus(node, tunnelRuntime, tunnelLayerId, property) ||
+        !IsNeedResetTunnelStatus(node, tunnelRuntime)) {
         return false;
     }
     auto surfaceHandler = node->GetMutableRSSurfaceHandler();
@@ -262,9 +274,15 @@ bool RSTunnelLayerHelper::TryCommitPendingBuffer(const std::shared_ptr<RSSurface
     uint64_t tunnelLayerId = 0;
     uint32_t property = TUNNEL_PROP_INVALID;
     auto consumer = surfaceHandler->GetConsumer();
-    bool canCommit = CanCommitBufferDirect(node, tunnelRuntime, tunnelLayerId, property);
+    bool canCommit = IsNeedDisableTunnelStatus(node, tunnelRuntime, tunnelLayerId, property);
     if (!canCommit || consumer == nullptr || composerClientManager == nullptr) {
         tunnelRuntime.DisableTunnelLayer();
+        pendingBuffer.bufferOwnerCount_->OnBufferReleased();
+        return false;
+    }
+    canCommit = IsNeedResetTunnelStatus(node, tunnelRuntime);
+    if (!canCommit) {
+        tunnelRuntime.ResetStateKeepLayerInfo();
         pendingBuffer.bufferOwnerCount_->OnBufferReleased();
         return false;
     }
@@ -277,6 +295,9 @@ bool RSTunnelLayerHelper::TryCommitPendingBuffer(const std::shared_ptr<RSSurface
     commitInfo.screenId = tunnelRuntime.GetScreenId();
     commitInfo.buffer = pendingBuffer.buffer;
     commitInfo.acquireFence = pendingBuffer.acquireFence;
+    auto swapStartTimeNs =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count();
     ScreenPowerStatus powerStatus = GetCachedScreenPowerStatus(tunnelRuntime.GetScreenId());
     if (!IsScreenPowerOff(powerStatus)) {
         if (!CommitBuffer(commitInfo, composerClientManager, releaseFence)) {
@@ -290,6 +311,13 @@ bool RSTunnelLayerHelper::TryCommitPendingBuffer(const std::shared_ptr<RSSurface
             pendingBuffer.bufferOwnerCount_->OnBufferReleased();
             return false;
         }
+    }
+
+    auto swapEndTimeNs =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count();
+    if (FrameReport::GetInstance().HasGameScene()) {
+        FrameReport::GetInstance().SetLastSwapBufferTime(swapEndTimeNs - swapStartTimeNs);
     }
 
     auto pendingReleaseFence = releaseFence == nullptr ? SyncFence::InvalidFence() : releaseFence;
@@ -317,11 +345,11 @@ bool RSTunnelLayerHelper::TryCommitPendingBuffer(const std::shared_ptr<RSSurface
     RS_TRACE_NAME_FMT("TUNNEL_DEBUG %s success, nodeId=%" PRIu64 ", tunnelLayerId=%" PRIu64
         ", bufferId=%" PRIu64 ", releaseFence=%d",
         __func__, node->GetId(), tunnelLayerId, pendingBuffer.buffer->GetBufferId(),
-        releaseFence ? releaseFence->Get() : -1);
+        pendingReleaseFence->Get());
     RS_LOGI_IF(DEBUG_TUNNEL, "%{public}s %{public}s success, nodeId:%{public}" PRIu64
         ", tunnelLayerId:%{public}" PRIu64 ", bufferId:%{public}" PRIu64 ", releaseFence:%{public}d",
         TUNNEL_DEBUG_PREFIX, __func__, node->GetId(), tunnelLayerId, pendingBuffer.buffer->GetBufferId(),
-        releaseFence ? releaseFence->Get() : -1);
+        pendingReleaseFence->Get());
     return true;
 }
 
@@ -375,7 +403,7 @@ RSSurfaceHandler::SurfaceBufferEntry RSTunnelLayerHelper::AcquirePendingBuffer(
     }
 
     IConsumerSurface::AcquireBufferReturnValue returnValue;
-    int32_t ret = consumer->AcquireBuffer(returnValue, DIRECT_CONSUME_TIMESTAMP, false);
+    int32_t ret = consumer->AcquireBufferForTunnel(returnValue, DIRECT_CONSUME_TIMESTAMP, false);
     surfaceHandler->SetAvailableBufferCount(static_cast<int32_t>(consumer->GetAvailableBufferCount()));
     if (ret != SURFACE_ERROR_OK || returnValue.buffer == nullptr) {
         return {};

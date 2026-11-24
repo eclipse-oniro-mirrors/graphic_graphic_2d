@@ -57,7 +57,57 @@ namespace effectKit {
     blue: int;
     alpha: int;
   }
-  
+
+  /**
+   * Describes a 2D point, compatible with common2D.Point.
+   * @typedef Point
+   * @syscap SystemCapability.Multimedia.Image.Core
+   * @systemapi
+   * @stagemodelonly
+   * @since 26.1.0
+   */
+  export interface Point {
+    x?: double;
+    y?: double;
+  }
+
+  /**
+   * Emboss effect parameter set, used to configure the multiple light effects of the emboss effect,
+   * including refraction, edge lighting, shadow, spot light, and directional light.
+   * @typedef EmbossParam
+   * @syscap SystemCapability.Multimedia.Image.Core
+   * @systemapi
+   * @stagemodelonly
+   * @since 26.1.0
+   */
+  export interface EmbossParam {
+    refractionRate: double;
+    dirIntensity: double;
+    edgeLightWidth: double;
+    edgeLightFeatherRate: double;
+    edgeLightIntensity: double;
+    edgeDarkIntensity: double;
+    spotLightCenter: Point;
+    spotLightIntensity: double;
+    specPow: double;
+    specIntensity: double;
+  }
+
+  /**
+   * Iridescence effect parameter set, used to set the spectrum stripe density, spectrum direction,
+   * and flow progress.
+   * @typedef IridescenceParam
+   * @syscap SystemCapability.Multimedia.Image.Core
+   * @systemapi
+   * @stagemodelonly
+   * @since 26.1.0
+   */
+  export interface IridescenceParam {
+    frequency: double;
+    direction: Point;
+    progress: double;
+  }
+
   export interface Filter {
     /**
     * A blur effect is added to the image.
@@ -213,6 +263,87 @@ namespace effectKit {
      * @since 14
      */
     setColorMatrix(colorMatrix: Array<double>): Filter;
+
+    /**
+     * Sets a custom GPU resource tag on the filter for GPU memory tracking. A tag is identified
+     * by customTagId and customTagName so that the application can distinguish GPU resources by
+     * usage scenario. The tag takes effect in subsequent rendering (such as getEffectPixelMap).
+     *
+     * > **NOTE**
+     * >
+     * > When this interface is not called, a default tag derived from the filter chain types
+     * > (such as "blur" and "blur+brightness") is used, so that DFX can still observe the
+     * > approximate GPU memory usage of each filter type. When no filter is added, no tag is
+     * > set and getGpuMemoryStatistics returns an empty string.
+     * >
+     * > This interface is for DFX purposes only.
+     *
+     * @param { int } customTagId - Custom tag ID set by the application. Pass 0 to indicate no
+     * custom tag.
+     * @param { string } customTagName - Custom tag name set by the application.
+     * @returns { Filter } The Filter instance, supporting chained calls.
+     * @syscap SystemCapability.Multimedia.Image.Core
+     * @systemapi
+     * @stagemodelonly
+     * @since 26.1.0 dynamic&static
+     */
+    setGpuResourceTag(customTagId: int, customTagName: string): Filter;
+
+    /**
+     * Obtains the GPU memory statistics of the last rendering as a formatted string. The
+     * statistics are computed and cached in the filter during rendering (such as
+     * getEffectPixelMap). The application decides how to output the returned string, for
+     * example, printing it to hilog or writing it to a file.
+     *
+     * > **NOTE**
+     * >
+     * > When no custom tag is set through setGpuResourceTag, a default tag derived from the
+     * > filter chain types (such as "blur" and "blur+brightness") is used, and the application
+     * > can still observe the approximate GPU memory usage of each filter type.
+     * >
+     * > This interface is for DFX purposes only.
+     *
+     * @returns { string } GPU memory statistics dump string. An empty string is returned when
+     * no statistics are available, such as when CPU rendering is used or no rendering has been
+     * performed.
+     * @syscap SystemCapability.Multimedia.Image.Core
+     * @systemapi
+     * @stagemodelonly
+     * @since 26.1.0 dynamic&static
+     */
+    getGpuMemoryStatistics(): string;
+
+    /**
+     * Adds the emboss effect to the filter linked list, and returns the head node of the linked list.
+     * This effect extracts the edges of non-transparent areas in the image to generate a transparent
+     * outline that presents the emboss reflection, and simulates multiple light effects including
+     * refraction, edge lighting, shadow, spot light, and directional light.
+     *
+     * @param { double } outlineWidth - Outline width, in px. Value range: [0, +∞).
+     * @param { EmbossParam } embossParam - Parameters of the multiple light effects of the emboss effect.
+     * @returns { Filter } Final image effect.
+     * @syscap SystemCapability.Multimedia.Image.Core
+     * @systemapi
+     * @stagemodelonly
+     * @since 26.1.0
+     */
+    emboss(outlineWidth: double, embossParam: EmbossParam): Filter;
+
+    /**
+     * Adds the iridescence and shadow effects to the filter linked list, and returns the head node
+     * of the linked list. This effect generates spectrum color bands on the image based on the
+     * spectrum parameters.
+     *
+     * @param { IridescenceParam } iridescenceParam - Spectrum-related parameters.
+     * @param { double } [outlineWidth] - Optional. Outline width, in px. Default value: 0.0.
+     * @param { ShadowOptions } [shadowOptions] - Optional. Shadow configuration parameters.
+     * @returns { Filter } Final image effect.
+     * @syscap SystemCapability.Multimedia.Image.Core
+     * @systemapi
+     * @stagemodelonly
+     * @since 26.1.0
+     */
+    iridescence(iridescenceParam: IridescenceParam, outlineWidth?: double, shadowOptions?: ShadowOptions): Filter;
 
     /**
      * Adds the outline and shadow effects to the effect chain and returns the head node of the chain. This effect
@@ -462,7 +593,16 @@ namespace effectKit {
 
     public native setColorMatrixNative(colorMatrix: Array<double>): Filter;
 
+    public native embossNative(outlineWidth: double, embossParam: EmbossParam): Filter;
+
+    public native iridescenceNative(iridescenceParam: IridescenceParam, outlineWidth: double,
+      shadowOptions: ShadowOptions): Filter;
+
     public native getPixelMapNative(): image.PixelMap;
+
+    public native setGpuResourceTagNative(customTagId: int, customTagName: string): Filter;
+
+    public native getGpuMemoryStatisticsNative(): string;
 
     public native outlineNative(outlineWidth: double, shadowOptions: ShadowOptions): Filter;
 
@@ -521,8 +661,21 @@ namespace effectKit {
     public setColorMatrix(colorMatrix: Array<double>): Filter {
       return this.setColorMatrixNative(colorMatrix);
     }
+    public emboss(outlineWidth: double, embossParam: EmbossParam): Filter {
+      return this.embossNative(outlineWidth, embossParam);
+    }
+    public iridescence(iridescenceParam: IridescenceParam, outlineWidth?: double, shadowOptions?: ShadowOptions): Filter {
+      let width: double = outlineWidth !== undefined ? outlineWidth : 0.0;
+      return this.iridescenceNative(iridescenceParam, width, shadowOptions ?? ({} as ShadowOptions));
+    }
     public getPixelMap(): image.PixelMap {
       return this.getPixelMapNative();
+    }
+    public setGpuResourceTag(customTagId: int, customTagName: string): Filter {
+        return this.setGpuResourceTagNative(customTagId, customTagName);
+    }
+    public getGpuMemoryStatistics(): string {
+      return this.getGpuMemoryStatisticsNative();
     }
     public outline(outlineWidth: double, shadowOptions?: ShadowOptions): Filter {
       return this.outlineNative(outlineWidth, shadowOptions ?? ({} as ShadowOptions));

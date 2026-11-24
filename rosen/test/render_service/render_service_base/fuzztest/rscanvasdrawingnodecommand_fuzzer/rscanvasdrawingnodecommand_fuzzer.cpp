@@ -33,11 +33,12 @@ bool DoCanvasDrawingNodeCommand(FuzzedDataProvider& fdp)
     RSContext context;
     NodeId id = fdp.ConsumeIntegral<NodeId>();
     bool isTextureExportNode = fdp.ConsumeBool();
+    uint64_t token = fdp.ConsumeIntegral<uint64_t>();
     int32_t width = fdp.ConsumeIntegral<int32_t>();
     int32_t height = fdp.ConsumeIntegral<int32_t>();
     uint32_t resetSurfaceIndex = fdp.ConsumeIntegral<uint32_t>();
 
-    RSCanvasDrawingNodeCommandHelper::Create(context, id, isTextureExportNode);
+    RSCanvasDrawingNodeCommandHelper::Create(context, id, isTextureExportNode, token);
     RSCanvasDrawingNodeCommandHelper::ResetSurface(context, id, width, height, resetSurfaceIndex);
     context.GetMutableNodeMap().FilterNodeByPid(getpid(), true);
     RSRenderNodeGC::Instance().ReleaseNodeMemory(true);

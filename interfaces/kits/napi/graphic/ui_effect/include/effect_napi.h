@@ -24,7 +24,6 @@
 #include "effect/include/brightness_blender.h"
 #include "effect/include/color_gradient_effect_para.h"
 #include "effect/include/distortion_collapse_effect_para.h"
-#include "effect/include/shadow_blender.h"
 #include "effect/include/hdr_darken_blender.h"
 #include "effect/include/glass_marble_effect_para.h"
 #include "effect/include/colorful_brightness_blender.h"
@@ -33,6 +32,7 @@
 #include "effect/include/visual_effect_para.h"
 
 #include "effect/include/harmonium_effect_para.h"
+#include "effect/include/sticker_laser_shader_effect_para.h"
 
 #include "mask/include/mask.h"
 #include "napi/native_api.h"
@@ -57,6 +57,8 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
 
 private:
+    // BlenderNapi reuses the old blender as pure data source and shares these parsers
+    friend class BlenderNapi;
     static thread_local napi_ref sConstructor_;
     static napi_value Constructor(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void* nativeObject, void* finalize);
@@ -70,9 +72,6 @@ private:
         napi_value optionsObj, ColorfulBrightnessBlender* blender);
     static napi_value SetBackgroundColorBlender(napi_env env, napi_callback_info info);
     static bool ParseBrightnessBlender(napi_env env, napi_value jsObject, BrightnessBlender* blender);
-    static napi_value CreateShadowBlender(napi_env env, napi_callback_info info);
-    static bool CheckCreateShadowBlender(napi_env env, napi_value jsObject);
-    static bool ParseShadowBlender(napi_env env, napi_value jsObject, ShadowBlender* blender);
     static napi_value CreateBorderLight(napi_env env, napi_callback_info info);
     static bool GetBorderLight(napi_env env, napi_value* param, size_t length,
         std::shared_ptr<BorderLightEffectPara>& para);
@@ -84,6 +83,13 @@ private:
     static napi_value CreateDistortionCollapseEffect(napi_env env, napi_callback_info info);
     static bool ParseDistortionCollapseEffectPara(napi_env env, napi_value jsObject,
         DistortionCollapseEffectPara* para);
+    static napi_value CreateIridescence(napi_env env, napi_callback_info info);
+    static bool GetNumberProperty(napi_env env, napi_value obj, const char* name, float& out);
+    static bool GetPointProperty(napi_env env, napi_value obj, const char* name, Vector2f& out);
+    static bool FillIridescenceParams(napi_env env, napi_value iridescenceParam,
+        const std::shared_ptr<StickerLaserShaderEffectPara>& para);
+    static bool FillShadowOptions(napi_env env, napi_value shadowOptions,
+        const std::shared_ptr<StickerLaserShaderEffectPara>& para);
     static napi_value CreateGlassMarbleEffect(napi_env env, napi_callback_info info);
     static bool FillGlassMarbleMaterial(napi_env env, napi_value materialObj,
         std::shared_ptr<GlassMarbleEffectPara>& para);

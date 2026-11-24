@@ -17,11 +17,14 @@
 #include <chrono>
 #include <condition_variable>
 #include <filesystem>
+#include <iostream>
 #include <mutex>
 
 #include "display_manager.h"
 #include "rs_graphic_errors.h"
+#include "rs_graphic_test_capture.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_png.h"
 #include "rs_graphic_test_utils.h"
 #include "rs_parameter_parse.h"
 #include "rs_trace.h"
@@ -58,17 +61,57 @@ public:
     void OnSurfaceCaptureHDR(std::shared_ptr<Media::PixelMap> pixelmap,
         std::shared_ptr<Media::PixelMap> pixelMapHDR) override {}
 
-    void Wait(int ms)
+    bool Wait(int ms)
     {
         std::unique_lock lock(mutex_);
-        cv_.wait_for(lock, std::chrono::milliseconds(ms), [&] { return ready_; });
+        return cv_.wait_for(lock, std::chrono::milliseconds(ms), [&] { return ready_; });
     }
 
+    std::shared_ptr<Media::PixelMap> GetPixelMap()
+    {
+        std::lock_guard lock(mutex_);
+        return pixelMap_;
+    }
+
+private:
     std::mutex mutex_;
     std::condition_variable cv_;
     bool ready_ = false;
     std::shared_ptr<Media::PixelMap> pixelMap_;
 };
+
+void LogCaptureMode(const std::string& mode, const std::string& reason = "")
+{
+    if (IsEmulatorCaptureModeEnabled()) {
+        std::cout << "RS_GRAPHIC_TEST_CAPTURE mode=" << mode;
+        if (!reason.empty()) {
+            std::cout << " reason=" << reason;
+        }
+        std::cout << std::endl;
+    }
+}
+
+std::shared_ptr<Media::PixelMap> GetDisplayScreenshot()
+{
+    DmErrorCode code = DmErrorCode::DM_OK;
+    auto pixelMap = DisplayManager::GetInstance().GetScreenshot(
+        DisplayManager::GetInstance().GetDefaultDisplayId(), &code, true);
+    if (!pixelMap) {
+        LOGE("RSGraphicTestDirector GetScreenshot failed, code=%{public}d", static_cast<int>(code));
+    }
+    return pixelMap;
+}
+
+std::shared_ptr<Media::PixelMap> HandleSurfaceCaptureFailure(
+    const char* reason, std::shared_ptr<Media::PixelMap> pixelMap = nullptr)
+{
+    if (!IsDisplayCaptureFallbackEnabled()) {
+        LogCaptureMode("surface");
+        return pixelMap;
+    }
+    LogCaptureMode("display_fallback", reason);
+    return GetDisplayScreenshot();
+}
 }
 
 class VSyncWaiter {
@@ -270,52 +313,104 @@ bool RSGraphicTestDirector::FlushMessageAndWait(int timeoutMs)
         state->flushMessageCv.notify_one();
     });
 
+    const int64_t flushStart = EmulatorMonotonicTimeMs();
     std::unique_lock<std::mutex> lock(state->mtx);
-    return state->flushMessageCv.wait_for(
+    const bool finished = state->flushMessageCv.wait_for(
         lock,
         std::chrono::milliseconds(timeoutMs),
         [state]() { return state->flushMessageFinish; }
     );
+    LogEmulatorTiming("flush", flushStart);
+    return finished;
 }
 
-std::shared_ptr<Media::PixelMap> RSGraphicTestDirector::TakeScreenCaptureAndWait(int ms, bool isScreenShot)
+void RSGraphicTestDirector::FlushMessageAndSettle(int settleMs)
+{
+    RS_TRACE_NAME("RSGraphicTestDirector::FlushMessageAndSettle");
+    const int64_t flushStart = EmulatorMonotonicTimeMs();
+    // Divided render never invokes the transaction-data callback; send commands only and
+    // settle for a fixed short period instead of waiting for the full callback timeout.
+    rsUiDirector_->SendMessages();
+    WaitTimeout(settleMs);
+    LogEmulatorTiming("flush", flushStart);
+}
+
+std::shared_ptr<Media::PixelMap> RSGraphicTestDirector::TakeScreenCaptureOnce(int ms, bool isScreenShot)
 {
     RS_TRACE_NAME("RSGraphicTestDirector::TakeScreenCaptureAndWait");
 
     if (isScreenShot) {
-        DmErrorCode code = DmErrorCode::DM_OK;
-        auto pixelMap =
-            DisplayManager::GetInstance().GetScreenshot(DisplayManager::GetInstance().GetDefaultDisplayId(),
-                &code, true);
-        return pixelMap;
+        LogCaptureMode("display");
+        return GetDisplayScreenshot();
     }
 
     if (!rootNode_ || !rootNode_->screenSurfaceNode_) {
         LOGE("RSGraphicTestDirector::TakeScreenCaptureAndWait root node or screen surface node is null");
-        return nullptr;
+        return HandleSurfaceCaptureFailure("request_failed");
     }
     auto callback = std::make_shared<TestSurfaceCaptureCallback>();
     if (!rsUiDirector_) {
         LOGE("RSGraphicTestDirector::TakeScreenCaptureAndWait rsUiDirector is null");
-        return nullptr;
+        return HandleSurfaceCaptureFailure("request_failed");
     }
     auto rsUiContext = rsUiDirector_->GetRSUIContext();
     if (!rsUiContext) {
         LOGE("RSGraphicTestDirector::TakeScreenCaptureAndWait rsUiContext is null");
-        return nullptr;
+        return HandleSurfaceCaptureFailure("request_failed");
     }
     auto rsInterface = rsUiContext->GetRSRenderInterface();
     if (!rsInterface) {
         LOGE("RSGraphicTestDirector::TakeScreenCaptureAndWait rsInterface is null");
-        return nullptr;
+        return HandleSurfaceCaptureFailure("request_failed");
     }
     if (!rsInterface->TakeSurfaceCaptureForUI(
         rootNode_->screenSurfaceNode_, callback)) {
-        return nullptr;
+        return HandleSurfaceCaptureFailure("request_failed");
     }
 
-    callback->Wait(ms);
-    return callback->pixelMap_;
+    const bool ready = callback->Wait(ms);
+    auto pixelMap = callback->GetPixelMap();
+    if (ready && pixelMap) {
+        LogCaptureMode("surface");
+        return pixelMap;
+    }
+    return HandleSurfaceCaptureFailure(ready ? "null_pixelmap" : "timeout", pixelMap);
+}
+
+std::shared_ptr<Media::PixelMap> RSGraphicTestDirector::TakeScreenCaptureAndWait(int ms, bool isScreenShot)
+{
+    if (!IsEmulatorCaptureModeEnabled()) {
+        return TakeScreenCaptureOnce(ms, isScreenShot);
+    }
+    return TakeStableScreenCapture(ms, isScreenShot);
+}
+
+std::shared_ptr<Media::PixelMap> RSGraphicTestDirector::TakeStableScreenCapture(int ms, bool isScreenShot)
+{
+    const auto config = GetEmulatorCaptureConfig();
+    std::shared_ptr<Media::PixelMap> latest;
+    for (uint32_t retry = 0; retry < config.readyMaxRetries; retry++) {
+        auto first = TakeScreenCaptureOnce(ms, isScreenShot);
+        if (!first) {
+            std::cout << "RS_GRAPHIC_TEST_READY status=unavailable retries=" << retry << std::endl;
+            return nullptr;
+        }
+        if (config.readyDelayMs > 0) {
+            WaitTimeout(config.readyDelayMs);
+        }
+        latest = TakeScreenCaptureOnce(ms, isScreenShot);
+        if (!latest) {
+            std::cout << "RS_GRAPHIC_TEST_READY status=unavailable retries=" << retry << std::endl;
+            return nullptr;
+        }
+        if (ArePixelMapsIdentical(*first, *latest)) {
+            std::cout << "RS_GRAPHIC_TEST_READY status=stable retries=" << retry << std::endl;
+            return latest;
+        }
+        std::cout << "RS_GRAPHIC_TEST_READY status=retry retries=" << (retry + 1) << std::endl;
+    }
+    std::cout << "RS_GRAPHIC_TEST_READY status=unstable retries=" << config.readyMaxRetries << std::endl;
+    return latest;
 }
 
 void RSGraphicTestDirector::ResetImagePath()
@@ -386,6 +481,7 @@ void RSGraphicTestDirector::SetSurfaceBounds(const Vector4f& bounds)
     }
     rootNode_->testSurfaceNodes_.back()->SetBounds(bounds);
     rootNode_->testSurfaceNodes_.back()->SetFrame(bounds);
+    rootNode_->SyncTestSurfaceBounds(bounds);
 }
 
 void RSGraphicTestDirector::SetScreenSurfaceBounds(const Vector4f& bounds)
@@ -405,6 +501,23 @@ void RSGraphicTestDirector::SetSurfaceColor(const RSColor& color)
         return;
     }
     rootNode_->testSurfaceNodes_.back()->SetBackgroundColor(color.AsRgbaInt());
+    rootNode_->SyncTestSurfaceColor(color.AsRgbaInt());
+}
+
+void RSGraphicTestDirector::BindRootToSurface(
+    const std::shared_ptr<RSSurfaceNode>& surface, const std::shared_ptr<RSRootNode>& root)
+{
+    // RSRootNode::AttachRSSurfaceNode is reachable only through RSUIDirector. Each call attaches the new
+    // pair in the client render thread; pairs bound earlier keep drawing, so several windows may coexist.
+    if (!rsUiDirector_ || !surface || !root) {
+        LOGE("RSGraphicTestDirector::BindRootToSurface invalid director, surface or root");
+        return;
+    }
+    // SetRSSurfaceNode re-attaches the director's current root to the new surface, which would move the
+    // previous window's tree onto it. Clear the root first so only the new pair gets attached.
+    rsUiDirector_->SetRSRootNode(nullptr);
+    rsUiDirector_->SetRSSurfaceNode(surface);
+    rsUiDirector_->SetRSRootNode(root);
 }
 
 void RSGraphicTestDirector::StartRunUIAnimation()

@@ -27,6 +27,8 @@
 #include "ge_shader.h"
 #include "ge_sticker_outline_shader.h"
 #include "ge_sticker_halftone_shader.h"
+#include "ge_sticker_emboss_filter.h"
+#include "ge_sticker_laser_shader.h"
 #include "rs_trace.h"
 
 #include "pipeline/rs_paint_filter_canvas.h"
@@ -250,6 +252,7 @@ DrawingError EffectImageChain::PrepareNativeBuffer(
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
+    CreateTagTracker();
 
     auto sbuffer = SurfaceBuffer::NativeBufferToSurfaceBuffer(dstNativeBuffer.get());
     imageRec_ = Drawing::Rect{0, 0, image_->GetWidth(), image_->GetHeight()};
@@ -940,13 +943,14 @@ std::shared_ptr<Drawing::Surface> EffectImageChain::CreateSurface(bool forceCPU)
         }
         gpuContext_ = renderContext_->GetSharedDrGPUContext();
     }
-    if (RSSystemProperties::IsUseVulkan()) {
-        gpuContext_->SetResourceCacheLimits(0, 0);
-    }
     if (gpuContext_ == nullptr) {
         EFFECT_COMM_LOG_E("EffectImageChain::CreateGPUSurface: create gpuContext failed.");
         return nullptr;
     }
+    if (RSSystemProperties::IsUseVulkan()) {
+        gpuContext_->SetResourceCacheLimits(0, 0);
+    }
+    CreateTagTracker();
     
     RS_TRACE_NAME_FMT("EffectImageChain::CreateGPUSurface Imageinfo:Image_Width:%d, Imageinfo_Height:%d",
         imageInfo_.GetWidth(), imageInfo_.GetHeight());
@@ -964,6 +968,7 @@ EffectImageChain::~EffectImageChain()
     filters_.reset();
     canvas_.reset();
     surface_.reset();
+    tagTracker_.reset();
     if (gpuContext_ && forceReleaseGpuContext_) {
         gpuContext_->ReleaseResourcesAndAbandonContext();
 #if (defined(RS_ENABLE_VK) || defined(RS_ENABLE_GL)) && defined(USE_M133_SKIA)
@@ -975,6 +980,36 @@ EffectImageChain::~EffectImageChain()
 void EffectImageChain::SetForceReleaseGpuContext(bool releaseGpuContext)
 {
     forceReleaseGpuContext_ = releaseGpuContext;
+}
+
+void EffectImageChain::SetGpuResourceTag(uint32_t customTagId, const std::string& customTagName)
+{
+    customTagId_ = customTagId;
+    customTagName_ = customTagName;
+}
+
+EffectTagTracker* EffectImageChain::GetEffectTagTracker() const
+{
+    return tagTracker_.get();
+}
+
+bool EffectImageChain::GetGpuMemoryStatistics(std::string& result) const
+{
+    const EffectTagTracker* tracker = GetEffectTagTracker();
+    if (tracker == nullptr) {
+        return false;
+    }
+    return tracker->GetGpuMemoryStatistics(result);
+}
+
+void EffectImageChain::CreateTagTracker()
+{
+    tagTracker_.reset();
+    if (customTagId_ != 0 || !customTagName_.empty()) {
+        tagTracker_ = std::make_unique<EffectTagTracker>(gpuContext_, customTagId_, customTagName_);
+    } else {
+        tagTracker_ = std::make_unique<EffectTagTracker>(gpuContext_);
+    }
 }
 
 static std::shared_ptr<GEShaderFilter> GenerateExtShaderWaterGlass(
@@ -1092,6 +1127,116 @@ DrawingError EffectImageChain::ApplyReededGlass(
 
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
     return DrawingError::ERR_OK;
+}
+
+DrawingError EffectImageChain::ApplyStickerEmboss(
+    const std::shared_ptr<Drawing::GEStickerEmbossFilterParams>& stickerEmbossData)
+{
+    std::lock_guard<std::mutex> lock(apiMutex_);
+    if (!prepared_) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerEmboss: Not ready, need prepare first.");
+        return DrawingError::ERR_NOT_PREPARED;
+    }
+
+    // CPU not supported
+    if (forceCPU_) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerEmboss: Not support CPU.");
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+
+    if (stickerEmbossData == nullptr) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerEmboss: stickerEmbossData is null.");
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+
+    if (filters_ != nullptr) {
+        UpdateImage();
+    }
+
+    if (image_ == nullptr) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerEmboss: image_ is null.");
+        return DrawingError::ERR_IMAGE_NULL;
+    }
+
+    // per-render copy: concurrent renders on one filter share the params object,
+    // each render must bind its own image and not retain the other's intermediate
+    auto embossData = std::make_shared<Drawing::GEStickerEmbossFilterParams>(*stickerEmbossData);
+
+    // the chain input image is the sticker whose contour the emboss effect extracts
+    embossData->sticker = image_;
+
+    ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageChain::ApplyStickerEmboss");
+
+    // built-in class, no external graphics-effect library needed
+    std::shared_ptr<GEShaderFilter> embossFilter = std::make_shared<GEStickerEmbossFilter>(*embossData);
+    if (!embossFilter) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerEmboss: create emboss filter fail.");
+        ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+
+    image_ = embossFilter->ProcessImage(*canvas_, image_,
+        Drawing::Rect(0, 0, image_->GetWidth(), image_->GetHeight()),
+        Drawing::Rect(0, 0, image_->GetWidth(), image_->GetHeight()));
+    if (image_ == nullptr) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerEmboss: ProcessImage fail.");
+        ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+
+    ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+    return DrawingError::ERR_OK;
+}
+
+DrawingError EffectImageChain::ApplyStickerLaserShader(
+    const std::shared_ptr<Drawing::GEStickerLaserShaderParams>& stickerLaserData)
+{
+    std::lock_guard<std::mutex> lock(apiMutex_);
+    if (!prepared_) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerLaserShader: Not ready, need prepare first.");
+        return DrawingError::ERR_NOT_PREPARED;
+    }
+
+    // CPU not supported
+    if (forceCPU_) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerLaserShader: Not support CPU.");
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+
+    if (stickerLaserData == nullptr) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerLaserShader: stickerLaserData is null.");
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+
+    if (filters_ != nullptr) {
+        UpdateImage();
+    }
+
+    if (image_ == nullptr) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerLaserShader: image_ is null.");
+        return DrawingError::ERR_IMAGE_NULL;
+    }
+
+    // per-render copy: concurrent renders on one filter share the params object,
+    // each render must bind its own image and not retain the other's intermediate
+    auto laserData = std::make_shared<Drawing::GEStickerLaserShaderParams>(*stickerLaserData);
+
+    // the chain input image is the sticker the iridescence effect renders on
+    laserData->sticker = image_;
+
+    ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageChain::ApplyStickerLaserShader");
+
+    // built-in class, no external graphics-effect library needed
+    std::shared_ptr<GEShader> stickerShader = std::make_shared<GEStickerLaserShader>(*laserData);
+    if (!stickerShader) {
+        EFFECT_LOG_E("EffectImageChain::ApplyStickerLaserShader: create shader fail.");
+        ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+
+    auto result = DrawShaderAndComposite(canvas_.get(), image_, stickerShader, "ApplyStickerLaserShader");
+    ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+    return result;
 }
 
 DrawingError EffectImageChain::ApplyScale(

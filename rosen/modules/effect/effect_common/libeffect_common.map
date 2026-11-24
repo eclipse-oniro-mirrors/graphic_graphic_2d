@@ -30,6 +30,12 @@
         *vtable*for*OHOS*Rosen*;
         *typeinfo*for*OHOS*Rosen*;
         *VTT*for*OHOS*Rosen*;
+
+        /* shared_ptr control block vtables/typeinfo for cross-DSO destruction */
+        *vtable*for*std*ColorPickerCommon*;
+        *typeinfo*for*std*ColorPickerCommon*;
+        *vtable*for*std*FilterCommon*;
+        *typeinfo*for*std*FilterCommon*;
       };
     local:
       *;

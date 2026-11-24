@@ -331,3 +331,17 @@ DECLARE_FILTER(LightUpEffect, LIGHT_UP_EFFECT,
 DECLARE_FILTER(DynamicDim, DYNAMIC_DIM,
     ADD_PROPERTY_TAG(DynamicDim, Value)
 );
+
+DECLARE_FILTER(StickerEmboss, STICKER_EMBOSS_FILTER,
+    ADD_PROPERTY_TAG(StickerEmboss, Sticker),
+    ADD_PROPERTY_TAG(StickerEmboss, OutlineWidth),
+    ADD_PROPERTY_TAG(StickerEmboss, RefractionRate),
+    ADD_PROPERTY_TAG(StickerEmboss, DirIntensity),
+    ADD_PROPERTY_TAG(StickerEmboss, EdgeLightWidth),
+    ADD_PROPERTY_TAG(StickerEmboss, EdgeLightFeatherRate),
+    ADD_PROPERTY_TAG(StickerEmboss, EdgeLightIntensity),
+    ADD_PROPERTY_TAG(StickerEmboss, SpotLightCenter),
+    ADD_PROPERTY_TAG(StickerEmboss, SpotLightIntensity),
+    ADD_PROPERTY_TAG(StickerEmboss, SpecPow),
+    ADD_PROPERTY_TAG(StickerEmboss, SpecIntensity)
+);

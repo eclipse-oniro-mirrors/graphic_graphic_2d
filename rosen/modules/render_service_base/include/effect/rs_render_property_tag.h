@@ -57,6 +57,7 @@ class RSNGRenderShapeBase; // forward declaration, impl in rs_render_shape_base.
 #include "effect/rs_render_property_tag_mask_def.in"
 #include "effect/rs_render_property_tag_shader_def.in"
 #include "effect/rs_render_property_tag_shape_def.in"
+#include "effect/rs_render_property_tag_blender_def.in"
 
 #undef MASK_PTR
 #undef SHAPE_PTR
@@ -126,6 +127,7 @@ enum class RSNGEffectType : int16_t {
     // shader type
     CONTOUR_DIAGONAL_FLOW_LIGHT,
     DOT_MATRIX_SHADER,
+    FLOW_LIGHT_SWEEP,
     WAVY_RIPPLE_LIGHT,
     AURORA_NOISE,
     PARTICLE_CIRCULAR_HALO,
@@ -171,6 +173,15 @@ enum class RSNGEffectType : int16_t {
     SDF_UBER_SHAPE,
     POINT_LIGHT,
     PARTICLE_AGGREGATION,
+
+    // blender type
+    COLORFUL_BRIGHTNESS_BLENDER,
+    BRIGHTNESS_BLENDER,
+    HDR_DARKEN_BLENDER,
+    // new types must be appended after all existing entries: the values are
+    // written into IPC parcels and renumbering breaks old-parcel compatibility
+    STICKER_LASER_SHADER,
+    STICKER_EMBOSS_FILTER,
 };
 
 using RSNGEffectTypeUnderlying = std::underlying_type<RSNGEffectType>::type;

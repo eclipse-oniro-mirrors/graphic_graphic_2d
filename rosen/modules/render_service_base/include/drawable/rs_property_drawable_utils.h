@@ -90,14 +90,8 @@ public:
      */
     static void DrawForegroundFilter(RSPaintFilterCanvas& canvas,
         const std::shared_ptr<RSFilter>& rsFilter, std::optional<RectF> drawRect = std::nullopt);
-    static void DrawColorFilter(Drawing::Canvas* canvas, const std::shared_ptr<Drawing::ColorFilter>& colorFilter);
-    static std::shared_ptr<Drawing::RuntimeBlenderBuilder> MakeDynamicBrightnessBuilder();
-    static std::shared_ptr<Drawing::RuntimeBlenderBuilder> MakeDynamicBrightnessLinearBuilder();
-    static std::shared_ptr<Drawing::Blender> MakeDynamicBrightnessBlender(const RSDynamicBrightnessPara& params);
-    static std::shared_ptr<Drawing::Blender> MakeShadowBlender(const RSShadowBlenderPara& params);
-    static std::shared_ptr<Drawing::Blender> MakeHdrDarkenBlender(const RSHdrDarkenBlenderPara& params);
-    static std::shared_ptr<Drawing::Blender> MakeColorfulBrightnessBlender(
-        const RSColorfulBrightnessBlenderPara& params);
+    static void DrawColorFilter(Drawing::Canvas* canvas, const std::shared_ptr<Drawing::ColorFilter>& colorFilter,
+        bool isColorMatrixFilter = false);
     static void DrawPixelStretch(Drawing::Canvas* canvas, const std::optional<Vector4f>& pixelStretch,
         const RectF& boundsRect, const bool boundsGeoValid, const Drawing::TileMode pixelStretchTileMode);
     static Drawing::Path CreateShadowPath(const std::shared_ptr<RSPath> rsPath,
@@ -108,11 +102,6 @@ public:
         const float& offsetY, const float& radius, const bool& isFilled, Color spotColor, bool disableSDFBlur,
         const bool& useBoundsClip, const RRect& bounds);
     static void DrawUseEffect(RSPaintFilterCanvas* canvas, UseEffectType useEffectType);
-
-    static bool IsDangerousBlendMode(int blendMode, int blendApplyType);
-    static void BeginBlender(RSPaintFilterCanvas& canvas, std::shared_ptr<Drawing::Blender> blender,
-        int blendModeApplyType, bool isDangerous);
-    static void EndBlender(RSPaintFilterCanvas& canvas, int blendModeApplyType);
 
     static Color CalculateInvertColor(const Color& backgroundColor);
     static Color GetInvertBackgroundColor(RSPaintFilterCanvas& canvas, bool needClipToBounds,
@@ -126,12 +115,6 @@ public:
     RSB_EXPORT static Drawing::RectI GetRectByStrategy(
         const Drawing::Rect& rect, RoundingStrategyType roundingStrategy);
     static std::shared_ptr<RSNGRenderShapeBase> GetResolvedSDFShape(const RSProperties& properties);
-
-private:
-    static std::shared_ptr<Drawing::RuntimeEffect> dynamicBrightnessBlenderEffect_;
-    static std::shared_ptr<Drawing::RuntimeEffect> dynamicBrightnessLinearBlenderEffect_;
-    static std::shared_ptr<Drawing::RuntimeEffect> shadowBlenderEffect_;
-    static std::shared_ptr<Drawing::RuntimeEffect> hdrDarkenBlenderEffect_;
 };
 } // namespace Rosen
 } // namespace OHOS

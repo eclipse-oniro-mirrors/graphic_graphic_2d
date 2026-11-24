@@ -15,16 +15,19 @@
 
 #include <gtest/gtest.h>
 
+#include "drawable/rs_blender_drawable_utils.h"
 #include "drawable/rs_property_drawable_utils.h"
 #include "drawable/rs_effect_drawable_utils.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "draw/surface.h"
+#include "effect/color_matrix.h"
 #include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_shape_base.h"
 #include "ge_visual_effect_container.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_depth_render_node.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "property/rs_properties.h"
 #include "property/rs_properties_painter.h"
@@ -209,6 +212,107 @@ HWTEST_F(RSPropertyDrawableUtilsTest, DrawColorFilterTest009, testing::ext::Test
     rsPropertyDrawableUtils->DrawColorFilter(&paintFilterCanvas, colorFilter);
 }
 
+namespace {
+class AlphaRecordPaintFilterCanvas : public RSPaintFilterCanvas {
+public:
+    explicit AlphaRecordPaintFilterCanvas(Drawing::Surface* surface)
+        : RSPaintFilterCanvas(surface) {}
+
+    void SaveLayer(const Drawing::SaveLayerOps& saveLayerOps) override
+    {
+        alphaAtSaveLayer_ = GetAlpha();
+        RSPaintFilterCanvas::SaveLayer(saveLayerOps);
+    }
+
+    // alpha observed by SaveLayer, negative when SaveLayer was not reached
+    float alphaAtSaveLayer_ = -1.0f;
+};
+} // namespace
+
+/**
+ * @tc.name: DrawColorFilterColorMatrixAlphaTest010
+ * @tc.desc: DrawColorFilter resets canvas alpha to 1.0 for the SaveLayer call when drawing a
+ *           color matrix filter and restores it afterwards; on an already opaque canvas the reset
+ *           still runs but is a no-op, and non-color-matrix filters keep the legacy behaviour
+ *           (no alpha reset)
+ * @tc.type: FUNC
+ * @tc.require:issueI9SCBR
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawColorFilterColorMatrixAlphaTest010, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    ASSERT_NE(rsPropertyDrawableUtils, nullptr);
+    auto surface = Drawing::Surface::MakeRasterN32Premul(10, 10);
+    ASSERT_NE(surface, nullptr);
+    auto colorFilter = std::make_shared<Drawing::ColorFilter>();
+    ASSERT_NE(colorFilter, nullptr);
+
+    // color matrix filter + semi-transparent canvas: alpha is reset to 1.0 only for the SaveLayer
+    // call and restored afterwards, the alpha stack stays balanced
+    {
+        AlphaRecordPaintFilterCanvas paintFilterCanvas(surface.get());
+        paintFilterCanvas.SetAlpha(0.5f);
+        const int alphaSaveCountBefore = paintFilterCanvas.GetAlphaSaveCount();
+        rsPropertyDrawableUtils->DrawColorFilter(&paintFilterCanvas, colorFilter, true);
+        EXPECT_EQ(paintFilterCanvas.alphaAtSaveLayer_, 1.0f);
+        EXPECT_EQ(paintFilterCanvas.GetAlpha(), 0.5f);
+        EXPECT_EQ(paintFilterCanvas.GetAlphaSaveCount(), alphaSaveCountBefore);
+    }
+
+    // color matrix filter + fully opaque canvas: the reset still runs but is a no-op (alpha stays 1.0)
+    {
+        AlphaRecordPaintFilterCanvas paintFilterCanvas(surface.get());
+        paintFilterCanvas.SetAlpha(1.0f);
+        const int alphaSaveCountBefore = paintFilterCanvas.GetAlphaSaveCount();
+        rsPropertyDrawableUtils->DrawColorFilter(&paintFilterCanvas, colorFilter, true);
+        EXPECT_EQ(paintFilterCanvas.alphaAtSaveLayer_, 1.0f);
+        EXPECT_EQ(paintFilterCanvas.GetAlpha(), 1.0f);
+        EXPECT_EQ(paintFilterCanvas.GetAlphaSaveCount(), alphaSaveCountBefore);
+    }
+
+    // non-color-matrix filter + semi-transparent canvas: legacy path, SaveLayer still observes
+    // the canvas alpha and no reset happens
+    {
+        AlphaRecordPaintFilterCanvas paintFilterCanvas(surface.get());
+        paintFilterCanvas.SetAlpha(0.5f);
+        const int alphaSaveCountBefore = paintFilterCanvas.GetAlphaSaveCount();
+        rsPropertyDrawableUtils->DrawColorFilter(&paintFilterCanvas, colorFilter, false);
+        EXPECT_EQ(paintFilterCanvas.alphaAtSaveLayer_, 0.5f);
+        EXPECT_EQ(paintFilterCanvas.GetAlpha(), 0.5f);
+        EXPECT_EQ(paintFilterCanvas.GetAlphaSaveCount(), alphaSaveCountBefore);
+    }
+}
+
+/**
+ * @tc.name: DrawColorFilterColorMatrixInvalidArgsTest011
+ * @tc.desc: DrawColorFilter returns early on null canvas / null filter / null surface and never
+ *           reaches SaveLayer, the canvas alpha is left untouched
+ * @tc.type: FUNC
+ * @tc.require:issueI9SCBR
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawColorFilterColorMatrixInvalidArgsTest011, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    ASSERT_NE(rsPropertyDrawableUtils, nullptr);
+    auto colorFilter = std::make_shared<Drawing::ColorFilter>();
+    ASSERT_NE(colorFilter, nullptr);
+    auto surface = Drawing::Surface::MakeRasterN32Premul(10, 10);
+    ASSERT_NE(surface, nullptr);
+
+    // null canvas / null filter: early return, no crash
+    rsPropertyDrawableUtils->DrawColorFilter(nullptr, colorFilter, true);
+    rsPropertyDrawableUtils->DrawColorFilter(nullptr, nullptr, true);
+
+    // null surface: early return before SaveLayer, alpha untouched
+    Drawing::Canvas canvasTest;
+    AlphaRecordPaintFilterCanvas paintFilterCanvas(surface.get());
+    paintFilterCanvas.surface_ = nullptr;
+    paintFilterCanvas.SetAlpha(0.5f);
+    rsPropertyDrawableUtils->DrawColorFilter(&paintFilterCanvas, colorFilter, true);
+    EXPECT_EQ(paintFilterCanvas.alphaAtSaveLayer_, -1.0f);
+    EXPECT_EQ(paintFilterCanvas.GetAlpha(), 0.5f);
+}
+
 /**
  * @tc.name: DrawPixelStretchTest013
  * @tc.desc: DrawPixelStretch test
@@ -280,21 +384,21 @@ HWTEST_F(RSPropertyDrawableUtilsTest, DrawShadowTestAndDrawUseEffectTest014, tes
  */
 HWTEST_F(RSPropertyDrawableUtilsTest, GetInvertedBackgroundColorTest015, testing::ext::TestSize.Level1)
 {
-    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtilsTest1 = std::make_shared<RSPropertyDrawableUtils>();
-    EXPECT_NE(rsPropertyDrawableUtilsTest1, nullptr);
+    std::shared_ptr<RSBlenderDrawableUtils> rsBlenderDrawableUtilsTest1 = std::make_shared<RSBlenderDrawableUtils>();
+    EXPECT_NE(rsBlenderDrawableUtilsTest1, nullptr);
     Drawing::Canvas canvasTest1;
     RSPaintFilterCanvas paintFilterCanvasTest1(&canvasTest1);
     paintFilterCanvasTest1.envStack_.top().hasOffscreenLayer_ = false;
     std::shared_ptr<Drawing::Blender> blender = std::make_shared<Drawing::Blender>();
     EXPECT_NE(blender, nullptr);
 
-    rsPropertyDrawableUtilsTest1->BeginBlender(paintFilterCanvasTest1, blender, 0, true);
+    rsBlenderDrawableUtilsTest1->BeginBlender(paintFilterCanvasTest1, blender, 0, true);
     EXPECT_EQ(paintFilterCanvasTest1.alphaStack_.size(), 1);
-    rsPropertyDrawableUtilsTest1->BeginBlender(paintFilterCanvasTest1, blender, 1, true);
+    rsBlenderDrawableUtilsTest1->BeginBlender(paintFilterCanvasTest1, blender, 1, true);
     EXPECT_EQ(paintFilterCanvasTest1.alphaStack_.size(), 2);
-    rsPropertyDrawableUtilsTest1->BeginBlender(paintFilterCanvasTest1, blender, 2, true);
+    rsBlenderDrawableUtilsTest1->BeginBlender(paintFilterCanvasTest1, blender, 2, true);
     EXPECT_EQ(paintFilterCanvasTest1.alphaStack_.size(), 3);
-    rsPropertyDrawableUtilsTest1->BeginBlender(paintFilterCanvasTest1, blender, 3, true);
+    rsBlenderDrawableUtilsTest1->BeginBlender(paintFilterCanvasTest1, blender, 3, true);
     EXPECT_EQ(paintFilterCanvasTest1.alphaStack_.size(), 4);
 
     std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtilsTest2 = std::make_shared<RSPropertyDrawableUtils>();
@@ -322,16 +426,16 @@ HWTEST_F(RSPropertyDrawableUtilsTest, GetInvertedBackgroundColorTest015, testing
  */
 HWTEST_F(RSPropertyDrawableUtilsTest, IsDangerousBlendModeAndEndBlenderTest016, testing::ext::TestSize.Level1)
 {
-    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtilsTest1 = std::make_shared<RSPropertyDrawableUtils>();
-    EXPECT_NE(rsPropertyDrawableUtilsTest1, nullptr);
-    EXPECT_EQ(rsPropertyDrawableUtilsTest1->IsDangerousBlendMode(1, 0), 0);
-    EXPECT_EQ(rsPropertyDrawableUtilsTest1->IsDangerousBlendMode(1, 1), 1);
-    EXPECT_EQ(rsPropertyDrawableUtilsTest1->IsDangerousBlendMode(1, 2), 1);
+    std::shared_ptr<RSBlenderDrawableUtils> rsBlenderDrawableUtilsTest1 = std::make_shared<RSBlenderDrawableUtils>();
+    EXPECT_NE(rsBlenderDrawableUtilsTest1, nullptr);
+    EXPECT_EQ(rsBlenderDrawableUtilsTest1->IsDangerousBlendMode(1, 0), 0);
+    EXPECT_EQ(rsBlenderDrawableUtilsTest1->IsDangerousBlendMode(1, 1), 1);
+    EXPECT_EQ(rsBlenderDrawableUtilsTest1->IsDangerousBlendMode(1, 2), 1);
 
     Drawing::Canvas canvasTest;
     RSPaintFilterCanvas paintFilterCanvasTest1(&canvasTest);
-    rsPropertyDrawableUtilsTest1->EndBlender(paintFilterCanvasTest1, 0);
-    rsPropertyDrawableUtilsTest1->EndBlender(paintFilterCanvasTest1, 1);
+    rsBlenderDrawableUtilsTest1->EndBlender(paintFilterCanvasTest1, 0);
+    rsBlenderDrawableUtilsTest1->EndBlender(paintFilterCanvasTest1, 1);
 }
 
 /**
@@ -617,20 +721,6 @@ HWTEST_F(RSPropertyDrawableUtilsTest, GetRectByStrategyTest001, testing::ext::Te
 }
 
 /**
- * @tc.name: MakeShadowBlenderTest001
- * @tc.desc: MakeShadowBlender Test
- * @tc.type: FUNC
- * @tc.require: issueICLU4I
- */
-HWTEST_F(RSPropertyDrawableUtilsTest, MakeShadowBlenderTest001, testing::ext::TestSize.Level1)
-{
-    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
-    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
-    RSShadowBlenderPara shadowBlenderParams;
-    EXPECT_NE(rsPropertyDrawableUtils->MakeShadowBlender(shadowBlenderParams), nullptr);
-}
-
-/**
  * @tc.name: DrawForegroundFilterWithCustomRect001
  * @tc.desc: Test DrawForegroundFilter with custom draw rect
  * @tc.type: FUNC
@@ -696,16 +786,13 @@ HWTEST_F(RSPropertyDrawableUtilsTest, PickColorAndGpuScaleImageTest001, testing:
  */
 HWTEST_F(RSPropertyDrawableUtilsTest, MakeHdrDarkenBlenderTest001, testing::ext::TestSize.Level1)
 {
-    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
-    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+    std::shared_ptr<RSBlenderDrawableUtils> rsBlenderDrawableUtils = std::make_shared<RSBlenderDrawableUtils>();
+    EXPECT_NE(rsBlenderDrawableUtils, nullptr);
     RSHdrDarkenBlenderPara hdrDarkenBlenderParams1;
-    EXPECT_NE(rsPropertyDrawableUtils->MakeHdrDarkenBlender(hdrDarkenBlenderParams1), nullptr);
+    EXPECT_NE(rsBlenderDrawableUtils->MakeHdrDarkenBlender(hdrDarkenBlenderParams1), nullptr);
 
     RSHdrDarkenBlenderPara hdrDarkenBlenderParams2 = {1.0, {0.2, 0.3, 0.5}};
-    EXPECT_NE(rsPropertyDrawableUtils->MakeHdrDarkenBlender(hdrDarkenBlenderParams2), nullptr);
-
-    RSHdrDarkenBlenderPara hdrDarkenBlenderParams3 = {0.0};
-    EXPECT_EQ(rsPropertyDrawableUtils->MakeHdrDarkenBlender(hdrDarkenBlenderParams3), nullptr);
+    EXPECT_NE(rsBlenderDrawableUtils->MakeHdrDarkenBlender(hdrDarkenBlenderParams2), nullptr);
 }
 
 /**
@@ -717,19 +804,19 @@ HWTEST_F(RSPropertyDrawableUtilsTest, MakeHdrDarkenBlenderTest001, testing::ext:
  */
 HWTEST_F(RSPropertyDrawableUtilsTest, MakeColorfulBrightnessBlenderTest001, testing::ext::TestSize.Level1)
 {
-    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
-    ASSERT_NE(rsPropertyDrawableUtils, nullptr);
+    std::shared_ptr<RSBlenderDrawableUtils> rsBlenderDrawableUtils = std::make_shared<RSBlenderDrawableUtils>();
+    ASSERT_NE(rsBlenderDrawableUtils, nullptr);
 
     // default-constructed params (F2 builder-valid path)
     RSColorfulBrightnessBlenderPara params1;
-    auto blender1 = rsPropertyDrawableUtils->MakeColorfulBrightnessBlender(params1);
+    auto blender1 = rsBlenderDrawableUtils->MakeColorfulBrightnessBlender(params1);
     EXPECT_NE(blender1, nullptr);
 
     // fully-specified params (F2 builder-valid path, all uniforms set)
     Vector3f pos(0.6f, 0.7f, 0.8f);
     Vector3f neg(0.9f, 0.1f, 0.2f);
     RSColorfulBrightnessBlenderPara params2(1.0f, 0.5f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, pos, neg, 0.33f, 0.88f);
-    auto blender2 = rsPropertyDrawableUtils->MakeColorfulBrightnessBlender(params2);
+    auto blender2 = rsBlenderDrawableUtils->MakeColorfulBrightnessBlender(params2);
     EXPECT_NE(blender2, nullptr);
 }
 

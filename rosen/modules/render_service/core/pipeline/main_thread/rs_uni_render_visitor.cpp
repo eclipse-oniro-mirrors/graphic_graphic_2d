@@ -919,6 +919,9 @@ void RSUniRenderVisitor::QuickPrepareScreenRenderNode(RSScreenRenderNode& node, 
     curScreenNode_->ResetMirroredScreenChangedFlag();
     PrepareForMultiScreenViewDisplayNode(node);
     node.ResetDirtyFlag();
+#if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
+    RsDelegateCompositeCallbackManager::GetInstance().CollectHwcNodesHardwareForcedDisabledInfo(curScreenNode_);
+#endif
     RS_TRACE_NAME_FMT("RSUniRenderVisitor::QuickPrepareScreenRenderNode childNumber: %d", rsScreenNodeChildNum_);
     if (UNLIKELY(RSFrameStatsCollection::IsLevelAtLeast(FrameStatsLevel::Full))) {
         RSFrameStatsCollection::GetInstance().IncrementBySurfaceNode(
@@ -1097,17 +1100,30 @@ bool RSUniRenderVisitor::CheckSkipAndPrepareForCrossNode(RSSurfaceRenderNode& no
     if (CheckSkipCrossNode(node)) {
         // when skip cloneCrossNode prepare, we need switch to record sourceNode dirty info
         PrepareForSkippedCrossNode(node);
+        // record the layer conversion of the drm nodes of the cross node composed on current display
+        RSSurfaceRenderNode& crossNode = sourceNode ? *sourceNode : node;
+        if (Drawing::Matrix layerConversion;
+            RSDrmUtil::CalcCrossNodeLayerConversion(crossNode, node, *curScreenNode_, layerConversion)) {
+            RSDrmUtil::UpdateDrmCrossNodeConversion(crossNode, curScreenNode_->GetId(), layerConversion);
+        }
         return true;
     }
 
     // when prepare CloneCrossNode on first display, we need switch to prepare sourceNode.
     if (node.IsCloneCrossNode()) {
+        // the prepare below rewrites the cached matrix of the source node, so the conversion is calculated before it
+        Drawing::Matrix layerConversion;
+        const bool hasLayerConversion =
+            RSDrmUtil::CalcCrossNodeLayerConversion(*sourceNode, node, *curScreenNode_, layerConversion);
         isSwitchToSourceCrossNodePrepare_ = true;
         sourceNode->SetCurCloneNodeParent(node.GetParent().lock());
         sourceNode->SetFirstLevelCrossNode(true);
         sourceNode->QuickPrepare(shared_from_this());
         sourceNode->SetCurCloneNodeParent(nullptr);
         isSwitchToSourceCrossNodePrepare_ = false;
+        if (hasLayerConversion) {
+            RSDrmUtil::UpdateDrmCrossNodeConversion(*sourceNode, curScreenNode_->GetId(), layerConversion);
+        }
         return true;
     }
     return false;
@@ -1379,6 +1395,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     MarkFilterInForegroundFilterAndCheckNeedForceClearCache(node);
     node.CheckContainerDirtyStatusAndUpdateDirty(curContainerDirty_);
     node.ClearCrossNodeSkipDisplayConversionMatrices();
+    node.ClearCrossNodeLayerConversionMatrices();
     const auto& screenProperty = curScreenNode_->GetScreenProperty();
     node.SetPreparedDisplayOffsetX(screenProperty.GetOffsetX());
     node.SetPreparedDisplayOffsetY(screenProperty.GetOffsetY());
@@ -5121,14 +5138,6 @@ RSUniRenderVisitor::RotationStatus RSUniRenderVisitor::GetRotationStatus() const
     bool rotationStatusChanged = curLogicalDisplayNode_ ?
         curLogicalDisplayNode_->GetPreRotationStatus() != curLogicalDisplayNode_->GetCurRotationStatus() : false;
     return {rotationChanged, rotationStatusChanged};
-}
-
-bool RSUniRenderVisitor::InitForDelegateMode(RSScreenRenderNode& node, std::shared_ptr<RSBaseRenderEngine> renderEngine)
-{
-    renderEngine_ = renderEngine;
-    const ScreenInfo& info = node.GetScreenInfo();
-    prepareClipRect_ = {0, 0, info.phyWidth, info.phyHeight};
-    return InitScreenInfo(node);
 }
 
 void RSUniRenderVisitor::GetScreenRotation(RSScreenRenderNode& node)

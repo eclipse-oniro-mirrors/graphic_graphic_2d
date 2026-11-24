@@ -24,6 +24,7 @@
 #include "animation/rs_render_particle.h"
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
+#include "effect/color_matrix.h"
 #include "modifier/rs_animatable_arithmetic.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
 #include "pipeline/rs_draw_cmd_list.h"
@@ -38,6 +39,7 @@ class RSNGRenderFilterBase;
 class RSNGRenderMaskBase;
 class RSNGRenderShaderBase;
 class RSNGRenderShapeBase;
+class RSNGRenderBlenderBase;
 class RSRenderMaskPara;
 class RSRenderNode;
 enum class ForegroundColorStrategyType;
@@ -127,15 +129,17 @@ enum class RSPropertyType : uint8_t {
     RS_NG_RENDER_FILTER_BASE,
     RS_NG_RENDER_MASK_BASE,
     RS_NG_RENDER_SHADER_BASE,
-    SHADOW_BLENDER_PARAMS,
+    HRP_PLACEHOLDER_3, // HRP: delete it
     RS_NG_RENDER_SHAPE_BASE,
-    HDR_DARKEN_BLENDER_PARAMS,
+    HRP_PLACEHOLDER_4, // HRP: delete it
     DEPTH_CAMERA_PARA,
     DEPTH_LIGHT_PARA,
     PARTICLE_FIELDS,
     SIMPLE_DRAW_CMD_LIST,
     ATLAS_INFO,
     CLIP_SHAPE,
+    RS_NG_RENDER_BLENDER_BASE,
+    COLOR_MATRIX,
 };
 
 enum class RSPropertyUnit : uint8_t {
@@ -163,6 +167,7 @@ struct RSRenderPropertyTypeTraits {
 #define SHADER_PTR std::shared_ptr<RSNGRenderShaderBase>
 #define MASK_PTR std::shared_ptr<RSNGRenderMaskBase>
 #define SHAPE_PTR std::shared_ptr<RSNGRenderShapeBase>
+#define BLENDER_PTR std::shared_ptr<RSNGRenderBlenderBase>
 
 #include "modifier/rs_property_def.in"
 
@@ -170,6 +175,7 @@ struct RSRenderPropertyTypeTraits {
 #undef SHADER_PTR
 #undef MASK_PTR
 #undef SHAPE_PTR
+#undef BLENDER_PTR
 
 #undef DECLARE_PROPERTY
 #undef DECLARE_ANIMATABLE_PROPERTY
@@ -828,6 +834,14 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::OnDetach();
 template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::Set(
     const std::shared_ptr<RSNGRenderShapeBase>& value, PropertyUpdateType type);
+template<>
+void RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>::OnAttach(RSRenderNode& node,
+    std::weak_ptr<ModifierNG::RSRenderModifier> modifier);
+template<>
+void RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>::OnDetach();
+template<>
+void RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>::Set(
+    const std::shared_ptr<RSNGRenderBlenderBase>& value, PropertyUpdateType type);
 
 #if defined(_WIN32)
 #define PROPERTY_EXPORT
@@ -847,6 +861,7 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::Set(
 #define SHADER_PTR std::shared_ptr<RSNGRenderShaderBase>
 #define MASK_PTR std::shared_ptr<RSNGRenderMaskBase>
 #define SHAPE_PTR std::shared_ptr<RSNGRenderShapeBase>
+#define BLENDER_PTR std::shared_ptr<RSNGRenderBlenderBase>
 
 #include "modifier/rs_property_def.in"
 
@@ -854,6 +869,7 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::Set(
 #undef SHADER_PTR
 #undef MASK_PTR
 #undef SHAPE_PTR
+#undef BLENDER_PTR
 
 #undef DECLARE_PROPERTY
 #undef DECLARE_ANIMATABLE_PROPERTY

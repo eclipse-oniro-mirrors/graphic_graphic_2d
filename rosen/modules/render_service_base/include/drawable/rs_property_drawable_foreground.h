@@ -29,7 +29,7 @@ class RSFilter;
 class RSBorder;
 class RSNGRenderShaderBase;
 class RSProperties;
-class RSParticlesDrawable;
+class RSParticlesPainter;
 namespace Drawing {
 class GEShader;
 class RuntimeEffect;
@@ -50,6 +50,8 @@ public:
 
 private:
     bool needSync_ = false;
+    bool isColorMatrixFilter_ = false;
+    bool stagingIsColorMatrixFilter_ = false;
     std::shared_ptr<Drawing::ColorFilter> filter_;
     std::shared_ptr<Drawing::ColorFilter> stagingFilter_;
     std::shared_ptr<RSNGRenderFilterBase> stagingColorNGFilter_;
@@ -171,7 +173,7 @@ public:
     bool OnUpdate(const RSRenderNode& node) override;
 
 private:
-    std::shared_ptr<RSParticlesDrawable> cachedDrawable_;
+    std::shared_ptr<RSParticlesPainter> cachedPainter_;
 };
 
 class RSPixelStretchDrawable : public RSDrawable {

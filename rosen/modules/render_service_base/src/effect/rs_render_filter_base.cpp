@@ -166,6 +166,10 @@ static std::unordered_map<RSNGEffectType, FilterCreator> creatorLUT = {
             return std::make_shared<RSNGRenderDynamicDimFilter>();
         }
     },
+    {RSNGEffectType::STICKER_EMBOSS_FILTER, [] {
+            return std::make_shared<RSNGRenderStickerEmbossFilter>();
+        }
+    },
 };
 
 using FilterGetSnapshotRect = std::function<RectF(std::shared_ptr<RSNGRenderFilterBase>, RectF)>;

@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "drawing_demo.h"
-
 #include <sstream>
 
 #include "accesstoken_kit.h"
@@ -23,7 +22,9 @@
 #endif
 #include "display_manager.h"
 #include "test_case_factory.h"
-#include "test_case/test_common.h"
+#include "test_common.h"
+#include "transaction/rs_interfaces.h"
+#include "ui/rs_ui_context_manager.h"
 
 using namespace OHOS::Rosen;
 
@@ -74,7 +75,10 @@ int DrawingDemo::Test(TestDisplayCanvas* canvas)
 
 int DrawingDemo::InitWindow()
 {
-    rsUiDirector_ = RSUIDirector::Create(nullptr, nullptr);
+    auto screenId = RSInterfaces::GetInstance().GetDefaultScreenId();
+    sptr<IRemoteObject> connectToRender = RSInterfaces::GetInstance().GetConnectToRenderToken(screenId);
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRender);
+    rsUiDirector_ = RSUIDirector::Create(connectToRender, rsUIContext);
     if (rsUiDirector_ == nullptr) {
         TestCommon::Log("Failed to create rsUiDirector_");
         return RET_FAILED;

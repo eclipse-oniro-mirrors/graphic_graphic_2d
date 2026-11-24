@@ -58,6 +58,8 @@ public:
     void SetIdentity();
     void SetArray(const scalar src[MATRIX_SIZE]);
     void GetArray(scalar (&dst)[MATRIX_SIZE]) const;
+    bool operator==(const ColorMatrix& other) const;
+    bool operator!=(const ColorMatrix& other) const;
     void SetConcat(const ColorMatrix& m1, const ColorMatrix& m2);
     void PreConcat(const ColorMatrix& m);
     void PostConcat(const ColorMatrix& m);
