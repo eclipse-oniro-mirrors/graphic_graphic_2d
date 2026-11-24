@@ -339,6 +339,47 @@ HWTEST_F(TypefaceTest, MakeFromAshmemTest003, TestSize.Level1)
         Drawing::Typeface::MakeFromAshmem(std::move(stream), args);
     ASSERT_NE(typeface, nullptr);
 }
+
+/**
+ * @tc.name: CalculateFontArgsHashTest
+ * @tc.desc: Test CalculateFontArgsHash
+ * @tc.type: FUNC
+ * @tc.require:22161
+ */
+HWTEST_F(TypefaceTest, CalculateFontArgsHashTest, TestSize.Level1)
+{
+    auto stream = std::make_unique<MemoryStream>(ttfData_.get(), ttfLen_);
+    ASSERT_NE(stream, nullptr);
+
+    auto typeface = Typeface::MakeFromStream(std::move(stream));
+    ASSERT_NE(typeface, nullptr);
+    FontArguments::VariationPosition variationPos;
+    uint32_t argHash = Drawing::Typeface::CalculateFontArgsHash(variationPos);
+    EXPECT_EQ(argHash, 0);
+    std::vector<FontArguments::VariationPosition::Coordinate> coordinates = { {2003265652, 100.0}, {2003072104, 62.5} };
+    variationPos.coordinateCount = coordinates.size();
+    argHash = Drawing::Typeface::CalculateFontArgsHash(variationPos);
+    EXPECT_EQ(argHash, 0);
+    variationPos.coordinates = coordinates.data();
+    argHash = Drawing::Typeface::CalculateFontArgsHash(variationPos);
+    EXPECT_NE(argHash, 0);
+}
+
+/**
+ * @tc.name: AssembleFullHashTest
+ * @tc.desc: Test AssembleFullHash
+ * @tc.type: FUNC
+ * @tc.require:22161
+ */
+HWTEST_F(TypefaceTest, AssembleFullHashTest, TestSize.Level1)
+{
+    auto typeface = Drawing::Typeface::MakeDefault();
+    ASSERT_NE(typeface, nullptr);
+    uint64_t fullHash = Drawing::Typeface::AssembleFullHash(0, typeface->GetHash());
+    EXPECT_EQ(fullHash, static_cast<uint64_t>(typeface->GetHash()));
+    typeface->SetFullHash(fullHash);
+    EXPECT_EQ(fullHash, typeface->GetFullHash());
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

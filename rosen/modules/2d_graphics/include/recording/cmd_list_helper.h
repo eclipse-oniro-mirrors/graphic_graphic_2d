@@ -31,6 +31,7 @@ namespace OHOS {
 namespace Rosen {
 namespace Drawing {
 constexpr size_t MAX_VECTORSIZE = 170000;
+constexpr size_t MAX_SYMBOL_VECTOR_SIZE = 1000;
 class DrawOpItem;
 class DRAWING_API CmdListHelper {
 public:

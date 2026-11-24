@@ -287,7 +287,7 @@ std::shared_ptr<ShaderEffect> ShaderEffect::CreateSweepGradient(const Point& cen
 }
 
 std::shared_ptr<ShaderEffect> ShaderEffect::CreateSweepGradient(const Point& centerPt,
-    const std::vector<Color4f>& colors, std::shared_ptr<ColorSpace> colorSpace,const std::vector<scalar>& pos,
+    const std::vector<Color4f>& colors, std::shared_ptr<ColorSpace> colorSpace, const std::vector<scalar>& pos,
     TileMode mode, scalar startAngle, scalar endAngle, const Matrix* matrix)
 {
     return std::make_shared<ShaderEffect>(

@@ -96,7 +96,7 @@ OH_Drawing_ImageFilter* OH_Drawing_ImageFilterCreateFromColorFilter(
 OH_Drawing_ImageFilter* OH_Drawing_ImageFilterCreateOffset(float x, float y, OH_Drawing_ImageFilter* imageFilter)
 {
     NativeHandle<ImageFilter>* inputHandle = imageFilter ? Helper::CastTo<OH_Drawing_ImageFilter*,
-        NativeHandle<ImageFilter>*>(imageFilter) : nullptr;
+    NativeHandle<ImageFilter>*>(imageFilter) : nullptr;
     NativeHandle<ImageFilter>* imageFilterHandle = new NativeHandle<ImageFilter>;
     imageFilterHandle->value =
         ImageFilterLazy::CreateOffset(x, y, inputHandle ? inputHandle->value : nullptr);

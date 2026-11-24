@@ -92,6 +92,7 @@ ohos_shared_library("drawing_ani_core") {
     "ipc:ipc_single",
     "runtime_core:ani",
     "runtime_core:libarkruntime",
+    "image_framework:image",
     "napi:ace_napi",
     "node:node_header_notice",
     "runtime_core:ani_helpers",
@@ -103,8 +104,6 @@ ohos_shared_library("drawing_ani_core") {
       "ability_runtime:app_context",
     ]
   }
-
-  public_external_deps = [ "image_framework:image" ]
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"
@@ -197,6 +196,7 @@ ohos_shared_library("drawing_ani") {
     "ipc:ipc_single",
     "runtime_core:ani",
     "runtime_core:libarkruntime",
+    "image_framework:image",
     "napi:ace_napi",
     "node:node_header_notice",
     "runtime_core:ani_helpers",
@@ -206,11 +206,8 @@ ohos_shared_library("drawing_ani") {
     external_deps += [
       "ability_runtime:abilitykit_native",
       "ability_runtime:app_context",
-      "ability_runtime:napi_common",
     ]
   }
-
-  public_external_deps = [ "image_framework:image" ]
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"

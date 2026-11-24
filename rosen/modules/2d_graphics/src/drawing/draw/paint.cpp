@@ -409,7 +409,6 @@ void Paint::Dump(std::string& out) const
     out += " isHdrColor:" + std::string(isHdrColor_ ? "true" : "false");
     out += ']';
 }
-
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

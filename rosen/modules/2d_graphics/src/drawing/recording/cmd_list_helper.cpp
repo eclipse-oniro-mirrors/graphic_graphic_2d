@@ -446,6 +446,10 @@ DrawingSymbolLayers CmdListHelper::GetSymbolLayersFromCmdList(const CmdList& cmd
 
     auto handleVector1 = GetVectorFromCmdList<std::pair<size_t, size_t>>(cmdList, symbolLayersHandle.layers);
     std::vector<std::vector<size_t>> layers;
+    if (handleVector1.size() > MAX_SYMBOL_VECTOR_SIZE) {
+        LOGE("GetSymbolLayersFromCmdList handleVector1 size is too large, an empty layers is returned!");
+        return symbolLayers;
+    }
     for (size_t i = 0; i < handleVector1.size(); i++) {
         layers.push_back(GetVectorFromCmdList<size_t>(cmdList, handleVector1.at(i)));
     }
@@ -453,6 +457,10 @@ DrawingSymbolLayers CmdListHelper::GetSymbolLayersFromCmdList(const CmdList& cmd
 
     auto handleVector2 = GetVectorFromCmdList<RenderGroupHandle>(cmdList, symbolLayersHandle.groups);
     std::vector<DrawingRenderGroup> renderGroups;
+    if (handleVector2.size() > MAX_SYMBOL_VECTOR_SIZE) {
+        LOGE("GetSymbolLayersFromCmdList handleVector2 size is too large, an empty renderGroups is returned!");
+        return symbolLayers;
+    }
     for (size_t i = 0; i < handleVector2.size(); i++) {
         renderGroups.push_back(GetRenderGroupFromCmdList(cmdList, handleVector2.at(i)));
     }
@@ -480,6 +488,10 @@ DrawingRenderGroup CmdListHelper::GetRenderGroupFromCmdList(const CmdList& cmdLi
 
     auto handleVector = GetVectorFromCmdList<GroupInfoHandle>(cmdList, renderGroupHandle.infos);
     std::vector<DrawingGroupInfo> groupInfos;
+    if (handleVector.size() > MAX_SYMBOL_VECTOR_SIZE) {
+        LOGE("GetRenderGroupFromCmdList handleVector size is too large, an empty groupInfos is returned!");
+        return group;
+    }
     for (size_t i = 0; i < handleVector.size(); i++) {
         groupInfos.push_back(GetGroupInfoFromCmdList(cmdList, handleVector.at(i)));
     }
@@ -925,6 +937,12 @@ std::shared_ptr<PathEffect> CmdListHelper::GetPathEffectFromCmdList(const CmdLis
 
     auto pathEffectData = std::make_shared<Data>();
     pathEffectData->BuildWithoutCopy(ptr, pathEffectHandle.size);
+
+    if (pathEffectHandle.type < static_cast<uint32_t>(PathEffect::PathEffectType::NO_TYPE) ||
+        pathEffectHandle.type > static_cast<uint32_t>(PathEffect::PathEffectType::COMPOSE)) {
+        LOGD("GetPathEffectFromCmdList invalid PathEffectType: %{public}u", pathEffectHandle.type);
+        return nullptr;
+    }
     auto pathEffect = std::make_shared<PathEffect>
         (static_cast<PathEffect::PathEffectType>(pathEffectHandle.type));
     if (pathEffect->Deserialize(pathEffectData) == false) {
@@ -1061,6 +1079,11 @@ std::shared_ptr<ImageFilter> CmdListHelper::GetImageFilterFromCmdList(const CmdL
         return nullptr;
     }
 
+    if (imageFilterHandle.type < static_cast<uint32_t>(ImageFilter::FilterType::NO_TYPE) ||
+        imageFilterHandle.type > static_cast<uint32_t>(ImageFilter::FilterType::LAZY_IMAGE_FILTER)) {
+        LOGD("GetImageFilterFromCmdList invalid FilterType: %{public}u", imageFilterHandle.type);
+        return nullptr;
+    }
     ImageFilter::FilterType type = static_cast<ImageFilter::FilterType>(imageFilterHandle.type);
     if (type == ImageFilter::FilterType::LAZY_IMAGE_FILTER) {
         // Lazy type: rebuild from DrawingObject and immediately instantiate

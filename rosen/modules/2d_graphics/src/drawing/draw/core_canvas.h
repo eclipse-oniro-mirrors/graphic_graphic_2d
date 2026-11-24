@@ -148,7 +148,6 @@ public:
     {
         return DrawingType::COMMON;
     }
-
     /**
      * @brief record canvas status
      * @param canvas canvas to be record
@@ -866,6 +865,7 @@ public:
     {
         return renderEngineType_;
     }
+
 protected:
     CoreCanvas(int32_t width, int32_t height);
     void BuildNoDraw(int32_t width, int32_t height);

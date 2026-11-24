@@ -1352,7 +1352,7 @@ namespace drawing {
      * @since 20
      */
     native concatMatrix(matrix: Matrix): void;
-
+  
     /**
      * Clips a region on the canvas.
      * @param { Region } region - Region object, which indicates the range to clip.
@@ -1438,7 +1438,7 @@ namespace drawing {
      * @since 20
      */
     native quickRejectRect(rect: common2D.Rect): boolean;
-
+    
     /**
      * Draws a single character with font feature.
      * @param { string } text - A string containing only a single character.

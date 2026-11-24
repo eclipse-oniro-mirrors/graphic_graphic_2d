@@ -46,7 +46,7 @@ static PathVerb ConvertToPathVerb(const SkPath::Verb& verb)
     }
 }
 
-SkiaPathIterator::SkiaPathIterator(const Path& path) noexcept: PathIteratorImpl(path)
+SkiaPathIterator::SkiaPathIterator(const Path& path) noexcept : PathIteratorImpl(path)
 {
     auto skiaPath = path.GetImpl<SkiaPath>();
     if (!skiaPath) {

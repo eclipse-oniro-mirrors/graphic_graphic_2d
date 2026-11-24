@@ -23,7 +23,7 @@ constexpr const char* ANI_DOUBLE_STRING = "std.core.Double";
 constexpr const char* ANI_INT_STRING = "std.core.Int";
 constexpr const char* ANI_BOOLEAN_STRING = "std.core.Boolean";
 constexpr const char* ANI_BUSINESS_ERROR_STRING = "@ohos.base.BusinessError";
-constexpr const char* ANI_ARRAY_STRING = "std.core.Array";
+constexpr const char *ANI_ARRAY_STRING = "std.core.Array";
 constexpr const char* ANI_GLOBAL_RESOURCE_STRING = "global.resource.Resource";
 constexpr const char* ANI_COLOR_ENUM_STRING = "arkui.component.enums.Color";
 

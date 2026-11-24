@@ -620,6 +620,9 @@ void CoreCanvas::DrawSingleCharacterWithFeatures(const char* str, const Font& fo
     std::function<void(int, const Font&)> drawSingleCharacterProc = [&](int currentGlyph, const Font& currentFont) {
         TextBlobBuilder textBlobBuilder;
         const TextBlobBuilder::RunBuffer& runBuffer = textBlobBuilder.AllocRunPos(currentFont, 1);
+        if (runBuffer.glyphs == nullptr || runBuffer.pos == nullptr) {
+            return;
+        }
         runBuffer.glyphs[0] = currentGlyph;
         runBuffer.pos[0] = 0;
         runBuffer.pos[1] = 0;
