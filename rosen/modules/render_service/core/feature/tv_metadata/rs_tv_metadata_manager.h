@@ -59,6 +59,7 @@ private:
     {
         return metadata.sceneTag != 0;
     }
+
     RSTvMetadataManager() = default;
     ~RSTvMetadataManager() = default;
     RSTvMetadataManager(const RSTvMetadataManager&) = delete;

@@ -545,7 +545,6 @@ HWTEST_F(TvMetadataTest, SetUniRenderThreadParam_001, TestSize.Level1)
     ASSERT_EQ(1, renderThreadParams->cachedSurfaceNodeId_);
     ASSERT_EQ(true, renderThreadParams->cachedSurfaceNodeOnTheTree_);
 }
-
 /**
  * @tc.name: SetVideoDimType_001
  * @tc.desc: Test SetVideoDimType with different values
