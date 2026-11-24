@@ -104,7 +104,7 @@ HWTEST(RSCanvasRenderNodeDrawableTest, AddDrawableToAllocatorTest001, TestSize.L
  * @tc.name: AddDrawableToAllocatorTest002
  * @tc.desc: test AddDrawableToAllocator
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST(RSCanvasRenderNodeDrawableTest, AddDrawableToAllocatorTest002, TestSize.Level1)
 {
