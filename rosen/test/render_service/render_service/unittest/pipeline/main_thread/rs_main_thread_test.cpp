@@ -11100,5 +11100,97 @@ HWTEST_F(RSMainThreadTest, DoDirectCompositionForDelegateMode002, TestSize.Level
     // cached false flips doDirectComposition off before the real composition path runs
     EXPECT_FALSE(mainThread->doDirectComposition_);
 }
+
+/**
+ * @tc.name: DoDirectCompositionForDelegateMode003
+ * @tc.desc: forceUpdateUniRenderFlag_ short-circuits direct composition even when hardware composer support is cached
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, DoDirectCompositionForDelegateMode003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    // build a cached false value through the collection path
+    auto context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(960301, 9603, context);
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(static_cast<NodeId>(960302), context);
+    hwcNode->isOnTheTree_ = true;
+    hwcNode->SetHardwareForcedDisabledState(true);
+    auto handler = hwcNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetBuffer(SurfaceBuffer::Create(), SyncFence::INVALID_FENCE, Rect { 0, 0, 0, 0 }, 0, nullptr);
+    handler->SetCurrentFrameBufferConsumed();
+    screenNode->childHwcNodes_.emplace_back(hwcNode);
+
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.SetCollectHwcNodesInfoFlag(true);
+    manager.CollectHwcNodesHardwareForcedDisabledInfo(screenNode);
+    auto support = manager.GetDoDirectCompositionSupportByHwcEnable();
+    ASSERT_EQ(support.has_value(), true);
+    ASSERT_EQ(support.value(), false);
+    manager.SetCollectHwcNodesInfoFlag(false);
+
+    mainThread->forceUpdateUniRenderFlag_ = true;
+    std::shared_ptr<RSBaseRenderNode> rootNode = std::make_shared<RSBaseRenderNode>(0);
+    mainThread->doDirectComposition_ = true;
+    mainThread->DoDirectCompositionForDelegateModeIfNeed(rootNode);
+    // early return on forceUpdateUniRenderFlag_: cached false must not flip the flag
+    EXPECT_TRUE(mainThread->doDirectComposition_);
+
+    mainThread->doDirectComposition_ = false;
+    mainThread->DoDirectCompositionForDelegateModeIfNeed(rootNode);
+    EXPECT_FALSE(mainThread->doDirectComposition_);
+    mainThread->forceUpdateUniRenderFlag_ = false;
+}
+
+/**
+ * @tc.name: DoDirectCompositionForDelegateMode004
+ * @tc.desc: forceUpdateUniRenderFlag_ alone skips direct composition when hardware composer support is not cached
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, DoDirectCompositionForDelegateMode004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    auto context = std::make_shared<RSContext>();
+    // reset cached hardware composer support back to nullopt
+    manager.ProcessDelegateCompositeCommand(*context);
+    auto support = manager.GetDoDirectCompositionSupportByHwcEnable();
+    ASSERT_EQ(support.has_value(), false);
+
+    mainThread->forceUpdateUniRenderFlag_ = true;
+    std::shared_ptr<RSBaseRenderNode> rootNode = std::make_shared<RSBaseRenderNode>(0);
+    mainThread->doDirectComposition_ = true;
+    mainThread->DoDirectCompositionForDelegateModeIfNeed(rootNode);
+    // early return with both conditions true: doDirectComposition_ stays untouched
+    EXPECT_TRUE(mainThread->doDirectComposition_);
+    mainThread->forceUpdateUniRenderFlag_ = false;
+    mainThread->doDirectComposition_ = false;
+}
+
+/**
+ * @tc.name: DoDirectCompositionForDelegateMode005
+ * @tc.desc: missing hardware composer support still returns early when forceUpdateUniRenderFlag_ is false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, DoDirectCompositionForDelegateMode005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    auto context = std::make_shared<RSContext>();
+    manager.ProcessDelegateCompositeCommand(*context);
+    auto support = manager.GetDoDirectCompositionSupportByHwcEnable();
+    ASSERT_EQ(support.has_value(), false);
+
+    mainThread->forceUpdateUniRenderFlag_ = false;
+    std::shared_ptr<RSBaseRenderNode> rootNode = std::make_shared<RSBaseRenderNode>(0);
+    mainThread->doDirectComposition_ = true;
+    mainThread->DoDirectCompositionForDelegateModeIfNeed(rootNode);
+    // early return on nullopt with forceUpdateUniRenderFlag_ false: doDirectComposition_ stays untouched
+    EXPECT_TRUE(mainThread->doDirectComposition_);
+    mainThread->doDirectComposition_ = false;
+}
 } // namespace OHOS::Rosen
 #endif
