@@ -111,7 +111,7 @@ public:
 
 private:
     const int screenWidth = 1200;
-    const int screenHeight = 1200;
+    const int screenHeight = 2000;
 };
 
 /*
@@ -119,8 +119,8 @@ private:
  */
 GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_GammaCorrection_Test)
 {
-    const size_t columnCount = 6;
-    const int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
+    int columnCount = 2;
+    int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight * columnCount / rowCount;
 
@@ -152,8 +152,8 @@ GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_GammaCorrection_Tes
  */
 GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_MapColorByBrightness_Test)
 {
-    const size_t columnCount = 6;
-    const int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
+    int columnCount = 2;
+    int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight * columnCount / rowCount;
 
@@ -192,8 +192,8 @@ GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_MapColorByBrightnes
  */
 GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_WaterGlass_Test)
 {
-    const size_t columnCount = 6;
-    const int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
+    int columnCount = 2;
+    int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight * columnCount / rowCount;
 
@@ -231,8 +231,8 @@ GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_WaterGlass_Test)
  */
 GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_ReededGlass_Test)
 {
-    const size_t columnCount = 6;
-    const int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
+    int columnCount = 2;
+    int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight * columnCount / rowCount;
 
@@ -270,8 +270,8 @@ GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_ReededGlass_Test)
  */
 GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_MaskTransition_Test)
 {
-    const size_t columnCount = 6;
-    const int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
+    int columnCount = 2;
+    int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight * columnCount / rowCount;
 
@@ -321,8 +321,8 @@ GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_MaskTransition_Test
  */
 GRAPHIC_TEST(OHFilterBlurCascadeTest, EFFECT_TEST, Blur_With_WaterDropletTransition_Test)
 {
-    const size_t columnCount = 6;
-    const int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
+    int columnCount = 2;
+    int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight * columnCount / rowCount;
 

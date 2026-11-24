@@ -17,6 +17,7 @@
 
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
 #include "rs_graphic_test_utils.h"
 
@@ -99,7 +100,8 @@ public:
         int duration = 500; // the animation lasts for 0.5 seconds
         protocol.SetDuration(duration);
         auto timingCurve = RSAnimationTimingCurve::EASE_IN_OUT;
-        RSNode::Animate(nullptr, protocol, timingCurve, [&]() {
+        auto rsUiContext = RSGraphicTestDirector::Instance().GetRSUIContext();
+        RSNode::Animate(rsUiContext, protocol, timingCurve, [&]() {
             canvasNode->SetTranslate(translate);
         }, []() {
             std::cout << "animation finish callback" << std::endl;
@@ -129,7 +131,7 @@ GRAPHIC_N_TEST(DirtyRegionTest06, CONTENT_DISPLAY_TEST, PixelStretch01)
     GetRootNode()->AddChild(testNode2);
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -156,7 +158,7 @@ GRAPHIC_N_TEST(DirtyRegionTest06, CONTENT_DISPLAY_TEST, PixelStretch02)
     GetRootNode()->AddChild(testNode2);
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -183,7 +185,7 @@ GRAPHIC_N_TEST(DirtyRegionTest06, CONTENT_DISPLAY_TEST, PixelStretch03)
     GetRootNode()->AddChild(testNode2);
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -210,7 +212,7 @@ GRAPHIC_N_TEST(DirtyRegionTest06, CONTENT_DISPLAY_TEST, PixelStretch04)
     GetRootNode()->AddChild(testNode2);
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -237,7 +239,7 @@ GRAPHIC_N_TEST(DirtyRegionTest06, CONTENT_DISPLAY_TEST, PixelStretch05)
     GetRootNode()->AddChild(testNode2);
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -264,7 +266,7 @@ GRAPHIC_N_TEST(DirtyRegionTest06, CONTENT_DISPLAY_TEST, PixelStretch06)
     GetRootNode()->AddChild(testNode2);
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -291,7 +293,7 @@ GRAPHIC_N_TEST(DirtyRegionTest06, CONTENT_DISPLAY_TEST, PixelStretch07)
     GetRootNode()->AddChild(testNode2);
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }

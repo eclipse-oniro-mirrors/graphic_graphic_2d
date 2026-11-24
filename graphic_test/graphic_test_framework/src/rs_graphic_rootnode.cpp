@@ -125,7 +125,7 @@ void RSGraphicRootNode::AddChild(std::shared_ptr<RSNode> child, int index)
 {
     auto parent = GetMainDrawParent();
     if (!parent) {
-        LOGE("RSGraphicRootNode::AddChild testSurfaceNodes_.back() is null");
+        LOGE("RSGraphicRootNode::AddChild test surface node is null");
         return;
     }
     parent->AddChild(child, index);

@@ -21,31 +21,31 @@ module_output_path = "graphic_2d/graphic_2d/graphic_test"
 drawing_engine_sources = []
 hardware_manager_sources = []
 open_capability_sources = [
-    "open_capability/pixmap/create_pixel_map_from_surface_test.cpp",
-    "open_capability/pixmap/pixelmap_display_test.cpp",
-    "open_capability/pixmap/pixelmap_draw_api_test.cpp",
+  "open_capability/pixmap/create_pixel_map_from_surface_test.cpp",
+  "open_capability/pixmap/pixelmap_display_test.cpp",
+  "open_capability/pixmap/pixelmap_draw_api_test.cpp",
 ]
 rs_display_effect_sources = [
   "rs_display_effect/animation/anim_callback_animation_test.cpp",
   "rs_display_effect/animation/anim_curve_animation_test.cpp",
   "rs_display_effect/animation/anim_curve_animation_test2.cpp",
-  "rs_display_effect/animation/anim_custom_modifier_test.cpp",
+  "rs_display_effect/animation/anim_custom_modifier_test.cpp",   # todo car
   "rs_display_effect/animation/anim_geometry_transition_test.cpp",
   "rs_display_effect/animation/animation_combination_test.cpp",
-  "rs_display_effect/animation/animation_protocol_test.cpp",
   "rs_display_effect/animation/animation_control_test.cpp",
+  "rs_display_effect/animation/animation_protocol_test.cpp",
   "rs_display_effect/animation/custom_curve_test.cpp",
   "rs_display_effect/animation/interactive_animation_test.cpp",
   "rs_display_effect/animation/keyframe_animation_test.cpp",
   "rs_display_effect/animation/path_animation_test.cpp",
   "rs_display_effect/animation/point_custom_modifier_test.cpp",
-  "rs_display_effect/animation/spring_animation_test.cpp",
-  "rs_display_effect/animation/transition_test.cpp",
   "rs_display_effect/content_display/canvas_drawing_node_test.cpp",
   "rs_display_effect/content_display/content_effectnode_test.cpp",
   "rs_display_effect/content_display/custom_draw_test.cpp",
   "rs_display_effect/content_display/modifier_ng_native_test.cpp",
   "rs_display_effect/content_display/rs_image_native_test.cpp",
+  "rs_display_effect/animation/spring_animation_test.cpp",
+  "rs_display_effect/animation/transition_test.cpp",
   "rs_display_effect/property_display/appearance_alpha_behind_window_filter_test.cpp",
   "rs_display_effect/property_display/point_light_feathering_test.cpp",
   "rs_display_effect/property_display/appearance_alpha_border_radius_test.cpp",
@@ -68,12 +68,12 @@ rs_display_effect_sources = [
   "rs_display_effect/property_display/appearance_border_test.cpp",
   "rs_display_effect/property_display/appearance_clip_test.cpp",
   "rs_display_effect/property_display/appearance_compositing_filter_test.cpp",
-  "rs_display_effect/property_display/appearance_double_sided_test.cpp",
   "rs_display_effect/property_display/appearance_g2cornerradius_test.cpp",
   "rs_display_effect/property_display/appearance_hdr_brightness_test.cpp",
   "rs_display_effect/property_display/appearance_material_filter_test.cpp",
   "rs_display_effect/property_display/appearance_outlineborder_radius_test.cpp",
   "rs_display_effect/property_display/appearance_outlineborder_test.cpp",
+  "rs_display_effect/property_display/appearance_double_sided_test.cpp",
   "rs_display_effect/property_display/appearance_particle_effect_test.cpp",
   "rs_display_effect/property_display/appearance_pixelstretch_test.cpp",
   "rs_display_effect/property_display/appearance_point_light_test.cpp",
@@ -95,7 +95,6 @@ rs_display_effect_sources = [
   "rs_display_effect/property_display/background_image_test.cpp",
   "rs_display_effect/property_display/background_shader_test.cpp",
   "rs_display_effect/property_display/background_useeffect_test.cpp",
-  "rs_display_effect/property_display/color_matrix_test.cpp",
   "rs_display_effect/property_display/color_picker_modifier_test.cpp",
   "rs_display_effect/property_display/display_node_properties_test.cpp",
   "rs_display_effect/property_display/fg_alpha_blur_test.cpp",
@@ -119,6 +118,7 @@ rs_display_effect_sources = [
   "rs_display_effect/property_display/fg_envfgcolor_test.cpp",
   "rs_display_effect/property_display/fg_fgcolor_test.cpp",
   "rs_display_effect/property_display/fg_lightupeffect_test.cpp",
+  "rs_display_effect/property_display/fg_light_test.cpp",
   "rs_display_effect/property_display/fg_mask_test.cpp",
   "rs_display_effect/property_display/fg_sdf_light_test.cpp",
   "rs_display_effect/property_display/fg_shader_test.cpp",
@@ -154,25 +154,26 @@ rs_display_effect_sources = [
   "rs_display_effect/property_display/particle_ripple_test.cpp",
   "rs_display_effect/property_display/particle_velocity_test.cpp",
   "rs_display_effect/property_display/rs_canvas_node_getbitmap_getpixelmap_test.cpp",
-  "rs_display_effect/property_display/rs_canvas_node_setpixelmap_test.cpp",
   "rs_display_effect/property_display/rs_node_comprehensive_test.cpp",
   "rs_display_effect/property_display/rs_node_name_colorpicker_test.cpp",
   "rs_display_effect/property_display/surface_composite_layer_test.cpp",
   "rs_display_effect/property_display/surface_node_properties_test.cpp",
   "rs_display_effect/property_display/surface_texture_export_test.cpp",
+  "rs_display_effect/property_display/color_matrix_test.cpp",
+  "rs_display_effect/property_display/rs_canvas_node_setpixelmap_test.cpp",
 ]
 rs_effect_feature_sources = [
-  "rs_effect_feature/effect_background_blur_test.cpp",
-  "rs_effect_feature/effect_light_up_effect_test.cpp",
   "rs_effect_feature/effect_ai_bar_glow_test.cpp",
   "rs_effect_feature/effect_aurora_noise_test.cpp",
+  "rs_effect_feature/effect_background_blur_test.cpp",
+  "rs_effect_feature/effect_light_up_effect_test.cpp",
+  "rs_effect_feature/effect_distort_chroma_test.cpp",
+  "rs_effect_feature/effect_gradient_flow_colors_test.cpp",
   "rs_effect_feature/effect_linear_gradient_blur_test.cpp",
   "rs_effect_feature/effect_light_cave_test.cpp",
   "rs_effect_feature/effect_particle_circular_halo_test.cpp",
   "rs_effect_feature/effect_pixel_stretch_test.cpp",
-  "rs_effect_feature/effect_gradient_flow_colors_test.cpp",
   "rs_effect_feature/effect_wavy_ripple_light_test.cpp",
-  "rs_effect_feature/effect_distort_chroma_test.cpp",
   "rs_effect_feature/ng_effect_test/ng_colorgradient_effect_test.cpp",
   "rs_effect_feature/ng_effect_test/ng_effect_test.cpp",
   "rs_effect_feature/ng_mask_test/ng_mask_image_test.cpp",
@@ -200,8 +201,8 @@ rs_effect_feature_sources = [
   "rs_effect_feature/ng_shader_test/ng_shader_cosmos_ring_test.cpp",
   "rs_effect_feature/ng_shader_test/ng_shader_color_gradient_effect_test.cpp",
   "rs_effect_feature/ng_shader_test/ng_shader_frosted_glass_effect_test.cpp",
+  "rs_effect_feature/ng_shader_test/ng_shader_sdf_edge_light_test.cpp",
   "rs_effect_feature/ng_shader_test/ng_shader_spatial_point_light_test.cpp",
-  "rs_effect_feature/ng_shader_test/ng_shader_spatial_glass_effect_test.cpp",
   "rs_effect_feature/ng_shader_test/ng_shader_border_sdf_test.cpp",
   "rs_effect_feature/ng_shader_test/ng_shader_cosmos_ring_shadow_test.cpp",
   "rs_effect_feature/ng_effect_test/ng_substracted_rect_test.cpp",
@@ -214,7 +215,6 @@ rs_effect_feature_sources = [
   "rs_effect_feature/ng_filter_test/ng_filter_gasify_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_grid_warp_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_particle_ablation_test.cpp",
-  "rs_effect_feature/ng_filter_test/ng_filter_particle_aggregation_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_magnifier_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_distortion_collapse_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_blur_test.cpp",
@@ -250,8 +250,10 @@ rs_effect_feature_sources = [
   "rs_effect_feature/ng_filter_test/ng_filter_blur_bubbles_rise_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_map_color_by_brightness_test.cpp",
   "rs_effect_feature/ng_effect_test/ng_mask_frame_gradient_test.cpp",
-  "rs_effect_feature/ng_effect_test/ng_effect_light_cave_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_distort_light_test.cpp",
+  "rs_effect_feature/ng_effect_test/ng_effect_light_cave_test.cpp",
+  "rs_effect_feature/ng_shader_test/ng_shader_spatial_glass_effect_test.cpp",
+  "rs_effect_feature/ng_filter_test/ng_filter_particle_aggregation_test.cpp",
   "rs_effect_feature/ng_shader_test/ng_shader_sticker_laser_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_sticker_emboss_test.cpp",
 ]
@@ -262,7 +264,6 @@ rs_framework_sources = [
 rs_func_feature_sources = [
   "rs_func_feature/color_space_and_hdr/color_space_test.cpp",
   "rs_func_feature/component_capture/demo.cpp",
-  "rs_func_feature/multi_instance/demo.cpp",
   "rs_func_feature/multi_screen/logical_display_node_test.cpp",
   "rs_func_feature/multi_screen/multi_screen_test.cpp",
   "rs_func_feature/multi_screen/screen_manager_test.cpp",
@@ -271,16 +272,17 @@ rs_func_feature_sources = [
   "rs_func_feature/special_layer/skip_layer_test.cpp",
   "rs_func_feature/special_layer/snapshot_skip_layer_test.cpp",
   "rs_func_feature/surface_capture/surface_capture_demo.cpp",
-  "rs_func_feature/surface_capture/self_surface_capture_demo.cpp",
-  "rs_func_feature/solonode_surface_capture/solonode_surface_capture_demo.cpp",
-  "rs_func_feature/ui_capture_in_range/ui_capture_in_range_demo.cpp",
-  "rs_func_feature/window_freeze_immediately/window_freeze_immediately_demo.cpp",
   "rs_func_feature/watermark/watermark.cpp",
+  "rs_func_feature/surface_capture/self_surface_capture_demo.cpp",
+  "rs_func_feature/window_freeze_immediately/window_freeze_immediately_demo.cpp",
   "rs_func_feature/accessibility/curtain_screen_test.cpp",
   "rs_func_feature/clonenode/clone_node_test.cpp",
   "rs_func_feature/register_buffer_available_callback/register_buffer_available_callback_test.cpp",
   "rs_func_feature/camera_rotation_feature/rotation_correction_test.cpp",
   "rs_func_feature/render_group/render_group_test.cpp",
+  "rs_func_feature/multi_instance/demo.cpp",
+  "rs_func_feature/solonode_surface_capture/solonode_surface_capture_demo.cpp",
+  "rs_func_feature/ui_capture_in_range/ui_capture_in_range_demo.cpp",
 ]
 rs_perform_feature_sources = [
   "rs_perform_feature/dirty_region/boundary_test.cpp",
@@ -325,7 +327,7 @@ group("test") {
   deps = [
     ":RSGraphicTest",
     ":RSGraphicTestFrameworkTest",
-    ":RenderServiceRenderProfilerTest",
+    ":RenderServiceRenderProfilerTest"
   ]
 }
 
@@ -347,6 +349,7 @@ ohos_unittest("RSGraphicTest") {
     "$graphic_2d_root/rosen/modules/effect",
     "$rosen_text_root/adapter/skia",
     "rs_effect_feature/ng_shape_test",
+    "$graphic_2d_root/graphic_test/test/rs_display_effect/animation",
   ]
 
   deps = [
@@ -431,7 +434,6 @@ ohos_unittest("RSGraphicTestFrameworkTest") {
   part_name = "graphic_2d"
 }
 
-## Build RenderServiceRenderProfilerTest
 ohos_unittest("RenderServiceRenderProfilerTest") {
   module_out_path = module_output_path
   enable_profiler_cmd_test = false

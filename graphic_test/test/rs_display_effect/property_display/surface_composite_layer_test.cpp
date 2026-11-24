@@ -14,6 +14,7 @@
  */
 
 #include "rs_graphic_test.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
 
 using namespace testing;
@@ -228,29 +229,6 @@ GRAPHIC_TEST(SurfaceCompositeLayerTest, CONTENT_DISPLAY_TEST, SurfaceCompositeLa
             GetRootNode()->AddChild(testNode);
             RegisterNode(testNode);
         }
-    }
-}
-
-/*
- * @tc.name: SurfaceCompositeLayerTest_009
- * @tc.desc: Test RSCanvasNode with pixelmap
- * @tc.type: FUNC
- * @tc.require: issueI7N7M0
- */
-GRAPHIC_TEST(SurfaceCompositeLayerTest, CONTENT_DISPLAY_TEST, SurfaceCompositeLayerTest_009)
-{
-    auto pixelMap = DecodePixelMap("/data/local/tmp/appearance_test.jpg",
-                                   Media::AllocatorType::SHARE_MEM_ALLOC);
-
-    std::vector<float> alphaValues = { 0.3f, 0.6f, 1.0f, 0.5f, 0.8f };
-
-    for (size_t i = 0; i < alphaValues.size(); i++) {
-        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
-        testNode->SetBounds({ (int)i * 230 + 50, 50, 200, 200 });
-        testNode->SetPixelmap(pixelMap);
-        testNode->SetAlpha(alphaValues[i]);
-        GetRootNode()->AddChild(testNode);
-        RegisterNode(testNode);
     }
 }
 

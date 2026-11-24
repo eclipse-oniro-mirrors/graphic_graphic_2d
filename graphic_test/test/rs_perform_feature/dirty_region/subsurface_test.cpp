@@ -17,6 +17,7 @@
 
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
 #include "rs_graphic_test_utils.h"
 
@@ -86,7 +87,8 @@ public:
         int duration = 500; // the animation lasts for 0.5 second
         protocol.SetDuration(duration);
         auto timingCurve = RSAnimationTimingCurve::EASE_IN_OUT;
-        RSNode::Animate(nullptr, protocol, timingCurve, [&]() {
+        auto rsUiContext = RSGraphicTestDirector::Instance().GetRSUIContext();
+        RSNode::Animate(rsUiContext, protocol, timingCurve, [&]() {
             canvasNode->SetTranslate(translate);
         }, []() {
             std::cout << "animation finish callback" << std::endl;
@@ -138,7 +140,7 @@ GRAPHIC_N_TEST(DirtyRegionTest05, CONTENT_DISPLAY_TEST, SubSurface01)
     surfaceNode2->RSNode::AddChild(filterNode);
     surfaceNode2->RSNode::AddChild(normalNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }

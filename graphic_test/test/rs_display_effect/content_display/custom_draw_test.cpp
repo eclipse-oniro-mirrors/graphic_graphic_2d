@@ -15,6 +15,7 @@
  
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_img.h"
+#include "rs_graphic_test_director.h"
  
 #include "ui/rs_canvas_node.h"
 #include "ui/rs_node.h"
@@ -53,11 +54,10 @@ GRAPHIC_TEST(CustomDrawTest, CONTENT_DISPLAY_TEST, DrawOnNode_Test)
 {
     int width = 1000;
     int height = 1000;
-    auto testNode1 = RSCanvasNode::Create(true);
+    auto testNode1 = RSCanvasNode::Create(true, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     auto node = std::static_pointer_cast<RSNode>(testNode1);
     setNode(node, { 0, 0, width, height }, Vector4<Color>(Color(0, 255, 0)));
-    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE,
-        [testNode1](std::shared_ptr<Drawing::Canvas> canvas) {
+    testNode1->DrawOnNode(ModifierNG::RSModifierType::CONTENT_STYLE, [testNode1](std::shared_ptr<Drawing::Canvas> canvas) {
         Drawing::Brush brush;
         brush.SetColor(Drawing::Color::COLOR_CYAN);
         canvas->AttachBrush(brush);
