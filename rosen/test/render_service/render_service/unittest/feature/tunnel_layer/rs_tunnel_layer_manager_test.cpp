@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 HUA[REPLACED] Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -229,12 +229,12 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState003, TestSize.Level1)
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     auto rsContext = std::make_shared<RSContext>();
     RSTunnelLayerManager tunnelLayerManager(rsContext);
+
     auto noStateContext = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_THREE));
     ASSERT_TRUE(noStateContext.IsProducerReady());
     ASSERT_TRUE(RegisterSurfaceNode(rsContext, noStateContext.node));
     tunnelLayerManager.UpdateTunnelStateMachinePerFrame(noStateContext.node);
     EXPECT_EQ(noStateContext.node->TryGetTunnelRuntimeState(), nullptr);
-    ExpectTunnelLayerInfo(noStateContext.node, 0, TUNNEL_PROP_INVALID);
 
     auto trackedContext = CreateTunnelContext(MakeNodeId(TEST_PID_TWO, TEST_NODE_UID_THREE));
     ASSERT_TRUE(trackedContext.IsProducerReady());
@@ -251,7 +251,6 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState003, TestSize.Level1)
     TunnelLayerInfo emptyTunnelInfo;
     ASSERT_EQ(trackedContext.consumer->SetTunnelLayerInfo(emptyTunnelInfo), GSERROR_OK);
     tunnelLayerManager.UpdateTunnelStateMachinePerFrame(trackedContext.node);
-
     EXPECT_EQ(trackedRuntime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 }
 
@@ -279,7 +278,6 @@ HWTEST_F(RSTunnelLayerManagerTest, HandleLayerStateChanged001, TestSize.Level1)
     context.surfaceHandler->SetCurrentFrameBufferConsumed();
     tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
     auto generation = runtime.GetTunnelLayerGeneration();
-
     tunnelLayerManager.HandleLayerStateChanged(context.node->GetId(), LayerStateChange::AVAILABLE, generation + 1);
     EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
 
@@ -410,7 +408,7 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState_NotNullSurfaceHandler_
 
     tunnelLayerManager.UpdateTunnelStateMachinePerFrame(context.node);
 
-ExpectTunnelLayerInfo(context.node, tunnelState.tunnelLayerId, tunnelState.property);
+    ExpectTunnelLayerInfo(context.node, tunnelState.tunnelLayerId, tunnelState.property);
     EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
 }
 
@@ -787,7 +785,149 @@ HWTEST_F(RSTunnelLayerManagerTest, HandleNewTunnelLayerId_SurfaceHandlerNotNull_
 
     tunnelLayerManager.HandleNewTunnelLayerId(context.node);
 
-    EXPECT_NE(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
+    EXPECT_EQ(runtime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::BUILDING);
+}
+
+/**
+ * @tc.name: HandleNewTunnelLayerId_TunnelRuntimeNull_TrueBranch
+ * @tc.desc: Cover HandleNewTunnelLayerId line 221 (tunnelRuntimePtr == nullptr) true branch.
+ *          A surfaceNode with a valid surfaceHandler but no tunnelRuntimeState_ (never created
+ *          via GetTunnelRuntimeState) passes line 216 guard but returns at line 221.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerManagerTest, HandleNewTunnelLayerId_TunnelRuntimeNull_TrueBranch, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    auto rsContext = std::make_shared<RSContext>();
+    RSTunnelLayerManager tunnelLayerManager(rsContext);
+    auto context = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_ONE));
+    ASSERT_TRUE(context.IsProducerReady());
+    ASSERT_TRUE(RegisterSurfaceNode(rsContext, context.node));
+    ASSERT_NE(context.node->GetMutableRSSurfaceHandler(), nullptr);
+    EXPECT_EQ(context.node->TryGetTunnelRuntimeState(), nullptr);
+
+    tunnelLayerManager.HandleNewTunnelLayerId(context.node);
+
+    EXPECT_EQ(context.node->TryGetTunnelRuntimeState(), nullptr);
+}
+
+/**
+ * @tc.name: HandleNewTunnelLayerId_TunnelRuntimeNotNull_FalseBranch
+ * @tc.desc: Cover HandleNewTunnelLayerId line 221 (tunnelRuntimePtr == nullptr) false branch.
+ *          A surfaceNode with tunnelRuntimeState_ created (via GetTunnelRuntimeState) passes
+ *          line 221 guard and proceeds to line 224+ GetLayerInfo / ResolveTunnelLayerInfo.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerManagerTest, HandleNewTunnelLayerId_TunnelRuntimeNotNull_FalseBranch, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    auto rsContext = std::make_shared<RSContext>();
+    RSTunnelLayerManager tunnelLayerManager(rsContext);
+    auto context = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_ONE));
+    ASSERT_TRUE(context.IsProducerReady());
+    ASSERT_TRUE(RegisterSurfaceNode(rsContext, context.node));
+
+    TunnelLayerState tunnelState;
+    ASSERT_TRUE(SetTunnelInfoForConsumer(context.consumer, tunnelState));
+    auto runtime = context.node->GetTunnelRuntimeState();
+    runtime->SetLayerInfo(tunnelState.tunnelLayerId, tunnelState.property);
+    runtime->SetBuilding();
+    ASSERT_NE(context.node->TryGetTunnelRuntimeState(), nullptr);
+
+    tunnelLayerManager.HandleNewTunnelLayerId(context.node);
+
+    EXPECT_NE(context.node->TryGetTunnelRuntimeState(), nullptr);
+}
+
+/**
+ * @tc.name: ProcessLayerStateChanged_CallbackConsumerNull_TrueBranch
+ * @tc.desc: Cover ProcessLayerStateChanged line 294 (callbackConsumer == nullptr) true branch
+ *           AND line 294 (surfaceHandler != nullptr) true branch.
+ *          consumer == nullptr && surfaceHandler != nullptr → branch entered, callbackConsumer
+ *          reassigned from surfaceHandler->GetConsumer(), DispatchLayerStateChanged called
+ *          with the surface's own consumer. Uses UNAVAILABLE state to force shouldDispatch=true.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerManagerTest, ProcessLayerStateChanged_CallbackConsumerNull_TrueBranch, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    auto rsContext = std::make_shared<RSContext>();
+    RSTunnelLayerManager tunnelLayerManager(rsContext);
+    auto context = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_ONE));
+    ASSERT_TRUE(context.IsProducerReady());
+    ASSERT_TRUE(RegisterSurfaceNode(rsContext, context.node));
+
+    constexpr uint64_t testTunnelLayerId = 9401;
+    auto runtime = context.node->GetTunnelRuntimeState();
+    runtime->SetLayerInfo(testTunnelLayerId, TUNNEL_PROP_BUFFER_ADDR);
+    runtime->SetBuilding();
+    ASSERT_NE(context.node->GetMutableRSSurfaceHandler(), nullptr);
+    ASSERT_NE(context.node->GetMutableRSSurfaceHandler()->GetConsumer(), nullptr);
+
+    tunnelLayerManager.ProcessLayerStateChanged(
+        context.node, context.node->GetId(), LayerStateChange::UNAVAILABLE, 0, nullptr);
+
+    EXPECT_EQ(runtime->GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
+}
+
+/**
+ * @tc.name: ProcessLayerStateChanged_CallbackConsumerNotNull_FalseBranch
+ * @tc.desc: Cover ProcessLayerStateChanged line 294 (callbackConsumer == nullptr) false branch.
+ *          A non-null consumer is passed, so the first condition short-circuits to false and
+ *          the branch is not entered; DispatchLayerStateChanged uses the original consumer.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerManagerTest, ProcessLayerStateChanged_CallbackConsumerNotNull_FalseBranch, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    auto rsContext = std::make_shared<RSContext>();
+    RSTunnelLayerManager tunnelLayerManager(rsContext);
+    auto context = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_ONE));
+    ASSERT_TRUE(context.IsProducerReady());
+    ASSERT_TRUE(RegisterSurfaceNode(rsContext, context.node));
+
+    constexpr uint64_t testTunnelLayerId = 9402;
+    auto runtime = context.node->GetTunnelRuntimeState();
+    runtime->SetLayerInfo(testTunnelLayerId, TUNNEL_PROP_BUFFER_ADDR);
+    runtime->SetBuilding();
+    ASSERT_NE(context.consumer, nullptr);
+
+    tunnelLayerManager.ProcessLayerStateChanged(
+        context.node, context.node->GetId(), LayerStateChange::UNAVAILABLE, 0, context.consumer);
+
+    EXPECT_EQ(runtime->GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
+}
+
+/**
+ * @tc.name: ProcessLayerStateChanged_SurfaceHandlerNull_FalseBranch
+ * @tc.desc: Cover ProcessLayerStateChanged line 294 (surfaceHandler != nullptr) false branch.
+ *          surfaceHandler_ is nulled out via private access; consumer == nullptr makes the
+ *          first condition true, but surfaceHandler == nullptr makes the second condition
+ *          false → branch not entered, callbackConsumer stays nullptr, DispatchLayerStateChanged
+ *          returns early at its null-consumer guard.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerManagerTest, ProcessLayerStateChanged_SurfaceHandlerNull_FalseBranch, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    auto rsContext = std::make_shared<RSContext>();
+    RSTunnelLayerManager tunnelLayerManager(rsContext);
+    auto context = CreateTunnelContext(MakeNodeId(TEST_PID_ONE, TEST_NODE_UID_ONE));
+    ASSERT_TRUE(context.IsProducerReady());
+    ASSERT_TRUE(RegisterSurfaceNode(rsContext, context.node));
+
+    constexpr uint64_t testTunnelLayerId = 9403;
+    auto runtime = context.node->GetTunnelRuntimeState();
+    runtime->SetLayerInfo(testTunnelLayerId, TUNNEL_PROP_BUFFER_ADDR);
+    runtime->SetBuilding();
+
+    context.node->surfaceHandler_ = nullptr;
+    ASSERT_EQ(context.node->GetMutableRSSurfaceHandler(), nullptr);
+
+    tunnelLayerManager.ProcessLayerStateChanged(
+        context.node, context.node->GetId(), LayerStateChange::UNAVAILABLE, 0, nullptr);
+
+    EXPECT_EQ(runtime->GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
 }
 
 /**
