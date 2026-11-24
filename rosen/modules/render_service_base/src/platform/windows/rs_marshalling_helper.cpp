@@ -244,7 +244,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::vector<std::sha
 {
     return {};
 }
-
+ 
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::vector<std::shared_ptr<EmitterUpdater>>& val)
 {
     return {};
@@ -726,6 +726,7 @@ bool RSMarshallingHelper::CheckReadPosition(Parcel& parcel)
 {
     return true;
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val)
 {
     return true;

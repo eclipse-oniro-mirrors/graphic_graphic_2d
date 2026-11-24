@@ -55,9 +55,11 @@ void RSRenderServiceListener::OnBufferAvailable()
         ConsumeBufferToKeepQueueRunning(surfaceHandler_);
         return;
     }
+
     RS_LOGD_IF(DEBUG_PIPELINE, "RsDebug RSRenderServiceListener::OnBufferAvailable node id:%{public}" PRIu64, nodeId_);
     surfaceHandler->IncreaseAvailableBuffer();
     auto consumer = surfaceHandler->GetConsumer();
+
     bool forceRefreshed = node->OnBufferAvailable();
     if (forceRefreshed) {
         RSMainThread::Instance()->ForceRefreshForUni();
@@ -101,16 +103,19 @@ bool RSRenderServiceListener::CheckFastCompose(const sptr<IConsumerSurface>& con
     if (consumer == nullptr) {
         return false;
     }
-    auto doFastCompose = false;
-    bool supportFastCompose = false;
-    GSError ret = consumer->GetBufferSupportFastCompose(supportFastCompose);
-    if (ret == GSERROR_OK && supportFastCompose) {
-        int64_t lastFlushedDesiredPresentTimeStamp = 0;
-        ret = consumer->GetLastFlushedDesiredPresentTimeStamp(lastFlushedDesiredPresentTimeStamp);
-        if (ret == GSERROR_OK) {
-            RS_TRACE_NAME_FMT("RSRenderServiceListener::OnBufferAvailable SupportFastCompose : %d, "
+
+    bool doFastCompose = false;
+    if (consumer) {
+        bool supportFastCompose = false;
+        GSError ret =  consumer->GetBufferSupportFastCompose(supportFastCompose);
+        if (ret == GSERROR_OK && supportFastCompose) {
+            int64_t lastFlushedDesiredPresentTimeStamp = 0;
+            ret = consumer->GetLastFlushedDesiredPresentTimeStamp(lastFlushedDesiredPresentTimeStamp);
+            if (ret == GSERROR_OK) {
+                RS_TRACE_NAME_FMT("RSRenderServiceListener::OnBufferAvailable SupportFastCompose : %d, " \
                 "bufferTimeStamp : %" PRId64, supportFastCompose, lastFlushedDesiredPresentTimeStamp);
             doFastCompose = RSMainThread::Instance()->CheckFastCompose(lastFlushedDesiredPresentTimeStamp);
+            }
         }
     }
     return doFastCompose;
@@ -141,8 +146,8 @@ void RSRenderServiceListener::SetBufferInfoAndRequest(const std::shared_ptr<RSSu
         int32_t pid = ExtractPid(surfaceHandler->GetNodeId());
         RSMainThread::Instance()->GetFrontBufferDesiredPresentTimeStamp(consumer, desiredPresentTimestamp, pid);
         auto node = surfaceBufferInterface_.lock();
-        if (node != nullptr && !node->GetDelegateMode()) {
-            RSMainThread::Instance()->RequestNextVSync("Selfdrawing", 0, desiredPresentTimestamp);
+        if (!node->GetDelegateMode()) {
+            RSMainThread::Instance()->RequestNextVSync("selfdrawing", 0, desiredPresentTimestamp);
         }
     }
 }
@@ -151,7 +156,7 @@ void RSRenderServiceListener::OnTunnelHandleChange()
 {
     auto surfaceHandler = surfaceHandler_.lock();
     if (surfaceHandler == nullptr) {
-        RS_LOGE("TUNNEL_DEBUG RSRenderServiceListener::OnTunnelHandleChange surfaceHandler is nullptr");
+        RS_LOGE("TUNNEL_DEBUG RSRenderServiceListener::OnTunnelHandleChange handler is nullptr");
         return;
     }
     auto node = surfaceBufferInterface_.lock();
@@ -234,8 +239,8 @@ void RSRenderServiceListener::OnCleanCache(uint32_t *bufSeqNum)
             node->OnCleanCache(tmpSet);
             handler->EnqueueAndFlushGPUCacheCleanup(tmpSet);
         });
-    RS_TRACE_NAME_FMT("RSRenderServiceListener::OnCleanCache cleanCacheBufSeqNum : %d, nodeId : %" PRId64,
-                    cleanCacheBufSeqNum_, nodeId_);
+    RS_TRACE_NAME_FMT("RSRenderServiceListener::OnCleanCache cleanCacheBufSeqNum:%d nodeId:%" PRIu64,
+                      cleanCacheBufSeqNum_, nodeId_);
     CleanLayerBufferCache();
 }
 
@@ -265,7 +270,7 @@ void RSRenderServiceListener::OnGoBackground()
                 return;
             }
             if (node == nullptr) {
-                RS_LOGE("OnGoBackground node null");
+                RS_LOGE("RSRenderServiceListener::OnGoBackground node is nullptr");
                 handler->ResetBufferAvailableCount();
                 handler->CleanCache();
                 return;
@@ -288,7 +293,7 @@ void RSRenderServiceListener::OnTransformChange()
     }
 
     RSMainThread::Instance()->PostTask([surfaceRenderNode = surfaceBufferInterface_, surfaceHandler = surfaceHandler_,
-                                           nodeId = nodeId_, nodeName = name_]() {
+                                        nodeId = nodeId_, nodeName = name_]() {
         auto node = surfaceRenderNode.lock();
         auto handler = surfaceHandler.lock();
         if (node == nullptr) {
@@ -311,7 +316,6 @@ void RSRenderServiceListener::OnDropBuffer()
         RS_LOGD_IF(DEBUG_PIPELINE, "RSRenderServiceListener::OnDropBuffer handler is nullptr");
         return;
     }
-
     RS_OPTIONAL_TRACE_NAME_FMT("RSRenderServiceListener::OnDropBuffer node id:%{public}" PRIu64, nodeId_);
     RS_LOGD_IF(DEBUG_PIPELINE, "RsDebug RSRenderServiceListener::OnDropBuffer node id:%{public}" PRIu64, nodeId_);
     handler->SetBufferDropped(true);
@@ -327,25 +331,22 @@ void RSRenderServiceListener::ConsumeBufferToKeepQueueRunning(std::weak_ptr<RSSu
     if (handler->GetAvailableBufferCount() > 0) {
         std::weak_ptr<RSSurfaceHandler> weakHandler = handler;
         RSMainThread::Instance()->PostTask([weakHandler, nodeId = nodeId_]() {
-            RS_TRACE_NAME_FMT("OnBufferAvailable acquire buffer begin nodeId: %" PRId64, nodeId);
-            auto handler = weakHandler.lock();
-            if (handler == nullptr) {
-                RS_LOGD_IF(DEBUG_PIPELINE, "ConsumeBufferToKeepQueueRunning PostTask handler is nullptr");
+            RS_TRACE_NAME_FMT("OnBufferAvailable acquire buffer begin:%p, Node:%" PRIu64, nodeId);
+            auto surfaceHandler = weakHandler.lock();
+            if (surfaceHandler == nullptr) {
                 return;
             }
-            const auto &consumer = handler->GetConsumer();
+            const auto &consumer = surfaceHandler->GetConsumer();
             if (consumer == nullptr) {
-                RS_LOGD_IF(DEBUG_PIPELINE, "ConsumeBufferToKeepQueueRunning PostTask consumer is nullptr");
                 return;
             }
-
             IConsumerSurface::AcquireBufferReturnValue returnValue;
             auto ret = consumer->AcquireBuffer(returnValue, 0, false);
             if (ret != SURFACE_ERROR_OK) {
                 RS_LOGE("PostTask AcquireBuffer failed, nodeId:%{public}" PRIu64 ", ret:%{public}d", nodeId, ret);
                 return;
             }
-            handler->SetAvailableBufferCount(static_cast<int32_t>(consumer->GetAvailableBufferCount()));
+            surfaceHandler->SetAvailableBufferCount(static_cast<int32_t>(consumer->GetAvailableBufferCount()));
             if (returnValue.buffer == nullptr) {
                 return;
             }
@@ -355,12 +356,11 @@ void RSRenderServiceListener::ConsumeBufferToKeepQueueRunning(std::weak_ptr<RSSu
             surfaceBuffer->acquireFence = returnValue.fence;
             surfaceBuffer->timestamp = returnValue.timestamp;
             // When the reference count drops to zero, ReleaseBuffer is automatically called.
-            surfaceBuffer->RegisterReleaseBufferListener([](uint64_t bufferId) {
-                RSUniRenderThread::Instance().ReleaseBufferById(bufferId);
-            });
-            RSUniRenderThread::Instance().AddPendingReleaseBuffer(consumer, surfaceBuffer->buffer,
-                SyncFence::InvalidFence(), surfaceBuffer->bufferOwnerCount_);
-            handler->ConsumeAndUpdateBuffer(*surfaceBuffer);
+            surfaceBuffer->RegisterReleaseBufferListener(
+                [](uint64_t bufferId) { RSUniRenderThread::Instance().ReleaseBufferById(bufferId); });
+            RSUniRenderThread::Instance().AddPendingReleaseBuffer(
+                consumer, surfaceBuffer->buffer, SyncFence::InvalidFence(), surfaceBuffer->bufferOwnerCount_);
+            surfaceHandler->ConsumeAndUpdateBuffer(*surfaceBuffer);
         });
     }
     return;
@@ -400,7 +400,7 @@ void RSRenderServiceListener::ProcessPendingCallbacks()
 void RSRenderServiceListener::SetRSSurfaceBufferInterface(
     std::weak_ptr<RSSurfaceBufferInterface> surfaceBufferInterface)
 {
-    RS_TRACE_NAME_FMT("RSRenderServiceListener::SetRSSurfaceBufferInterface nodeId : %" PRIu64, nodeId_);
+    RS_TRACE_NAME_FMT("RSRenderServiceListener::SetRSSurfaceBufferInterface nodeId:%" PRIu64, nodeId_);
     surfaceBufferInterface_ = std::move(surfaceBufferInterface);
     {
         std::lock_guard<std::mutex> lock(pendingStateMutex_);
@@ -411,12 +411,12 @@ void RSRenderServiceListener::SetRSSurfaceBufferInterface(
 
 void RSRenderServiceListener::OnCleanCacheForBufferInfoMap(std::vector<CleanCacheBufferInfo> &infos)
 {
-#if !defined(ROSEN_CROSS_PLATFORM) && defined(RS_ENABLE_DELEGATE_COMPOSITE)
-    auto node = surfaceRenderNode_.lock();
+#ifndef ROSEN_CROSS_PLATFORM
+    auto node = surfaceBufferInterface_.lock();
     if (node == nullptr || !node->GetDelegateMode()) {
         return;
     }
-    auto surfaceHandler = node->GetRSSurfaceHandler();
+    auto surfaceHandler = surfaceHandler_.lock();
     if (!surfaceHandler) {
         return;
     }
@@ -424,14 +424,16 @@ void RSRenderServiceListener::OnCleanCacheForBufferInfoMap(std::vector<CleanCach
     if (!consumer) {
         return;
     }
+#ifdef RS_ENABLE_DELEGATE_COMPOSITE
     RsDelegateCompositeCallbackManager::GetInstance().OnCleanCacheForBufferInfoMap(
         infos, node->GetId(), consumer->GetUniqueId());
+#endif
 #endif
 }
 
 bool RSRenderServiceListener::IsNeedBufferInfo()
 {
-    auto node = surfaceRenderNode_.lock();
+    auto node = surfaceBufferInterface_.lock();
     if (node == nullptr) {
         return false;
     }
