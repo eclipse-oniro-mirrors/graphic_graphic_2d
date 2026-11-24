@@ -252,7 +252,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, SetBuffer004, TestSize.Level1)
 
 /**
  * @tc.name: SetBuffer005
- * @tc.desc: Test SetBuffer when need_sync_buffer_to_node_ is true so
+ * @tc.desc: Test SetBuffer when needSyncBufferToNode_ is true so
  *           GenerateTransactionConfigIfNecessary produces config.nodeId != 0
  *           and configList gets pushed.
  *           Branch: if (config.nodeId != 0) -> true (line 49).
@@ -265,7 +265,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, SetBuffer005, TestSize.Level1)
     auto mgr = CreatePlainManager();
     ASSERT_NE(mgr, nullptr);
 
-    // Force need_sync_buffer_to_node_ to true via SetBufferTransform.
+    // Force needSyncBufferToNode_ to true via SetBufferTransform.
     mgr->SetBufferTransform(GRAPHIC_ROTATE_90);
     sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
     UniqueFd fd;
@@ -336,7 +336,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, SetDamageRegion002, TestSize.Leve
  * @tc.name: SetBufferTransform001
  * @tc.desc: Test SetBufferTransform with a DIFFERENT transform.
  *           Branch: if (buffer_transform_ != transform) -> true (line 72).
- *           need_sync_buffer_to_node_ should become true.
+ *           needSyncBufferToNode_ should become true.
  * @tc.type: FUNC
  */
 HWTEST_F(RSDelegateCompositeBufferManagerTest, SetBufferTransform001, TestSize.Level1)
@@ -357,7 +357,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, SetBufferTransform001, TestSize.L
  * @tc.name: SetBufferTransform002
  * @tc.desc: Test SetBufferTransform with the SAME transform (no change).
  *           Branch: if (buffer_transform_ != transform) -> false (line 72).
- *           need_sync_buffer_to_node_ should remain false.
+ *           needSyncBufferToNode_ should remain false.
  * @tc.type: FUNC
  */
 HWTEST_F(RSDelegateCompositeBufferManagerTest, SetBufferTransform002, TestSize.Level1)
@@ -710,7 +710,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, GenerateBufferParamsDamageEmpty00
     auto mgr = CreatePlainManager();
     ASSERT_NE(mgr, nullptr);
 
-    // need_sync_buffer_to_node_ must be true to trigger GenerateBufferParams.
+    // needSyncBufferToNode_ must be true to trigger GenerateBufferParams.
     mgr->SetBufferTransform(GRAPHIC_ROTATE_90);
     sptr<SurfaceBuffer> buf = SurfaceBuffer::Create();
     UniqueFd fd;
@@ -749,7 +749,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, GenerateBufferParamsDamageNonEmpt
 /**
  * @tc.name: GenerateTransactionConfigIfNecessary001
  * @tc.desc: Test GenerateTransactionConfigIfNecessary when buffer_ is null
- *           but need_sync_buffer_to_node_ is true. In SetBuffer flow,
+ *           but needSyncBufferToNode_ is true. In SetBuffer flow,
  *           need_sync is forced true; the call to GenerateBufferParams with
  *           a null buffer should return early without crashing.
  *           Branch: if (!buffer_) -> true (line 81 in GenerateBufferParams).
@@ -761,7 +761,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, GenerateTransactionConfigIfNecess
     auto mgr = CreatePlainManager();
     ASSERT_NE(mgr, nullptr);
 
-    // need_sync_buffer_to_node_ becomes true via SetBufferTransform, but we
+    // needSyncBufferToNode_ becomes true via SetBufferTransform, but we
     // do NOT call SetBuffer, so buffer_ is still null.
     mgr->SetBufferTransform(GRAPHIC_ROTATE_90);
     // Now SetBuffer with null callback to ensure need_sync stays true but
@@ -769,7 +769,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, GenerateTransactionConfigIfNecess
     // trick: call SetBufferTransform then call SetBuffer with valid buffer
     // to consume need_sync. To exercise the early-return path with buffer_
     // == null, we directly verify the false branch via the public API:
-    //   - need_sync_buffer_to_node_ == false (no SetBufferTransform yet)
+    //   - needSyncBufferToNode_ == false (no SetBufferTransform yet)
     //     => GenerateTransactionConfigIfNecessary returns empty config.
     sptr<SurfaceBuffer> buf = SurfaceBuffer::Create();
     UniqueFd fd;
@@ -780,8 +780,8 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, GenerateTransactionConfigIfNecess
 /**
  * @tc.name: GenerateTransactionConfigIfNecessary002
  * @tc.desc: Test GenerateTransactionConfigIfNecessary when
- *           need_sync_buffer_to_node_ is false.
- *           Branch: if (need_sync_buffer_to_node_) -> false (line 101).
+ *           needSyncBufferToNode_ is false.
+ *           Branch: if (needSyncBufferToNode_) -> false (line 101).
  *           Should return an empty RSTransactionConfig (nodeId == 0).
  *           This branch is exercised whenever SetBuffer is called without
  *           first toggling the sync flag through SetBufferTransform.
@@ -792,7 +792,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, GenerateTransactionConfigIfNecess
     auto mgr = CreatePlainManager();
     ASSERT_NE(mgr, nullptr);
 
-    // need_sync_buffer_to_node_ becomes true in SetBuffer. So this test
+    // needSyncBufferToNode_ becomes true in SetBuffer. So this test
     // exercises the need_sync=true path again. To hit the false branch
     // we'd need need_sync to be false, which only happens after a previous
     // SetBuffer consumed it. The second SetBuffer below consumes need_sync,
@@ -804,7 +804,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, GenerateTransactionConfigIfNecess
     ASSERT_TRUE(mgr->SetBuffer(buf1, std::move(fd1), cb));
 
     // Second SetBuffer - need_sync was set to true by previous SetBuffer.
-    // After this call need_sync_buffer_to_node_ becomes false again (after
+    // After this call needSyncBufferToNode_ becomes false again (after
     // GenerateTransactionConfigIfNecessary consumes it).
     sptr<SurfaceBuffer> buf2 = SurfaceBuffer::Create();
     UniqueFd fd2;
@@ -1207,7 +1207,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, SetBuffer_InvokePreviousReleaseCa
  * @tc.name: GenerateBufferParams_NullBuffer_001
  * @tc.desc: GenerateBufferParams when buffer_ is null -> early return.
  *           Branch: if (!buffer_) -> true (line 81-82).
- *           We set need_sync_buffer_to_node_ true but keep buffer_ null, then
+ *           We set needSyncBufferToNode_ true but keep buffer_ null, then
  *           call GenerateTransactionConfigIfNecessary which calls GenerateBufferParams.
  * @tc.type: FUNC
  */
@@ -1216,7 +1216,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, GenerateBufferParams_NullBuffer_0
     auto mgr = CreatePlainManager();
     ASSERT_NE(mgr, nullptr);
 
-    mgr->need_sync_buffer_to_node_ = true;
+    mgr->needSyncBufferToNode_ = true;
     mgr->buffer_ = nullptr;
     auto config = mgr->GenerateTransactionConfigIfNecessary(1000);
     // buffer_ null -> GenerateBufferParams returns early -> config.nodeId == 0
@@ -1236,14 +1236,14 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, SetBuffer_AddCommand_WithTransact
     auto mgr = CreatePlainManager();
     ASSERT_NE(mgr, nullptr);
     // directly install a real transaction handler (constructor is public)
-    mgr->rsTransactionhandle_ = std::make_shared<RSTransactionHandler>();
+    mgr->rsTransactionHandle_ = std::make_shared<RSTransactionHandler>();
     mgr->SetBufferTransform(GRAPHIC_ROTATE_90);
     sptr<SurfaceBuffer> buf = SurfaceBuffer::Create();
     UniqueFd fd;
     auto cb = counter_.MakeCallback();
     EXPECT_TRUE(mgr->SetBuffer(buf, std::move(fd), cb));
     // AddCommand was called (no crash); rsTransactionHandle_ still non-null
-    EXPECT_NE(mgr->rsTransactionhandle_, nullptr);
+    EXPECT_NE(mgr->rsTransactionHandle_, nullptr);
 }
 
 /**
@@ -1256,7 +1256,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, SetDelegateDstRect_WithTransactio
 {
     auto mgr = CreatePlainManager();
     ASSERT_NE(mgr, nullptr);
-    mgr->rsTransactionhandle_ = std::make_shared<RSTransactionHandler>();
+    mgr->rsTransactionHandle_ = std::make_shared<RSTransactionHandler>();
     EXPECT_NO_FATAL_FAILURE(mgr->SetDelegateDstRect(1.0f, 2.0f, 3.0f, 4.0f));
 }
 
@@ -1270,7 +1270,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, SetDelegateSrcRect_WithTransactio
 {
     auto mgr = CreatePlainManager();
     ASSERT_NE(mgr, nullptr);
-    mgr->rsTransactionhandle_ = std::make_shared<RSTransactionHandler>();
+    mgr->rsTransactionHandle_ = std::make_shared<RSTransactionHandler>();
     EXPECT_NO_FATAL_FAILURE(mgr->SetDelegateSrcRect(5.0f, 6.0f, 7.0f, 8.0f));
 }
 
@@ -1299,7 +1299,7 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, Constructor_WithRSUIContext_001, 
     auto mgr = CreateManager(ctx, nullptr);
     ASSERT_NE(mgr, nullptr);
     // rsTransactionHandle_ should be set from ctx->GetRSTransaction() (303-305)
-    EXPECT_NE(mgr->rsTransactionhandle_, nullptr);
+    EXPECT_NE(mgr->rsTransactionHandle_, nullptr);
 }
 
 /**
@@ -1326,25 +1326,25 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, CleanDelegateModeBufferCmd001, Te
     ASSERT_NE(mgr, nullptr);
 
     {
-        std::shared_ptr<RSUIContext> rsUiContext = mgr->rsUiContext_;
+        std::shared_ptr<RSUIContext> rsUiContext = mgr->rsUIContext_;
         EXPECT_NE(rsUiContext, nullptr);
-        mgr->rsUiContext_ = nullptr;
+        mgr->rsUIContext_ = nullptr;
         mgr->CleanDelegateModeBufferCmd(); // no crash
-        mgr->rsUiContext_ = rsUiContext;
+        mgr->rsUIContext_ = rsUiContext;
     }
 
     {
-        std::shared_ptr<RSUIContext> rsUiContext = mgr->rsUiContext_;
-        auto rsRenderInterface = mgr->rsUiContext_->rsRenderInterface_;
+        std::shared_ptr<RSUIContext> rsUiContext = mgr->rsUIContext_;
+        auto rsRenderInterface = mgr->rsUIContext_->rsRenderInterface_;
         EXPECT_NE(rsRenderInterface, nullptr);
-        mgr->rsUiContext_->rsRenderInterface_ = nullptr;
+        mgr->rsUIContext_->rsRenderInterface_ = nullptr;
         mgr->CleanDelegateModeBufferCmd(); // no crash
-        mgr->rsUiContext_->rsRenderInterface_ = rsRenderInterface;
+        mgr->rsUIContext_->rsRenderInterface_ = rsRenderInterface;
     }
 
     {
-        EXPECT_NE(mgr->rsUiContext_->rsRenderInterface_, nullptr);
-        EXPECT_NE(mgr->rsUiContext_, nullptr);
+        EXPECT_NE(mgr->rsUIContext_->rsRenderInterface_, nullptr);
+        EXPECT_NE(mgr->rsUIContext_, nullptr);
         mgr->CleanDelegateModeBufferCmd(); // no crash
     }
 }

@@ -106,13 +106,6 @@ public:
     static void PrepareCommands(pid_t pid, pid_t tid, uint64_t index,
         std::vector<std::unique_ptr<RSCommand>> cmds);
     static void DrainCmdQueues(RSContext& context);
-    // reset direct-composition flags and hardware composer collection state for other tests
-    bool hasCommandProcess = false;
-    bool doDirectCompositionSupport = false;
-    RsDelegateCompositeCallbackManager::GetInstance().QueryAndResetCommandProcessFlag(
-        hasCommandProcess, doDirectCompositionSupport);
-    auto resetContext = std::make_shared<RSContext>();
-    RsDelegateCompositeCallbackManager::GetInstance().ProcessDelegateCompositeCommand(*resetContext);
 };
 
 void RSDelegateCompositeCallbackManagerTest::SetUpTestCase()
@@ -128,6 +121,13 @@ void RSDelegateCompositeCallbackManagerTest::TearDown()
     auto context = std::make_shared<RSContext>();
     DrainCmdQueues(*context);
     RsDelegateCompositeCallbackManager::GetInstance().NotifyCurrentSurfaceNodeBufferReleaseCallback();
+    // reset direct-composition flags and hardware composer collection state for other tests
+    bool hasCommandProcess = false;
+    bool doDirectCompositionSupport = false;
+    RsDelegateCompositeCallbackManager::GetInstance().QueryAndResetCommandProcessFlag(
+        hasCommandProcess, doDirectCompositionSupport);
+    auto resetContext = std::make_shared<RSContext>();
+    RsDelegateCompositeCallbackManager::GetInstance().ProcessDelegateCompositeCommand(*resetContext);
 }
 
 class TestProducerListener : public IRemoteStub<IProducerListener> {
@@ -1574,7 +1574,10 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessEachCommandQueue_NullCmd
     std::queue<std::unique_ptr<RSCommand>> cmdQueue;
     cmdQueue.push(nullptr);
     RSContext context;
-    EXPECT_NO_FATAL_FAILURE(manager_->ProcessEachCommandQueue(cmdQueue, context));
+    bool isSetBufferCmdOnly = false;
+    bool doDirectCompositionSupportByCmd = false;
+    EXPECT_NO_FATAL_FAILURE(manager_->ProcessEachCommandQueue(
+        cmdQueue, context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd));
     EXPECT_TRUE(cmdQueue.empty());
 }
 
@@ -1596,7 +1599,10 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessEachCommandQueue_Invalid
     cmd->SetCallingPidValid(false);
     cmdQueue.push(std::move(cmd));
     RSContext context;
-    EXPECT_NO_FATAL_FAILURE(manager_->ProcessEachCommandQueue(cmdQueue, context));
+    bool isSetBufferCmdOnly = false;
+    bool doDirectCompositionSupportByCmd = false;
+    EXPECT_NO_FATAL_FAILURE(manager_->ProcessEachCommandQueue(
+        cmdQueue, context, isSetBufferCmdOnly, doDirectCompositionSupportByCmd));
     EXPECT_TRUE(cmdQueue.empty());
 }
 

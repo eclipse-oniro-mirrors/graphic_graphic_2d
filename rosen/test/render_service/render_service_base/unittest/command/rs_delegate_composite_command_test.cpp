@@ -2104,7 +2104,7 @@ HWTEST_F(RSDelegateCompositeCommandTest, TransactionBufferCommandProcess003, Tes
 {
     auto context = std::make_shared<RSContext>();
     TransactionBufferCommand cmd;
-    EXPECT_EQ(cmd.cmdtype_, TransactionBufferCommand::CmdType::INVALID);
+    EXPECT_EQ(cmd.cmdType_, TransactionBufferCommand::CmdType::INVALID);
     cmd.Process(*context);
 }
 
@@ -2118,7 +2118,7 @@ HWTEST_F(RSDelegateCompositeCommandTest, TransactionBufferCommandProcess004, Tes
     auto context = std::make_shared<RSContext>();
     RectF rect(SRC_RECT_TOP, SRC_RECT_LEFT, SRC_RECT_WIDTH, SRC_RECT_HEIGHT);
     TransactionBufferCommand cmd(rect, true, SET_RECT_NODE_ID);
-    EXPECT_EQ(cmd.cmdtype_, TransactionBufferCommand::CmdType::SET_RECT);
+    EXPECT_EQ(cmd.cmdType_, TransactionBufferCommand::CmdType::SET_RECT);
     cmd.Process(*context);
 }
 
