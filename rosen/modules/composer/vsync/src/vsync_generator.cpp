@@ -443,11 +443,15 @@ int64_t VSyncGenerator::SetCurrentRefreshRate(uint32_t currRefreshRate, uint32_t
     if (!DVSyncLibManager::Instance().IsInitialized()) {
         return delayTime;
     }
-    std::lock_guard<std::mutex> locker(mutex_);
-    delayTime = DVSyncLibManager::Instance().SetCurrentRefreshRate(currRefreshRate, lastRefreshRate);
+    {
+        std::lock_guard<std::mutex> locker(mutex_);
+        delayTime = DVSyncLibManager::Instance().SetCurrentRefreshRate(currRefreshRate, lastRefreshRate);
+        if (currRefreshRate != 0 && delayTime != 0) {
+            isLtpoNeedChange_ = true;
+        }
+    }
     if (currRefreshRate != 0 && delayTime != 0) {
         WaitForTimeoutConNotifyLocked();
-        isLtpoNeedChange_ = true;
     }
     RS_TRACE_NAME_FMT("DVSync::UiDVSync setCurrentRefreshRate isLtpoNeedChange:%d, currRefreshRate:%u, delayTime:%ld",
         isLtpoNeedChange_, currRefreshRate, delayTime);
