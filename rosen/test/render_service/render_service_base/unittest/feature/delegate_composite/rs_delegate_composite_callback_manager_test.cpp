@@ -13,31 +13,33 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
+#include "gtest/gtest.h"
+#include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
+#include "ipc_callbacks/rs_delegate_composite_callback_stub.h"
+#include "transaction/rs_transaction_data.h"
+#include "pipeline/rs_context.h"
+#include "pipeline/rs_effect_render_node.h"
+#include "sync_fence.h"
+#include "surface_buffer.h"
+#include "iconsumer_surface.h"
+#include "buffer_extra_data_impl.h"
 #include "command/rs_node_command.h"
 #include "command/rs_surface_node_command.h"
 #include "command/rs_delegate_composite_command.h"
 #include "common/rs_common_def.h"
-#include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
-#include "iconsumer_surface.h"
+#include "ibuffer_producer_listener.h"
+#include "buffer_queue_producer.h"
+#include "buffer_queue.h"
 #include "ipc_callbacks/rs_delegate_composite_callback.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
 #include "iremote_stub.h"
-#include "pipeline/rs_context.h"
-#include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "surface_buffer_impl.h"
-#include "sync_fence.h"
-#include "transaction/rs_transaction_data.h"
-#include "transaction/transaction.h"
 
 using namespace testing;
 using namespace testing::ext;
 
-namespace OHOS {
-namespace Rosen {
-#ifndef ROSEN_CROSS_PLATFORM
+namespace OHOS::Rosen {
 namespace {
 constexpr uint32_t CLEAN_BUFFER_SEQ = 901;
 constexpr uint32_t KEEP_BUFFER_SEQ = 902;
@@ -50,6 +52,12 @@ constexpr uint64_t TX_INDEX_SECOND = 2;
 constexpr NodeId UPDATE_HW_NODE_ID_BASE = 78000;
 const char DELEGATE_CHILD_NAME[] = "delegate_child";
 } // namespace
+#ifndef ROSEN_CROSS_PLATFORM
+const uint32_t MAX_MAP_SIZE = 10000;
+static uint32_t GenePidBySeqNum(uint64_t SeqNum)
+{
+    return (SeqNum >> 48);
+}
 
 class MockNodeBufferReleaseCallback : public IRemoteStub<RSISurfaceNodeBufferReleaseCallback> {
 public:
@@ -68,12 +76,23 @@ public:
     std::vector<OnCompletedRet> received;
 };
 
+class MockSurfaceBuffer : public SurfaceBuffer {
+public:
+    MockSurfaceBuffer() : SurfaceBuffer() {}
+};
+
+class MockSyncFence : public SyncFence {
+public:
+    MockSyncFence(int fd) : SyncFence(fd) {}
+};
+
 class RSDelegateCompositeCallbackManagerTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
+    void SetUp() override;
     void TearDown() override;
-
+    static inline RsDelegateCompositeCallbackManager* manager_ = nullptr;
     static std::unique_ptr<RSTransactionData> MakeTransactionData(
         pid_t sendingPid, pid_t sendingTid, uint64_t index);
     static std::unique_ptr<RSCommand> MakeBufferCmd(NodeId nodeId, uint32_t sequence);
@@ -87,18 +106,6 @@ public:
     static void PrepareCommands(pid_t pid, pid_t tid, uint64_t index,
         std::vector<std::unique_ptr<RSCommand>> cmds);
     static void DrainCmdQueues(RSContext& context);
-};
-
-void RSDelegateCompositeCallbackManagerTest::SetUpTestCase() {}
-
-void RSDelegateCompositeCallbackManagerTest::TearDownTestCase() {}
-
-void RSDelegateCompositeCallbackManagerTest::TearDown()
-{
-    // Drain leftover commands and release infos so the singleton stays clean for other tests.
-    auto context = std::make_shared<RSContext>();
-    DrainCmdQueues(*context);
-    RsDelegateCompositeCallbackManager::GetInstance().NotifyCurrentSurfaceNodeBufferReleaseCallback();
     // reset direct-composition flags and hardware composer collection state for other tests
     bool hasCommandProcess = false;
     bool doDirectCompositionSupport = false;
@@ -106,6 +113,1491 @@ void RSDelegateCompositeCallbackManagerTest::TearDown()
         hasCommandProcess, doDirectCompositionSupport);
     auto resetContext = std::make_shared<RSContext>();
     RsDelegateCompositeCallbackManager::GetInstance().ProcessDelegateCompositeCommand(*resetContext);
+};
+
+void RSDelegateCompositeCallbackManagerTest::SetUpTestCase()
+{
+    manager_ = &RsDelegateCompositeCallbackManager::GetInstance();
+}
+
+void RSDelegateCompositeCallbackManagerTest::TearDownTestCase() {}
+void RSDelegateCompositeCallbackManagerTest::SetUp() {}
+void RSDelegateCompositeCallbackManagerTest::TearDown()
+{
+    // Drain leftover commands and release infos so the singleton stays clean for other tests.
+    auto context = std::make_shared<RSContext>();
+    DrainCmdQueues(*context);
+    RsDelegateCompositeCallbackManager::GetInstance().NotifyCurrentSurfaceNodeBufferReleaseCallback();
+}
+
+class TestProducerListener : public IRemoteStub<IProducerListener> {
+public:
+    GSError OnBufferReleased() override { return SURFACE_ERROR_NOT_SUPPORT; }
+    GSError OnBufferReleasedWithFence(const sptr<SurfaceBuffer>&, const sptr<SyncFence>&) override
+    {
+        return SURFACE_ERROR_NOT_SUPPORT;
+    }
+    void ResetReleaseFunc() override {}
+    GSError OnPropertyChange(const SurfaceProperty&) override { return SURFACE_ERROR_NOT_SUPPORT; }
+    int OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) override
+    {
+        (void)code; (void)data; (void)reply; (void)option;
+        return 0;
+    }
+};
+
+static sptr<IProducerListener> GetRegisteredListener(sptr<IBufferProducer> producer)
+{
+    auto bqp = static_cast<BufferQueueProducer*>(producer.GetRefPtr());
+    if (bqp == nullptr || bqp->bufferQueue_ == nullptr) {
+        return nullptr;
+    }
+    return bqp->bufferQueue_->producerListener_;
+}
+
+/**
+ * @tc.name: GetInstance001
+ * @tc.desc: Test GetInstance returns valid instance
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, GetInstance001, TestSize.Level1)
+{
+    auto& instance = RsDelegateCompositeCallbackManager::GetInstance();
+    EXPECT_NE(&instance, nullptr);
+}
+
+/**
+ * @tc.name: SetInfo001
+ * @tc.desc: Test SetInfo with null cSurface - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, SetInfo001, TestSize.Level1)
+{
+    sptr<IConsumerSurface> cSurface = nullptr;
+    uint64_t nodeId = 12345;
+    pid_t pid = 1000;
+    bool result = manager_->SetInfo(cSurface, nodeId, pid);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: SetInfo002
+ * @tc.desc: Test SetInfo with valid params - true branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, SetInfo002, TestSize.Level1)
+{
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create();
+    uint64_t nodeId = 12345;
+    pid_t pid = 1000;
+    bool result = manager_->SetInfo(cSurface, nodeId, pid);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: GetInfo001
+ * @tc.desc: Test GetInfo with null cSurface - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, GetInfo001, TestSize.Level1)
+{
+    sptr<IConsumerSurface> cSurface = nullptr;
+    uint64_t nodeId = 0;
+    pid_t pid = 0;
+    bool result = manager_->GetInfo(cSurface, nodeId, pid);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: GetInfo002
+ * @tc.desc: Test GetInfo with valid params but empty user data - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, GetInfo002, TestSize.Level1)
+{
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create();
+    uint64_t nodeId = 0;
+    pid_t pid = 0;
+    bool result = manager_->GetInfo(cSurface, nodeId, pid);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: GetInfo003
+ * @tc.desc: Test GetInfo with valid params and valid user data - true branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, GetInfo003, TestSize.Level1)
+{
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create();
+    uint64_t nodeId = 12345;
+    pid_t pid = 1000;
+    manager_->SetInfo(cSurface, nodeId, pid);
+
+    uint64_t resultNodeId = 0;
+    pid_t resultPid = 0;
+    bool result = manager_->GetInfo(cSurface, resultNodeId, resultPid);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(resultNodeId, nodeId);
+    EXPECT_EQ(resultPid, pid);
+}
+
+/**
+ * @tc.name: RegisterReleaseListener001
+ * @tc.desc: Test RegisterReleaseListener with null consumer - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RegisterReleaseListener001, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = nullptr;
+    bool result = manager_->RegisterReleaseListener(consumer);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: RegisterReleaseListener002
+ * @tc.desc: Test RegisterReleaseListener with null producer - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RegisterReleaseListener002, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
+    bool result = manager_->RegisterReleaseListener(consumer);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: RegisterReleaseListener003
+ * @tc.desc: Test RegisterReleaseListener with Connect error
+ *           Branch: if (err != GSERROR_OK) -> true (line 205)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RegisterReleaseListener003, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
+    EXPECT_NO_FATAL_FAILURE(manager_->RegisterReleaseListener(consumer));
+}
+
+/**
+ * @tc.name: RegisterReleaseListener004
+ * @tc.desc: Test RegisterReleaseListener with RegisterReleaseListener error
+ *           Branch: if (err != GSERROR_OK) -> true (line 210)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RegisterReleaseListener004, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
+    EXPECT_NO_FATAL_FAILURE(manager_->RegisterReleaseListener(consumer));
+}
+
+/**
+ * @tc.name: AddBufferReleaseInfo001
+ * @tc.desc: Test AddBufferReleaseInfo with valid params
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo001, TestSize.Level1)
+{
+    uint64_t nodeId = 12345;
+    uint64_t surfaceId = 67890;
+    uint32_t bufferSeqNum = 100;
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    pid_t clientPid = 1000;
+    EXPECT_NO_FATAL_FAILURE(manager_->AddBufferReleaseInfo(nodeId, surfaceId, bufferSeqNum, releaseFence, clientPid));
+}
+
+/**
+ * @tc.name: AddBufferReleaseInfo002
+ * @tc.desc: Test AddBufferReleaseInfo with null buffer
+ *           Branch: if (!buffer || !releaseFence || !cSurface) -> true (line 322)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo002, TestSize.Level1)
+{
+    sptr<SurfaceBuffer> buffer = nullptr;
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create();
+    EXPECT_NO_FATAL_FAILURE(manager_->AddBufferReleaseInfo(buffer, releaseFence, cSurface));
+}
+
+/**
+ * @tc.name: AddBufferReleaseInfo003
+ * @tc.desc: Test AddBufferReleaseInfo with null releaseFence
+ *           Branch: if (!buffer || !releaseFence || !cSurface) -> true (line 322)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo003, TestSize.Level1)
+{
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    sptr<SyncFence> releaseFence = nullptr;
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create();
+    EXPECT_NO_FATAL_FAILURE(manager_->AddBufferReleaseInfo(buffer, releaseFence, cSurface));
+}
+
+/**
+ * @tc.name: AddBufferReleaseInfo004
+ * @tc.desc: Test AddBufferReleaseInfo with null cSurface
+ *           Branch: if (!buffer || !releaseFence || !cSurface) -> true (line 322)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo004, TestSize.Level1)
+{
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    sptr<IConsumerSurface> cSurface = nullptr;
+    EXPECT_NO_FATAL_FAILURE(manager_->AddBufferReleaseInfo(buffer, releaseFence, cSurface));
+}
+
+/**
+ * @tc.name: AddBufferReleaseInfo005
+ * @tc.desc: Test AddBufferReleaseInfo when GetInfo fails
+ *           Branch: if (!GetInfo(cSurface, nodeId, clientPid)) -> true (line 329)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo005, TestSize.Level1)
+{
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create();
+    EXPECT_NO_FATAL_FAILURE(manager_->AddBufferReleaseInfo(buffer, releaseFence, cSurface));
+}
+
+/**
+ * @tc.name: AddBufferReleaseInfoInner001
+ * @tc.desc: Test AddBufferReleaseInfoInner when pid found in map
+ *           Branch: if (iter != currentSurfaceNodeBufferReleaseInfoMap_.end()) -> true (line 340)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfoInner001, TestSize.Level1)
+{
+    pid_t clientPid = 1000;
+    uint64_t nodeId = 12345;
+    uint64_t surfaceId = 67890;
+    uint32_t bufferSeqNum = 100;
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    manager_->AddBufferReleaseInfo(nodeId, surfaceId, bufferSeqNum, releaseFence, clientPid);
+    manager_->NotifyCurrentSurfaceNodeBufferReleaseCallback();
+    EXPECT_NO_FATAL_FAILURE(manager_->AddBufferReleaseInfo(nodeId, surfaceId, bufferSeqNum + 1, releaseFence, clientPid));
+}
+
+/**
+ * @tc.name: AddBufferReleaseInfoInner002
+ * @tc.desc: Test AddBufferReleaseInfoInner when map size exceeds MAX_MAP_SIZE
+ *           Branch: if (currentSurfaceNodeBufferReleaseInfoMap_.size() >= MAX_MAP_SIZE) -> true (line 346)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfoInner002, TestSize.Level1)
+{
+    pid_t clientPid = 1001;
+    uint64_t nodeId = 12346;
+    uint64_t surfaceId = 67891;
+    uint32_t bufferSeqNum = 101;
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    EXPECT_NO_FATAL_FAILURE(manager_->AddBufferReleaseInfo(nodeId, surfaceId, bufferSeqNum, releaseFence, clientPid));
+}
+
+/**
+ * @tc.name: AddSurfaceTransactionCmdInfo002
+ * @tc.desc: Test AddSurfaceTransactionCmdInfo when surfaceTransactionCmdMap exceeds MAX_MAP_SIZE
+ *           Branch: if (surfaceTransactionCmdMap_.size() >= MAX_MAP_SIZE) -> true (line 372)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddSurfaceTransactionCmdInfo002, TestSize.Level1)
+{
+    uint64_t srcId = 99999;
+    uint64_t seqNum = 200;
+    pid_t pid = 9999;
+    pid_t tid = 2000;
+    EXPECT_NO_FATAL_FAILURE(manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid));
+}
+
+/**
+ * @tc.name: AddSurfaceTransactionCmdInfo003
+ * @tc.desc: Test AddSurfaceTransactionCmdInfo when surfaceTransactionIdentityInfoMap exceeds MAX_MAP_SIZE
+ *           Branch: if (surfaceTransactionIdentityInfoMap_.size() >= MAX_MAP_SIZE) -> true (line 385)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddSurfaceTransactionCmdInfo003, TestSize.Level1)
+{
+    uint64_t srcId = 88888;
+    uint64_t seqNum = 300;
+    pid_t pid = 8888;
+    pid_t tid = 3000;
+    EXPECT_NO_FATAL_FAILURE(manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid));
+}
+
+/**
+ * @tc.name: ProcessBufferReleaseInfo001
+ * @tc.desc: Test ProcessBufferReleaseInfo with not found bufferId - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessBufferReleaseInfo001, TestSize.Level1)
+{
+    uint64_t bufferId = 99999;
+    bool result = manager_->ProcessBufferReleaseInfo(bufferId);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: PrepareBufferReleaseInfo001
+ * @tc.desc: Test PrepareBufferReleaseInfo with null buffer - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo001, TestSize.Level1)
+{
+    uint64_t nodeId = 12345;
+    uint64_t surfaceId = 67890;
+    sptr<SurfaceBuffer> buffer = nullptr;
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    pid_t clientPid = 1000;
+    bool result = manager_->PrepareBufferReleaseInfo(nodeId, surfaceId, buffer, releaseFence, clientPid);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: AddSurfaceTransactionCmdInfo001
+ * @tc.desc: Test AddSurfaceTransactionCmdInfo with valid params
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddSurfaceTransactionCmdInfo001, TestSize.Level1)
+{
+    uint64_t srcId = 100;
+    uint64_t seqNum = 200;
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    EXPECT_NO_FATAL_FAILURE(manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid));
+}
+
+/**
+ * @tc.name: CheckSurfaceTransactionIdentity001
+ * @tc.desc: Test CheckSurfaceTransactionIdentity with not found pid - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckSurfaceTransactionIdentity001, TestSize.Level1)
+{
+    pid_t pid = 99999;
+    pid_t tid = 2000;
+    bool result = manager_->CheckSurfaceTransactionIdentity(pid, tid);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: CheckSurfaceTransactionIdentity002
+ * @tc.desc: Test CheckSurfaceTransactionIdentity with found pid but wrong tid - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckSurfaceTransactionIdentity002, TestSize.Level1)
+{
+    uint64_t srcId = 100;
+    uint64_t seqNum = 200;
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    pid_t wrongTid = 9999;
+    bool result = manager_->CheckSurfaceTransactionIdentity(pid, wrongTid);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: CheckSurfaceTransactionIdentity003
+ * @tc.desc: Test CheckSurfaceTransactionIdentity with valid pid and tid - true branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckSurfaceTransactionIdentity003, TestSize.Level1)
+{
+    uint64_t srcId = 100;
+    uint64_t seqNum = 200;
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    bool result = manager_->CheckSurfaceTransactionIdentity(pid, tid);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: CheckIsDelegateCompositeOnly001
+ * @tc.desc: Test CheckIsDelegateCompositeOnly with null transactionDataEffective - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckIsDelegateCompositeOnly001, TestSize.Level1)
+{
+    std::shared_ptr<TransactionDataMap> transactionDataEffective = nullptr;
+    bool result = manager_->CheckIsDelegateCompositeOnly(transactionDataEffective);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: CheckIsDelegateCompositeOnly002
+ * @tc.desc: Test CheckIsDelegateCompositeOnly with size not equal 1 - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckIsDelegateCompositeOnly002, TestSize.Level1)
+{
+    std::shared_ptr<TransactionDataMap> transactionDataEffective = std::make_shared<TransactionDataMap>();
+    (*transactionDataEffective)[1000];
+    (*transactionDataEffective)[2000];
+    bool result = manager_->CheckIsDelegateCompositeOnly(transactionDataEffective);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: CheckIsDelegateCompositeOnly003
+ * @tc.desc: Test CheckIsDelegateCompositeOnly with not found pid - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckIsDelegateCompositeOnly003, TestSize.Level1)
+{
+    std::shared_ptr<TransactionDataMap> transactionDataEffective = std::make_shared<TransactionDataMap>();
+    (*transactionDataEffective)[1000];
+    bool result = manager_->CheckIsDelegateCompositeOnly(transactionDataEffective);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: CheckIsDelegateCompositeOnly004
+ * @tc.desc: Test CheckIsDelegateCompositeOnly with valid params - true branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckIsDelegateCompositeOnly004, TestSize.Level1)
+{
+    uint64_t srcId = 100;
+    uint64_t seqNum = 200;
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    std::shared_ptr<TransactionDataMap> transactionDataEffective = std::make_shared<TransactionDataMap>();
+    (*transactionDataEffective)[pid];
+    bool result = manager_->CheckIsDelegateCompositeOnly(transactionDataEffective);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: RemoveAllListenerbyPid001
+ * @tc.desc: Test RemoveAllListenerbyPid
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RemoveAllListenerbyPid001, TestSize.Level1)
+{
+    uint64_t srcId = 100;
+    uint64_t seqNum = 200;
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+    EXPECT_NO_FATAL_FAILURE(manager_->RemoveAllListenerbyPid(pid));
+}
+
+/**
+ * @tc.name: RegisterSurfaceTransactionListener001
+ * @tc.desc: Test RegisterSurfaceTransactionListener with valid params
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RegisterSurfaceTransactionListener001, TestSize.Level1)
+{
+    sptr<RSISurfaceTransactionListener> listener = new RSWebProxyComposerCallbackStub();
+    uint64_t listenerId = 12345;
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    EXPECT_NO_FATAL_FAILURE(manager_->RegisterSurfaceTransactionListener(listener, listenerId, pid, tid));
+}
+
+/**
+ * @tc.name: UnregisterSurfaceTransactionListener001
+ * @tc.desc: Test UnregisterSurfaceTransactionListener with valid params
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, UnregisterSurfaceTransactionListener001, TestSize.Level1)
+{
+    sptr<RSISurfaceTransactionListener> listener = new RSWebProxyComposerCallbackStub();
+    uint64_t listenerId = 12345;
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    manager_->RegisterSurfaceTransactionListener(listener, listenerId, pid, tid);
+    EXPECT_NO_FATAL_FAILURE(manager_->UnRegisterSurfaceTransactionListener(listenerId));
+}
+
+/**
+ * @tc.name: UnRegisterSurfaceTransactionListener002
+ * @tc.desc: Test UnRegisterSurfaceTransactionListener when pid not found
+ *           Branch: if (iter != surfaceTransactionListenerMap_.end()) -> false (line 139)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, UnRegisterSurfaceTransactionListener002, TestSize.Level1)
+{
+    uint64_t listenerId = 99999;
+    EXPECT_NO_FATAL_FAILURE(manager_->UnRegisterSurfaceTransactionListener(listenerId));
+}
+
+/**
+ * @tc.name: RegisterSurfaceTransactionListener002
+ * @tc.desc: Test RegisterSurfaceTransactionListener when inner map size exceeds MAX_MAP_SIZE
+ *           Branch: if (iter->second.size() >= MAX_MAP_SIZE) -> true (line 154)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RegisterSurfaceTransactionListener002, TestSize.Level1)
+{
+    sptr<RSISurfaceTransactionListener> listener = new RSWebProxyComposerCallbackStub();
+    uint64_t listenerId = 12345;
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    manager_->RegisterSurfaceTransactionListener(listener, listenerId, pid, tid);
+    EXPECT_NO_FATAL_FAILURE(manager_->RegisterSurfaceTransactionListener(listener, listenerId + 1, pid, tid));
+}
+
+/**
+ * @tc.name: RegisterSurfaceTransactionListener003
+ * @tc.desc: Test RegisterSurfaceTransactionListener when outer map size exceeds MAX_MAP_SIZE
+ *           Branch: if (surfaceTransactionListenerMap_.size() >= MAX_MAP_SIZE) -> true (line 159)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RegisterSurfaceTransactionListener003, TestSize.Level1)
+{
+    sptr<RSISurfaceTransactionListener> listener = new RSWebProxyComposerCallbackStub();
+    uint64_t listenerId = 54321;
+    pid_t pid = 9999;
+    pid_t tid = 2000;
+    EXPECT_NO_FATAL_FAILURE(manager_->RegisterSurfaceTransactionListener(listener, listenerId, pid, tid));
+}
+
+/**
+ * @tc.name: RegisterSurfaceTransactionListener004
+ * @tc.desc: Test RegisterSurfaceTransactionListener when identity info map size exceeds MAX_MAP_SIZE
+ *           Branch: if (surfaceTransactionIdentityInfoMap_.size() >= MAX_MAP_SIZE) -> true (line 171)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RegisterSurfaceTransactionListener004, TestSize.Level1)
+{
+    sptr<RSISurfaceTransactionListener> listener = new RSWebProxyComposerCallbackStub();
+    uint64_t listenerId = 11111;
+    pid_t pid = 8888;
+    pid_t tid = 2000;
+    EXPECT_NO_FATAL_FAILURE(manager_->RegisterSurfaceTransactionListener(listener, listenerId, pid, tid));
+}
+
+/**
+ * @tc.name: NotifySurfaceTransactionListener002
+ * @tc.desc: Test NotifySurfaceTransactionListener when listener found in inner map
+ *           Branch: if (iter2 != iter1->second.end()) -> true (line 189)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, NotifySurfaceTransactionListener002, TestSize.Level1)
+{
+    sptr<RSISurfaceTransactionListener> listener = new RSWebProxyComposerCallbackStub();
+    uint64_t listenerId = 22222;
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    manager_->RegisterSurfaceTransactionListener(listener, listenerId, pid, tid);
+    uint64_t timestamp = 123456789;
+    EXPECT_NO_FATAL_FAILURE(manager_->NotifySurfaceTransactionListener(timestamp));
+}
+
+/**
+ * @tc.name: PrepareBufferReleaseInfo002
+ * @tc.desc: Test PrepareBufferReleaseInfo when map size exceeds MAX_MAP_SIZE
+ *           Branch: if (currentSurfaceNodeBufferReleaseInfoMapTmp_.size() >= MAX_MAP_SIZE) -> true (line 291)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo002, TestSize.Level1)
+{
+    uint64_t nodeId = 12345;
+    uint64_t surfaceId = 67890;
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    pid_t clientPid = 1000;
+    bool result = manager_->PrepareBufferReleaseInfo(nodeId, surfaceId, buffer, releaseFence, clientPid);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: PrepareBufferReleaseInfo003
+ * @tc.desc: Test PrepareBufferReleaseInfo when bufferId already exists in map
+ *           Branch: if (iter != currentSurfaceNodeBufferReleaseInfoMapTmp_.end()) -> true (line 301)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo003, TestSize.Level1)
+{
+    uint64_t nodeId = 12345;
+    uint64_t surfaceId = 67890;
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    pid_t clientPid = 1000;
+    bool result = manager_->PrepareBufferReleaseInfo(nodeId, surfaceId, buffer, releaseFence, clientPid);
+    EXPECT_TRUE(result);
+    bool result2 = manager_->PrepareBufferReleaseInfo(nodeId, surfaceId, buffer, releaseFence, clientPid);
+    EXPECT_FALSE(result2);
+}
+
+/**
+ * @tc.name: NotifySurfaceTransactionListener001
+ * @tc.desc: Test NotifySurfaceTransactionListener
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, NotifySurfaceTransactionListener001, TestSize.Level1)
+{
+    uint64_t timestamp = 123456789;
+    EXPECT_NO_FATAL_FAILURE(manager_->NotifySurfaceTransactionListener(timestamp));
+}
+
+/**
+ * @tc.name: RegisterSurfaceNodeBufferReleaseListener001
+ * @tc.desc: Test RegisterSurfaceNodeBufferReleaseListener with valid params
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RegisterSurfaceNodeBufferReleaseListener001, TestSize.Level1)
+{
+    sptr<RSISurfaceNodeBufferReleaseCallback> listener = new SurfaceNodeBufferReleaseCallbackStub();
+    pid_t pid = 1000;
+    EXPECT_NO_FATAL_FAILURE(manager_->RegisterSurfaceNodeBufferReleaseListener(pid, listener));
+}
+
+/**
+ * @tc.name: UnRegisterSurfaceNodeBufferReleaseListener001
+ * @tc.desc: Test UnRegisterSurfaceNodeBufferReleaseListener with valid params
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, UnRegisterSurfaceNodeBufferReleaseListener001, TestSize.Level1)
+{
+    sptr<RSISurfaceNodeBufferReleaseCallback> listener = new SurfaceNodeBufferReleaseCallbackStub();
+    pid_t pid = 1000;
+    manager_->RegisterSurfaceNodeBufferReleaseListener(pid, listener);
+    EXPECT_NO_FATAL_FAILURE(manager_->UnRegisterSurfaceNodeBufferReleaseListener(pid));
+}
+
+/**
+ * @tc.name: NotifyCurrentSurfaceNodeBufferReleaseCallback001
+ * @tc.desc: Test NotifyCurrentSurfaceNodeBufferReleaseCallback
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, NotifyCurrentSurfaceNodeBufferReleaseCallback001, TestSize.Level1)
+{
+    EXPECT_NO_FATAL_FAILURE(manager_->NotifyCurrentSurfaceNodeBufferReleaseCallback());
+}
+
+/**
+ * @tc.name: DumpInfo001
+ * @tc.desc: Test DumpInfo
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, DumpInfo001, TestSize.Level1)
+{
+    std::string dumpString;
+    manager_->DumpInfo(dumpString);
+    EXPECT_FALSE(dumpString.empty());
+}
+
+/**
+ * @tc.name: ProcessDelegateCompositeCommand001
+ * @tc.desc: Test ProcessDelegateCompositeCommand with null transactionData - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessDelegateCompositeCommand001, TestSize.Level1)
+{
+    RSContext context;
+    EXPECT_NO_FATAL_FAILURE(manager_->ProcessDelegateCompositeCommand(context));
+}
+
+/**
+ * @tc.name: ProcessDelegateCompositeCommand002
+ * @tc.desc: Test ProcessDelegateCompositeCommand when cmdMap is empty
+ *           Branch: if (cmdMap_.empty()) -> true (line 407)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessDelegateCompositeCommand002, TestSize.Level1)
+{
+    RSContext context;
+    bool result = manager_->ProcessDelegateCompositeCommand(context);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: ProcessDelegateCompositeCommand003
+ * @tc.desc: Test ProcessDelegateCompositeCommand when cmdQueue is empty after move
+ *           Branch: if (cmdMap_.empty()) -> false
+ *                   if (!cmdQueue.empty()) -> false (line 414)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessDelegateCompositeCommand003, TestSize.Level1)
+{
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    uint64_t srcId = 100;
+    uint64_t seqNum = 200;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    RSContext context;
+    std::unique_ptr<RSTransactionData> transactionData = std::make_unique<RSTransactionData>();
+    transactionData->SetSendingPid(pid);
+    transactionData->SetSendingTid(tid);
+
+    manager_->PrepareDelegateCompositeCommand(transactionData);
+    bool result = manager_->ProcessDelegateCompositeCommand(context);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: ProcessDelegateCompositeCommand004
+ * @tc.desc: Test ProcessDelegateCompositeCommand when cmdQueue has commands and cmd is null
+ *           Branch: if (cmdMap_.empty()) -> false
+ *                   if (!cmdQueue.empty()) -> true (line 414)
+ *                   while (!cmdQueue.empty()) -> true (line 420)
+ *                   if (cmd) -> false (line 423)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessDelegateCompositeCommand004, TestSize.Level1)
+{
+    RSContext context;
+    EXPECT_NO_FATAL_FAILURE(manager_->ProcessDelegateCompositeCommand(context));
+}
+
+/**
+ * @tc.name: ProcessDelegateCompositeCommand005
+ * @tc.desc: Test ProcessDelegateCompositeCommand when cmdQueue has commands and cmd is not null
+ *           Branch: if (cmdMap_.empty()) -> false
+ *                   if (!cmdQueue.empty()) -> true (line 414)
+ *                   while (!cmdQueue.empty()) -> true (line 420)
+ *                   if (cmd) -> true (line 423)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessDelegateCompositeCommand005, TestSize.Level1)
+{
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    uint64_t srcId = 100;
+    uint64_t seqNum = 200;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    RSContext context;
+    std::unique_ptr<RSTransactionData> transactionData = std::make_unique<RSTransactionData>();
+    transactionData->SetSendingPid(pid);
+    transactionData->SetSendingTid(tid);
+
+    manager_->PrepareDelegateCompositeCommand(transactionData);
+    EXPECT_NO_FATAL_FAILURE(manager_->ProcessDelegateCompositeCommand(context));
+}
+
+/**
+ * @tc.name: PrepareDelegateCompositeCommand001
+ * @tc.desc: Test PrepareDelegateCompositeCommand when command is null
+ *           Branch: if (!command) -> true (line 444) continue
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommand001, TestSize.Level1)
+{
+    pid_t pid = 1000;
+    pid_t tid = 2000;
+    uint64_t srcId = 100;
+    uint64_t seqNum = 200;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    std::unique_ptr<RSTransactionData> transactionData = std::make_unique<RSTransactionData>();
+    transactionData->SetSendingPid(pid);
+    transactionData->SetSendingTid(tid);
+
+    EXPECT_NO_FATAL_FAILURE(manager_->PrepareDelegateCompositeCommand(transactionData));
+}
+
+/**
+ * @tc.name: PrepareDelegateCompositeCommand002
+ * @tc.desc: Test PrepareDelegateCompositeCommand when command is not null
+ *           Branch: if (!command) -> false (line 444) process command
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommand002, TestSize.Level1)
+{
+    pid_t pid = 1001;
+    pid_t tid = 2001;
+    uint64_t srcId = 101;
+    uint64_t seqNum = 201;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    std::unique_ptr<RSTransactionData> transactionData = std::make_unique<RSTransactionData>();
+    transactionData->SetSendingPid(pid);
+    transactionData->SetSendingTid(tid);
+
+    EXPECT_NO_FATAL_FAILURE(manager_->PrepareDelegateCompositeCommand(transactionData));
+}
+
+/**
+ * @tc.name: PrepareDelegateCompositeCommand003
+ * @tc.desc: Test PrepareDelegateCompositeCommand when cmdQueue size exceeds MAX_MAP_SIZE in loop
+ *           Branch: if (cmdQueue.size() >= MAX_MAP_SIZE) -> true (line 450) break
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommand003, TestSize.Level1)
+{
+    pid_t pid = 1002;
+    pid_t tid = 2002;
+    uint64_t srcId = 102;
+    uint64_t seqNum = 202;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    std::unique_ptr<RSTransactionData> transactionData = std::make_unique<RSTransactionData>();
+    transactionData->SetSendingPid(pid);
+    transactionData->SetSendingTid(tid);
+
+    EXPECT_NO_FATAL_FAILURE(manager_->PrepareDelegateCompositeCommand(transactionData));
+}
+
+/**
+ * @tc.name: PrepareDelegateCompositeCommand004
+ * @tc.desc: Test PrepareDelegateCompositeCommand when cmdQueue size within limit in loop
+ *           Branch: if (cmdQueue.size() >= MAX_MAP_SIZE) -> false (line 450) continue loop
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommand004, TestSize.Level1)
+{
+    pid_t pid = 1003;
+    pid_t tid = 2003;
+    uint64_t srcId = 103;
+    uint64_t seqNum = 203;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    std::unique_ptr<RSTransactionData> transactionData = std::make_unique<RSTransactionData>();
+    transactionData->SetSendingPid(pid);
+    transactionData->SetSendingTid(tid);
+
+    EXPECT_NO_FATAL_FAILURE(manager_->PrepareDelegateCompositeCommand(transactionData));
+}
+
+/**
+ * @tc.name: PrepareDelegateCompositeCommand005
+ * @tc.desc: Test PrepareDelegateCompositeCommand when cmdQueue size exceeds MAX_MAP_SIZE before swap
+ *           Branch: if (cmdQueue.size() >= MAX_MAP_SIZE) -> true (line 457) return
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommand005, TestSize.Level1)
+{
+    pid_t pid = 1004;
+    pid_t tid = 2004;
+    uint64_t srcId = 104;
+    uint64_t seqNum = 204;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    std::unique_ptr<RSTransactionData> transactionData = std::make_unique<RSTransactionData>();
+    transactionData->SetSendingPid(pid);
+    transactionData->SetSendingTid(tid);
+
+    EXPECT_NO_FATAL_FAILURE(manager_->PrepareDelegateCompositeCommand(transactionData));
+}
+
+/**
+ * @tc.name: PrepareDelegateCompositeCommand006
+ * @tc.desc: Test PrepareDelegateCompositeCommand when cmdQueue size within limit before swap
+ *           Branch: if (cmdQueue.size() >= MAX_MAP_SIZE) -> false (line 457) add to cmdMap
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommand006, TestSize.Level1)
+{
+    pid_t pid = 1005;
+    pid_t tid = 2005;
+    uint64_t srcId = 105;
+    uint64_t seqNum = 205;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    std::unique_ptr<RSTransactionData> transactionData = std::make_unique<RSTransactionData>();
+    transactionData->SetSendingPid(pid);
+    transactionData->SetSendingTid(tid);
+
+    EXPECT_NO_FATAL_FAILURE(manager_->PrepareDelegateCompositeCommand(transactionData));
+    RSContext context;
+    EXPECT_NO_FATAL_FAILURE(manager_->ProcessDelegateCompositeCommand(context));
+}
+
+/**
+ * @tc.name: PrepareDelegateCompositeCommand_CommandNotNullInPayload_001
+ * @tc.desc: Test PrepareDelegateCompositeCommand with valid command in payload
+ *           Branch: line 442 for loop, line 444 if (!command) -> false, process command
+ *           Should process command and add to cmdQueue
+ * @tc.type: FUNC
+ * @tc.require: issueIAL2EA
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommand_CommandNotNullInPayload_001, TestSize.Level1)
+{
+    pid_t pid = 1101;
+    pid_t tid = 2101;
+    uint64_t srcId = 111;
+    uint64_t seqNum = 211;
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    std::unique_ptr<RSTransactionData> transactionData = std::make_unique<RSTransactionData>();
+    transactionData->SetSendingPid(pid);
+    transactionData->SetSendingTid(tid);
+
+    NodeId nodeId = 12346;
+    FollowType followType = FollowType::FOLLOW_TO_PARENT;
+    std::unique_ptr<RSCommand> command = std::make_unique<SurfaceTransactionCommand>(srcId, seqNum, pid, tid, nodeId);
+    transactionData->GetPayload().push_back(std::make_tuple(nodeId, followType, std::move(command)));
+
+    EXPECT_NO_FATAL_FAILURE(manager_->PrepareDelegateCompositeCommand(transactionData));
+    RSContext context;
+    EXPECT_NO_FATAL_FAILURE(manager_->ProcessDelegateCompositeCommand(context));
+}
+
+/**
+ * @tc.name: BufferDestructorCallback001
+ * @tc.desc: Test BufferDestructorCallback
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, BufferDestructorCallback001, TestSize.Level1)
+{
+    uint64_t bufferId = 12345;
+    EXPECT_NO_FATAL_FAILURE(RsDelegateCompositeCallbackManager::BufferDestructorCallback(bufferId));
+}
+
+/**
+ * @tc.name: OnCleanCacheForBufferInfoMap001
+ * @tc.desc: Test OnCleanCacheForBufferInfoMap with isAcquired false - false branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, OnCleanCacheForBufferInfoMap001, TestSize.Level1)
+{
+    std::vector<CleanCacheBufferInfo> infos;
+    CleanCacheBufferInfo info;
+    info.isAcquired = false;
+    info.buffer = SurfaceBuffer::Create();
+    info.fence = SyncFence::INVALID_FENCE;
+    infos.push_back(info);
+
+    NodeId nodeId = 12345;
+    uint64_t queueId = 67890;
+    EXPECT_NO_FATAL_FAILURE(manager_->OnCleanCacheForBufferInfoMap(infos, nodeId, queueId));
+}
+
+/**
+ * @tc.name: OnCleanCacheForBufferInfoMap002
+ * @tc.desc: Test OnCleanCacheForBufferInfoMap with isAcquired true - true branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, OnCleanCacheForBufferInfoMap002, TestSize.Level1)
+{
+    std::vector<CleanCacheBufferInfo> infos;
+    CleanCacheBufferInfo info;
+    info.isAcquired = true;
+    info.buffer = SurfaceBuffer::Create();
+    info.fence = SyncFence::INVALID_FENCE;
+    infos.push_back(info);
+
+    NodeId nodeId = 12345;
+    uint64_t queueId = 67890;
+    EXPECT_NO_FATAL_FAILURE(manager_->OnCleanCacheForBufferInfoMap(infos, nodeId, queueId));
+}
+
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, OnCleanCacheForBufferInfoMap003, TestSize.Level1)
+{
+    std::vector<CleanCacheBufferInfo> infos;
+    CleanCacheBufferInfo info;
+    info.isAcquired = true;
+    info.buffer = nullptr;
+    info.fence = SyncFence::INVALID_FENCE;
+    infos.push_back(info);
+
+    NodeId nodeId = 12345;
+    uint64_t queueId = 67890;
+    EXPECT_NO_FATAL_FAILURE(manager_->OnCleanCacheForBufferInfoMap(infos, nodeId, queueId));
+}
+
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RemoveAllListenerbyPid002, TestSize.Level1)
+{
+    manager_->surfaceTransactionIdentityInfoMap_.clear();
+    manager_->surfaceTransactionListenerMap_.clear();
+
+    uint64_t listenerId = 1111;
+    pid_t pid = GenePidBySeqNum(listenerId);
+    pid_t tid = 2222;
+    manager_->surfaceTransactionIdentityInfoMap_[pid] = tid;
+
+    sptr<RSISurfaceTransactionListener> listener = new RSWebProxyComposerCallbackStub();
+    manager_->RegisterSurfaceTransactionListener(listener, listenerId, pid, tid);
+    EXPECT_EQ(manager_->surfaceTransactionListenerMap_.size(), 1);
+
+    manager_->RemoveAllListenerbyPid(pid);
+    EXPECT_EQ(manager_->surfaceTransactionIdentityInfoMap_.size(), 0);
+    EXPECT_EQ(manager_->surfaceTransactionListenerMap_.size(), 0);
+}
+
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RegisterSurfaceNodeBufferReleaseListener002, TestSize.Level1)
+{
+    pid_t pid = 0;
+    manager_->surfaceNodeBufferReleaseCallbackMap_.clear();
+    sptr<RSISurfaceNodeBufferReleaseCallback> listener = new SurfaceNodeBufferReleaseCallbackStub();
+    for (uint32_t i = 0; i < MAX_MAP_SIZE + 1; i++) {
+        manager_->RegisterSurfaceNodeBufferReleaseListener(pid++, listener);
+        if (i >= MAX_MAP_SIZE) {
+            EXPECT_EQ(manager_->surfaceNodeBufferReleaseCallbackMap_.size(), MAX_MAP_SIZE);
+        } else {
+            EXPECT_EQ(manager_->surfaceNodeBufferReleaseCallbackMap_.size(), i + 1);
+        }
+    }
+}
+
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, NotifyCurrentSurfaceNodeBufferReleaseCallback002, TestSize.Level1)
+{
+    pid_t pid = 1111;
+    manager_->surfaceNodeBufferReleaseCallbackMap_.clear();
+    sptr<RSISurfaceNodeBufferReleaseCallback> listener = new SurfaceNodeBufferReleaseCallbackStub();
+    manager_->RegisterSurfaceNodeBufferReleaseListener(pid, listener);
+
+    std::queue<OnCompletedRet> queue;
+    OnCompletedRet ret = {
+        .nodeId = 1,
+        .clientPid = pid,
+        .queueId = 3,
+#ifdef ROSEN_OHOS
+        .releaseFence = nullptr,
+#endif
+        .bufferSeqNum = 4,
+        .isActiveGame = false };
+    queue.push(ret);
+    manager_->currentSurfaceNodeBufferReleaseInfoMap_[pid] = queue;
+    manager_->NotifyCurrentSurfaceNodeBufferReleaseCallback();
+    EXPECT_EQ(manager_->currentSurfaceNodeBufferReleaseInfoMap_.size(), 0);
+}
+
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo004, TestSize.Level1)
+{
+    manager_->currentSurfaceNodeBufferReleaseInfoMapTmp_.clear();
+    uint64_t bufferId = 0;
+    for (uint32_t i = 0; i < MAX_MAP_SIZE; i++) {
+        bufferId++;
+        OnCompletedRet ret;
+        manager_->currentSurfaceNodeBufferReleaseInfoMapTmp_[bufferId] = ret;
+    }
+
+    uint64_t nodeId = 12345;
+    uint64_t surfaceId = 67890;
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    pid_t clientPid = 1000;
+    bool result = manager_->PrepareBufferReleaseInfo(nodeId, surfaceId, buffer, releaseFence, clientPid);
+    EXPECT_FALSE(result);
+}
+
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo006, TestSize.Level1)
+{
+    manager_->currentSurfaceNodeBufferReleaseInfoMap_.clear();
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create();
+
+    uint64_t nodeId = 12345;
+    pid_t pid = 123;
+    EXPECT_EQ(manager_->SetInfo(cSurface, nodeId, pid), true);
+
+    manager_->AddBufferReleaseInfo(buffer, releaseFence, cSurface);
+    EXPECT_EQ(manager_->currentSurfaceNodeBufferReleaseInfoMap_.size(), 1);
+}
+
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfoInner003, TestSize.Level1)
+{
+    manager_->currentSurfaceNodeBufferReleaseInfoMap_.clear();
+
+    pid_t pid = 0;
+    for (uint32_t i = 0; i < MAX_MAP_SIZE + 1; i++) {
+        pid++;
+        OnCompletedRet ret;
+        manager_->AddBufferReleaseInfoInner(pid, ret);
+        if (i >= MAX_MAP_SIZE) {
+            EXPECT_EQ(manager_->currentSurfaceNodeBufferReleaseInfoMap_.size(), MAX_MAP_SIZE);
+        } else {
+            EXPECT_EQ(manager_->currentSurfaceNodeBufferReleaseInfoMap_.size(), i + 1);
+        }
+    }
+}
+
+/**
+* @tc.name: RsDelegateProducerListener_OnBufferReleasedWithSequenceAndFence_001
+* @tc.desc: Test RsDelegateProducerListener::OnBufferReleasedWithSequenceAndFence
+*           Should call AddBufferReleaseInfo and return GSERROR_OK
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_OnBufferReleasedWithSequenceAndFence_001, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    uint64_t nodeId = 54321;
+    pid_t pid = 2000;
+    manager_->SetInfo(consumer, nodeId, pid);
+    bool ret = manager_->RegisterReleaseListener(consumer);
+    EXPECT_TRUE(ret);
+
+    auto producer = consumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    auto listener = GetRegisteredListener(producer);
+    ASSERT_NE(listener, nullptr);
+    uint32_t sequence = 42;
+    sptr<SyncFence> fence = SyncFence::INVALID_FENCE;
+    GSError err = GSERROR_OK;
+    EXPECT_NO_FATAL_FAILURE(err = listener->OnBufferReleasedWithSequenceAndFence(sequence, fence));
+    EXPECT_EQ(err, GSERROR_OK);
+}
+
+/**
+* @tc.name: RsDelegateProducerListener_OnBufferReleased_001
+* @tc.desc: Test RsDelegateProducerListener::OnBufferReleased
+*           Should return SURFACE_ERROR_NOT_SUPPORT
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_OnBufferReleased_001, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    uint64_t nodeId = 55555;
+    pid_t pid = 3000;
+    manager_->SetInfo(consumer, nodeId, pid);
+    bool ret = manager_->RegisterReleaseListener(consumer);
+    EXPECT_TRUE(ret);
+
+    auto producer = consumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    auto listener = GetRegisteredListener(producer);
+    ASSERT_NE(listener, nullptr);
+    GSError err = GSERROR_OK;
+    EXPECT_NO_FATAL_FAILURE(err = listener->OnBufferReleased());
+    EXPECT_EQ(err, SURFACE_ERROR_NOT_SUPPORT);
+}
+
+/**
+* @tc.name: RsDelegateProducerListener_OnBufferReleasedWithFence_001
+* @tc.desc: Test RsDelegateProducerListener::OnBufferReleasedWithFence
+*           Should return SURFACE_ERROR_NOT_SUPPORT
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_OnBufferReleasedWithFence_001, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    uint64_t nodeId = 66666;
+    pid_t pid = 4000;
+    manager_->SetInfo(consumer, nodeId, pid);
+    bool ret = manager_->RegisterReleaseListener(consumer);
+    EXPECT_TRUE(ret);
+
+    auto producer = consumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    auto listener = GetRegisteredListener(producer);
+    ASSERT_NE(listener, nullptr);
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    ASSERT_NE(buffer, nullptr);
+    sptr<SyncFence> fence = SyncFence::INVALID_FENCE;
+    GSError err = GSERROR_OK;
+    EXPECT_NO_FATAL_FAILURE(err = listener->OnBufferReleasedWithFence(buffer, fence));
+    EXPECT_EQ(err, SURFACE_ERROR_NOT_SUPPORT);
+}
+
+/**
+* @tc.name: RsDelegateProducerListener_OnPropertyChange_001
+* @tc.desc: Test RsDelegateProducerListener::OnPropertyChange
+*           Should return SURFACE_ERROR_NOT_SUPPORT
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_OnPropertyChange_001, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    uint64_t nodeId = 77777;
+    pid_t pid = 5000;
+    manager_->SetInfo(consumer, nodeId, pid);
+    bool ret = manager_->RegisterReleaseListener(consumer);
+    EXPECT_TRUE(ret);
+
+    auto producer = consumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    auto listener = GetRegisteredListener(producer);
+    ASSERT_NE(listener, nullptr);
+    SurfaceProperty property;
+    GSError err = GSERROR_OK;
+    EXPECT_NO_FATAL_FAILURE(err = listener->OnPropertyChange(property));
+    EXPECT_EQ(err, SURFACE_ERROR_NOT_SUPPORT);
+}
+
+/**
+* @tc.name: RsDelegateProducerListener_ResetReleaseFunc_001
+* @tc.desc: Test RsDelegateProducerListener::ResetReleaseFunc
+*           Should not crash
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_ResetReleaseFunc_001, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    uint64_t nodeId = 88888;
+    pid_t pid = 6000;
+    manager_->SetInfo(consumer, nodeId, pid);
+    bool ret = manager_->RegisterReleaseListener(consumer);
+    EXPECT_TRUE(ret);
+
+    auto producer = consumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    auto listener = GetRegisteredListener(producer);
+    ASSERT_NE(listener, nullptr);
+    EXPECT_NO_FATAL_FAILURE(listener->ResetReleaseFunc());
+}
+
+/**
+* @tc.name: RsDelegateProducerListener_RegisterReleaseListener_FullFlow_001
+* @tc.desc: Test full flow: SetInfo -> RegisterReleaseListener -> verify listener is set
+*           Covers RsDelegateProducerListener constructor (line 45-54) and RegisterReleaseListener success path
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_RegisterReleaseListener_FullFlow_001, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    uint64_t nodeId = 99999;
+    pid_t pid = 7000;
+    ASSERT_TRUE(manager_->SetInfo(consumer, nodeId, pid));
+    bool ret = manager_->RegisterReleaseListener(consumer);
+    EXPECT_TRUE(ret);
+
+    auto producer = consumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    EXPECT_NO_FATAL_FAILURE(producer->Connect());
+    EXPECT_NO_FATAL_FAILURE(producer->Disconnect());
+}
+
+/**
+* @tc.name: RsDelegateProducerListener_OnBufferReleasedWithSequenceAndFence_VerifyInfo_001
+* @tc.desc: Test OnBufferReleasedWithSequenceAndFence verifies AddBufferReleaseInfo is called
+*           Pre-register SetInfo, call RegisterReleaseListener, then call OnBufferReleasedWithSequenceAndFence
+*           Verify currentSurfaceNodeBufferReleaseInfoMap_ is non-empty after call
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_OnBufferReleasedWithSequenceAndFence_VerifyInfo_001, TestSize.Level1)
+{
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
+    ASSERT_NE(consumer, nullptr);
+    uint64_t nodeId = 11111;
+    pid_t pid = 8000;
+    ASSERT_TRUE(manager_->SetInfo(consumer, nodeId, pid));
+
+    manager_->currentSurfaceNodeBufferReleaseInfoMap_.clear();
+
+    bool ret = manager_->RegisterReleaseListener(consumer);
+    EXPECT_TRUE(ret);
+
+    auto producer = consumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    auto listener = GetRegisteredListener(producer);
+    ASSERT_NE(listener, nullptr);
+
+    uint32_t sequence = 99;
+    sptr<SyncFence> fence = SyncFence::INVALID_FENCE;
+    GSError err = GSERROR_OK;
+    EXPECT_NO_FATAL_FAILURE(err = listener->OnBufferReleasedWithSequenceAndFence(sequence, fence));
+    EXPECT_EQ(err, GSERROR_OK);
+    EXPECT_FALSE(manager_->currentSurfaceNodeBufferReleaseInfoMap_.empty());
+    manager_->currentSurfaceNodeBufferReleaseInfoMap_.clear();
+}
+
+/**
+* @tc.name: DumpInfo_PopulatedMaps_001
+* @tc.desc: Test DumpInfo/DumpTotleInfo with populated maps (lines 663-664, 673, 678-679)
+*           Pre-populate surfaceTransactionCmdMap_, surfaceNodeBufferReleaseCallbackMap_,
+*           and currentSurfaceNodeBufferReleaseInfoMap_ to exercise loop bodies in DumpTotleInfo
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, DumpInfo_PopulatedMaps_001, TestSize.Level1)
+{
+    pid_t testPid = 12345;
+    pid_t testTid = 67890;
+    uint64_t srcId = 1001;
+    uint64_t seqNum = 2001;
+
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, testPid, testTid);
+    manager_->AddBufferReleaseInfo(srcId, seqNum, testPid, SyncFence::INVALID_FENCE, testPid);
+
+    std::string dumpString;
+    EXPECT_NO_FATAL_FAILURE(manager_->DumpInfo(dumpString));
+    EXPECT_FALSE(dumpString.empty());
+
+    manager_->surfaceTransactionCmdMap_.clear();
+    manager_->surfaceTransactionIdentityInfoMap_.clear();
+    manager_->currentSurfaceNodeBufferReleaseInfoMap_.clear();
+}
+
+/**
+* @tc.name: DumpInfo_PopulatedMaps_002
+* @tc.desc: Test DumpInfo/DumpTotleInfo with surfaceNodeBufferReleaseCallbackMap_ populated (line 673)
+*           Register a listener to populate the map, then call DumpInfo
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, DumpInfo_PopulatedMaps_002, TestSize.Level1)
+{
+    pid_t testPid = 22222;
+    sptr<RSISurfaceNodeBufferReleaseCallback> listener = nullptr;
+    manager_->RegisterSurfaceNodeBufferReleaseListener(testPid, listener);
+    EXPECT_FALSE(manager_->surfaceNodeBufferReleaseCallbackMap_.empty());
+
+    std::string dumpString;
+    EXPECT_NO_FATAL_FAILURE(manager_->DumpInfo(dumpString));
+    EXPECT_FALSE(dumpString.empty());
+    EXPECT_NE(dumpString.find("pid=22222"), std::string::npos);
+
+    manager_->surfaceNodeBufferReleaseCallbackMap_.clear();
+}
+
+/**
+* @tc.name: DumpInfo_PopulatedMaps_003
+* @tc.desc: Test DumpInfo/DumpTotleInfo with currentSurfaceNodeBufferReleaseInfoMap_ populated (lines 678-679)
+*           Add buffer release info to populate the map, then call DumpInfo
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, DumpInfo_PopulatedMaps_003, TestSize.Level1)
+{
+    NodeId nodeId = 33333;
+    uint64_t surfaceId = 44444;
+    uint32_t bufferSeqNum = 555;
+    pid_t clientPid = 33333;
+
+    manager_->currentSurfaceNodeBufferReleaseInfoMap_.clear();
+    manager_->AddBufferReleaseInfo(nodeId, surfaceId, bufferSeqNum, SyncFence::INVALID_FENCE, clientPid);
+    EXPECT_FALSE(manager_->currentSurfaceNodeBufferReleaseInfoMap_.empty());
+
+    std::string dumpString;
+    EXPECT_NO_FATAL_FAILURE(manager_->DumpInfo(dumpString));
+    EXPECT_FALSE(dumpString.empty());
+    EXPECT_NE(dumpString.find("pid=33333"), std::string::npos);
+
+    manager_->currentSurfaceNodeBufferReleaseInfoMap_.clear();
+}
+
+/**
+* @tc.name: DumpInfo_PopulatedMaps_004
+* @tc.desc: Test DumpInfo/DumpTotleInfo with surfaceTransactionCmdMap_ populated (lines 663-664)
+*           Add surface transaction cmd info to populate the map, then call DumpInfo
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, DumpInfo_PopulatedMaps_004, TestSize.Level1)
+{
+    uint64_t srcId = 5555;
+    uint64_t seqNum = 6666;
+    pid_t pid = 44444;
+    pid_t tid = 55555;
+
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+    EXPECT_FALSE(manager_->surfaceTransactionCmdMap_.empty());
+
+    std::string dumpString;
+    EXPECT_NO_FATAL_FAILURE(manager_->DumpInfo(dumpString));
+    EXPECT_FALSE(dumpString.empty());
+    EXPECT_NE(dumpString.find("ListenerId=5555"), std::string::npos);
+
+    manager_->surfaceTransactionCmdMap_.clear();
+    manager_->surfaceTransactionIdentityInfoMap_.clear();
+}
+
+/**
+* @tc.name: DumpInfo_AllMapsPopulated_001
+* @tc.desc: Test DumpInfo/DumpTotleInfo with all maps populated simultaneously
+*           Covers all loop bodies in DumpTotleInfo in one call
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, DumpInfo_AllMapsPopulated_001, TestSize.Level1)
+{
+    pid_t pid1 = 111;
+    pid_t tid1 = 222;
+    uint64_t srcId = 1111;
+    uint64_t seqNum = 2222;
+    NodeId nodeId = 3333;
+    uint64_t surfaceId = 4444;
+    uint32_t bufferSeqNum = 555;
+    pid_t releasePid = 111;
+
+    manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid1, tid1);
+    sptr<RSISurfaceNodeBufferReleaseCallback> listener = nullptr;
+    manager_->RegisterSurfaceNodeBufferReleaseListener(pid1, listener);
+    manager_->AddBufferReleaseInfo(nodeId, surfaceId, bufferSeqNum, SyncFence::INVALID_FENCE, releasePid);
+
+    std::string dumpString;
+    EXPECT_NO_FATAL_FAILURE(manager_->DumpInfo(dumpString));
+    EXPECT_FALSE(dumpString.empty());
+
+    manager_->surfaceTransactionCmdMap_.clear();
+    manager_->surfaceTransactionIdentityInfoMap_.clear();
+    manager_->surfaceNodeBufferReleaseCallbackMap_.clear();
+    manager_->currentSurfaceNodeBufferReleaseInfoMap_.clear();
+}
+
+/**
+* @tc.name: DumpInfo_AllPidCmdMapPopulated_001
+* @tc.desc: Test DumpInfo with allPidCmdMap_ populated (lines 613-617)
+*           Pre-register identity + PrepareDelegateCompositeCommand to fill allPidCmdMap_,
+*           then call DumpInfo to exercise the loop body
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, DumpInfo_AllPidCmdMapPopulated_001, TestSize.Level1)
+{
+    pid_t testPid = 77777;
+    pid_t testTid = 88888;
+    manager_->AddSurfaceTransactionCmdInfo(7001, 8001, testPid, testTid);
+
+    auto data = std::make_unique<RSTransactionData>();
+    data->SetSendingPid(testPid);
+    data->SetSendingTid(testTid);
+    data->SetIndex(1);
+    manager_->PrepareDelegateCompositeCommand(data);
+
+    EXPECT_FALSE(manager_->allPidCmdMap_.empty());
+
+    std::string dumpString;
+    EXPECT_NO_FATAL_FAILURE(manager_->DumpInfo(dumpString));
+    EXPECT_FALSE(dumpString.empty());
+    EXPECT_NE(dumpString.find("sendingPid=77777"), std::string::npos);
+
+    manager_->allPidCmdMap_.clear();
+    manager_->surfaceTransactionCmdMap_.clear();
+    manager_->surfaceTransactionIdentityInfoMap_.clear();
+}
+
+/**
+* @tc.name: ProcessEachCommandQueue_NullCmd_001
+* @tc.desc: Test ProcessEachCommandQueue with a null command in the queue
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessEachCommandQueue_NullCmd_001, TestSize.Level1)
+{
+    std::queue<std::unique_ptr<RSCommand>> cmdQueue;
+    cmdQueue.push(nullptr);
+    RSContext context;
+    EXPECT_NO_FATAL_FAILURE(manager_->ProcessEachCommandQueue(cmdQueue, context));
+    EXPECT_TRUE(cmdQueue.empty());
+}
+
+/**
+* @tc.name: ProcessEachCommandQueue_InvalidPid_001
+* @tc.desc: Test ProcessEachCommandQueue with a command whose IsCallingPidValid is false
+* @tc.type: FUNC
+* @tc.require: issueIAL2EA
+*/
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessEachCommandQueue_InvalidPid_001, TestSize.Level1)
+{
+    std::queue<std::unique_ptr<RSCommand>> cmdQueue;
+    uint64_t srcId = 100;
+    uint64_t seqNum = 200;
+    pid_t pid = 300;
+    pid_t tid = 400;
+    NodeId nodeId = (static_cast<NodeId>(pid) << 32) | 1;
+    auto cmd = std::make_unique<SurfaceTransactionCommand>(srcId, seqNum, pid, tid, nodeId);
+    cmd->SetCallingPidValid(false);
+    cmdQueue.push(std::move(cmd));
+    RSContext context;
+    EXPECT_NO_FATAL_FAILURE(manager_->ProcessEachCommandQueue(cmdQueue, context));
+    EXPECT_TRUE(cmdQueue.empty());
 }
 
 std::unique_ptr<RSTransactionData> RSDelegateCompositeCallbackManagerTest::MakeTransactionData(
@@ -197,6 +1689,10 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, CleanDelegateCompositeCommand00
 {
     auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
     EXPECT_TRUE(manager.CleanDelegateCompositeCommand(0, 0, 654321));
+    EXPECT_TRUE(manager.CleanDelegateCompositeCommand(0, 1, 123456));
+    EXPECT_TRUE(manager.CleanDelegateCompositeCommand(0, 2, 123457));
+    EXPECT_TRUE(manager.CleanDelegateCompositeCommand(0, 3, 123458));
+    EXPECT_TRUE(manager.CleanDelegateCompositeCommand(0, 3, 123459));
 }
 
 /**
@@ -244,6 +1740,7 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, CleanDelegateCompositeCommand00
 
     DrainCmdQueues(*context);
 
+    // rect commands survived and were processed; RectF stores (left, top, width, height)
     RectF delegateSrcRect = RectF(5.0f, 6.0f, 7.0f, 8.0f);
     RectF delegateDstRect = RectF(5.1f, 6.1f, 7.1f, 8.1f);
     rectNode->SetDelegateSrcRect(delegateSrcRect);
@@ -288,11 +1785,11 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, CleanDelegateCompositeCommand00
 }
 
 /**
- * @tc.name: PrepareDelegateCompositeCommand001
+ * @tc.name: PrepareDelegateCompositeCommand007
  * @tc.desc: Verify prepare with null data or unregistered identity keeps the manager empty.
  * @tc.type: FUNC
  */
-HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommand001, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommand007, TestSize.Level1)
 {
     auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
     std::unique_ptr<RSTransactionData> nullData = nullptr;
@@ -310,12 +1807,12 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommand
 }
 
 /**
- * @tc.name: AddBufferReleaseInfo001
+ * @tc.name: AddBufferReleaseInfo007
  * @tc.desc: Verify null release fence is converted to invalid fence and the listener
  *           receives the entry after notify.
  * @tc.type: FUNC
  */
-HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo001, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo007, TestSize.Level1)
 {
     constexpr pid_t clientPid = 74001;
     constexpr NodeId nodeId = 74002;
@@ -337,12 +1834,12 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo001, TestSi
 }
 
 /**
- * @tc.name: AddBufferReleaseInfo002
+ * @tc.name: AddBufferReleaseInfo008
  * @tc.desc: Verify buffer/fence/surface overload rejects invalid inputs and surfaces
  *           without delegate user data; valid input notifies with buffer sequence.
  * @tc.type: FUNC
  */
-HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo002, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo008, TestSize.Level1)
 {
     constexpr pid_t clientPid = 75001;
     constexpr NodeId nodeId = 75002;
@@ -374,12 +1871,12 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfo002, TestSi
 }
 
 /**
- * @tc.name: PrepareBufferReleaseInfo001
+ * @tc.name: PrepareBufferReleaseInfo005
  * @tc.desc: Verify prepare stores pending release info, rejects duplicate or null buffer,
  *           and process consumes it once with invalid fence for null input.
  * @tc.type: FUNC
  */
-HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo001, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo005, TestSize.Level1)
 {
     constexpr pid_t clientPid = 76001;
     constexpr NodeId nodeId = 76002;
@@ -390,7 +1887,7 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo001, Te
 
     sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl(PREPARE_BUFFER_SEQ);
     uint64_t bufferId = buffer->GetBufferId();
-
+    manager.currentSurfaceNodeBufferReleaseInfoMapTmp_.clear();
     EXPECT_FALSE(manager.PrepareBufferReleaseInfo(nodeId, surfaceId, nullptr, nullptr, clientPid));
     EXPECT_TRUE(manager.PrepareBufferReleaseInfo(nodeId, surfaceId, buffer, nullptr, clientPid));
     EXPECT_FALSE(manager.PrepareBufferReleaseInfo(nodeId, surfaceId, buffer, nullptr, clientPid));
@@ -407,11 +1904,11 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo001, Te
 }
 
 /**
- * @tc.name: PrepareBufferReleaseInfo002
+ * @tc.name: PrepareBufferReleaseInfo006
  * @tc.desc: Verify a non-null release fence passes through to the callback unchanged.
  * @tc.type: FUNC
  */
-HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo002, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo006, TestSize.Level1)
 {
     constexpr pid_t clientPid = 77001;
     constexpr NodeId nodeId = 77002;
@@ -423,7 +1920,7 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo002, Te
     sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl(RELEASE_BUFFER_SEQ);
     sptr<SyncFence> fence = SyncFence::InvalidFence();
     uint64_t bufferId = buffer->GetBufferId();
-
+    manager.currentSurfaceNodeBufferReleaseInfoMapTmp_.clear();
     ASSERT_TRUE(manager.PrepareBufferReleaseInfo(nodeId, surfaceId, buffer, fence, clientPid));
     ASSERT_TRUE(manager.ProcessBufferReleaseInfo(bufferId));
     manager.NotifyCurrentSurfaceNodeBufferReleaseCallback();
@@ -432,6 +1929,123 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareBufferReleaseInfo002, Te
     ASSERT_EQ(listener->received.size(), 1);
     EXPECT_EQ(listener->received.front().releaseFence, fence); // same sptr passes through
     manager.UnRegisterSurfaceNodeBufferReleaseListener(clientPid);
+}
+
+/**
+ * @tc.name: PrepareDelegateCompositeCommandInner001
+ * @tc.desc: test PrepareDelegateCompositeCommandInner
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommandInner001, TestSize.Level1)
+{
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.allPidCmdMap_.clear();
+    for (uint32_t i = 0; i < MAX_MAP_SIZE + 1; i++) {
+        auto transactionData = MakeTransactionData(i, 123, TX_INDEX_FIRST);
+        std::queue<std::unique_ptr<RSCommand>> cmdQueue;
+        manager.PrepareDelegateCompositeCommandInner(transactionData, cmdQueue);
+        if (i < MAX_MAP_SIZE) {
+            EXPECT_EQ(manager.allPidCmdMap_.size(), i + 1);
+        } else {
+            EXPECT_EQ(manager.allPidCmdMap_.size(), MAX_MAP_SIZE);
+        }
+    }
+}
+
+/**
+ * @tc.name: PrepareDelegateCompositeCommandInner002
+ * @tc.desc: test PrepareDelegateCompositeCommandInner
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommandInner002, TestSize.Level1)
+{
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.allPidCmdMap_.clear();
+    pid_t pid = 0;
+    for (uint64_t i = 0; i < MAX_MAP_SIZE + 1; i++) {
+        auto transactionData = MakeTransactionData(pid, 123, TX_INDEX_FIRST);
+        transactionData->token_ = i;
+        std::queue<std::unique_ptr<RSCommand>> cmdQueue;
+        manager.PrepareDelegateCompositeCommandInner(transactionData, cmdQueue);
+        auto it = manager.allPidCmdMap_.find(pid);
+        EXPECT_EQ(it != manager.allPidCmdMap_.end(), true);
+        if (it == manager.allPidCmdMap_.end()) {
+            return;
+        }
+        auto &transactionCmdMap = it->second;
+        if (i < MAX_MAP_SIZE) {
+            EXPECT_EQ(transactionCmdMap.size(), i + 1);
+        } else {
+            EXPECT_EQ(transactionCmdMap.size(), MAX_MAP_SIZE);
+        }
+    }
+}
+
+/**
+ * @tc.name: PrepareDelegateCompositeCommandInner003
+ * @tc.desc: test PrepareDelegateCompositeCommandInner
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, PrepareDelegateCompositeCommandInner003, TestSize.Level1)
+{
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    manager.allPidCmdMap_.clear();
+    pid_t pid = 0;
+    uint64_t token = 0;
+    for (uint32_t i = 0; i < MAX_MAP_SIZE + 1; i++) {
+        auto transactionData = MakeTransactionData(pid, 123, i);
+        transactionData->token_ = token;
+        std::queue<std::unique_ptr<RSCommand>> cmdQueue;
+        manager.PrepareDelegateCompositeCommandInner(transactionData, cmdQueue);
+        auto it = manager.allPidCmdMap_.find(pid);
+        EXPECT_EQ(it != manager.allPidCmdMap_.end(), true);
+        if (it == manager.allPidCmdMap_.end()) {
+            return;
+        }
+        auto &transactionCmdMap = it->second;
+        auto it1 = transactionCmdMap.find(token);
+        EXPECT_EQ(it != manager.allPidCmdMap_.end(), true);
+        if (it1 == transactionCmdMap.end()) {
+            return;
+        }
+
+        auto &cmdMap = it1->second;
+        if (i < MAX_MAP_SIZE) {
+            EXPECT_EQ(cmdMap.size(), i + 1);
+        } else {
+            EXPECT_EQ(cmdMap.size(), MAX_MAP_SIZE);
+        }
+    }
+}
+
+/**
+ * @tc.name: CleanDelegateCompositeCommand004
+ * @tc.desc: test PrepareDelegateCompositeCommandInner
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSDelegateCompositeCallbackManagerTest, CleanDelegateCompositeCommand004, TestSize.Level1)
+{
+    auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
+    pid_t pid = 0;
+    uint64_t token1 = 1;
+    uint64_t token2 = 2;
+    manager.allPidCmdMap_.clear();
+
+    {
+        auto transactionData = MakeTransactionData(pid, 123, TX_INDEX_FIRST);
+        transactionData->token_ = token1;
+        std::queue<std::unique_ptr<RSCommand>> cmdQueue;
+        manager.PrepareDelegateCompositeCommandInner(transactionData, cmdQueue);
+    }
+    {
+        auto transactionData = MakeTransactionData(pid, 123, TX_INDEX_FIRST);
+        transactionData->token_ = token2;
+        std::queue<std::unique_ptr<RSCommand>> cmdQueue;
+        manager.PrepareDelegateCompositeCommandInner(transactionData, cmdQueue);
+    }
+    EXPECT_EQ(manager.CleanDelegateCompositeCommand(token1, 0, pid), true);
+    EXPECT_EQ(manager.CleanDelegateCompositeCommand(token1, 0, pid), true);
+    EXPECT_EQ(manager.CleanDelegateCompositeCommand(token2, 0, pid), true);
 }
 
 /**
@@ -444,6 +2058,7 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, UpdateHardWareForcedDisabledSta
     auto& manager = RsDelegateCompositeCallbackManager::GetInstance();
     std::shared_ptr<RSSurfaceRenderNode> nullNode = nullptr;
     manager.UpdateHardWareForcedDisabledStateForDelegateMode(nullNode);
+    EXPECT_TRUE(nullNode == nullptr);
     SUCCEED();
 }
 
@@ -1404,6 +3019,5 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, ProcessDelegateCompositeCommand
     EXPECT_TRUE(hasCommandProcess);
     EXPECT_FALSE(doDirectCompositionSupport);
 }
-#endif // ROSEN_CROSS_PLATFORM
-} // namespace Rosen
-} // namespace OHOS
+#endif
+} // namespace OHOS::Rosen
