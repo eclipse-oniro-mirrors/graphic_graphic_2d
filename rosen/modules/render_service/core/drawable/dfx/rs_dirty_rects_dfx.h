@@ -82,7 +82,6 @@ private:
 #ifdef RS_ENABLE_GPU
     void DrawSurfaceOpaqueRegionForDFX(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams) const;
 #endif
-    void DrawHwcRegionForDFX(RSPaintFilterCanvas& canvas) const;
 
     void DrawCurrentFrameVisibleDirtyRects(RSPaintFilterCanvas& canvas) const;
     void DrawDirtyRegionForDFX(RSPaintFilterCanvas& canvas, std::vector<RectI> dirtyRects) const;
