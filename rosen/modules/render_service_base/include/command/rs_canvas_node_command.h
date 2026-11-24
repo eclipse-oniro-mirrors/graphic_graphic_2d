@@ -35,7 +35,6 @@ enum RSCanvasNodeCommandType : uint16_t {
     CANVAS_NODE_SET_HDR_PRESENT = 3,
     CANVAS_NODE_SET_LINKED_ROOTNODE = 4, // Deprecated
     CANVAS_NODE_SET_COLOR_GAMUT = 5,
-    CANVAS_NODE_SET_PIXELMAP = 6,
 };
 
 namespace Drawing {
@@ -72,9 +71,6 @@ ADD_COMMAND(RSCanvasNodeSetHDRPresent,
 ADD_COMMAND(RSCanvasNodeSetColorGamut,
     ARG(PERMISSION_APP, NodeIdPosTag<0>, CANVAS_NODE, CANVAS_NODE_SET_COLOR_GAMUT,
         RSCanvasNodeCommandHelper::SetColorGamut, NodeId, uint32_t))
-ADD_COMMAND(RSCanvasNodeSetPixelmap,
-    ARG(PERMISSION_APP, NodeIdPosTag<0>, CANVAS_NODE, CANVAS_NODE_SET_PIXELMAP,
-        RSCanvasNodeCommandHelper::SetPixelmap, NodeId, std::shared_ptr<Media::PixelMap>))
 
 } // namespace Rosen
 } // namespace OHOS

@@ -274,15 +274,5 @@ bool RSCanvasNode::FlushCachedModifiers()
     }
     return flushed;
 }
-
-void RSCanvasNode::SetPixelmap(const std::shared_ptr<Media::PixelMap>& pixelMap)
-{
-    if (!pixelMap) {
-        return;
-    }
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSCanvasNodeSetPixelmap>(GetId(), pixelMap);
-    AddCommand(command, true);
-}
 } // namespace Rosen
 } // namespace OHOS
