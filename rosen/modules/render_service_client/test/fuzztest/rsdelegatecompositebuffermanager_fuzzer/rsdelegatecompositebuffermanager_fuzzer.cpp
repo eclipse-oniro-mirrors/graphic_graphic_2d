@@ -131,6 +131,11 @@ bool DoSomethingInterestingWithMyAPI(FuzzedDataProvider& fdp, uint8_t tarPos)
     ReleaseBufferFuzzTest(fdp, manager);
     CleanBufferFuzzTest(fdp, manager);
     // The selected manager destructs here, invoking the remaining release callbacks with an invalid fd.
+    // Drain the commands queued on the static context, otherwise the transaction
+    // data (holding the buffers) grows across iterations and exhausts memory.
+    if (rsUIContext) {
+        rsUIContext->GetRSTransaction()->FlushImplicitTransaction();
+    }
     return true;
 }
 } // namespace OHOS
