@@ -8278,59 +8278,59 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetApsConfigParams_FilterCacheFram
 
 /**
  * @tc.name: ReleaseGpuMemory_NullAgent
- * @tc.desc: Test ReleaseGpuMemory when renderServiceAgent_ == nullptr, should return without crash
+ * @tc.desc: Test ReleaseGpuMemory when renderProcessManagerAgent_ == nullptr, should return without crash
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NullAgent, TestSize.Level1)
 {
     ASSERT_NE(connectionStub_, nullptr);
-    auto backupAgent = connectionStub_->renderServiceAgent_;
-    connectionStub_->renderServiceAgent_ = nullptr;
+    auto backupAgent = connectionStub_->renderProcessManagerAgent_;
+    connectionStub_->renderProcessManagerAgent_ = nullptr;
 
     EXPECT_NO_FATAL_FAILURE(connectionStub_->ReleaseGpuMemory(1001, GpuMemoryType::MIPMAP_AND_IMAGE_GPU));
 
-    connectionStub_->renderServiceAgent_ = backupAgent;
+    connectionStub_->renderProcessManagerAgent_ = backupAgent;
 }
 
 /**
  * @tc.name: ReleaseGpuMemory_Success
- * @tc.desc: Test ReleaseGpuMemory with valid renderServiceAgent_, should schedule task without crash
+ * @tc.desc: Test ReleaseGpuMemory with valid renderProcessManagerAgent_, should forward without crash
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_Success, TestSize.Level1)
 {
     ASSERT_NE(connectionStub_, nullptr);
-    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+    ASSERT_NE(connectionStub_->renderProcessManagerAgent_, nullptr);
 
     EXPECT_NO_FATAL_FAILURE(connectionStub_->ReleaseGpuMemory(1002, GpuMemoryType::MIPMAP_AND_IMAGE_GPU));
 }
 
 /**
  * @tc.name: ReleaseGpuMemory_UnsupportedType
- * @tc.desc: Test ReleaseGpuMemory with unsupported type (MAX), should log error in switch default
+ * @tc.desc: Test ReleaseGpuMemory with unsupported type (MAX), should forward without crash
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_UnsupportedType, TestSize.Level1)
 {
     ASSERT_NE(connectionStub_, nullptr);
-    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+    ASSERT_NE(connectionStub_->renderProcessManagerAgent_, nullptr);
 
     EXPECT_NO_FATAL_FAILURE(connectionStub_->ReleaseGpuMemory(1003, GpuMemoryType::MAX));
 }
 
 /**
  * @tc.name: ReleaseGpuMemory_NonDdgrBackend
- * @tc.desc: Test ReleaseGpuMemory async branch when GetGpuApiType() != DDGR, should return early
+ * @tc.desc: Test ReleaseGpuMemory forwards to serviceToRenderConns; DDGR check is in PipelineAgent
  * @tc.type: FUNC
  * @tc.require: issue#IBZ6NM
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NonDdgrBackend, TestSize.Level1)
 {
     ASSERT_NE(connectionStub_, nullptr);
-    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+    ASSERT_NE(connectionStub_->renderProcessManagerAgent_, nullptr);
 
     connectionStub_->ReleaseGpuMemory(1004, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
     std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_HANDLER_TIME * 1000));
@@ -8338,14 +8338,14 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NonDdgrBackend, T
 
 /**
  * @tc.name: ReleaseGpuMemory_NodeNotFound
- * @tc.desc: Test ReleaseGpuMemory async branch when surface node not found in node map
+ * @tc.desc: Test ReleaseGpuMemory forwards to serviceToRenderConns; node lookup is in PipelineAgent
  * @tc.type: FUNC
  * @tc.require: issue#IBZ6NM
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NodeNotFound, TestSize.Level1)
 {
     ASSERT_NE(connectionStub_, nullptr);
-    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+    ASSERT_NE(connectionStub_->renderProcessManagerAgent_, nullptr);
 
     NodeId nonexistentNodeId = 999999;
     connectionStub_->ReleaseGpuMemory(nonexistentNodeId, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
@@ -8354,14 +8354,14 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NodeNotFound, Tes
 
 /**
  * @tc.name: ReleaseGpuMemory_NonScbWindowType
- * @tc.desc: Test ReleaseGpuMemory async branch when node found but window type is not SCB
+ * @tc.desc: Test ReleaseGpuMemory forwards to serviceToRenderConns; SCB window check is in PipelineAgent
  * @tc.type: FUNC
  * @tc.require: issue#IBZ6NM
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NonScbWindowType, TestSize.Level1)
 {
     ASSERT_NE(connectionStub_, nullptr);
-    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+    ASSERT_NE(connectionStub_->renderProcessManagerAgent_, nullptr);
 
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
@@ -8383,14 +8383,14 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_NonScbWindowType,
 
 /**
  * @tc.name: ReleaseGpuMemory_ScbWindowSuccess
- * @tc.desc: Test ReleaseGpuMemory async branch when node found and is SCB window, hits MIPMAP_AND_IMAGE_GPU case
+ * @tc.desc: Test ReleaseGpuMemory forwards to serviceToRenderConns; cleanup is in PipelineAgent
  * @tc.type: FUNC
  * @tc.require: issue#IBZ6NM
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_ScbWindowSuccess, TestSize.Level1)
 {
     ASSERT_NE(connectionStub_, nullptr);
-    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+    ASSERT_NE(connectionStub_->renderProcessManagerAgent_, nullptr);
 
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
@@ -8412,14 +8412,14 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_ScbWindowSuccess,
 
 /**
  * @tc.name: ReleaseGpuMemory_ScbWindowUnsupportedType
- * @tc.desc: Test ReleaseGpuMemory async branch when node is SCB window but type is unsupported (MAX), hits default case
+ * @tc.desc: Test ReleaseGpuMemory forwards to serviceToRenderConns; type check is in PipelineAgent
  * @tc.type: FUNC
  * @tc.require: issue#IBZ6NM
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, ReleaseGpuMemory_ScbWindowUnsupportedType, TestSize.Level1)
 {
     ASSERT_NE(connectionStub_, nullptr);
-    ASSERT_NE(connectionStub_->renderServiceAgent_, nullptr);
+    ASSERT_NE(connectionStub_->renderProcessManagerAgent_, nullptr);
 
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);

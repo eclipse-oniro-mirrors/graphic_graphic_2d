@@ -5977,5 +5977,20 @@ HWTEST_F(RSClientToRenderConnectionStubTest, SceneBoardSyncIpcStubTest001, TestS
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     EXPECT_TRUE(res == ERR_NONE || res == ERR_NULL_OBJECT);
 }
+
+/**
+ * @tc.name: ReleaseGpuMemory_NullPipeline
+ * @tc.desc: Test ReleaseGpuMemory with null rsRenderPipeline_, should return without crash
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, ReleaseGpuMemory_NullPipeline, TestSize.Level1)
+{
+    auto pipeline = renderPipelineAgent_->rsRenderPipeline_;
+    renderPipelineAgent_->rsRenderPipeline_.reset();
+    EXPECT_NO_FATAL_FAILURE(
+        renderPipelineAgent_->ReleaseGpuMemory(5001, GpuMemoryType::MIPMAP_AND_IMAGE_GPU));
+    renderPipelineAgent_->rsRenderPipeline_ = pipeline;
+}
 } // namespace OHOS::Rosen
 #endif

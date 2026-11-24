@@ -94,6 +94,7 @@ enum class RSIServiceToRenderConnectionInterfaceCode : CodeUnderlyingType {
     NOTIFY_WINDOW_MODE_TYPE_EVENT = 0x00F017,
     AUTHORIZE_UIEXTENSION_PID = 0x00F018,
     SEND_TRANSFER = 0x00F100,
+    RELEASE_GPU_MEMORY = 0x00F101,
 };
 
 } // namespace Rosen
