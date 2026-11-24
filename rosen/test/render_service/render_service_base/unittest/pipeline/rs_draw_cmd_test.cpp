@@ -167,6 +167,7 @@ HWTEST_F(RSDrawCmdTest, Playback001, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issueI9H4AD
  */
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 HWTEST_F(RSDrawCmdTest, PreProcessPixelMap, TestSize.Level1)
 {
     Drawing::Canvas canvas;
@@ -180,6 +181,7 @@ HWTEST_F(RSDrawCmdTest, PreProcessPixelMap, TestSize.Level1)
     extendImageObject.PreProcessPixelMap(canvas, pixelMapT, sampling);
     ASSERT_TRUE(true);
 }
+#endif
 
 /**
  * @tc.name: Playback002
@@ -1505,6 +1507,7 @@ HWTEST_F(RSDrawCmdTest, RSExtendImageObjectFlushImageCacheTest002, TestSize.Leve
     ASSERT_NE(extendImageLatticeObjWithPixelMap.rsImage_, nullptr);
 }
 
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 /**
  * @tc.name: PreProcessPixelMapAstcReserveImageInfo_001
  * @tc.desc: Verify PreProcessPixelMap ASTC path calls ReserveImageInfo when !imageInfoReserved_ and
@@ -1607,4 +1610,5 @@ HWTEST_F(RSDrawCmdTest, PreProcessPixelMapAstcReserveImageInfo_003, TestSize.Lev
     EXPECT_FALSE(extendImageObject.IsImageInfoReserved());
     RSImageCache::Instance().rsImageInfoMap.clear();
 }
+#endif
 } // namespace OHOS::Rosen
