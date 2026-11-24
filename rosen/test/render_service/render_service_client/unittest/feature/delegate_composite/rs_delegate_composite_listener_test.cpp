@@ -578,7 +578,7 @@ HWTEST_F(RSDelegateCompositeListenerTest, SurfaceTransactionListenerGetCommand_W
     auto listener = new SurfaceTransactionListener(connectToRender_);
     uint64_t capturedSeqNum = 0;
     std::unique_ptr<OHOS::Rosen::RSCommand> cmd;
-    std::thread worker([&]() {
+    std::thread worker([&cmd, &capturedSeqNum, listener]() {
         cmd = listener->GetCommand(capturedSeqNum);
     });
     worker.join();
