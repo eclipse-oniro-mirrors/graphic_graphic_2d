@@ -16,6 +16,8 @@ group("fuzztest") {
   deps = [
     "rsanimation_fuzzer:fuzztest",
     "rsanimationtimingcurve_fuzzer:fuzztest",
+    "rsdelegatecompositebuffermanager_fuzzer:fuzztest",
+    "rsdelegatecompositelistener_fuzzer:fuzztest",
     "rsinteractiveimplictanimator_fuzzer:fuzztest",
     "rsuieffect_fuzzer:fuzztest",
   ]
