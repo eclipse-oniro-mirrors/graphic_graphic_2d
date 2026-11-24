@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 HUA[REPLACED] Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,12 +17,14 @@
 
 #include <memory>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
 #include "consumer_surface.h"
 #include "feature/hyper_graphic_manager/hgm_render_context.h"
 #include "feature/tunnel_layer/rs_tunnel_layer_helper.h"
 #include "feature/tunnel_layer/rs_tunnel_route_arbiter.h"
+#include "frame_report.h"
 #include "gtest/gtest.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/main_thread/rs_render_service_listener.h"
@@ -992,13 +994,13 @@ HWTEST_F(RSTunnelLayerHelperTest, OnBufferAvailable_TunnelCandidate_ReceivesInfo
 }
 
 /**
- * @tc.name: CanCommitBufferDirect_RejectsWhenSolePresentLayerFalse
- * @tc.desc: Cover the true branch of `if (!GetTunnelSolePresentLayer())` in CanCommitBufferDirect.
+ * @tc.name: IsNeedResetTunnelStatus_RejectsWhenSolePresentLayerFalse
+ * @tc.desc: Cover the true branch of `if (!GetTunnelSolePresentLayer())` in IsNeedResetTunnelStatus.
  *          When the main thread has not signalled sole-present, the helper must reject the direct
  *          commit before any composer IPC is attempted.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerHelperTest, CanCommitBufferDirect_RejectsWhenSolePresentLayerFalse, TestSize.Level1)
+HWTEST_F(RSTunnelLayerHelperTest, IsNeedResetTunnelStatus_RejectsWhenSolePresentLayerFalse, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     RSTunnelRouteArbiter::SetTunnelSolePresentLayer(false);
@@ -1031,13 +1033,13 @@ HWTEST_F(RSTunnelLayerHelperTest, CanCommitBufferDirect_RejectsWhenSolePresentLa
 }
 
 /**
- * @tc.name: CanCommitBufferDirect_ProceedsWhenSolePresentLayerTrue
- * @tc.desc: Cover the false branch of `if (!GetTunnelSolePresentLayer())` in CanCommitBufferDirect.
+ * @tc.name: IsNeedResetTunnelStatus_ProceedsWhenSolePresentLayerTrue
+ * @tc.desc: Cover the false branch of `if (!GetTunnelSolePresentLayer())` in IsNeedResetTunnelStatus.
  *          When the arbiter reports sole-present, the helper must proceed through AcquirePendingBuffer
  *          and TryCommitPendingBuffer so the recording connection observes the commit call.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerHelperTest, CanCommitBufferDirect_ProceedsWhenSolePresentLayerTrue, TestSize.Level1)
+HWTEST_F(RSTunnelLayerHelperTest, IsNeedResetTunnelStatus_ProceedsWhenSolePresentLayerTrue, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     RSTunnelRouteArbiter::SetTunnelSolePresentLayer(true);
@@ -1315,11 +1317,11 @@ HWTEST_F(RSTunnelLayerHelperTest, BeginTunnelBuildingAndResetTunnelState001, Tes
 }
 
 /**
- * @tc.name: CanCommitBufferDirect_RejectsWhenHandlerNull
- * @tc.desc: Cover the handler_null reject path in CanCommitBufferDirect when the surface handler is null.
+ * @tc.name: IsNeedResetTunnelStatus_RejectsWhenHandlerNull
+ * @tc.desc: Cover the handler_null reject path in IsNeedResetTunnelStatus when the surface handler is null.
  * @tc.type: FUNC
  */
-HWTEST_F(RSTunnelLayerHelperTest, CanCommitBufferDirect_RejectsWhenHandlerNull, TestSize.Level1)
+HWTEST_F(RSTunnelLayerHelperTest, IsNeedResetTunnelStatus_RejectsWhenHandlerNull, TestSize.Level1)
 {
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     auto context = CreateTunnelTestContext(false);
@@ -1470,6 +1472,243 @@ HWTEST_F(RSTunnelLayerHelperTest, NotifyScreenPowerStatusChanged_NullProperty_Ke
 
     EXPECT_TRUE(RSTunnelLayerHelper::TryCommitBufferDirect(context.node, composerClientManager, false, tunnelRuntime));
     EXPECT_FALSE(connection->commitTunnelCalled);
+}
+
+/**
+ * @tc.name: TryCommitBufferDirect001
+ * @tc.desc: Cover the consumer_null reject in IsNeedDisableTunnelStatus: with runtime, registration
+ *           and sole-present all valid, a nulled consumer rejects before any composer IPC and keeps
+ *           the ACTIVE state untouched.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerHelperTest, TryCommitBufferDirect001, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    RSTunnelRouteArbiter::SetTunnelSolePresentLayer(true);
+    auto context = CreateTunnelTestContext(true);
+    ASSERT_TRUE(context.IsProducerReady());
+
+    TunnelLayerState state;
+    ASSERT_TRUE(SetTunnelInfoForConsumer(context.consumer, state));
+    auto& tunnelRuntime = *context.node->GetTunnelRuntimeState();
+    tunnelRuntime.SetLayerInfo(state.tunnelLayerId, state.property);
+    tunnelRuntime.SetBuilding();
+    ASSERT_TRUE(tunnelRuntime.SetActiveFromTunnelLayerAvailable(tunnelRuntime.GetTunnelLayerGeneration()));
+    ScopedRegisteredSurfaceNode registeredNode(context.node);
+    ASSERT_TRUE(registeredNode.IsRegistered());
+
+    auto connection = sptr<RecordingRenderToComposerConnection>::MakeSptr();
+    connection->commitTunnelResult = GRAPHIC_DISPLAY_SUCCESS;
+    auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
+    ASSERT_NE(composerClientManager, nullptr);
+
+    context.surfaceHandler->SetConsumer(nullptr);
+    EXPECT_FALSE(RSTunnelLayerHelper::TryCommitBufferDirect(context.node, composerClientManager, false,
+        tunnelRuntime));
+    EXPECT_FALSE(connection->commitTunnelCalled);
+    EXPECT_EQ(tunnelRuntime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::ACTIVE);
+}
+
+/**
+ * @tc.name: TryCommitBufferDirect002
+ * @tc.desc: Cover the not_on_tree reject in IsNeedResetTunnelStatus: with consumer, layer info and
+ *           sole-present all valid, an off-tree node rejects before any composer IPC and keeps the
+ *           ACTIVE state untouched.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerHelperTest, TryCommitBufferDirect002, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    RSTunnelRouteArbiter::SetTunnelSolePresentLayer(true);
+    auto context = CreateTunnelTestContext(true);
+    ASSERT_TRUE(context.IsProducerReady());
+
+    TunnelLayerState state;
+    ASSERT_TRUE(SetTunnelInfoForConsumer(context.consumer, state));
+    auto& tunnelRuntime = *context.node->GetTunnelRuntimeState();
+    tunnelRuntime.SetLayerInfo(state.tunnelLayerId, state.property);
+    tunnelRuntime.SetBuilding();
+    ASSERT_TRUE(tunnelRuntime.SetActiveFromTunnelLayerAvailable(tunnelRuntime.GetTunnelLayerGeneration()));
+    context.node->SetIsOnTheTree(false);
+
+    auto connection = sptr<RecordingRenderToComposerConnection>::MakeSptr();
+    connection->commitTunnelResult = GRAPHIC_DISPLAY_SUCCESS;
+    auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
+    ASSERT_NE(composerClientManager, nullptr);
+
+    EXPECT_FALSE(RSTunnelLayerHelper::TryCommitBufferDirect(context.node, composerClientManager, false,
+        tunnelRuntime));
+    EXPECT_FALSE(connection->commitTunnelCalled);
+    EXPECT_EQ(tunnelRuntime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::ACTIVE);
+}
+
+/**
+ * @tc.name: TryCommitPendingBuffer001
+ * @tc.desc: Cover the ResetStateKeepLayerInfo branch in TryCommitPendingBuffer: when
+ *           IsNeedResetTunnelStatus rejects after a pending buffer was acquired, the buffer is
+ *           released via its callback and the state resets to NOT_TUNNEL keeping layerId/property.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerHelperTest, TryCommitPendingBuffer001, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    auto context = CreateTunnelTestContext(true);
+    ASSERT_TRUE(context.IsProducerReady());
+
+    context.producer->SetQueueSize(TEST_QUEUE_SIZE);
+    TunnelLayerState state;
+    ASSERT_TRUE(SetTunnelInfoForConsumer(context.consumer, state));
+    auto& tunnelRuntime = *context.node->GetTunnelRuntimeState();
+    tunnelRuntime.SetLayerInfo(state.tunnelLayerId, state.property);
+    tunnelRuntime.SetBuilding();
+    ASSERT_TRUE(tunnelRuntime.SetActiveFromTunnelLayerAvailable(tunnelRuntime.GetTunnelLayerGeneration()));
+    ScopedRegisteredSurfaceNode registeredNode(context.node);
+    ASSERT_TRUE(registeredNode.IsRegistered());
+
+    auto connection = sptr<RecordingRenderToComposerConnection>::MakeSptr();
+    connection->commitTunnelResult = GRAPHIC_DISPLAY_SUCCESS;
+    auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
+    ASSERT_NE(composerClientManager, nullptr);
+
+    ASSERT_TRUE(FlushProducerBufferForTest(context.producer));
+    context.surfaceHandler->SetAvailableBufferCount(1);
+    RSTunnelRouteArbiter::RefreshGlobalTriggerSnapshot();
+    // Sole-present off makes IsNeedResetTunnelStatus reject inside TryCommitPendingBuffer after acquire.
+    RSTunnelRouteArbiter::SetTunnelSolePresentLayer(false);
+
+    auto pendingBuffer = RSTunnelLayerHelper::AcquirePendingBuffer(context.node, tunnelRuntime);
+    ASSERT_NE(pendingBuffer.buffer, nullptr);
+    ASSERT_NE(pendingBuffer.bufferOwnerCount_, nullptr);
+    bool releaseCallbackFired = false;
+    pendingBuffer.bufferOwnerCount_->bufferReleaseCb_ =
+        [&releaseCallbackFired](uint64_t) { releaseCallbackFired = true; };
+
+    EXPECT_FALSE(RSTunnelLayerHelper::TryCommitPendingBuffer(
+        context.node, composerClientManager, false, tunnelRuntime, pendingBuffer));
+    EXPECT_FALSE(connection->commitTunnelCalled);
+    EXPECT_EQ(tunnelRuntime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
+    uint64_t keptTunnelLayerId = 0;
+    uint32_t keptProperty = TUNNEL_PROP_INVALID;
+    tunnelRuntime.GetLayerInfo(keptTunnelLayerId, keptProperty);
+    EXPECT_EQ(keptTunnelLayerId, state.tunnelLayerId);
+    EXPECT_EQ(keptProperty, state.property);
+    EXPECT_TRUE(releaseCallbackFired);
+    EXPECT_EQ(pendingBuffer.bufferOwnerCount_->refCount_.load(), 0);
+}
+
+/**
+ * @tc.name: TryCommitPendingBuffer002
+ * @tc.desc: Cover the FrameReport game-scene block on the commit success path: with an active game
+ *           scene the tunnel commit still succeeds and reports swap statistics.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerHelperTest, TryCommitPendingBuffer002, TestSize.Level1)
+{
+    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
+    ScopedScreenPowerStatus scopedPower(0, ScreenPowerStatus::POWER_STATUS_ON);
+    RSTunnelRouteArbiter::SetTunnelSolePresentLayer(true);
+    auto context = CreateTunnelTestContext(true);
+    ASSERT_TRUE(context.IsProducerReady());
+
+    context.producer->SetQueueSize(TEST_QUEUE_SIZE);
+    TunnelLayerState state;
+    ASSERT_TRUE(SetTunnelInfoForConsumer(context.consumer, state));
+    auto& tunnelRuntime = *context.node->GetTunnelRuntimeState();
+    tunnelRuntime.SetLayerInfo(state.tunnelLayerId, state.property);
+    tunnelRuntime.SetBuilding();
+    ASSERT_TRUE(tunnelRuntime.SetActiveFromTunnelLayerAvailable(tunnelRuntime.GetTunnelLayerGeneration()));
+    ScopedRegisteredSurfaceNode registeredNode(context.node);
+    ASSERT_TRUE(registeredNode.IsRegistered());
+
+    auto connection = sptr<RecordingRenderToComposerConnection>::MakeSptr();
+    connection->commitTunnelResult = GRAPHIC_DISPLAY_SUCCESS;
+    auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
+    ASSERT_NE(composerClientManager, nullptr);
+
+    ASSERT_TRUE(FlushProducerBufferForTest(context.producer));
+    context.surfaceHandler->SetAvailableBufferCount(1);
+    RSTunnelRouteArbiter::consecutiveSolePresentCount_.store(TUNNEL_STABLE_THRESHOLD, std::memory_order_release);
+    RSTunnelRouteArbiter::RefreshGlobalTriggerSnapshot();
+
+    FrameReport::GetInstance().SetGameScene(getpid(), 2); // FR_GAME_SCHED
+    EXPECT_TRUE(FrameReport::GetInstance().HasGameScene());
+    EXPECT_TRUE(RSTunnelLayerHelper::TryCommitBufferDirect(
+        context.node, composerClientManager, false, tunnelRuntime));
+    EXPECT_TRUE(connection->commitTunnelCalled);
+    FrameReport::GetInstance().SetGameScene(getpid(), 0); // FR_GAME_BACKGROUND
+    EXPECT_FALSE(FrameReport::GetInstance().HasGameScene());
+}
+
+/**
+ * @tc.name: RestoreTunnelRuntimeState001
+ * @tc.desc: Cover RestoreTunnelRuntimeState no-op branch when the consumer is null: no tunnel
+ *           runtime state is created and the receipt flag stays unset.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerHelperTest, RestoreTunnelRuntimeState001, TestSize.Level1)
+{
+    auto context = CreateTunnelTestContext(false);
+    ASSERT_TRUE(context.IsBaseReady());
+    context.surfaceHandler->SetConsumer(nullptr);
+
+    context.node->RestoreTunnelRuntimeState();
+
+    EXPECT_EQ(context.node->TryGetTunnelRuntimeState(), nullptr);
+    EXPECT_FALSE(context.surfaceHandler->HasReceivedTunnelLayerInfo());
+}
+
+/**
+ * @tc.name: RestoreTunnelRuntimeState002
+ * @tc.desc: Cover RestoreTunnelRuntimeState no-op branch when the fetched tunnel info resolves to a
+ *           zero layerId (TUNNEL_TYPE_NONE): no runtime state is created.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerHelperTest, RestoreTunnelRuntimeState002, TestSize.Level1)
+{
+    auto context = CreateTunnelTestContext(false);
+    ASSERT_TRUE(context.IsBaseReady());
+    ASSERT_TRUE(SetTunnelInfoForConsumer(context.consumer, TUNNEL_TYPE_NONE));
+
+    context.node->RestoreTunnelRuntimeState();
+
+    EXPECT_EQ(context.node->TryGetTunnelRuntimeState(), nullptr);
+    EXPECT_FALSE(context.surfaceHandler->HasReceivedTunnelLayerInfo());
+}
+
+/**
+ * @tc.name: RestoreTunnelRuntimeState003
+ * @tc.desc: Cover RestoreTunnelRuntimeState valid-info branch: a STYLUS tunnel info creates the
+ *           runtime state, marks tunnel info received and stores layerId/property; a second call
+ *           reuses the existing state instead of resetting it.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTunnelLayerHelperTest, RestoreTunnelRuntimeState003, TestSize.Level1)
+{
+    auto context = CreateTunnelTestContext(true);
+    ASSERT_TRUE(context.IsProducerReady());
+    TunnelLayerState state;
+    ASSERT_TRUE(SetTunnelInfoForConsumer(context.consumer, state));
+    ASSERT_NE(state.tunnelLayerId, 0u);
+    ASSERT_NE(static_cast<uint32_t>(state.property), 0u);
+    ASSERT_FALSE(context.surfaceHandler->HasReceivedTunnelLayerInfo());
+
+    context.node->RestoreTunnelRuntimeState();
+
+    auto runtimeState = context.node->TryGetTunnelRuntimeState();
+    ASSERT_NE(runtimeState, nullptr);
+    EXPECT_TRUE(context.surfaceHandler->HasReceivedTunnelLayerInfo());
+    uint64_t restoredTunnelLayerId = 0;
+    uint32_t restoredProperty = TUNNEL_PROP_INVALID;
+    runtimeState->GetLayerInfo(restoredTunnelLayerId, restoredProperty);
+    EXPECT_EQ(restoredTunnelLayerId, state.tunnelLayerId);
+    EXPECT_EQ(restoredProperty, state.property);
+    EXPECT_EQ(runtimeState->GetTunnelState(), RSTunnelRuntimeState::TunnelState::NOT_TUNNEL);
+
+    context.node->RestoreTunnelRuntimeState();
+    EXPECT_EQ(context.node->TryGetTunnelRuntimeState().get(), runtimeState.get());
+    runtimeState->GetLayerInfo(restoredTunnelLayerId, restoredProperty);
+    EXPECT_EQ(restoredTunnelLayerId, state.tunnelLayerId);
+    EXPECT_EQ(restoredProperty, state.property);
 }
 
 } // namespace OHOS::Rosen
