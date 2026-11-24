@@ -110,21 +110,44 @@ bool MemAllocator::Resize(size_t size)
     return true;
 }
 
+void* MemAllocator::PreparePlacement(size_t objSize)
+{
+    void* addr = static_cast<void*>(startPtr_ + size_);
+    // Bytes the constructor leaves unwritten (object padding, inactive union members) end up
+    // inside the serialized [0, size_) region and would carry stale heap content across IPC;
+    // zeroing just the object space here closes that leak without touching the capacity tail.
+    if (memset_s(addr, capacity_ - size_, 0, objSize) != EOK) {
+        return nullptr;
+    }
+    return addr;
+}
+
 void* MemAllocator::Add(const void* data, size_t size)
 {
     if (isReadOnly_ || !data || size == 0 || size > MEM_SIZE_MAX || size > MEM_SIZE_MAX - capacity_) {
         return nullptr;
     }
     auto current = startPtr_ + size_;
+    size_t gap = 0;
     if (auto mod = reinterpret_cast<uintptr_t>(current) % ALIGN_SIZE; mod != 0) {
-        size_ += ALIGN_SIZE - mod;
+        gap = ALIGN_SIZE - mod;
     }
 
-    if (capacity_ == 0 || capacity_ < size_ + size) {
-        // The capacity is not enough, expand the capacity
+    if (capacity_ == 0 || capacity_ < size_ + gap + size) {
+        // Growth keeps the historical (capacity_ + size) * 2 form; in the rare corner where
+        // that does not cover the alignment gap, the memcpy_s bounds check below fails safe
+        // instead of writing out of bounds.
         if (Resize((capacity_ + size) * MEMORY_EXPANSION_FACTOR) == false) {
             return nullptr;
         }
+    }
+    if (gap != 0) {
+        // The alignment gap belongs to the serialized [0, size_) region but is never written
+        // afterwards; zero it so no stale heap byte gets marshalled.
+        if (memset_s(startPtr_ + size_, capacity_ - size_, 0, gap) != EOK) {
+            return nullptr;
+        }
+        size_ += gap;
     }
     if (!memcpy_s(startPtr_ + size_, capacity_ - size_, data, size)) {
         size_ += size;
