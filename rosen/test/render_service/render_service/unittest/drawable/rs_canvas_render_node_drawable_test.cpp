@@ -15,12 +15,13 @@
 
 #include "gtest/gtest.h"
 #include "drawable/rs_canvas_render_node_drawable.h"
-#include "feature/opinc/rs_opinc_manager.h"
+#include "params/rs_render_params.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_render_node_allocator.h"
-#include "memory/rs_memory_snapshot.h"
+#include "pipeline/rs_render_node_gc.h"
 #include "platform/common/rs_system_properties.h"
+#include "memory/rs_memory_snapshot.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -40,6 +41,14 @@ void RSCanvasRenderNodeDrawableTest::SetUpTestCase() {}
 void RSCanvasRenderNodeDrawableTest::TearDownTestCase() {}
 void RSCanvasRenderNodeDrawableTest::SetUp() {}
 void RSCanvasRenderNodeDrawableTest::TearDown() {}
+
+class TestRSRenderNodeDrawable : public DrawableV2::RSRenderNodeDrawableAdapter {
+public:
+    explicit TestRSRenderNodeDrawable(std::shared_ptr<const RSRenderNode> node)
+        : RSRenderNodeDrawableAdapter(std::move(node))
+    {}
+    void Draw(Drawing::Canvas& canvas) {}
+};
 
 /**
  * @tc.name: CreateCanvasRenderNodeDrawableTest
@@ -67,7 +76,7 @@ HWTEST(RSCanvasRenderNodeDrawableTest, CreateCanvasRenderNodeDrawableTest002, Te
     auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
     auto drawable = RSCanvasRenderNodeDrawable::OnGenerate(canvasNode);
     ASSERT_NE(drawable, nullptr);
-
+ 
     auto& allocator = RSRenderNodeAllocator::Instance();
     auto ret = allocator.AddDrawableToAllocator(drawable);
     ASSERT_TRUE(ret);
@@ -75,10 +84,25 @@ HWTEST(RSCanvasRenderNodeDrawableTest, CreateCanvasRenderNodeDrawableTest002, Te
     auto drawable2 = RSCanvasRenderNodeDrawable::OnGenerate(canvasNode2);
     ASSERT_NE(drawable2, nullptr);
 }
-
+ 
+/**
+ * @tc.name: AddDrawableToAllocatorTest001
+ * @tc.desc: test AddDrawableToAllocator
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST(RSCanvasRenderNodeDrawableTest, AddDrawableToAllocatorTest001, TestSize.Level1)
+{
+    auto& nodeAllocator = RSRenderNodeAllocator::Instance();
+    auto node = std::make_shared<RSCanvasRenderNode>(0);
+    auto drawable = new TestRSRenderNodeDrawable(node);
+    EXPECT_FALSE(nodeAllocator.AddDrawableToAllocator(drawable));
+    EXPECT_FALSE(nodeAllocator.AddDrawableToAllocator(nullptr));
+}
+ 
 /**
  * @tc.name: AddDrawableToAllocatorTest002
- * @tc.desc: Test AddDrawableToAllocator
+ * @tc.desc: test AddDrawableToAllocator
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -88,11 +112,11 @@ HWTEST(RSCanvasRenderNodeDrawableTest, AddDrawableToAllocatorTest002, TestSize.L
     auto node = std::make_shared<RSRenderNode>(0);
     auto drawable = RSCanvasRenderNodeDrawable::OnGenerate(node);
     EXPECT_FALSE(nodeAllocator.AddDrawableToAllocator(drawable));
-
+ 
     auto canvasNode = std::make_shared<RSCanvasRenderNode>(0);
     auto canvasDrawable = RSCanvasRenderNodeDrawable::OnGenerate(canvasNode);
     EXPECT_TRUE(nodeAllocator.AddDrawableToAllocator(canvasDrawable));
-
+ 
     auto newCanvasNode = std::make_shared<RSCanvasRenderNode>(1);
     auto newDrawable = RSCanvasRenderNodeDrawable::OnGenerate(newCanvasNode);
     for (int i = 2; i < 514; i++) {
@@ -102,82 +126,32 @@ HWTEST(RSCanvasRenderNodeDrawableTest, AddDrawableToAllocatorTest002, TestSize.L
     }
     EXPECT_FALSE(nodeAllocator.AddDrawableToAllocator(newDrawable));
 }
-
+ 
 /**
- * @tc.name: OnDrawTest
- * @tc.desc: Test If OnDraw Can Run
+ * @tc.name: ReleaseDrawableBucketTest
+ * @tc.desc: test results of ReleaseDrawableBucket
  * @tc.type: FUNC
- * @tc.require: issueIAEDYI
+ * @tc.require:
  */
-HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest, TestSize.Level1)
+HWTEST(RSRenderNodeGCTest, ReleaseDrawableBucketTest, TestSize.Level1)
 {
-    NodeId nodeId = 0;
-    auto node = std::make_shared<RSRenderNode>(nodeId);
-    auto drawable = std::make_shared<RSCanvasRenderNodeDrawable>(std::move(node));
-    ASSERT_NE(drawable, nullptr);
-    Drawing::Canvas canvas;
-    drawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
-    drawable->OnDraw(canvas);
-    ASSERT_TRUE(drawable->GetRenderParams());
-
-    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(false);
-    drawable->renderParams_->isOpincStateChanged_ = false;
-    drawable->renderParams_->startingWindowFlag_ = false;
-    drawable->OnDraw(canvas);
-    ASSERT_TRUE(drawable->GetRenderParams());
-
-    drawable->isOpDropped_ = false;
-    drawable->isDrawingCacheEnabled_ = true;
-    RSOpincManager::Instance().SetOPIncSwitch(false);
-    drawable->SetDrawBlurForCache(false);
-    drawable->OnDraw(canvas);
-    ASSERT_TRUE(drawable->isDrawingCacheEnabled_);
-
-    drawable->SetDrawBlurForCache(true);
-    drawable->OnDraw(canvas);
-    ASSERT_TRUE(drawable->isDrawingCacheEnabled_);
+    RSRenderNodeGC& gc = RSRenderNodeGC::Instance();
+    auto canvasNode = std::make_shared<RSCanvasRenderNode>(0);
+    auto canvasDrawable = RSCanvasRenderNodeDrawable::OnGenerate(canvasNode);
+    std::queue<std::vector<DrawableV2::RSRenderNodeDrawableAdapter*>> tempQueue;
+    tempQueue.push({canvasDrawable});
+    gc.drawableBucket_.swap(tempQueue);
+    gc.ReleaseDrawableBucket();
+    EXPECT_TRUE(gc.drawableBucket_.size() == 0);
 }
 
 /**
  * @tc.name: OnCaptureTest
  * @tc.desc: Test If OnCapture Can Run
  * @tc.type: FUNC
- * @tc.require: issueIAEDYI
+ * @tc.require:
  */
-HWTEST(RSCanvasRenderNodeDrawableTest, OnCaptureTest001, TestSize.Level1)
-{
-    // set render thread param
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    uniParams->SetSecurityDisplay(true);
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-
-    NodeId nodeId = 0;
-    auto node = std::make_shared<RSRenderNode>(nodeId);
-    auto drawable = std::make_shared<RSCanvasRenderNodeDrawable>(std::move(node));
-    ASSERT_NE(drawable, nullptr);
-    Drawing::Canvas drawingCanvas;
-    RSPaintFilterCanvas canvas(&drawingCanvas);
-    drawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
-    drawable->OnCapture(canvas);
-    ASSERT_FALSE(drawable->ShouldPaint());
-
-    drawable->renderParams_->shouldPaint_ = true;
-    drawable->renderParams_->contentEmpty_ = false;
-    ASSERT_TRUE(drawable->ShouldPaint());
-    CaptureParam param;
-    param.isMirror_ = false;
-    RSUniRenderThread::SetCaptureParam(param);
-    drawable->OnCapture(canvas);
-    ASSERT_TRUE(drawable->ShouldPaint());
-}
-
-/**
- * @tc.name: OnCaptureTest
- * @tc.desc: Test If OnCapture Can Run
- * @tc.type: FUNC
- * @tc.require: issueIAEDYI
- */
-HWTEST(RSCanvasRenderNodeDrawableTest, OnCaptureTest002, TestSize.Level1)
+HWTEST(RSCanvasRenderNodeDrawableTest, OnCaptureTest, TestSize.Level1)
 {
     // set render thread param
     auto uniParams = std::make_unique<RSRenderThreadParams>();
@@ -206,12 +180,14 @@ HWTEST(RSCanvasRenderNodeDrawableTest, OnCaptureTest002, TestSize.Level1)
     RSUniRenderThread::GetCaptureParam().endNodeId_ = TEST_ID;
     canvas.SetUICapture(true);
     drawable->OnCapture(canvas);
+    drawable->OnDraw(canvas);
     ASSERT_TRUE(drawable->ShouldPaint());
     RSUniRenderThread::GetCaptureParam().endNodeId_ = INVALID_NODEID;
     RSUniRenderThread::GetCaptureParam().captureFinished_ = true;
     drawable->OnCapture(canvas);
+    drawable->OnDraw(canvas);
     ASSERT_TRUE(drawable->ShouldPaint());
-    
+   
     CaptureParam params;
     std::unordered_set<NodeId> whiteList = {nodeId};
     RSUniRenderThread::Instance().SetWhiteList(whiteList);
@@ -222,45 +198,21 @@ HWTEST(RSCanvasRenderNodeDrawableTest, OnCaptureTest002, TestSize.Level1)
 }
 
 /**
- * @tc.name: OnCaptureTest
- * @tc.desc: Test If OnCapture Can Run
- * @tc.type: FUNC
- * @tc.require: issueIAEDYI
- */
-HWTEST(RSCanvasRenderNodeDrawableTest, OnCaptureTest003, TestSize.Level1)
-{
-    NodeId nodeId = 0;
-    auto node = std::make_shared<RSRenderNode>(nodeId);
-    auto drawable = std::make_shared<RSCanvasRenderNodeDrawable>(std::move(node));
-    ASSERT_NE(drawable, nullptr);
-    Drawing::Canvas drawingCanvas;
-    RSPaintFilterCanvas canvas(&drawingCanvas);
-    RSUniRenderThread::GetCaptureParam().isMirror_ = true;
-    drawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
-    drawable->renderParams_->shouldPaint_ = true;
-    drawable->renderParams_->contentEmpty_ = false;
-    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
-    ASSERT_TRUE(RSUniRenderThread::Instance().GetRSRenderThreadParams());
-    drawable->OnCapture(canvas);
-    ASSERT_TRUE(drawable->ShouldPaint());
-    RSUniRenderThread::Instance().Sync(nullptr);
-}
-
-/**
- * @tc.name: OnDrawTest001
+ * @tc.name: OnDraw001
  * @tc.desc: Test OnDraw
  * @tc.type: FUNC
- * @tc.require: IC8TIV
+ * @tc.require:
  */
 HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest001, TestSize.Level1)
 {
     auto canvasNode = std::make_shared<RSCanvasRenderNode>(0);
-    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(
-        RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
+    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
     ASSERT_NE(canvasDrawable, nullptr);
     canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(1);
+ 
     canvasDrawable->renderParams_->shouldPaint_ = true;
     canvasDrawable->renderParams_->contentEmpty_ = false;
+ 
     canvasDrawable->renderParams_->startingWindowFlag_ = false;
     canvasDrawable->SetOcclusionCullingEnabled(false);
     auto drawingCanvas = std::make_unique<Drawing::Canvas>(1, 1);
@@ -269,6 +221,7 @@ HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest001, TestSize.Level1)
     ASSERT_TRUE(canvas);
     canvasDrawable->OnDraw(*canvas);
     ASSERT_NE(canvasDrawable->renderParams_, nullptr);
+
     canvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::SUBTREE_QUICK_DRAW_STATE);
     canvasDrawable->OnDraw(*canvas);
     ASSERT_NE(canvasDrawable->renderParams_, nullptr);
@@ -276,12 +229,12 @@ HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest001, TestSize.Level1)
 
 #ifdef SUBTREE_PARALLEL_ENABLE
 /**
- * @tc.name: QuickDrawTest001
- * @tc.desc: Test QuickGetDrawState
+ * @tc.name: QuickGetDrawState
+ * @tc.desc: Test OnDraw
  * @tc.type: FUNC
- * @tc.require: IC8TIV
+ * @tc.require:
  */
-HWTEST(RSCanvasRenderNodeDrawableTest, QuickDrawTest001, TestSize.Level1)
+HWTEST(RSCanvasRenderNodeDrawableTest, QuickGetDrawState, TestSize.Level1)
 {
     Drawing::Canvas canvas;
     auto pCanvas = std::make_shared<RSPaintFilterCanvas>(&canvas);
@@ -290,12 +243,8 @@ HWTEST(RSCanvasRenderNodeDrawableTest, QuickDrawTest001, TestSize.Level1)
         RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
     pCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::DEFAULT_STATE);
     canvasDrawable->QuickGetDrawState(*pCanvas);
-
     pCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::SUBTREE_QUICK_DRAW_STATE);
-    canvasDrawable->nodeId_ = 0;
     canvasDrawable->QuickGetDrawState(*pCanvas);
-
-    canvasDrawable->nodeId_ = 1;
     canvasDrawable->occlusionCullingEnabled_ = true;
     pCanvas->culledEntireSubtree_.insert(1);
     canvasDrawable->QuickGetDrawState(*pCanvas);
@@ -506,139 +455,6 @@ HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest005, TestSize.Level2)
 
     // restore
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
-}
-
-/**
- * @tc.name: OnDrawTest006
- * @tc.desc: Cover occlusion skip path and FinishOpincSubtree call in OnDraw
- * @tc.type: FUNC
- * @tc.require: issueTddCover120
- */
-HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest006, TestSize.Level2)
-{
-    NodeId nodeId = 6;
-    auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
-    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
-    ASSERT_NE(canvasDrawable, nullptr);
-
-    canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
-    canvasDrawable->renderParams_->shouldPaint_ = true;
-    canvasDrawable->renderParams_->contentEmpty_ = false;
-    canvasDrawable->renderParams_->startingWindowFlag_ = false;
-    ASSERT_TRUE(canvasDrawable->renderParams_->SetLocalDrawRect(RectF(1000.f, 1000.f, 100.f, 100.f)));
-    canvasDrawable->isOpDropped_ = true;
-
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    uniParams->SetOpDropped(true);
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    Drawing::Canvas drawingCanvas(1, 1);
-    RSPaintFilterCanvas canvas(&drawingCanvas);
-    Drawing::Region dirtyRegion;
-    canvas.PushDirtyRegion(dirtyRegion);
-    canvas.SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::SUBTREE_QUICK_DRAW_STATE);
-    canvasDrawable->OnDraw(canvas);
-    ASSERT_EQ(canvasDrawable->GetDrawSkipType(), DrawSkipType::OCCLUSION_SKIP);
-
-    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
-}
-
-#ifdef SUBTREE_PARALLEL_ENABLE
-/**
- * @tc.name: OnDrawTest007
- * @tc.desc: Cover quick draw branch and FinishOpincSubtree call in OnDraw
- * @tc.type: FUNC
- * @tc.require: issueTddCover130
- */
-HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest007, TestSize.Level2)
-{
-    NodeId nodeId = 7;
-    auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
-    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
-    ASSERT_NE(canvasDrawable, nullptr);
-
-    canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
-    canvasDrawable->renderParams_->shouldPaint_ = true;
-    canvasDrawable->renderParams_->contentEmpty_ = false;
-    canvasDrawable->renderParams_->startingWindowFlag_ = false;
-    canvasDrawable->isOpDropped_ = false;
-
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    uniParams->SetSecurityDisplay(false);
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-
-    Drawing::Canvas drawingCanvas;
-    RSPaintFilterCanvas canvas(&drawingCanvas);
-    canvas.SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::SUBTREE_QUICK_DRAW_STATE);
-    canvasDrawable->OnDraw(canvas);
-    ASSERT_EQ(canvasDrawable->GetDrawSkipType(), DrawSkipType::NONE);
-
-    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
-}
-#endif
-
-/**
- * @tc.name: OnDrawTest008
- * @tc.desc: Cover multi-access path and FinishOpincSubtree call in OnDraw
- * @tc.type: FUNC
- * @tc.require: issueTddCover141
- */
-HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest008, TestSize.Level2)
-{
-    NodeId nodeId = 8;
-    auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
-    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
-    ASSERT_NE(canvasDrawable, nullptr);
-
-    canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
-    canvasDrawable->renderParams_->shouldPaint_ = true;
-    canvasDrawable->renderParams_->contentEmpty_ = false;
-    canvasDrawable->renderParams_->startingWindowFlag_ = false;
-    canvasDrawable->isOpDropped_ = false;
-
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    uniParams->SetSecurityDisplay(false);
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-
-    Drawing::Canvas drawingCanvas;
-    RSPaintFilterCanvas canvas(&drawingCanvas);
-    RSRenderNodeSingleDrawableLocker lockGuard(canvasDrawable);
-    canvasDrawable->OnDraw(canvas);
-    if (RSSystemProperties::GetSingleDrawableLockerEnabled()) {
-        ASSERT_EQ(canvasDrawable->GetDrawSkipType(), DrawSkipType::MULTI_ACCESS);
-    }
-
-    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
-}
-
-/**
- * @tc.name: OnDrawAbnormalProcessTest
- * @tc.desc: Test OnDraw with abnormal process check
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawAbnormalProcessTest, TestSize.Level1)
-{
-    NodeId nodeId = 1;
-    auto node = std::make_shared<RSCanvasRenderNode>(nodeId);
-    auto drawable = std::make_shared<RSCanvasRenderNodeDrawable>(std::move(node));
-    drawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
-    drawable->renderParams_->shouldPaint_ = true;
-    drawable->renderParams_->contentEmpty_ = false;
-
-    // Mark process as abnormal
-    pid_t pid = ExtractPid(nodeId);
-    MemorySnapshot::Instance().SetAbnormalProcess(pid);
-
-    Drawing::Canvas drawingCanvas;
-    RSPaintFilterCanvas canvas(&drawingCanvas);
-    
-    // OnDraw should return early for abnormal process
-    drawable->OnDraw(canvas);
-    ASSERT_EQ(drawable->GetDrawSkipType(), DrawSkipType::MEMORYOVER_SKIP);
-    
-    // Clean up
-    std::set<pid_t> exitedPids = {pid};
-    MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
 }
 
 /**
@@ -2007,6 +1823,139 @@ HWTEST(RSCanvasRenderNodeDrawableTest, OnCaptureBackFaceSkipTest003, TestSize.Le
     canvasDrawable->OnCapture(canvas);
 
     ASSERT_NE(canvasDrawable->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
+
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+}
+
+/**
+ * @tc.name: OnDrawAbnormalProcessTest
+ * @tc.desc: Test OnDraw with abnormal process check
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawAbnormalProcessTest, TestSize.Level1)
+{
+    NodeId nodeId = 1;
+    auto node = std::make_shared<RSCanvasRenderNode>(nodeId);
+    auto drawable = std::make_shared<RSCanvasRenderNodeDrawable>(std::move(node));
+    drawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
+    drawable->renderParams_->shouldPaint_ = true;
+    drawable->renderParams_->contentEmpty_ = false;
+ 
+    // Mark process as abnormal
+    pid_t pid = ExtractPid(nodeId);
+    MemorySnapshot::Instance().SetAbnormalProcess(pid);
+ 
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    
+    // OnDraw should return early for abnormal process
+    drawable->OnDraw(canvas);
+    ASSERT_EQ(drawable->GetDrawSkipType(), DrawSkipType::MEMORYOVER_SKIP);
+    
+    // Clean up
+    std::set<pid_t> exitedPids = {pid};
+    MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
+}
+
+/**
+ * @tc.name: OnDrawTest006
+ * @tc.desc: Cover occlusion skip path and FinishOpincSubtree call in OnDraw
+ * @tc.type: FUNC
+ * @tc.require: issueTddCover120
+ */
+HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest006, TestSize.Level2)
+{
+    NodeId nodeId = 6;
+    auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
+    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
+    ASSERT_NE(canvasDrawable, nullptr);
+
+    canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
+    canvasDrawable->renderParams_->shouldPaint_ = true;
+    canvasDrawable->renderParams_->contentEmpty_ = false;
+    canvasDrawable->renderParams_->startingWindowFlag_ = false;
+    ASSERT_TRUE(canvasDrawable->renderParams_->SetLocalDrawRect(RectF(1000.f, 1000.f, 100.f, 100.f)));
+    canvasDrawable->isOpDropped_ = true;
+
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    uniParams->SetOpDropped(true);
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+    Drawing::Canvas drawingCanvas(1, 1);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    Drawing::Region dirtyRegion;
+    canvas.PushDirtyRegion(dirtyRegion);
+    canvas.SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::SUBTREE_QUICK_DRAW_STATE);
+    canvasDrawable->OnDraw(canvas);
+    ASSERT_EQ(canvasDrawable->GetDrawSkipType(), DrawSkipType::OCCLUSION_SKIP);
+
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+}
+
+#ifdef SUBTREE_PARALLEL_ENABLE
+/**
+ * @tc.name: OnDrawTest007
+ * @tc.desc: Cover quick draw branch and FinishOpincSubtree call in OnDraw
+ * @tc.type: FUNC
+ * @tc.require: issueTddCover130
+ */
+HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest007, TestSize.Level2)
+{
+    NodeId nodeId = 7;
+    auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
+    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
+    ASSERT_NE(canvasDrawable, nullptr);
+
+    canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
+    canvasDrawable->renderParams_->shouldPaint_ = true;
+    canvasDrawable->renderParams_->contentEmpty_ = false;
+    canvasDrawable->renderParams_->startingWindowFlag_ = false;
+    canvasDrawable->isOpDropped_ = false;
+
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    uniParams->SetSecurityDisplay(false);
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    canvas.SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::SUBTREE_QUICK_DRAW_STATE);
+    canvasDrawable->OnDraw(canvas);
+    ASSERT_EQ(canvasDrawable->GetDrawSkipType(), DrawSkipType::NONE);
+
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+}
+#endif
+
+/**
+ * @tc.name: OnDrawTest008
+ * @tc.desc: Cover multi-access path and FinishOpincSubtree call in OnDraw
+ * @tc.type: FUNC
+ * @tc.require: issueTddCover141
+ */
+HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest008, TestSize.Level2)
+{
+    NodeId nodeId = 8;
+    auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
+    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
+    ASSERT_NE(canvasDrawable, nullptr);
+
+    canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
+    canvasDrawable->renderParams_->shouldPaint_ = true;
+    canvasDrawable->renderParams_->contentEmpty_ = false;
+    canvasDrawable->renderParams_->startingWindowFlag_ = false;
+    canvasDrawable->isOpDropped_ = false;
+
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    uniParams->SetSecurityDisplay(false);
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    RSRenderNodeSingleDrawableLocker lockGuard(canvasDrawable);
+    canvasDrawable->OnDraw(canvas);
+    if (RSSystemProperties::GetSingleDrawableLockerEnabled()) {
+        ASSERT_EQ(canvasDrawable->GetDrawSkipType(), DrawSkipType::MULTI_ACCESS);
+    }
 
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }

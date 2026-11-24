@@ -206,7 +206,6 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
         !RSUniRenderJudgement::IsUniRender() || GetIsTextureExportNode()) {
         return;
     }
-
     if (!dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE))) {
         return;
     }
@@ -902,13 +901,13 @@ void RSCanvasDrawingRenderNode::UpdateBufferInfo(const sptr<SurfaceBuffer>& buff
     canvasParams->SetBufferDraw(IsBufferDraw());
     AddToPendingSyncList();
 }
- 
+
 void RSCanvasDrawingRenderNode::OnDestoryTokenNode()
 {
     if (surfaceHandler_ == nullptr) {
         return;
     }
- 
+
     if (auto context = GetContext().lock()) {
         context->GetMutableNodeMap().RegisterSurfaceHandler(GetId(), surfaceHandler_);
     }
@@ -918,7 +917,7 @@ void RSCanvasDrawingRenderNode::OnDestoryTokenNode()
         stagingParams->SetConsumerSurface(nullptr);
     }
 }
- 
+
 void RSCanvasDrawingRenderNode::InitSurfaceHandler()
 {
     auto nodeId = GetId();
@@ -927,10 +926,10 @@ void RSCanvasDrawingRenderNode::InitSurfaceHandler()
         RS_LOGE("RSCanvasDrawingRenderNode::InitSurfaceHandler: context is nullptr, nodeId=%{public}" PRIu64, nodeId);
         return;
     }
- 
+
     surfaceHandler_ = context->GetMutableNodeMap().GetSurfaceHandler(nodeId, true);
 }
- 
+
 void RSCanvasDrawingRenderNode::SetSurfaceHandler(std::shared_ptr<RSSurfaceHandler> surfaceHandler)
 {
     surfaceHandler_ = surfaceHandler;
@@ -944,12 +943,12 @@ void RSCanvasDrawingRenderNode::SetSurfaceHandler(std::shared_ptr<RSSurfaceHandl
         stagingParams->SetConsumerSurface(consumerSurface);
     }
 }
- 
+
 bool RSCanvasDrawingRenderNode::IsBufferDraw() const
 {
     return bufferDraw_;
 }
- 
+
 bool RSCanvasDrawingRenderNode::IsHybridEnabled()
 {
     return hybridEnabled_;
