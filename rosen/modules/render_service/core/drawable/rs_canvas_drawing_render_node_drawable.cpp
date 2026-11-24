@@ -136,12 +136,12 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
+#if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
     auto threadIdx = paintFilterCanvas->GetParallelThreadIdx();
     auto clearFunc = [idx = threadIdx](std::shared_ptr<Drawing::Surface> surface) {
         // The second param is null, 0 is an invalid value.
         RSUniRenderUtil::ClearNodeCacheSurface(std::move(surface), nullptr, idx, 0);
     };
-#if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
     auto threadId = paintFilterCanvas->GetIsParallelCanvas() ?
         RSSubThreadManager::Instance()->GetReThreadIndexMap()[threadIdx] : RSUniRenderThread::Instance().GetTid();
     SetSurfaceClearFunc({ threadIdx, clearFunc }, threadId);

@@ -1084,6 +1084,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDrawAbnormalProcessTest2, Test
 }
 #endif
 
+#if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
 /**
  * @tc.name: CheckAndSetThreadIdx
  * @tc.desc: Test If CheckAndSetThreadIdx Can Run
@@ -1097,6 +1098,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CheckAndSetThreadIdxTest, TestSi
     RSUniRenderThread::Instance().tid_ = gettid();
     ASSERT_EQ(drawable->CheckAndSetThreadIdx(), UNI_RENDER_THREAD_INDEX);
 }
+#endif
 
 /**
  * @tc.name: ResetSurfaceforPlayback

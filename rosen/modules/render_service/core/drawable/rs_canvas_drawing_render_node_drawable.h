@@ -158,10 +158,8 @@ private:
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
     std::atomic<pid_t> threadId_ = RSUniRenderThread::Instance().GetTid();
 
-#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     ThreadInfo curThreadInfo_ = { UNI_RENDER_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
     ThreadInfo preThreadInfo_ = { UNI_RENDER_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
-#endif
 
     // setted in render thread, used and resetted in main thread
     std::atomic<bool> needDraw_ = false;
