@@ -571,7 +571,6 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, ReleaseBuffer004, TestSize.Level1
 
     sptr<SyncFence> fence = SyncFence::INVALID_FENCE;
     EXPECT_EQ(mgr->ReleaseBuffer(0u, fence), GSERROR_OK);
-
 }
 
 // ===========================================================================

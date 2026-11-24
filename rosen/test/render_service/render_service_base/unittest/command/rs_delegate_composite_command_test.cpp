@@ -1751,7 +1751,8 @@ HWTEST_F(RSDelegateCompositeCommandTest, Unmarshalling_EmptyParcel_ReadInt32Fail
  * @tc.type: FUNC
  * @tc.require: issueIAL2EA
  */
-HWTEST_F(RSDelegateCompositeCommandTest, TransactionBufferCommand_Marshalling_RSMarshallingHelperFail_001, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCommandTest,
+    TransactionBufferCommand_Marshalling_RSMarshallingHelperFail_001, TestSize.Level1)
 {
     std::vector<RSTransactionConfig> configs;
     NodeId nodeId = 12345;
