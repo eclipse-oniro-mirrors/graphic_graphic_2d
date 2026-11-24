@@ -3660,21 +3660,6 @@ HWTEST_F(RSCanvasNodeTest, ConstructorWithNodeId, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetPixelmap
- * @tc.desc: Test SetPixelmap
- * @tc.type: FUNC
- * @tc.require: IBFOIN
- */
-HWTEST_F(RSCanvasNodeTest, SetPixelmap, TestSize.Level1)
-{
-    RSCanvasNode::SharedPtr canvasNode = RSCanvasNode::Create();
-    canvasNode->SetPixelmap(nullptr);
-    auto pixelmap = std::make_shared<OHOS::Media::PixelMap>();
-    EXPECT_NE(pixelmap, nullptr);
-    canvasNode->SetPixelmap(pixelmap);
-}
-
-/**
  * @tc.name: SetRSUIContextTest001
  * @tc.desc: test result of SetRSUIContext
  * @tc.type: FUNC

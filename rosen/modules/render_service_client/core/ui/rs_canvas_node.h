@@ -163,13 +163,6 @@ public:
      */
     bool FlushCachedModifiers() override;
 
-    /**
-     * @brief Set a pixel map.
-     *
-     * @param pixelMap A shared pointer to a Media::PixelMap object.
-     */
-    void SetPixelmap(const std::shared_ptr<Media::PixelMap>& pixelMap);
-
 protected:
     RSCanvasNode(bool isRenderServiceNode, bool isTextureExportNode = false,
         std::shared_ptr<RSUIContext> rsUIContext = nullptr);
