@@ -326,7 +326,6 @@ RSTunnelRouteArbiter::MainThreadOutcome RSTunnelRouteArbiter::ArbitrateAndClaim(
     }
     auto& tunnelRuntime = *tunnelRuntimePtr;
     auto state = tunnelRuntime.GetTunnelState();
-
     if (state != RSTunnelRuntimeState::TunnelState::ACTIVE) {
         // NOT_TUNNEL / BUILDING / others: not participating in arbitration this frame.
         return MainThreadOutcome::NOT_TUNNEL_ACTIVE;
