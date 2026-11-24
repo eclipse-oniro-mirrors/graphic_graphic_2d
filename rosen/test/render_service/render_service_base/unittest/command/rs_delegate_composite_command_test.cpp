@@ -1884,7 +1884,8 @@ HWTEST_F(RSDelegateCompositeCommandTest, MarshallingCmdTypeSetRect_WriteFail_001
  * @tc.type: FUNC
  * @tc.require: issueIAL2EA
  */
-HWTEST_F(RSDelegateCompositeCommandTest, SurfaceTransactionCommand_Marshalling_RSMarshallingHelperFail_001, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCommandTest,
+    SurfaceTransactionCommand_Marshalling_RSMarshallingHelperFail_001, TestSize.Level1)
 {
     uint64_t srcId = 100;
     uint64_t seqNum = 200;

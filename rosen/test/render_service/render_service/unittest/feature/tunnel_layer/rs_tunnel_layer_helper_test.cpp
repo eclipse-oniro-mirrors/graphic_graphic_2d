@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#define private public
-
 #include <memory>
 #include <string>
 #include <unistd.h>
@@ -653,8 +651,8 @@ HWTEST_F(RSTunnelLayerHelperTest, OnBufferAvailable002, TestSize.Level1)
     auto firstTunnelBufferOwnerCount = context.surfaceHandler->GetBufferOwnerCount();
     ASSERT_NE(firstTunnelBufferOwnerCount, nullptr);
     // refCount = 2: initial(1) + AddRef from CreateTunnelLayer->SetBufferOwnerCount
-    constexpr int32_t TUNNEL_BUFFER_REFCOUNT_AFTER_ADDREF = 2;
-    EXPECT_EQ(firstTunnelBufferOwnerCount->refCount_.load(), TUNNEL_BUFFER_REFCOUNT_AFTER_ADDREF);
+    constexpr int32_t tunnelBufferRefcountAfterAddref = 2;
+    EXPECT_EQ(firstTunnelBufferOwnerCount->refCount_.load(), tunnelBufferRefcountAfterAddref);
     EXPECT_TRUE(context.surfaceHandler->IsCurrentFrameBufferConsumed());
     EXPECT_EQ(context.surfaceHandler->GetPreBuffer(), nullptr);
     EXPECT_EQ(tunnelRuntime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::ACTIVE);
@@ -945,7 +943,7 @@ HWTEST_F(RSTunnelLayerHelperTest, TryCommitPendingBuffer_NullComposerManager_Rel
     ASSERT_TRUE(context.IsProducerReady());
 
     context.producer->SetQueueSize(TEST_QUEUE_SIZE);
-    TunnelLayerState state = { {TUNNEL_TYPE_NONE, 0 }, 0 , TUNNEL_PROP_INVALID };
+    TunnelLayerState state = { {TUNNEL_TYPE_NONE, 0}, 0, TUNNEL_PROP_INVALID };
     ASSERT_TRUE(SetTunnelInfoForConsumer(context.consumer, state));
     auto& tunnelRuntime = *context.node->GetTunnelRuntimeState();
     tunnelRuntime.SetLayerInfo(state.tunnelLayerId, state.property);

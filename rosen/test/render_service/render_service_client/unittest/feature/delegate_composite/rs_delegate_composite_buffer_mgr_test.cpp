@@ -1060,8 +1060,8 @@ HWTEST_F(RSDelegateCompositeBufferManagerTest, GenerateTransactionConfigInner_Fu
     uint32_t bufSeq = buf->GetSeqNum();
 
     // pre-populate MAX_CACHE_SIZE (16) entries with keys that are NOT bufSeq
-    constexpr uint32_t MAX_CACHE_SIZE = 16;
-    for (uint32_t i = 0; i < MAX_CACHE_SIZE; ++i) {
+    constexpr uint32_t maxCacheSize = 16;
+    for (uint32_t i = 0; i < maxCacheSize; ++i) {
         uint32_t key = 1000u + i;
         if (key == bufSeq) {
             key = 5000u + i;

@@ -615,7 +615,8 @@ HWTEST_F(RSDelegateCompositeListenerTest, SurfaceTransactionListenerGetCommand_I
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSDelegateCompositeListenerTest, UnRegisterCommandCompleteCallBack_RenderPipelineClientNull_001, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeListenerTest,
+    UnRegisterCommandCompleteCallBack_RenderPipelineClientNull_001, TestSize.Level1)
 {
     auto listener = new SurfaceTransactionListener(connectToRender_);
     // directly create a stub so callBackStub_ becomes non-null without going through RegisterCommandCompleteCallBack

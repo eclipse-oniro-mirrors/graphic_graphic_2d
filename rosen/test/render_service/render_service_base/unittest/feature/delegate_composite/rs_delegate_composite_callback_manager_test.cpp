@@ -54,9 +54,10 @@ const char DELEGATE_CHILD_NAME[] = "delegate_child";
 } // namespace
 #ifndef ROSEN_CROSS_PLATFORM
 const uint32_t MAX_MAP_SIZE = 10000;
+const int32_t BIT = 48;
 static uint32_t GenePidBySeqNum(uint64_t SeqNum)
 {
-    return (SeqNum >> 48);
+    return (SeqNum >> BIT);
 }
 
 class MockNodeBufferReleaseCallback : public IRemoteStub<RSISurfaceNodeBufferReleaseCallback> {
@@ -141,7 +142,10 @@ public:
     GSError OnPropertyChange(const SurfaceProperty&) override { return SURFACE_ERROR_NOT_SUPPORT; }
     int OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) override
     {
-        (void)code; (void)data; (void)reply; (void)option;
+        (void)code;
+        (void)data;
+        (void)reply;
+        (void)option;
         return 0;
     }
 };
@@ -1212,7 +1216,8 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, AddBufferReleaseInfoInner003, T
 * @tc.type: FUNC
 * @tc.require: issueIAL2EA
 */
-HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_OnBufferReleasedWithSequenceAndFence_001, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCallbackManagerTest,
+    RsDelegateProducerListener_OnBufferReleasedWithSequenceAndFence_001, TestSize.Level1)
 {
     sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
     ASSERT_NE(consumer, nullptr);
@@ -1266,7 +1271,8 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_OnBu
 * @tc.type: FUNC
 * @tc.require: issueIAL2EA
 */
-HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_OnBufferReleasedWithFence_001, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCallbackManagerTest,
+    RsDelegateProducerListener_OnBufferReleasedWithFence_001, TestSize.Level1)
 {
     sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
     ASSERT_NE(consumer, nullptr);
@@ -1346,7 +1352,8 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_Rese
 * @tc.type: FUNC
 * @tc.require: issueIAL2EA
 */
-HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_RegisterReleaseListener_FullFlow_001, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCallbackManagerTest,
+    RsDelegateProducerListener_RegisterReleaseListener_FullFlow_001, TestSize.Level1)
 {
     sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
     ASSERT_NE(consumer, nullptr);
@@ -1370,7 +1377,8 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_Regi
 * @tc.type: FUNC
 * @tc.require: issueIAL2EA
 */
-HWTEST_F(RSDelegateCompositeCallbackManagerTest, RsDelegateProducerListener_OnBufferReleasedWithSequenceAndFence_VerifyInfo_001, TestSize.Level1)
+HWTEST_F(RSDelegateCompositeCallbackManagerTest,
+    RsDelegateProducerListener_OnBufferReleasedWithSequenceAndFence_VerifyInfo_001, TestSize.Level1)
 {
     sptr<IConsumerSurface> consumer = IConsumerSurface::Create();
     ASSERT_NE(consumer, nullptr);
