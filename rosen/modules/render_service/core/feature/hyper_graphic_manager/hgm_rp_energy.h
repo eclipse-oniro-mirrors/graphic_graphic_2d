@@ -37,7 +37,7 @@ public:
 
     void SetVideoCallPid(pid_t pid);
 
-    uint64_t GetVideoCallPtsOffset(pid_t pid, const std::string& bufferName);
+    int64_t GetVideoCallPtsOffset(pid_t pid, const std::string& bufferName);
 
 private:
     void GetComponentFps(FrameRateRange& range);
@@ -50,5 +50,4 @@ private:
     std::atomic<pid_t> videoCallPid_ = { DEFAULT_PID };
 };
 }; // namespace OHOS::Rosen
-
 #endif // HGM_RP_ENERGY_H

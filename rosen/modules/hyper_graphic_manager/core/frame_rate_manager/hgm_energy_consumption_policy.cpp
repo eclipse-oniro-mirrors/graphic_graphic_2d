@@ -393,9 +393,9 @@ bool HgmEnergyConsumptionPolicy::GetVideoCallFrameRate(
         isVideoCall = false;
     }
     if (isVideoCall_.load() != isVideoCall) {
-        isSyncVideoCallToRp_ = false;
+        isSyncVideoCallToRp_.store(false);
     }
-    if (isVideoCall_.load() && isVideoCall && isSyncVideoCallToRp_) {
+    if (isVideoCall_.load() && isVideoCall && isSyncVideoCallToRp_.load()) {
         // Enable the policy after the status is synchronized to the RP.
         finalRange.Merge({ OLED_NULL_HZ, OLED_144_HZ, videoCallMaxFrameRate_.load() });
         RS_TRACE_NAME_FMT("GetVideoCallFrameRate limit video call frame rate %d", finalRange.preferred_);
@@ -406,7 +406,7 @@ bool HgmEnergyConsumptionPolicy::GetVideoCallFrameRate(
 
 pid_t HgmEnergyConsumptionPolicy::GetVideoCallPid()
 {
-    isSyncVideoCallToRp_ = true;
+    isSyncVideoCallToRp_.store(true);
     return isVideoCall_.load() ? videoCallPid_.load() : DEFAULT_PID;
 }
 

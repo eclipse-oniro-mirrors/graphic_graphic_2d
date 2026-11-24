@@ -94,7 +94,7 @@ private:
     std::atomic<bool> isOnlyVideoCallExist_ = { false };
     std::atomic<bool> isVideoCallVsyncChange_ = { false };
     std::atomic<bool> isVideoCall_ = { false };
-    bool isSyncVideoCallToRp_ = false;
+    std::atomic<bool> isSyncVideoCallToRp_ = { false };
     // concurrency protection >>>
     mutable std::mutex videoCallLock_;
     std::string videoCallLayerName_ = "";

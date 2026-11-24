@@ -1225,18 +1225,19 @@ void RSMainThread::GetFrontBufferDesiredPresentTimeStamp(
         desiredPresentTimeStamp = 0;
         return;
     }
-    uint64_t videoCallPtsOffset = hgmRenderContext_->GetHgmRPEnergy()->GetVideoCallPtsOffset(pid, consumer->GetName());
+ 
+    int64_t videoCallPtsOffset = hgmRenderContext_->GetHgmRPEnergy()->GetVideoCallPtsOffset(pid, consumer->GetName());
     fronDesiredPresentTimeStamp = fronDesiredPresentTimeStamp > videoCallPtsOffset
                                       ? fronDesiredPresentTimeStamp - videoCallPtsOffset
                                       : fronDesiredPresentTimeStamp;
-    const uint64_t tmp = static_cast<uint64_t>(fronDesiredPresentTimeStamp);
-    if (tmp <= vsyncRsTimestamp_.load() ||
-        (tmp > ONE_SECOND_TIMESTAMP && tmp - ONE_SECOND_TIMESTAMP > vsyncRsTimestamp_.load())) {
+    uint64_t currentVsyncTime = vsyncRsTimestamp_.load();
+    if (currentVsyncTime > static_cast<uint64_t>(INT64_MAX)) {
         desiredPresentTimeStamp = 0;
         return;
     }
-    // vsyncRsTimestamp_ < fronDesiredPresentTimeStamp <= vsyncRsTimestamp_ + 1s
-    desiredPresentTimeStamp = fronDesiredPresentTimeStamp;
+    desiredPresentTimeStamp =
+        isBufferUtilPresentTimestampReady(fronDesiredPresentTimeStamp, currentVsyncTime) ?
+            0 : fronDesiredPresentTimeStamp;
 }
 
 void RSMainThread::NotifyUnmarshalTask(int64_t uiTimestamp)
