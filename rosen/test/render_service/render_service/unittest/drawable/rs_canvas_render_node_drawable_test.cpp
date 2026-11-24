@@ -68,7 +68,7 @@ HWTEST(RSCanvasRenderNodeDrawableTest, CreateCanvasRenderNodeDrawable, TestSize.
  * @tc.name: CreateCanvasRenderNodeDrawableTest002
  * @tc.desc: Test If CanvasRenderNodeDrawable Can Be Created
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST(RSCanvasRenderNodeDrawableTest, CreateCanvasRenderNodeDrawableTest002, TestSize.Level1)
 {
@@ -89,7 +89,7 @@ HWTEST(RSCanvasRenderNodeDrawableTest, CreateCanvasRenderNodeDrawableTest002, Te
  * @tc.name: AddDrawableToAllocatorTest001
  * @tc.desc: test AddDrawableToAllocator
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST(RSCanvasRenderNodeDrawableTest, AddDrawableToAllocatorTest001, TestSize.Level1)
 {
@@ -243,12 +243,8 @@ HWTEST(RSCanvasRenderNodeDrawableTest, QuickGetDrawState, TestSize.Level1)
         RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
     pCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::DEFAULT_STATE);
     canvasDrawable->QuickGetDrawState(*pCanvas);
-
     pCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::SUBTREE_QUICK_DRAW_STATE);
-    // canvasDrawable->nodeId_ = 0; // removed in slimming
     canvasDrawable->QuickGetDrawState(*pCanvas);
-
-    // canvasDrawable->nodeId_ = 1; // removed in slimming
     canvasDrawable->occlusionCullingEnabled_ = true;
     pCanvas->culledEntireSubtree_.insert(1);
     canvasDrawable->QuickGetDrawState(*pCanvas);
