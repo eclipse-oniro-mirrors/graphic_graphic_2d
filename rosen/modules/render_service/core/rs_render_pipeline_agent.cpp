@@ -82,7 +82,8 @@
 #include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
 #include "feature/capture/rs_blur_pixelmap.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
-
+#include "platform/common/rs_system_properties.h"
+#include "render/rs_image_cache.h"
 #undef LOG_TAG
 #define LOG_TAG "RSRenderPipelineAgent"
 
@@ -3140,6 +3141,54 @@ bool RSRenderPipelineAgent::CleanDelegateModeBufferCmd(NodeId nodeId, pid_t pid)
     return repCode;
 #else
     return false;
+#endif
+}
+
+void RSRenderPipelineAgent::ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type)
+{
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+    RS_TRACE_NAME_FMT("RSRenderPipelineAgent::ReleaseGpuMemory nodeId:%" PRIu64 ", type:%d",
+        surfaceNodeId, static_cast<int>(type));
+    RS_LOGI("RSRenderPipelineAgent::ReleaseGpuMemory nodeId:%{public}" PRIu64
+        ", type:%{public}d", surfaceNodeId, static_cast<int>(type));
+    auto pipeline = rsRenderPipeline_.lock();
+    if (!pipeline) {
+        RS_LOGE("RSRenderPipelineAgent::ReleaseGpuMemory pipeline is nullptr");
+        return;
+    }
+    auto task = [surfaceNodeId, type, pipeline]() {
+        if (RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+            RS_LOGE("RSRenderPipelineAgent::ReleaseGpuMemory only surpports DDGR backend, "
+                "nodeId:%{public}" PRIu64, surfaceNodeId);
+            return;
+        }
+        auto node = pipeline->GetMainThread()->GetContext().GetNodeMap()
+            .GetRenderNode<RSSurfaceRenderNode>(surfaceNodeId);
+        if (node == nullptr) {
+            RS_LOGE("RSRenderPipelineAgent::ReleaseGpuMemory node not found, id:%{public}" PRIu64, surfaceNodeId);
+            return;
+        }
+        if (!IS_SCB_WINDOW_TYPE(node->GetSurfaceWindowType())) {
+            RS_LOGE("RSRenderPipelineAgent::ReleaseGpuMemory surface type must SCB window, "
+                "nodeId:%{public}" PRIu64, surfaceNodeId);
+            return;
+        }
+        switch (type) {
+            case GpuMemoryType::MIPMAP_AND_IMAGE_GPU:
+                pipeline->GetUniRenderThread()->PostTask([surfaceNodeId]() {
+                    RSImageCache::Instance().RemoveImageMemForWindow(surfaceNodeId, false);
+                });
+                break;
+            default:
+                RS_LOGE("RSRenderPipelineAgent::ReleaseGpuMemory unsupported type:%{public}d, "
+                    "nodeId:%{public}" PRIu64, static_cast<int>(type), surfaceNodeId);
+                break;
+        }
+    };
+    pipeline->PostMainThreadTask(task);
+#else
+    RS_LOGE("RSRenderPipelineAgent::ReleaseGpuMemory not supported, nodeId:%{public}" PRIu64
+        ", ROSEN_OHOS or RS_ENABLE_VK is not defined", surfaceNodeId);
 #endif
 }
 } // namespace Rosen

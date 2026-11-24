@@ -251,6 +251,8 @@ public:
     void ReleaseCanvasDrawingNodeSurface(NodeId nodeId, pid_t remotePid);
 #endif
 
+    void ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type);
+
 private:
     void ConfigureForceTunnelLayer(const RSSurfaceRenderNodeConfig& config, const sptr<IConsumerSurface>& surface);
     void ConfigureForceTunnelLayer(
