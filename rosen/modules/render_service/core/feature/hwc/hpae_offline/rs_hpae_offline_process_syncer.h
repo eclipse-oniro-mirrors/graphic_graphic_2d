@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 HUA[REPLACED] Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,8 +15,8 @@
 
 #ifndef RS_HPAE_OFFLINE_PROCESS_SYNC_H
 #define RS_HPAE_OFFLINE_PROCESS_SYNC_H
-
 #include <utility>
+
 #include "feature/hwc/hpae_offline/rs_offline_result.h"
 
 namespace OHOS::Rosen {

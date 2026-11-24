@@ -1,0 +1,915 @@
+# Copyright (c) 2025 HUA[REPLACED] Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
+
+module_output_path = "graphic_2d/graphic_2d/rosen_engine/render_service/feature"
+
+group("unittest") {
+  testonly = true
+  deps = [
+    ":RSHpaeOfflineThreadManagerTest",
+    ":RSHpaeOfflineLayerTest",
+    ":RSHpaeOfflineDeviceTest",
+    ":RSHpaeOfflineDrawableTest",
+    ":RSHpaeOfflineDeviceMockTest",
+    ":RSHpaeOfflineUniRSVisitorTest",
+    ":RSHpaeSurfaceLayerTest",
+    ":RSHpaeOfflineCmdAndParamsTest",
+    ":RSGPUOfflineTest",
+  ]
+}
+
+###############################################################################
+config("capture_test") {
+  include_dirs = [ "$graphic_2d_root/rosen/modules/render_service/core" ]
+}
+
+## Build RSHpaeOfflineDrawableTest
+ohos_unittest("RSHpaeOfflineDrawableTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_hpae_offline_drawable_test.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
+  include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "egl:libEGL",
+    "opengles:libGLES",
+    "libxml2:libxml2",
+    "samgr:samgr_proxy",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  if (defined(global_parts_info) &&
+    defined(global_parts_info.resourceschedule_resource_schedule_service)) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+    defines += [ "RES_SCHED_ENABLE" ]
+  }
+
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    include_dirs = []
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+
+  deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  external_deps += [
+    "eventhandler:libeventhandler",
+    "accessibility:accessibilityconfig",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+  ]
+
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_override:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+}
+
+## Build RSHpaeOfflineThreadManagerTest
+ohos_unittest("RSHpaeOfflineThreadManagerTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_hpae_offline_thread_manager_test.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
+  include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
+  external_deps = [
+    "c_utils:utils",
+    "ffrt:libffrt",
+    "hilog:libhilog",
+    "egl:libEGL",
+    "opengles:libGLES",
+    "libxml2:libxml2",
+    "samgr:samgr_proxy",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    include_dirs = []
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+
+  deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  external_deps += [
+    "eventhandler:libeventhandler",
+    "accessibility:accessibilityconfig",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+  ]
+
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_override:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+}
+
+## Build RSHpaeOfflineLayerTest
+ohos_unittest("RSHpaeOfflineLayerTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_hpae_offline_layer_test.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
+  include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "egl:libEGL",
+    "opengles:libGLES",
+    "libxml2:libxml2",
+    "samgr:samgr_proxy",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    include_dirs = []
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+
+  deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  external_deps += [
+    "eventhandler:libeventhandler",
+    "accessibility:accessibilityconfig",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+  ]
+
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_override:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+}
+
+## Build RSGPUOfflineTest
+ohos_unittest("RSGPUOfflineTest") {
+  module_out_path = module_output_path
+  sources = [
+    "rs_gpu_offline_buffer_test.cpp",
+    "rs_gpu_offline_device_test.cpp",
+    "rs_gpu_offline_thread_test.cpp",
+    "rs_offline_processor_test.cpp",
+    "rs_hpae_offline_test.cpp",
+  ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "samgr:samgr_proxy",
+    "egl:libEGL",
+    "opengles:libGLES",
+    "libxml2:libxml2",
+  ]
+  if (use_memmgr_plugin || use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+  include_dirs = [ "$graphic_2d_root/rosen/modules/composer/hdi_backend/include", ]
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+}
+
+ohos_source_set("mock_dlfcn") {
+  testonly = true
+
+  sources = [ "mock.cpp" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+  }
+
+  include_dirs = [
+    "$graphic_2d_root/rosen/modules/render_service",
+    "$graphic_2d_root/rosen/modules/render_service/core",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
+  ]
+
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "egl:libEGL",
+    "opengles:libGLES",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    include_dirs = []
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+
+  deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  external_deps += [
+    "eventhandler:libeventhandler",
+    "accessibility:accessibilityconfig",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+  ]
+
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_override:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+}
+
+## Build RSHpaeOfflineDeviceTest
+ohos_unittest("RSHpaeOfflineDeviceTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_hpae_offline_device_test.cpp" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+  }
+  
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
+  include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "egl:libEGL",
+    "opengles:libGLES",
+    "libxml2:libxml2",
+    "samgr:samgr_proxy",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    include_dirs = []
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+
+  deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  external_deps += [
+    "eventhandler:libeventhandler",
+    "accessibility:accessibilityconfig",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+  ]
+
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_override:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+
+  if (defined(graphic_2d_feature_hetero_hdr_enable) && graphic_2d_feature_hetero_hdr_enable
+    && defined(graphic_2d_hetero_hdr_configs)) {
+    sources += graphic_2d_hetero_hdr_configs.render_service_hetero_hdr_unittest_sources
+    include_dirs += graphic_2d_hetero_hdr_configs.librender_service_hetero_hdr_include
+    external_deps += graphic_2d_hetero_hdr_configs.librender_service_hetero_hdr_external_deps
+    external_deps += [ "ffrt:libffrt" ]
+  }
+}
+
+## Build RSHpaeOfflineDeviceMockTest
+ohos_unittest("RSHpaeOfflineDeviceMockTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_hpae_offline_device_mock_test.cpp" ]
+  
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+  }
+  
+  deps = [
+    ":mock_dlfcn",
+    ":rs_test_common",
+  ]
+  include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "egl:libEGL",
+    "opengles:libGLES",
+    "libxml2:libxml2",
+    "samgr:samgr_proxy",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    include_dirs = []
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+
+  deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  external_deps += [
+    "eventhandler:libeventhandler",
+    "accessibility:accessibilityconfig",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+  ]
+
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_override:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+}
+
+## Build RSHpaeOfflineUniRSVisitorTest
+ohos_unittest("RSHpaeOfflineUniRSVisitorTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_hpae_offline_uni_render_visitor_test.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "egl:libEGL",
+    "opengles:libGLES",
+    "libxml2:libxml2",
+    "samgr:samgr_proxy",
+  ]
+  include_dirs =
+      [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    include_dirs = []
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps +=
+        [ "drivers_interface_display:display_commontype_idl_headers",
+          "video_processing_engine:videoprocessingengine",
+        ]
+  }
+
+  deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  external_deps += [
+    "eventhandler:libeventhandler",
+    "accessibility:accessibilityconfig",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+  ]
+
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_override:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+}
+
+## Build RSOfflineProcessorTest
+ohos_unittest("RSOfflineProcessorTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_offline_processor_test.cpp" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+  }
+  
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
+  include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "libxml2:libxml2",
+    "samgr:samgr_proxy",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    include_dirs = []
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+
+  deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  external_deps += [
+    "eventhandler:libeventhandler",
+    "accessibility:accessibilityconfig",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+  ]
+
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_override:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+
+  if (defined(graphic_2d_feature_hetero_hdr_enable) && graphic_2d_feature_hetero_hdr_enable
+    && defined(graphic_2d_hetero_hdr_configs)) {
+    sources += graphic_2d_hetero_hdr_configs.render_service_hetero_hdr_unittest_sources
+    include_dirs += graphic_2d_hetero_hdr_configs.librender_service_hetero_hdr_include
+    external_deps += graphic_2d_hetero_hdr_configs.librender_service_hetero_hdr_external_deps
+    external_deps += [ "ffrt:libffrt" ]
+  }
+}
+
+## Build RSHpaeSurfaceLayerTest
+ohos_unittest("RSHpaeSurfaceLayerTest") {
+  module_out_path = module_output_path
+  sources = [
+    "rsHpaeOfflineLayerTest.cpp",
+    "../../../composer/composer_service/layer_backend/mock_hdi_device.cpp",
+  ]
+  deps = [
+    ":mock_dlfcn",
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
+  include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "egl:libEGL",
+    "opengles:libGLES",
+    "libxml2:libxml2",
+    "samgr:samgr_proxy",
+  ]
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+
+  deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  external_deps += [
+    "eventhandler:libeventhandler",
+    "accessibility:accessibilityconfig",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "graphic_surface:surface",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+  ]
+
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_override:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+}
+
+## Build RSHpaeOfflineCmdAndParamsTest
+ohos_unittest("RSHpaeOfflineCmdAndParamsTest") {
+  module_out_path = module_output_path
+  sources = [ "rsHpaeOfflineCmdAndParamsTest.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
+  include_dirs = [
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/layer_backend",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "graphic_surface:surface",
+  ]
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+
+  external_deps += [
+    "eventhandler:libeventhandler",
+    "accessibility:accessibilityconfig",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "image_framework:image_native",
+    "init:libbegetutil",
+  ]
+
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_override:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+}
+
+## Build rs_test_common.a {{{
+config("rs_test_common_public_config") {
+  include_dirs = [
+    "$graphic_2d_root/rosen/include",
+    "$graphic_2d_root/rosen/modules/frame_load/include",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/config",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/frame_rate_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/hgm_screen_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/soft_vsync_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/utils",
+    "$graphic_2d_root/rosen/modules/render_service",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/connection",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/connection/zidl",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/external_depend",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/layer",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/pipeline",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/connection",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/connection/zidl",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/layer_backend",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/pipeline",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/render_layer",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/transaction",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/transaction/command",
+    "$graphic_2d_root/rosen/modules/render_service/core",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/feature_param",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/feature_param/extend_feature",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/feature_param/performance_feature",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/xml_parser",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/xml_parser/extend_feature_parser",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/xml_parser/performance_feature_parser",
+    "$graphic_2d_root/rosen/modules/render_service/main",
+    "$graphic_2d_root/rosen/modules/render_service/main/render_server",
+    "$graphic_2d_root/rosen/modules/render_service_base/src",
+    "$graphic_2d_root/rosen/modules/render_service_client/core",
+    "$graphic_2d_root/rosen/test/include",
+    "$graphic_2d_root/rosen/test/render_service/render_service/unittest",
+    "$graphic_2d_root/rosen/modules/render_service/vsync",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-g3",
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
+
+ohos_static_library("rs_test_common") {
+  visibility = [ ":*" ]
+  testonly = true
+  defines = []
+  defines += gpu_defines
+  sources = [ "../../../pipeline/rs_test_util.cpp" ]
+  public_configs = [ ":rs_test_common_public_config" ]
+
+  external_deps = [
+    "egl:libEGL",
+    "opengles:libGLES",
+    "libxml2:libxml2",
+    "samgr:samgr_proxy",
+  ]
+  if (accessibility_enable) {
+    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
+    defines += accessibility_defines
+  }
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.resourceschedule_resource_schedule_service)) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+    defines += [ "RES_SCHED_ENABLE" ]
+  }
+
+  subsystem_name = "graphic"
+  part_name = "graphic_2d"
+}
