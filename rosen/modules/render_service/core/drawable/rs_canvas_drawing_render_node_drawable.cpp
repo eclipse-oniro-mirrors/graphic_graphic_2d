@@ -810,6 +810,9 @@ bool RSCanvasDrawingRenderNodeDrawable::IsNeedResetSurface() const
 
 void RSCanvasDrawingRenderNodeDrawable::ReleaseCaptureImage()
 {
+    if (!captureImage_) {
+        return;
+    }
     RSOffscreenRenderThread::Instance().PostTask([image = captureImage_]() mutable { image = nullptr; });
     captureImage_ = nullptr;
 }
@@ -955,6 +958,7 @@ void RSCanvasDrawingRenderNodeDrawable::CreateGpuSurface(const Drawing::ImageInf
     } else {
         return;
     }
+
     if (isDmaBackendTexture) {
         if (preAllocateDmaEnabled_) {
             dmaFallbackCount_.fetch_add(1, std::memory_order_relaxed);
@@ -1212,7 +1216,7 @@ bool RSCanvasDrawingRenderNodeDrawable::GpuContextResetVK(
 {
     Drawing::ImageInfo info =
         Drawing::ImageInfo { width, height, Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
-#if defined(RS_ENABLE_VK)
+#ifdef RS_ENABLE_VK
     bool newVulkanCleanupHelper = false;
     CreateGpuSurface(info, gpuContext, newVulkanCleanupHelper, true);
     if (!surface_) {
@@ -1323,7 +1327,7 @@ bool RSCanvasDrawingRenderNodeDrawable::GetCurrentContextAndImage(std::shared_pt
                 RS_LOGE("RSCanvasDrawingRenderNodeDrawable::GetCurrentContextAndImage get grGrContext failed");
                 return false;
             }
-            grContext = RSSubThreadManager::Instance()->GetGrContextFromSubThread(realTid);
+            grContext = RSSubThreadManager::Instance()->GetGrContextFromSubThread(tid);
         }
 
         if (!grContext || !backendTexture_.IsValid()) {

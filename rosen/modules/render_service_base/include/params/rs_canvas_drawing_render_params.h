@@ -62,31 +62,31 @@ public:
 
 #ifdef RS_MODIFIERS_DRAW_ENABLE
     void SetBufferSynced(bool bufferSynced);
- 
+
     bool IsBufferSynced() const;
- 
+
     void SetBufferDraw(bool bufferDraw);
- 
+
     bool IsBufferDraw() const;
- 
+
     void SetBuffer(const sptr<SurfaceBuffer>& buffer,
         std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect) override;
- 
+
     sptr<SurfaceBuffer> GetBuffer() const override;
- 
+
     void SetPreBuffer(const sptr<SurfaceBuffer>& preBuffer,
         std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount) override;
- 
+
     sptr<SurfaceBuffer> GetPreBuffer() override;
- 
+
     void SetAcquireFence(const sptr<SyncFence>& acquireFence) override;
- 
+
     sptr<SyncFence> GetAcquireFence() const override;
- 
+
     const Rect& GetBufferDamage() const override;
- 
+
     std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> GetBufferOwnerCount() const override;
- 
+
     std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> GetPreBufferOwnerCount() const override;
 
     void SetConsumerSurface(sptr<IConsumerSurface> consumerSurface);
