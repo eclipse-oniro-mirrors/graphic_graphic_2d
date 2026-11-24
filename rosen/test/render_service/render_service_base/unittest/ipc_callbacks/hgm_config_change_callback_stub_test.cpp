@@ -58,6 +58,7 @@ void RSHgmConfigChangeCallbackStubTest::TearDown() {}
  * @tc.name: OnRemoteRequest001
  * @tc.desc: Verify function OnRemoteRequest incorrect code and no data
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest001, TestSize.Level1)
 {
@@ -74,6 +75,7 @@ HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest001, TestSize.Level1)
  * @tc.name: OnRemoteRequest002
  * @tc.desc: Verify function OnRemoteRequest incorrect Descriptor
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest002, TestSize.Level1)
 {
@@ -91,6 +93,7 @@ HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest002, TestSize.Level1)
  * @tc.name: OnRemoteRequest003
  * @tc.desc: Verify function OnRemoteRequest incorrect code and data present
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest003, TestSize.Level1)
 {
@@ -108,6 +111,7 @@ HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest003, TestSize.Level1)
  * @tc.name: OnRemoteRequest004
  * @tc.desc: Verify function OnRemoteRequest code:ON_HGM_CONFIG_CHANGED
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest004, TestSize.Level1)
 {
@@ -125,6 +129,7 @@ HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest004, TestSize.Level1)
  * @tc.name: OnRemoteRequest005
  * @tc.desc: Verify function OnRemoteRequest code:ON_HGM_REFRESH_RATE_MODE_CHANGED
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest005, TestSize.Level1)
 {
@@ -142,6 +147,7 @@ HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest005, TestSize.Level1)
  * @tc.name: OnRemoteRequest006
  * @tc.desc: Verify function OnRemoteRequest code:ON_HGM_REFRESH_RATE_CHANGED
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSHgmConfigChangeCallbackStubTest, OnRemoteRequest006, TestSize.Level1)
 {

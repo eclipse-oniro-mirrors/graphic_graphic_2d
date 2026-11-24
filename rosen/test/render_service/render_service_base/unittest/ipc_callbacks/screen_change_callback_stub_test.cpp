@@ -46,6 +46,7 @@ void RSScreenChangeCallbackStubTest::TearDown() {}
  * @tc.name: OnRemoteRequest001
  * @tc.desc: Verify function OnRemoteRequest
  * @tc.type:FUNC
+ * @tc.require: issueI9L0VL
  */
 HWTEST_F(RSScreenChangeCallbackStubTest, OnRemoteRequest001, TestSize.Level1)
 {
@@ -64,6 +65,7 @@ HWTEST_F(RSScreenChangeCallbackStubTest, OnRemoteRequest001, TestSize.Level1)
  * @tc.name: OnRemoteRequest002
  * @tc.desc: Verify function OnRemoteRequest
  * @tc.type:FUNC
+ * @tc.require: issueI9L0VL
  */
 HWTEST_F(RSScreenChangeCallbackStubTest, OnRemoteRequest002, TestSize.Level1)
 {
@@ -81,6 +83,7 @@ HWTEST_F(RSScreenChangeCallbackStubTest, OnRemoteRequest002, TestSize.Level1)
  * @tc.name: OnRemoteRequest003
  * @tc.desc: Verify function OnRemoteRequest
  * @tc.type:FUNC
+ * @tc.require: issueI9L0VL
  */
 HWTEST_F(RSScreenChangeCallbackStubTest, OnRemoteRequest003, TestSize.Level1)
 {
@@ -99,6 +102,7 @@ HWTEST_F(RSScreenChangeCallbackStubTest, OnRemoteRequest003, TestSize.Level1)
  * @tc.name: OnRemoteRequest004
  * @tc.desc: Verify function OnRemoteRequest
  * @tc.type:FUNC
+ * @tc.require: issueI9L0VL
  */
 HWTEST_F(RSScreenChangeCallbackStubTest, OnRemoteRequest004, TestSize.Level1)
 {

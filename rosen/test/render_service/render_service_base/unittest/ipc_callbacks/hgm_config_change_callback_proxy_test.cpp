@@ -38,6 +38,7 @@ void HGMConfigChangeCallbackProxyTest::TearDown() {}
  * @tc.name: OnHgmConfigChanged001
  * @tc.desc: Verify function OnHgmConfigChanged
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmConfigChanged001, TestSize.Level1)
 {
@@ -54,6 +55,7 @@ HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmConfigChanged001, TestSize.Level
  * @tc.name: OnHgmConfigChanged002
  * @tc.desc: Verify function OnHgmConfigChanged
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmConfigChanged002, TestSize.Level1)
 {
@@ -71,6 +73,7 @@ HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmConfigChanged002, TestSize.Level
  * @tc.name: OnHgmConfigChanged003
  * @tc.desc: Verify function OnHgmConfigChanged
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmConfigChanged003, TestSize.Level1)
 {
@@ -83,6 +86,7 @@ HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmConfigChanged003, TestSize.Level
  * @tc.name: OnHgmRefreshRateModeChanged001
  * @tc.desc: Verify function OnHgmRefreshRateModeChanged
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateModeChanged001, TestSize.Level1)
 {
@@ -100,6 +104,7 @@ HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateModeChanged001, TestS
  * @tc.name: OnHgmRefreshRateModeChanged002
  * @tc.desc: Verify function OnHgmRefreshRateModeChanged
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateModeChanged002, TestSize.Level1)
 {
@@ -118,6 +123,7 @@ HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateModeChanged002, TestS
  * @tc.name: OnHgmRefreshRateModeChanged003
  * @tc.desc: Verify function OnHgmRefreshRateModeChanged
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateModeChanged003, TestSize.Level1)
 {
@@ -131,6 +137,7 @@ HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateModeChanged003, TestS
  * @tc.name: OnHgmRefreshRateUpdate001
  * @tc.desc: Verify function OnHgmRefreshRateUpdate
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateUpdate001, TestSize.Level1)
 {
@@ -148,6 +155,7 @@ HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateUpdate001, TestSize.L
  * @tc.name: OnHgmRefreshRateUpdate002
  * @tc.desc: Verify function OnHgmRefreshRateUpdate
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateUpdate002, TestSize.Level1)
 {
@@ -166,6 +174,7 @@ HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateUpdate002, TestSize.L
  * @tc.name: OnHgmRefreshRateUpdate003
  * @tc.desc: Verify function OnHgmRefreshRateUpdate
  * @tc.type: FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(HGMConfigChangeCallbackProxyTest, OnHgmRefreshRateUpdate003, TestSize.Level1)
 {

@@ -41,6 +41,7 @@ void RSBufferClearCallbackProxyTest::TearDown() {}
  * @tc.name: OnBufferClear001
  * @tc.desc: Verify the OnBufferClear
  * @tc.type:FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSBufferClearCallbackProxyTest, OnBufferClear001, TestSize.Level1)
 {
@@ -50,13 +51,14 @@ HWTEST_F(RSBufferClearCallbackProxyTest, OnBufferClear001, TestSize.Level1)
     ASSERT_TRUE(rsBufferClearCallbackProxy != nullptr);
     rsBufferClearCallbackProxy->OnBufferClear();
     ASSERT_EQ(remoteMocker->receivedCode_,
-              static_cast<uint32_t>(RSIBufferClearCallbackInterfaceCode::ON_BUFFER_CLEAR));
+        static_cast<uint32_t>(RSIBufferClearCallbackInterfaceCode::ON_BUFFER_CLEAR));
 }
 
 /**
  * @tc.name: OnBufferClear002
  * @tc.desc: Verify the OnBufferClear error case
  * @tc.type:FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSBufferClearCallbackProxyTest, OnBufferClear002, TestSize.Level1)
 {
@@ -67,17 +69,18 @@ HWTEST_F(RSBufferClearCallbackProxyTest, OnBufferClear002, TestSize.Level1)
     ASSERT_TRUE(rsBufferClearCallbackProxy != nullptr);
     rsBufferClearCallbackProxy->OnBufferClear();
     ASSERT_EQ(remoteMocker->receivedCode_,
-              static_cast<uint32_t>(RSIBufferClearCallbackInterfaceCode::ON_BUFFER_CLEAR));
+        static_cast<uint32_t>(RSIBufferClearCallbackInterfaceCode::ON_BUFFER_CLEAR));
 }
 
 /**
 * @tc.name: OnBufferClear003
 * @tc.desc: Verify the OnBufferClear
 * @tc.type:FUNC
+* @tc.require: issueIABHAX
 */
 HWTEST_F(RSBufferClearCallbackProxyTest, OnBufferClear003, TestSize.Level1)
 {
-    auto  rsBufferClearCallbackProxy = std::make_shared<RSBufferClearCallbackProxy>(nullptr);
+    auto rsBufferClearCallbackProxy = std::make_shared<RSBufferClearCallbackProxy>(nullptr);
     ASSERT_TRUE(rsBufferClearCallbackProxy != nullptr);
     rsBufferClearCallbackProxy->OnBufferClear();
 }
