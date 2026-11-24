@@ -282,6 +282,10 @@ void FontCollection::ClearThemeFont()
         dfmanager_->LoadThemeFont("", themeFamily, nullptr, 0);
     }
     SPText::DefaultFamilyNameMgr::GetInstance().ModifyThemeFontFamilies(0);
+    // The theme families are mirrored into the skparagraph FontCollection; sync
+    // the mirror (and the default family names) so the shaping fast path can
+    // re-enable after the theme font is cleared.
+    fontCollection_->UpdateDefaultFamilies();
 }
 
 void FontCollection::SetCachesEnabled(bool enable)
