@@ -149,6 +149,8 @@ void RSScreenRenderNodeDrawableTest::CleanUpUniRenderEngine()
 
 void RSScreenRenderNodeDrawableTest::SetUp()
 {
+    // Initialize the thread-local render thread params so that each test case can run independently.
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
     if (!clientHasSet) {
         clientHasSet = true;
         // Instance() can't be invoked in SetUpTestCase(), that will cause process crashed.
