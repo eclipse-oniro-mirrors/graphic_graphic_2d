@@ -19,6 +19,20 @@
 #include <string>
 #include <unistd.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#define gettid GetCurrentThreadId
+#endif
+#ifdef __APPLE__
+#define gettid getpid
+#endif
+
+#ifdef __gnu_linux__
+#include <sys/syscall.h>
+#include <sys/types.h>
+#define gettid []()->int32_t { return static_cast<int32_t>(syscall(SYS_gettid)); }
+#endif
+
 #include "memory/rs_dfx_string.h"
 
 namespace OHOS::Rosen {
