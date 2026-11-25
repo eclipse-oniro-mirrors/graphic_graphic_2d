@@ -327,10 +327,11 @@ void RSImageBase::PurgeGpuImageOnly()
     if (!image_) {
         return;
     }
-    RS_LOGI("RSImageBase::PurgeGpuImageOnly use_count:%{public}ld", image_.use_count());
     // one in this RSImage, one in RSImageCache
     constexpr int32_t USE_COUNT_FOR_PURGE_GPU = 2;
     if (image_.use_count() <= USE_COUNT_FOR_PURGE_GPU) {
+        RS_LOGI("RSImageBase::PurgeGpuImageOnly can't purge image_.use_count:%{public}ld",
+            image_.use_count());
         image_ = nullptr;
         isDrawn_ = false;
     }

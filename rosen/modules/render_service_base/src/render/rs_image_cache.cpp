@@ -407,7 +407,7 @@ void RSImageCache::RemoveImageMemForWindow(NodeId surfaceNodeId, bool isCleanCPU
     if (!RSSystemProperties::GetDefaultMemClearEnabled()) {
         return;
     }
-    RS_TRACE_NAME_FMT_DEBUG("", "RSImageCache::RemoveImageMemForWindow surfaceNodeId:%" PRIu64
+    RS_TRACE_NAME_FMT("RSImageCache::RemoveImageMemForWindow surfaceNodeId:%" PRIu64
         ", isCleanCPUCache:%d", surfaceNodeId, isCleanCPUCache);
     RS_LOGI("RSImageCache::RemoveImageMemForWindow surfaceNodeId:%{public}" PRIu64
         ", isCleanCPUCache:%{public}d", surfaceNodeId, isCleanCPUCache);
