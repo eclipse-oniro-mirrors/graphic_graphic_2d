@@ -362,6 +362,10 @@ public:
 
     void SetNGBlender(const std::shared_ptr<RSNGRenderBlenderBase>& blender);
     std::shared_ptr<RSNGRenderBlenderBase> GetNGBlender() const;
+    void SetNGAdaptiveDarkBlender(const std::shared_ptr<RSNGRenderBlenderBase>& blender);
+    std::shared_ptr<RSNGRenderBlenderBase> GetNGAdaptiveDarkBlender() const;
+    void SetNGAdaptiveLightBlender(const std::shared_ptr<RSNGRenderBlenderBase>& blender);
+    std::shared_ptr<RSNGRenderBlenderBase> GetNGAdaptiveLightBlender() const;
 
     bool DisableHWCForFilter() const;
     bool NeedClipHoleForRenderGroup() const;

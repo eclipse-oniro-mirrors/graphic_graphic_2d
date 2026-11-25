@@ -43,4 +43,13 @@ void RSBlendModifier::SetNGBlenderBase(std::shared_ptr<RSNGBlenderBase> blender)
     Setter<RSProperty>(RSPropertyType::FOREGROUND_NG_BLENDER, blender);
 }
 
+void RSBlendModifier::SetNGAdaptiveDarkBlender(std::shared_ptr<RSNGBlenderBase> blender)
+{
+    Setter<RSProperty>(RSPropertyType::ADAPTIVE_DARK_BLENDER, blender);
+}
+
+void RSBlendModifier::SetNGAdaptiveLightBlender(std::shared_ptr<RSNGBlenderBase> blender)
+{
+    Setter<RSProperty>(RSPropertyType::ADAPTIVE_LIGHT_BLENDER, blender);
+}
 } // namespace OHOS::Rosen::ModifierNG

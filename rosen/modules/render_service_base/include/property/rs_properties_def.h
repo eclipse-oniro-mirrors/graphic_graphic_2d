@@ -16,6 +16,8 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_PROPERTIES_DEF_H
 #define RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_PROPERTIES_DEF_H
 
+#include <algorithm>
+
 #include "common/rs_common_def.h"
 #include "utils/matrix.h"
 
@@ -171,7 +173,7 @@ struct RSDynamicBrightnessPara {
     bool operator==(const RSDynamicBrightnessPara& other) const
     {
         return (rates_ == other.rates_ && saturation_ == other.saturation_ && posCoeff_ == other.posCoeff_ &&
-            negCoeff_ == other.negCoeff_ && fraction_ == other.fraction_);
+            negCoeff_ == other.negCoeff_ && fraction_ == other.fraction_ && enableHdr_ == other.enableHdr_);
     }
 };
 

@@ -112,4 +112,72 @@ HWTEST_F(RSBlendRenderModifierNGTest, RSBlendRenderModifierNGBlenderApplierTest,
     modifier.ApplyLegacyProperty(properties);
     EXPECT_EQ(properties.GetNGBlender(), nullptr);
 }
+/**
+ * @tc.name: RSBlendRenderModifierNGAdaptiveBlenderApplierTest
+ * @tc.desc: verify the ADAPTIVE_DARK_BLENDER / ADAPTIVE_LIGHT_BLENDER appliers and the reset path.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSBlendRenderModifierNGTest, RSBlendRenderModifierNGAdaptiveBlenderApplierTest, TestSize.Level1)
+{
+    RSBlendRenderModifier modifier;
+    RSProperties properties;
+    auto dark = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    auto light = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(dark, nullptr);
+    ASSERT_NE(light, nullptr);
+
+    modifier.AttachProperty(ModifierNG::RSPropertyType::ADAPTIVE_DARK_BLENDER,
+        std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(dark, 1));
+    modifier.AttachProperty(ModifierNG::RSPropertyType::ADAPTIVE_LIGHT_BLENDER,
+        std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(light, 2));
+    modifier.ApplyLegacyProperty(properties);
+    EXPECT_EQ(properties.GetNGAdaptiveDarkBlender(), dark);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), light);
+
+    modifier.ResetProperties(properties);
+    EXPECT_EQ(properties.GetNGAdaptiveDarkBlender(), nullptr);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), nullptr);
+}
+
+/**
+ * @tc.name: RSBlendRenderModifierNGAdaptiveBlenderPartialTest
+ * @tc.desc: Cover the adaptive appliers with a single slot, a null value and the reset path on an
+ *           empty modifier.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSBlendRenderModifierNGTest, RSBlendRenderModifierNGAdaptiveBlenderPartialTest, TestSize.Level1)
+{
+    RSProperties properties;
+    RSBlendRenderModifier modifier;
+
+    // reset on an empty modifier: both adaptive slots stay empty
+    modifier.ResetProperties(properties);
+    EXPECT_EQ(properties.GetNGAdaptiveDarkBlender(), nullptr);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), nullptr);
+
+    // only the dark slot is attached
+    auto dark = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(dark, nullptr);
+    modifier.AttachProperty(ModifierNG::RSPropertyType::ADAPTIVE_DARK_BLENDER,
+        std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(dark, 1));
+    modifier.ApplyLegacyProperty(properties);
+    EXPECT_EQ(properties.GetNGAdaptiveDarkBlender(), dark);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), nullptr);
+
+    // a null light value clears only that slot; the still-attached dark slot keeps its value
+    modifier.AttachProperty(ModifierNG::RSPropertyType::ADAPTIVE_LIGHT_BLENDER,
+        std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(nullptr, 2));
+    modifier.ApplyLegacyProperty(properties);
+    EXPECT_EQ(properties.GetNGAdaptiveDarkBlender(), dark);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), nullptr);
+
+    // a null dark value clears the remaining slot
+    modifier.DetachProperty(ModifierNG::RSPropertyType::ADAPTIVE_DARK_BLENDER);
+    modifier.AttachProperty(ModifierNG::RSPropertyType::ADAPTIVE_DARK_BLENDER,
+        std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlenderBase>>>(nullptr, 1));
+    modifier.ApplyLegacyProperty(properties);
+    EXPECT_EQ(properties.GetNGAdaptiveDarkBlender(), nullptr);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), nullptr);
+}
+
 } // namespace OHOS::Rosen
