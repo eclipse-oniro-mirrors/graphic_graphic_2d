@@ -5373,7 +5373,7 @@ void RSMainThread::ForceRefreshForUni(bool needDelay)
 void RSMainThread::PostForceRefreshTask()
 {
     if (!IsRequestedNextVSync()) {
-        PostTask([this]() {
+        PostTask([this](){
             RS_TRACE_NAME("No RNV, ForceRefreshOneFrame");
             SetDirtyFlag();
             RequestNextVSync();
