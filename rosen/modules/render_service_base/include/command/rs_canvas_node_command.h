@@ -49,7 +49,6 @@ public:
     static void ClearRecording(RSContext& context, NodeId id);
     static void SetHDRPresent(RSContext& context, NodeId nodeId, bool hdrPresent);
     static void SetColorGamut(RSContext& context, NodeId nodeId, uint32_t colorGamut);
-    static void SetPixelmap(RSContext& context, NodeId nodeId, const std::shared_ptr<Media::PixelMap>& pixelMap);
 
 private:
     static bool AddCmdToSingleFrameComposer(

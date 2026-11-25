@@ -1075,7 +1075,6 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDraw005, TestSize.Level2)
 }
 #endif
 
-#if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
 /**
  * @tc.name: OnDrawAbnormalProcessTest2
  * @tc.desc: Test OnDraw with abnormal process check
@@ -1090,9 +1089,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDrawAbnormalProcessTest2, Test
     RSUniRenderThread::Instance().tid_ = gettid();
     ASSERT_EQ(drawable->CheckAndSetThreadIdx(), UNI_RENDER_THREAD_INDEX);
 }
-#endif
 
-#if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
 /**
  * @tc.name: CheckAndSetThreadIdx
  * @tc.desc: Test If CheckAndSetThreadIdx Can Run
@@ -1108,7 +1105,6 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CheckAndSetThreadIdxTest, TestSi
     uniRenderThread.tid_ = gettid();
     ASSERT_EQ(drawable->CheckAndSetThreadIdx(), UNI_RENDER_THREAD_INDEX);
 }
-#endif
 
 /**
  * @tc.name: ResetSurfaceforPlayback

@@ -31,14 +31,12 @@ public:
     void OnDraw(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
 
-#if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
     uint32_t CheckAndSetThreadIdx();
     void SetSurfaceClearFunc(ThreadInfo threadInfo, pid_t threadId = 0)
     {
         curThreadInfo_ = threadInfo;
         threadId_ = threadId;
     }
-#endif
 
     bool CheckPostplaybackParamValid(NodeId, pid_t);
     void PostPlaybackInCorrespondThread();

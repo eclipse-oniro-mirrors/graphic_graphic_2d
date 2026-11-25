@@ -136,7 +136,6 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
-#if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
     auto threadIdx = paintFilterCanvas->GetParallelThreadIdx();
     auto clearFunc = [idx = threadIdx](std::shared_ptr<Drawing::Surface> surface) {
         // The second param is null, 0 is an invalid value.
@@ -145,7 +144,6 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto threadId = paintFilterCanvas->GetIsParallelCanvas() ?
         RSSubThreadManager::Instance()->GetReThreadIndexMap()[threadIdx] : RSUniRenderThread::Instance().GetTid();
     SetSurfaceClearFunc({ threadIdx, clearFunc }, threadId);
-#endif
 
     bool bufferDraw = false;
 #ifdef RS_MODIFIERS_DRAW_ENABLE
@@ -360,7 +358,6 @@ void RSCanvasDrawingRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     OnDraw(canvas);
 }
 
-#if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
 uint32_t RSCanvasDrawingRenderNodeDrawable::CheckAndSetThreadIdx()
 {
     uint32_t threadIdx = UNI_MAIN_THREAD_INDEX;
@@ -377,7 +374,6 @@ uint32_t RSCanvasDrawingRenderNodeDrawable::CheckAndSetThreadIdx()
     }
     return threadIdx;
 }
-#endif
 
 bool RSCanvasDrawingRenderNodeDrawable::CheckPostplaybackParamValid(NodeId nodeId, pid_t threadId)
 {
@@ -434,14 +430,12 @@ void RSCanvasDrawingRenderNodeDrawable::PostPlaybackInCorrespondThread()
             renderParams->SetCanvasDrawingSurfaceChanged(false);
         }
 
-#if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
         auto threadIdx = CheckAndSetThreadIdx();
         auto clearFunc = [idx = threadIdx](std::shared_ptr<Drawing::Surface> surface) {
             // The second param is null, 0 is an invalid value.
             RSUniRenderUtil::ClearNodeCacheSurface(std::move(surface), nullptr, idx, 0);
         };
         SetSurfaceClearFunc({ threadIdx, clearFunc }, threadId);
-#endif
 
         auto surfaceParams = renderParams->GetCanvasDrawingSurfaceParams();
         if (!surface_ || !canvas_) {
