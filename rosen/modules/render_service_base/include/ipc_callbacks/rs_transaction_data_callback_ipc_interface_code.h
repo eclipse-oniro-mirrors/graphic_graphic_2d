@@ -23,7 +23,7 @@ namespace Rosen {
 enum class RSITransactionDataCallbackInterfaceCode : CodeUnderlyingType {
     ON_AFTER_PROCESS,
 };
-}// namespace Rosen
-}// namespace OHOS
+} // namespace Rosen
+} // namespace OHOS
 
 #endif // ROSEN_RENDER_SERVICE_BASE_ITRANSACTION_DATA_CALLBACK_INTERFACE_CODE_H
