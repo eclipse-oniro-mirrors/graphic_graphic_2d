@@ -624,9 +624,7 @@ HWTEST_F(RSTunnelLayerHelperTest, OnBufferAvailable002, TestSize.Level1)
     ASSERT_EQ(tunnelRuntime.GetPhase(), RSTunnelRuntimeState::Phase::NORMAL_COMMITTED);
     ScopedRegisteredSurfaceNode registeredNode(context.node);
     ASSERT_TRUE(registeredNode.IsRegistered());
-    // CreateRecordingComposerManager registers the client under screenId 0,
-    // so align node screenId to ensure CreateTunnelLayer can find the composer client.
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, 0);
     auto connection = sptr<RecordingRenderToComposerConnection>::MakeSptr();
     auto composerManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerManager, nullptr);
@@ -1084,12 +1082,9 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_ReturnsEarlyWhenUniBufferCou
 
     auto connection = sptr<RecordingRenderToComposerConnection>::MakeSptr();
     constexpr ScreenId testScreenId = 0;
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, testScreenId);
     auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerClientManager, nullptr);
-    // CreateRecordingComposerManager registers the client under screenId 0,
-    // not context.node->GetScreenId() (which is INVALID_SCREEN_ID since the node
-    // is not attached to any screen tree), so we must query with screenId 0.
     auto composerClient = composerClientManager->GetComposerClient(testScreenId);
     ASSERT_NE(composerClient, nullptr);
     auto composerContext = composerClient->GetComposerContext();
@@ -1122,7 +1117,7 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_InsertsUniOnDrawSet_WhenBuff
     auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerClientManager, nullptr);
     constexpr ScreenId testScreenId = 0;
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, testScreenId);
     auto composerClient = composerClientManager->GetComposerClient(testScreenId);
     ASSERT_NE(composerClient, nullptr);
     auto composerContext = composerClient->GetComposerContext();
@@ -1164,7 +1159,7 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_SkipsInsertUniOnDrawSet_When
     auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerClientManager, nullptr);
     constexpr ScreenId testScreenId = 0;
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, testScreenId);
     auto composerClient = composerClientManager->GetComposerClient(testScreenId);
     ASSERT_NE(composerClient, nullptr);
     auto composerContext = composerClient->GetComposerContext();
@@ -1203,7 +1198,7 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_SetsUniBufferOwner_WhenBuffe
     auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerClientManager, nullptr);
     constexpr ScreenId testScreenId = 0;
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, testScreenId);
     auto composerClient = composerClientManager->GetComposerClient(testScreenId);
     ASSERT_NE(composerClient, nullptr);
     auto composerContext = composerClient->GetComposerContext();
@@ -1243,7 +1238,7 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_SkipsSetUniBufferOwner_WhenB
     auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerClientManager, nullptr);
     constexpr ScreenId testScreenId = 0;
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, testScreenId);
     auto composerClient = composerClientManager->GetComposerClient(testScreenId);
     ASSERT_NE(composerClient, nullptr);
     auto composerContext = composerClient->GetComposerContext();

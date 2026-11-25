@@ -468,10 +468,11 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckIsDelegateCompositeOnly002
  */
 HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckIsDelegateCompositeOnly003, TestSize.Level1)
 {
+    constexpr pid_t neverRegisteredPid = 3000;
     std::shared_ptr<TransactionDataMap> transactionDataEffective = std::make_shared<TransactionDataMap>();
-    (*transactionDataEffective)[1000];
+    (*transactionDataEffective)[neverRegisteredPid];
     bool result = manager_->CheckIsDelegateCompositeOnly(transactionDataEffective);
-    EXPECT_TRUE(result);
+    EXPECT_FALSE(result);
 }
 
 /**
@@ -486,6 +487,15 @@ HWTEST_F(RSDelegateCompositeCallbackManagerTest, CheckIsDelegateCompositeOnly004
     pid_t pid = 1000;
     pid_t tid = 2000;
     manager_->AddSurfaceTransactionCmdInfo(srcId, seqNum, pid, tid);
+
+    // doDirectCompositionSupportByCmd_ is only set by ProcessDelegateCompositeCommand over a
+    // prepared queue; drive the real Prepare -> Process path with an empty payload so the flag
+    // ends up true (empty queues leave the local flag at its initial true value). Process
+    // returns false because the single prepared queue is fully consumed (no pending vsync).
+    auto transactionData = MakeTransactionData(pid, tid, TX_INDEX_FIRST);
+    manager_->PrepareDelegateCompositeCommand(transactionData);
+    RSContext context;
+    EXPECT_FALSE(manager_->ProcessDelegateCompositeCommand(context));
 
     std::shared_ptr<TransactionDataMap> transactionDataEffective = std::make_shared<TransactionDataMap>();
     (*transactionDataEffective)[pid];

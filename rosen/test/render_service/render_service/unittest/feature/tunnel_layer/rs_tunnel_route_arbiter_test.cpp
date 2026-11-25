@@ -32,6 +32,7 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
+using TunnelTest::AttachNodeToScreen;
 using TunnelTest::CreateTunnelTestContext;
 using TunnelTest::ScopedNewTunnelSwitch;
 namespace {
@@ -475,14 +476,14 @@ HWTEST_F(RSTunnelRouteArbiterTest,
     auto& tunnelRuntime = *context.node->GetTunnelRuntimeState();
     ActivateTunnelRuntime(tunnelRuntime);
     context.surfaceHandler->SetAvailableBufferCount(1);
-    context.node->screenId_ = CLAIMED_SCREEN_ID;
+    AttachNodeToScreen(context.node, CLAIMED_SCREEN_ID);
 
     RSTunnelRouteArbiter arbiter;
     auto outcome = arbiter.ArbitrateAndClaim(context.node);
     ASSERT_EQ(outcome, RSTunnelRouteArbiter::MainThreadOutcome::GO_NORMAL);
     ASSERT_EQ(tunnelRuntime.GetPhase(), RSTunnelRuntimeState::Phase::NORMAL_PREPARING);
 
-    context.node->screenId_ = MIGRATED_SCREEN_ID;
+    AttachNodeToScreen(context.node, MIGRATED_SCREEN_ID);
 
     arbiter.OnRenderCommitDone(UNRELATED_SCREEN_ID);
     EXPECT_EQ(tunnelRuntime.GetPhase(), RSTunnelRuntimeState::Phase::NORMAL_PREPARING);
@@ -539,7 +540,7 @@ HWTEST_F(RSTunnelRouteArbiterTest,
     auto& tunnelRuntime = *context.node->GetTunnelRuntimeState();
     ActivateTunnelRuntime(tunnelRuntime);
     context.surfaceHandler->SetAvailableBufferCount(1);
-    context.node->screenId_ = CLAIMED_SCREEN_ID;
+    AttachNodeToScreen(context.node, CLAIMED_SCREEN_ID);
 
     RSTunnelRouteArbiter arbiter;
     ASSERT_EQ(arbiter.ArbitrateAndClaim(context.node), RSTunnelRouteArbiter::MainThreadOutcome::GO_NORMAL);

@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#include <parameters.h>
+#include <string>
+
 #include "gtest/gtest.h"
 
 #include "common/rs_obj_abs_geometry.h"
@@ -74,6 +77,23 @@ const RectI DEFAULT_INTERSECT_ONLY_RECT = { INTERSECT_RECT_LEFT, INTERSECT_RECT_
     INTERSECT_RECT_WIDTH, INTERSECT_RECT_HEIGHT };
 const RectI DEFAULT_INTERSECT_RESULT_RECT = DEFAULT_INTERSECT_ONLY_RECT.IntersectRect(DEFAULT_ABS_RECT);
 const RectI DEFAULT_INSIDE_RECT = { INSIDE_RECT_LEFT, INSIDE_RECT_TOP, INSIDE_RECT_WIDTH, INSIDE_RECT_HEIGHT };
+
+class ScopedLayerPartRenderEnabled {
+public:
+    ScopedLayerPartRenderEnabled()
+    {
+        oldValue_ = system::GetParameter("rosen.layerPartRender.enabled", "1");
+        system::SetParameter("rosen.layerPartRender.enabled", "1");
+    }
+
+    ~ScopedLayerPartRenderEnabled()
+    {
+        system::SetParameter("rosen.layerPartRender.enabled", oldValue_);
+    }
+
+private:
+    std::string oldValue_;
+};
 }
 
 class RSOpincManagerLayerPartTest : public testing::Test {
@@ -944,6 +964,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
  */
 HWTEST_F(RSOpincManagerLayerPartTest, UpdateLayerPartRenderDirtyRegionNullManager, TestSize.Level1)
 {
+    ScopedLayerPartRenderEnabled scopedLayerPartRenderEnabled;
     auto node = CreateCanvasNode(DEFAULT_NODE_ID);
     node->InitRenderParams();
     std::shared_ptr<RSDirtyRegionManager> dirtyManager = nullptr;
@@ -959,6 +980,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, UpdateLayerPartRenderDirtyRegionNullManage
  */
 HWTEST_F(RSOpincManagerLayerPartTest, UpdateLayerPartRenderDirtyRegionWithoutDirtyFlag, TestSize.Level1)
 {
+    ScopedLayerPartRenderEnabled scopedLayerPartRenderEnabled;
     auto node = CreateCanvasNode(SECOND_NODE_ID);
     auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
     ASSERT_NE(dirtyManager, nullptr);
@@ -977,6 +999,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, UpdateLayerPartRenderDirtyRegionWithoutDir
  */
 HWTEST_F(RSOpincManagerLayerPartTest, UpdateLayerPartRenderDirtyRegionWithDirtyFlag, TestSize.Level1)
 {
+    ScopedLayerPartRenderEnabled scopedLayerPartRenderEnabled;
     auto node = CreateCanvasNode(THIRD_NODE_ID);
     auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
     ASSERT_NE(dirtyManager, nullptr);
