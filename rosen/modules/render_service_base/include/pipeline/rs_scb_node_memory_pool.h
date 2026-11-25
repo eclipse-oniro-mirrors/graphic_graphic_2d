@@ -53,6 +53,10 @@ public:
     // slots in the pool. Called during idle GC to return memory to the system.
     void Shrink();
 
+    // Returns true if at least one slot was really returned to the pool via
+    // Deallocate() since the last call, and clears the flag. Used by the GC to
+    // skip the expensive Shrink() traversal when nothing was actually released.
+    bool ConsumeDeallocFlag();
     // Dump memory pool status for Hildumper integration.
     // Outputs: slot size, total slots, used slots, free slots, usage rate, chunks count,
     //          free queue size, live nodes, fragmentation, per-chunk detail.
@@ -125,6 +129,9 @@ private:
     std::deque<uint32_t> freeSlots_;
     // Total number of slots across all chunks.
     uint32_t totalSlots_ = 0;
+    // Set when Deallocate() returns a slot to the pool; consumed by the GC to
+    // decide whether Shrink() is worth running.
+    std::atomic<bool> deallocFlag_{false};
     mutable Spinlock spinlock_;
 
     const size_t slotSize_;
