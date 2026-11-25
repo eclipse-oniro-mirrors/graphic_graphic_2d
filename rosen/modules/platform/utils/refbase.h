@@ -591,6 +591,16 @@ public:
      */
     virtual bool OnAttemptPromoted(const void *);
 
+#ifndef EMULATOR_PLATFORM
+    /**
+     * @brief Check whether this RefBase object can be promoted by `wptr::Promote()`.
+     *
+     * @note Directly return true by default.
+     * @return Return true if the object can be promoted
+     */
+    virtual bool CanPromote();
+#endif
+
 private:
     RefCounter *refs_ = nullptr; // Pointer to the corresponding reference counter of this RefBase object
 };
