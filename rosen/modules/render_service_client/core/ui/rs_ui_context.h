@@ -30,6 +30,7 @@
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_UI_CONTEXT_H
 
 #include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <iremote_object.h>
 #include <memory>

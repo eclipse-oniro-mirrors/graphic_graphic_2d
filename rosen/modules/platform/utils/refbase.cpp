@@ -610,4 +610,11 @@ bool RefBase::OnAttemptPromoted(const void*)
     return true;
 }
 
+#ifndef EMULATOR_PLATFORM
+bool RefBase::CanPromote()
+{
+    return true;
+}
+#endif
+
 }  // namespace OHOS
