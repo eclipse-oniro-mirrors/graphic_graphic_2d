@@ -976,10 +976,28 @@ void RSRenderThreadVisitor::ClipHoleForSurfaceNode(RSSurfaceRenderNode& node)
     // Calculation position in RenderService may appear floating point number, and it will be removed.
     // It caused missed line problem on surfaceview hap, so we subtract one pixel when cliphole to avoid this problem
     static int pixel = 1;
-    auto x = std::ceil(node.GetRenderProperties().GetBoundsPositionX() + pixel); // x increase 1 pixel
-    auto y = std::ceil(node.GetRenderProperties().GetBoundsPositionY() + pixel); // y increase 1 pixel
-    auto width = std::floor(node.GetRenderProperties().GetBoundsWidth() - (2 * pixel)); // width decrease 2 pixels
-    auto height = std::floor(node.GetRenderProperties().GetBoundsHeight() - (2 * pixel)); // height decrease 2 pixels
+    auto boundsX = node.GetRenderProperties().GetBoundsPositionX();
+    auto boundsY = node.GetRenderProperties().GetBoundsPositionY();
+    auto boundsWidth = node.GetRenderProperties().GetBoundsWidth();
+    auto boundsHeight = node.GetRenderProperties().GetBoundsHeight();
+    auto x = std::ceil(boundsX + pixel); // x increase 1 pixel
+    auto y = std::ceil(boundsY + pixel); // y increase 1 pixel
+    auto width = std::floor(boundsWidth - (2 * pixel)); // width decrease 2 pixels
+    auto height = std::floor(boundsHeight - (2 * pixel)); // height decrease 2 pixels
+#if defined(ROSEN_ARKUI_X)
+    // The node name is not carried by the RSSurfaceNodeCreate command, so the render-thread-side
+    // copy of a web surface node is anonymous and IsRosenWeb() never matches here. Web is the only
+    // registrant of the surface-changed callback, whose NodeId is preserved across the command
+    // pipeline, so the callback registration is the reliable web-node marker on the render thread.
+    if (surfaceCallbacks_.find(node.GetId()) != surfaceCallbacks_.end()) {
+        ROSEN_LOGI("RSRenderThreadVisitor::ClipHoleForSurfaceNode exact hole for web node:%{public}" PRIu64,
+            node.GetId());
+        x = std::floor(boundsX);
+        y = std::floor(boundsY);
+        width = std::ceil(boundsX + boundsWidth) - x;
+        height = std::ceil(boundsY + boundsHeight) - y;
+    }
+#endif
     canvas_->Save();
     Drawing::Rect originRect = Drawing::Rect(x, y, width + x, height + y);
     canvas_->ClipRect(originRect, Drawing::ClipOp::INTERSECT, false);
