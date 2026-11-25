@@ -1312,6 +1312,8 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
             node.UpdateChildHardwareEnabledNode();
         }
         dynamicLayerSkipController_->VisitRenderNode(node.ReinterpretCastTo<RSSurfaceRenderNode>(), node);
+        CheckPixelFormat(node);
+        RSHdrUtil::CheckPixelFormatForHdrEffect(node, curScreenNode_);
         return;
     }
 #endif
