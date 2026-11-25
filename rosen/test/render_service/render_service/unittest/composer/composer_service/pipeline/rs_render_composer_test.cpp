@@ -10476,5 +10476,37 @@ HWTEST_F(RsRenderComposerTest, ProcessComposerFrame_AutoSwitchDisabled, TestSize
 
     composer->uniRenderEngine_ = nullptr;
 }
+
+/**
+ * Function: ProcessComposerFrame_PowerOffing_ClearFence
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create RSRenderComposer
+ *                  2. call HandlePowerStatus with POWER_STATUS_OFFING
+ *                  3. call ProcessComposerFrame with rate=60
+ *                  4. verify ClearFence is called
+ */
+HWTEST_F(RsRenderComposerTest, ProcessComposerFrame_PowerOffing_ClearFence, TestSize.Level1)
+{
+    constexpr uint32_t staleLayerId = 7001;
+    auto output = std::make_shared<HdiOutput>(25u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    auto tmpRSRenderComposer = std::make_shared<RSRenderComposer>(output, property);
+
+    sptr<SyncFence> staleFence = sptr<SyncFence>::MakeSptr(-1);
+    output->layersId_.push_back(staleLayerId);
+    output->fences_.push_back(staleFence);
+
+    tmpRSRenderComposer->HandlePowerStatus(ScreenPowerStatus::POWER_STATUS_OFFING);
+
+    PipelineParam param;
+    uint32_t currentRate = 60;
+    tmpRSRenderComposer->ProcessComposerFrame(currentRate, param);
+
+    EXPECT_TRUE(output->layersId_.empty());
+    EXPECT_TRUE(output->fences_.empty());
+}
 } // namespace Rosen
 } // namespace OHOS
