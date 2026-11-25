@@ -62,7 +62,6 @@ private:
     bool subTreeSupportFlag_ = true;
     bool curNodeTreeSupportFlag_ = false;
     bool hasUnstableOpincNode_ = false;
-
     bool isUnchangeMarkInApp_ = false;
     bool isMaterialNode_ = false;
     bool layerPartRenderDirtyFlag_ = false;

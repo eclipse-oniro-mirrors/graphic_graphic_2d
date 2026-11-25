@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <parameters.h>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -25,6 +26,7 @@
 #include "consumer_surface.h"
 #include "feature/tunnel_layer/rs_tunnel_route_arbiter.h"
 #include "pipeline/main_thread/rs_main_thread.h"
+#include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_test_util.h"
 #include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
@@ -125,6 +127,16 @@ inline bool FlushProducerBufferForTest(const sptr<Surface>& producer)
         producer->RequestBuffer(buffer, requestFence, testBufferRequestConfig) == GSERROR_OK &&
         buffer != nullptr &&
         producer->FlushBuffer(buffer, flushFence, testBufferFlushConfig) == GSERROR_OK;
+}
+
+inline void AttachNodeToScreen(const std::shared_ptr<RSSurfaceRenderNode>& node, ScreenId screenId)
+{
+    static std::unordered_map<ScreenId, std::shared_ptr<RSScreenRenderNode>> screenNodes;
+    auto& screenNode = screenNodes[screenId];
+    if (!screenNode) {
+        screenNode = std::make_shared<RSScreenRenderNode>(screenId, screenId);
+    }
+    node->SetAncestorScreenNode(screenNode);
 }
 
 class TunnelNoopConsumerListener : public IBufferConsumerListener {
