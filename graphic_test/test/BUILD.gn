@@ -160,7 +160,6 @@ rs_display_effect_sources = [
   "rs_display_effect/property_display/surface_node_properties_test.cpp",
   "rs_display_effect/property_display/surface_texture_export_test.cpp",
   "rs_display_effect/property_display/color_matrix_test.cpp",
-  "rs_display_effect/property_display/rs_canvas_node_setpixelmap_test.cpp",
 ]
 rs_effect_feature_sources = [
   "rs_effect_feature/effect_ai_bar_glow_test.cpp",

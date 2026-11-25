@@ -156,8 +156,16 @@ bool RSScbNodeMemoryPool::Deallocate(void* ptr)
     spinlock_.unlock();
     if (!found) {
         RS_LOGW("RSScbNodeMemoryPool::Deallocate ptr not in pool, ptr:%{public}p", ptr);
+        return false;
     }
-    return found;
+    // Mark that a slot was really returned, so the GC knows Shrink() is worth running.
+    deallocFlag_.store(true, std::memory_order_release);
+    return true;
+}
+
+bool RSScbNodeMemoryPool::ConsumeDeallocFlag()
+{
+    return deallocFlag_.exchange(false, std::memory_order_acq_rel);
 }
 
 bool RSScbNodeMemoryPool::Owns(const void* ptr) const

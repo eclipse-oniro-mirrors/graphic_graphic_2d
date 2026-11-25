@@ -2162,6 +2162,44 @@ HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_SaveLayer037, TestSize
 }
 
 /*
+ * @tc.name: NativeDrawingCanvasTest_SaveLayerWithFlag038
+ * @tc.desc: test for SaveLayerWithFlag
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_SaveLayerWithFlag038, TestSize.Level1)
+{
+    constexpr uint32_t SAVE_LAYER_FLAGS_NONE = 0;
+    constexpr uint32_t SAVE_LAYER_FLAGS_INIT_WITH_PREVIOUS = 2;
+    constexpr uint32_t SAVE_LAYER_FLAGS_INVALID = 1;
+    OH_Drawing_Rect *rect = OH_Drawing_RectCreate(200, 500, 300, 600);
+    EXPECT_NE(rect, nullptr);
+    OH_Drawing_Brush* brush = OH_Drawing_BrushCreate();
+    EXPECT_NE(brush, nullptr);
+    OH_Drawing_ErrorCode code = OH_DRAWING_SUCCESS;
+    // test canvas is nullptr and failed
+    code = OH_Drawing_CanvasSaveLayerWithFlag(nullptr, rect, brush, SAVE_LAYER_FLAGS_NONE);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INCORRECT_PARAMETER);
+    // test saveLayerFlags is invalid and failed
+    code = OH_Drawing_CanvasSaveLayerWithFlag(canvas_, rect, brush, SAVE_LAYER_FLAGS_INVALID);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE);
+    // test canvas is valid and saveLayerFlags is 0 and success
+    code = OH_Drawing_CanvasSaveLayerWithFlag(canvas_, rect, brush, SAVE_LAYER_FLAGS_NONE);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    OH_Drawing_CanvasRestore(canvas_);
+    // test saveLayerFlags is INIT_WITH_PREVIOUS and success
+    code = OH_Drawing_CanvasSaveLayerWithFlag(canvas_, rect, brush, SAVE_LAYER_FLAGS_INIT_WITH_PREVIOUS);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    OH_Drawing_CanvasRestore(canvas_);
+    // test rect and brush are nullptr and success
+    code = OH_Drawing_CanvasSaveLayerWithFlag(canvas_, nullptr, nullptr, SAVE_LAYER_FLAGS_NONE);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    OH_Drawing_CanvasRestore(canvas_);
+    OH_Drawing_BrushDestroy(brush);
+    OH_Drawing_RectDestroy(rect);
+}
+
+/*
  * @tc.name: NativeDrawingCanvasTest_ClipRoundRect
  * @tc.desc: test for OH_Drawing_ClipRoundRect.
  * @tc.type: FUNC

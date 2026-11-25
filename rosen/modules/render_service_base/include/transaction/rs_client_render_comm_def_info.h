@@ -32,6 +32,6 @@ public:
         std::shared_ptr<Media::PixelMap> pixelmapHDR, CaptureError captureErrorCode) {}
 };
 
-} // namespace Rosen
-} // namespace OHOS
-#endif // RENDER_SERVICE_BASE_CLIENT_RENDER_COMM_DEF_INFO_H
+}
+}
+#endif

@@ -29,8 +29,8 @@ class RSOpincManagerTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
-    void SetUp();
-    void TearDown();
+    void SetUp() override;
+    void TearDown() override;
 
     static inline RSOpincManager& opincManager_ = RSOpincManager::Instance();
 };
@@ -46,10 +46,10 @@ void RSOpincManagerTest::TearDown() {}
  * @tc.type: FUNC
  * @tc.require: #IBQETW
  */
-HWTEST_F(RSOpincManagerTest, SetOPIncEnable, Function | SmallTest | Level1)
+HWTEST_F(RSOpincManagerTest, SetOPIncSwitch, Function | SmallTest | Level1)
 {
     opincManager_.SetOPIncSwitch(true);
-    ASSERT_EQ(opincManager_.GetOPIncSwitch(), true);
+    EXPECT_EQ(opincManager_.GetOPIncSwitch(), true);
 }
 
 /**
@@ -152,12 +152,12 @@ HWTEST_F(RSOpincManagerTest, OpincGetCanvasNodeSupportFlag, Function | SmallTest
     ASSERT_TRUE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
 
     rsCanvasRenderNode->childHasVisibleFilter_ = true;
-    EXPECT_FALSE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
+    ASSERT_FALSE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
     rsCanvasRenderNode->childHasVisibleFilter_ = false;
     ASSERT_TRUE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
 
     rsCanvasRenderNode->childHasVisibleEffect_ = true;
-    EXPECT_FALSE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
+    ASSERT_FALSE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
     rsCanvasRenderNode->childHasVisibleEffect_ = false;
     ASSERT_TRUE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
 }
@@ -173,7 +173,7 @@ HWTEST_F(RSOpincManagerTest, OpincGetCanvasNodeSupportFlag1, Function | SmallTes
     NodeId id = 0;
     auto rsCanvasRenderNode = std::make_shared<RSCanvasRenderNode>(id);
     ASSERT_NE(rsCanvasRenderNode, nullptr);
-
+    
     auto& property = rsCanvasRenderNode->GetMutableRenderProperties();
 
     property.hasHarmonium_ = true;
@@ -222,7 +222,7 @@ HWTEST_F(RSOpincManagerTest, IsOpincSubTreeDirty, Function | SmallTest | Level1)
  * @tc.name: QuickMarkStableNode
  * @tc.desc: Verify the QuickMarkStableNode function
  * @tc.type: FUNC
- * @tc.require: #ICTPO0
+ * @tc.require: issueICTPO0
  */
 HWTEST_F(RSOpincManagerTest, QuickMarkStableNode, Function | SmallTest | Level1)
 {
@@ -256,7 +256,7 @@ HWTEST_F(RSOpincManagerTest, QuickMarkStableNode, Function | SmallTest | Level1)
  * @tc.name: UpdateRootFlag
  * @tc.desc: Verify the UpdateRootFlag function
  * @tc.type: FUNC
- * @tc.require: #ICTPO0
+ * @tc.require: issueICTPO0
  */
 HWTEST_F(RSOpincManagerTest, UpdateRootFlag, Function | SmallTest | Level1)
 {
@@ -505,7 +505,7 @@ HWTEST_F(RSOpincManagerTest, QuickCheckOpincStableAncestorRenderGroupPropagatesT
  * @tc.name: GetUnsupportReason
  * @tc.desc: Verify the GetUnsupportReason function
  * @tc.type: FUNC
- * @tc.require: issueICP90U
+ * @tc.require: issue
  */
 HWTEST_F(RSOpincManagerTest, GetUnsupportReason, Function | SmallTest | Level1)
 {
@@ -564,7 +564,7 @@ HWTEST_F(RSOpincManagerTest, GetUnsupportReason, Function | SmallTest | Level1)
  * @tc.name: GetUnsupportReason1
  * @tc.desc: Verify the GetUnsupportReason function
  * @tc.type: FUNC
- * @tc.require: issueICP90U
+ * @tc.require: issue
  */
 HWTEST_F(RSOpincManagerTest, GetUnsupportReason1, Function | SmallTest | Level1)
 {
@@ -583,7 +583,7 @@ HWTEST_F(RSOpincManagerTest, GetUnsupportReason1, Function | SmallTest | Level1)
  * @tc.name: QuickGetNodeDebugInfo
  * @tc.desc: Verify the QuickGetNodeDebugInfo function
  * @tc.type: FUNC
- * @tc.require: issueICP90U
+ * @tc.require: issue
  */
 HWTEST_F(RSOpincManagerTest, QuickGetNodeDebugInfo, Function | SmallTest | Level1)
 {

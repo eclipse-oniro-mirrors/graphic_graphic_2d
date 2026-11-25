@@ -176,6 +176,32 @@ void OH_Drawing_CanvasSave(OH_Drawing_Canvas*);
 void OH_Drawing_CanvasSaveLayer(OH_Drawing_Canvas*, const OH_Drawing_Rect*, const OH_Drawing_Brush*);
 
 /**
+ * @brief Saves the current canvas status (canvas matrix) and clip, and allocates a bitmap for
+ * subsequent drawing. The allocated bitmap can be initialized with the previous contents according
+ * to <b>saveLayerFlags</b>. Calling {@link OH_Drawing_CanvasRestore} discards changes to the matrix
+ * and clip, and draws the bitmap.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param cCanvas [in] Indicates the pointer to an <b>OH_Drawing_Canvas</b> object.
+ *     It must not be nullptr.
+ * @param cRect [in] Indicates the pointer to an <b>OH_Drawing_Rect</b> object that defines the bounds
+ *     of the layer. It may be nullptr, in which case the bounds of the layer are the current clip.
+ * @param cBrush [in] Indicates the pointer to an <b>OH_Drawing_Brush</b> object that is attached when
+ *     the layer is restored. It may be nullptr, in which case no brush is attached.
+ * @param saveLayerFlags [in] Indicates how the layer is initialized. The value must be 0 (the
+ *     layer is initialized as empty, the default) or 2 (the layer is initialized with the previous
+ *     contents). Other values are invalid.
+ * @return <ul>
+ *         <li>{@link OH_DRAWING_SUCCESS} if the operation is successful.</li>
+ *         <li>{@link OH_DRAWING_ERROR_INCORRECT_PARAMETER} if cCanvas is nullptr.</li>
+ *         <li>{@link OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE} if saveLayerFlags is not 0 or 2.</li>
+ *         </ul>
+ * @since 26.1.0
+ */
+OH_Drawing_ErrorCode OH_Drawing_CanvasSaveLayerWithFlag(OH_Drawing_Canvas* cCanvas,
+    const OH_Drawing_Rect* cRect, const OH_Drawing_Brush* cBrush, uint32_t saveLayerFlags);
+
+/**
  * @brief Restores the canvas status (canvas matrix) saved on the top of the stack.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
