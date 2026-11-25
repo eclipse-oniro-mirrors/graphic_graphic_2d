@@ -34,11 +34,13 @@ public:
     void TearDown() override;
 };
 
-void RSComposerToRenderConnectionTest::SetUpTestCase() {
+void RSComposerToRenderConnectionTest::SetUpTestCase()
+{
     RSUniRenderThread::Instance().composerClientManager_ = std::make_shared<RSComposerClientManager>();
 }
 
-void RSComposerToRenderConnectionTest::TearDownTestCase() {
+void RSComposerToRenderConnectionTest::TearDownTestCase()
+{
     RSUniRenderThread::Instance().composerClientManager_ = nullptr;
 }
 
