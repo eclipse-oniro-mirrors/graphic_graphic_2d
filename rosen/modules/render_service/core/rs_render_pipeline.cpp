@@ -345,18 +345,19 @@ bool RSRenderPipeline::RemoveConnection(pid_t remotePid, const sptr<RSIConnectio
         RS_LOGE("RSRenderPipeline::RemoveConnection: find token fail");
         return false;
     }
+    RS_LOGI("RSRenderPipeline::RemoveConnection from token %{public}d", remotePid);
     // verify token consistency
     if (iter->second.token != token->AsObject()) {
         RS_LOGE("RemoveConnection: token mismatch for pid %{public}d", remotePid);
         return false;
     }
-    RS_LOGI("RSRenderPipeline::RemoveConnection from token pid %{public}d", remotePid);
     renderConnections_.erase(iter);
     return true;
 }
 
 std::pair<sptr<RSIClientToRenderConnection>, uint64_t> RSRenderPipeline::AddConnection(pid_t remotePid,
-    uint64_t tokenMaskId, sptr<IRemoteObject>& token, sptr<RSIClientToRenderConnection> connectToRenderConnection)
+    uint64_t tokenMaskId, const sptr<IRemoteObject>& token,
+    const sptr<RSIClientToRenderConnection> connectToRenderConnection)
 {
     std::unique_lock<std::mutex> lock(renderConnectionMutex_);
     auto iter = renderConnections_.find(remotePid);
