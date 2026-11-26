@@ -132,7 +132,6 @@ bool RSRenderRcdDraw::BindPixelMapToDrawingImage(Drawing::Canvas& canvas,
     if (pixelMap->GetUniqueId() == rcdLayer->GetCachedId()) {
         return true;
     }
-
     return StoreWithoutDMA(canvas, rcdLayer, pixelMap);
 }
 

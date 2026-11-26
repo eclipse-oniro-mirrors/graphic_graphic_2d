@@ -398,7 +398,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetForceRefresh_002, TestSize.Level2)
 {
     RSSurfaceRenderParams params(115);
     params.needSync_ = false;
-    params.isForceRefresh_  = false;
+    params.isForceRefresh_ = false;
 
     bool isForceRefresh = !params.isForceRefresh_;
     params.SetForceRefresh(isForceRefresh);
@@ -737,7 +737,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, SwapRelatedRenderParamsTest, TestSize.Level1
 /**
  * @tc.name: SetNeedClearRelatedCacheTest
  * @tc.desc: Test SetNeedClearRelatedCache
- * @tc.type:FUNC
+ * @tc.type: FUNC
  * @tc.require: issues22651
  */
 HWTEST_F(RSSurfaceRenderParamsTest, SetNeedClearRelatedCacheTest, TestSize.Level1)
@@ -844,7 +844,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, GetScreenInfoIfNeedRogScaleInvalidWidthRatio
     // phyWidth is zero so width ratio is zero, which is invalid
     auto screenNode = CreateScreenNodeWithSamplingMode(ScreenSamplingMode::DEVICE_GPU, 0u, ROG_PHY_HEIGHT);
     params.SetAncestorScreenNode(screenNode);
-
+ 
     ScreenInfo screenInfo;
     ASSERT_FALSE(params.GetScreenInfoIfNeedRogScale(screenInfo));
 }
@@ -861,7 +861,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, GetScreenInfoIfNeedRogScaleInvalidHeightRati
     // phyHeight is zero so height ratio is zero, which is invalid
     auto screenNode = CreateScreenNodeWithSamplingMode(ScreenSamplingMode::DEVICE_GPU, ROG_PHY_WIDTH, 0u);
     params.SetAncestorScreenNode(screenNode);
-
+ 
     ScreenInfo screenInfo;
     ASSERT_FALSE(params.GetScreenInfoIfNeedRogScale(screenInfo));
 }

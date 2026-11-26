@@ -586,7 +586,6 @@ HWTEST_F(NativeImageTest, OHNativeImageGetTransformMatrix003, Function | MediumT
     int fenceFd = -1;
     struct Region *region = new Region();
     struct Region::Rect *rect = new Region::Rect();
-
     for (int32_t i = 0; i < sizeof(testType) / sizeof(int32_t); i++) {
         int code = SET_TRANSFORM;
         ret = NativeWindowHandleOpt(nativeWindow, code, testType[i]);
@@ -1666,24 +1665,24 @@ HWTEST_F(NativeImageTest, OH_NativeImage_ReleaseTextImage002, Function | MediumT
     ASSERT_NE(nativeImage, nullptr);
     OHNativeWindow* nativeWindow = OH_NativeImage_AcquireNativeWindow(nativeImage);
     ASSERT_NE(nativeWindow, nullptr);
-
+ 
     OH_OnFrameAvailableListener listener;
     listener.context = this;
     listener.onFrameAvailable = NativeImageTest::OnFrameAvailable;
     int32_t ret = OH_NativeImage_SetOnFrameAvailableListener(nativeImage, listener);
     ASSERT_EQ(ret, GSERROR_OK);
-
+ 
     int32_t code = SET_BUFFER_GEOMETRY;
     int32_t width = 0x100;
     int32_t height = 0x100;
     ret = NativeWindowHandleOpt(nativeWindow, code, width, height);
     ASSERT_EQ(ret, GSERROR_OK);
-
+ 
     NativeWindowBuffer* nativeWindowBuffer = nullptr;
     int fenceFd = -1;
     ret = OH_NativeWindow_NativeWindowRequestBuffer(nativeWindow, &nativeWindowBuffer, &fenceFd);
     ASSERT_EQ(ret, GSERROR_OK);
-
+ 
     struct Region *region = new Region();
     struct Region::Rect *rect = new Region::Rect();
     rect->x = 0x100;
@@ -1693,7 +1692,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_ReleaseTextImage002, Function | MediumT
     region->rects = rect;
     ret = OH_NativeWindow_NativeWindowFlushBuffer(nativeWindow, nativeWindowBuffer, fenceFd, *region);
     ASSERT_EQ(ret, GSERROR_OK);
-
+ 
     ret = OH_NativeImage_UpdateSurfaceImage(nativeImage);
     ASSERT_EQ(ret, SURFACE_ERROR_OK);
     Deinit();
@@ -1937,24 +1936,24 @@ HWTEST_F(NativeImageTest, OH_NativeImage_AcquireLatestNativeWindowBuffer001, Fun
     NativeWindowBuffer* nativeWindowBuffer = nullptr;
     ret = OH_NativeImage_AcquireLatestNativeWindowBuffer(newImage1, &nativeWindowBuffer, nullptr);
     ASSERT_EQ(ret, SURFACE_ERROR_INVALID_PARAM);
-
+ 
     ret = OH_NativeImage_ReleaseNativeWindowBuffer(nullptr, nullptr, 0);
     ASSERT_EQ(ret, SURFACE_ERROR_INVALID_PARAM);
     ret = OH_NativeImage_ReleaseNativeWindowBuffer(newImage1, nullptr, 0);
     ASSERT_EQ(ret, SURFACE_ERROR_INVALID_PARAM);
-
+ 
     int32_t fenceFd;
     memset_s(newImage1, sizeof(OH_NativeImage_Tmp), 0, sizeof(OH_NativeImage_Tmp));
     ret = OH_NativeImage_AcquireLatestNativeWindowBuffer(newImage1, &nativeWindowBuffer, &fenceFd);
     ASSERT_EQ(ret, SURFACE_ERROR_INVALID_PARAM);
-
+ 
     NativeWindowBuffer nativeWindowBufferNew;
     ret = OH_NativeImage_ReleaseNativeWindowBuffer(newImage1, &nativeWindowBufferNew, 0);
     ASSERT_EQ(ret, SURFACE_ERROR_INVALID_PARAM);
-
+ 
     OH_NativeImage_Destroy(&newImage1);
 }
-
+ 
 /*
 * Function: OH_NativeImage_AcquireLatestNativeWindowBuffer
  * Type: Function
@@ -1972,13 +1971,13 @@ HWTEST_F(NativeImageTest, OH_NativeImage_AcquireLatestNativeWindowBuffer002, Fun
     ASSERT_NE(newImage, nullptr);
     OHNativeWindow* newNativeWindow = OH_NativeImage_AcquireNativeWindow(newImage);
     ASSERT_NE(newNativeWindow, nullptr);
-
+ 
     int32_t code = SET_BUFFER_GEOMETRY;
     int32_t width = 0x100;
     int32_t height = 0x100;
     int32_t ret = NativeWindowHandleOpt(newNativeWindow, code, width, height);
     ASSERT_EQ(ret, GSERROR_OK);
-
+ 
     NativeWindowBuffer* nativeWindowBuffer = nullptr;
     int fenceFd = -1;
     struct Region *region = new Region();
@@ -1993,26 +1992,26 @@ HWTEST_F(NativeImageTest, OH_NativeImage_AcquireLatestNativeWindowBuffer002, Fun
     for (int32_t i = 0; i < 100; i++) {
         ret = OH_NativeWindow_NativeWindowRequestBuffer(newNativeWindow, &nativeWindowBuffer, &fenceFd);
         ASSERT_EQ(ret, GSERROR_OK);
-
+ 
         ret = OH_NativeWindow_NativeWindowFlushBuffer(newNativeWindow, nativeWindowBuffer, fenceFd, *region);
         ASSERT_EQ(ret, GSERROR_OK);
-
+ 
         nativeWindowBuffer = nullptr;
         ret = OH_NativeImage_AcquireLatestNativeWindowBuffer(newImage, &nativeWindowBuffer, &fenceFd);
         ASSERT_EQ(ret, GSERROR_OK);
         ASSERT_NE(nativeWindowBuffer, nullptr);
-
+ 
         ret = OH_NativeImage_ReleaseNativeWindowBuffer(newImage, nativeWindowBuffer, fenceFd);
         ASSERT_EQ(ret, GSERROR_OK);
     }
-
+ 
     delete rect;
     delete region;
     OH_NativeImage_Destroy(&newImage);
 }
 
 /*
-* Function: OH_NativeImage_IsReleased
+ * Function: OH_NativeImage_IsReleased
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
@@ -2029,7 +2028,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_IsReleased001, Function | MediumTest | 
 }
 
 /*
-* Function: OH_NativeImage_IsReleased
+ * Function: OH_NativeImage_IsReleased
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
@@ -2052,7 +2051,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_IsReleased002, Function | MediumTest | 
 }
 
 /*
-* Function: OH_NativeImage_IsReleased
+ * Function: OH_NativeImage_IsReleased
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
@@ -2121,7 +2120,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_IsReleased003, Function | MediumTest | 
 }
 
 /*
-* Function: OH_NativeImage_Release
+ * Function: OH_NativeImage_Release
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
@@ -2137,7 +2136,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_Release001, Function | MediumTest | Lev
 }
 
 /*
-* Function: OH_NativeImage_Release
+ * Function: OH_NativeImage_Release
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A

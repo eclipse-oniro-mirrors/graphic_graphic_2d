@@ -1085,7 +1085,6 @@ HWTEST_F(RSSystemPropertiesTest, GetSubTreePrepareCheckType, TestSize.Level1)
     ASSERT_EQ(RSSystemProperties::GetSubTreePrepareCheckType(), SubTreePrepareCheckType::ENABLED);
 }
 
-
 /**
  * @tc.name: GetOptimizeParentNodeRegionEnabled
  * @tc.desc: GetOptimizeParentNodeRegionEnabled Test

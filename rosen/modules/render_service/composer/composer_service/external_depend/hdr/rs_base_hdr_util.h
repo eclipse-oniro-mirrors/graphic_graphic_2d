@@ -20,6 +20,7 @@
 #include "rs_layer.h"
 #include "surface_buffer.h"
 
+
 namespace OHOS {
 namespace Rosen {
 class RSBaseHdrUtil {

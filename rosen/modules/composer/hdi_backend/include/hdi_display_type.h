@@ -160,7 +160,6 @@ using GraphicLayerColor = struct GraphicLayerColor {
     }
 };
 
-
 /*
  * @brief Enumerates the display connection type.
  */

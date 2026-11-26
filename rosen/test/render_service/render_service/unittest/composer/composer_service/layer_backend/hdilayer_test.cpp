@@ -246,7 +246,7 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerId001, Function | MediumTest| Level1)
     HdiLayerTest::hdiLayer_->prevRSLayer_ = std::make_shared<RSSurfaceLayer>(0, nullptr);
     ASSERT_EQ(HdiLayerTest::hdiLayer_->SetTunnelLayerId(), GRAPHIC_DISPLAY_SUCCESS);
 }
- 
+
 /**
  * Function: SetTunnelLayerId002
  * Type: Function
@@ -260,11 +260,11 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerId002, Function | MediumTest| Level1)
     uint32_t devId = 1;
     uint32_t layerId = 2;
     uint64_t tunnelId = 3;
- 
+
     EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerId(devId, layerId, tunnelId)).WillRepeatedly(testing::Return(0));
     ASSERT_EQ(HdiLayerTest::hdiLayer_->SetTunnelLayerId(), 0);
 }
- 
+
 /**
  * Function: SetTunnelLayerProperty001
  * Type: Function
@@ -416,7 +416,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters001, Function | MediumTest| Level1)
     int32_t result = HdiLayerTest::hdiLayer_->SetPerFrameParameters();
     EXPECT_EQ(result, GRAPHIC_DISPLAY_SUCCESS);
 }
- 
+
 /**
  * Function: SetPerFrameParameters002
  * Type: Function
@@ -434,7 +434,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters002, Function | MediumTest| Level1)
     EXPECT_EQ(result, GRAPHIC_DISPLAY_SUCCESS);
     EXPECT_CALL(*hdiDeviceMock_, GetSupportedLayerPerFrameParameterKey()).WillRepeatedly(testing::ReturnRef(paramKey_));
 }
- 
+
 /**
  * Function: SetPerFrameParameters003
  * Type: Function
@@ -452,7 +452,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters003, Function | MediumTest| Level1)
     EXPECT_EQ(result, GRAPHIC_DISPLAY_SUCCESS);
     EXPECT_CALL(*hdiDeviceMock_, GetSupportedLayerPerFrameParameterKey()).WillRepeatedly(testing::ReturnRef(paramKey_));
 }
- 
+
 /**
  * Function: SetPerFrameParameters004
  * Type: Function
@@ -470,7 +470,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters004, Function | MediumTest| Level1)
     EXPECT_EQ(result, GRAPHIC_DISPLAY_SUCCESS);
     EXPECT_CALL(*hdiDeviceMock_, GetSupportedLayerPerFrameParameterKey()).WillRepeatedly(testing::ReturnRef(paramKey_));
 }
- 
+
 /**
  * Function: SetPerFrameParameters005
  * Type: Function
@@ -1160,7 +1160,7 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerPropertyWithHasSetTunnelFlag, Function | Me
     ASSERT_EQ(hdiLayer->SetHdiDeviceMock(&hdiDeviceMock), GRAPHIC_DISPLAY_SUCCESS);
 
     hdiLayer->tunnelLayerProperty_ = TUNNEL_PROP_INVALID;
- 
+
     auto rsLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     rsLayer->SetTunnelLayerProperty(TUNNEL_PROP_BUFFER_ADDR);
     rsLayer->SetType(GRAPHIC_LAYER_TYPE_TUNNEL);
@@ -5351,7 +5351,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
  * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
  *                  2. check ret
  */
- HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest001, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest001, Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
     auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
@@ -5373,7 +5373,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
  * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
  *                  2. check ret
  */
- HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest002, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest002, Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
     auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
@@ -5397,7 +5397,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
  * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
  *                  2. check ret
  */
- HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest003, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest003, Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
     hdiLayer_->prevRSLayer_ = nullptr;
@@ -5416,7 +5416,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
  * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
  *                  2. check ret
  */
- HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest004, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest004, Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
     hdiLayer_->prevRSLayer_ = nullptr;
@@ -5438,7 +5438,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
  * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
  *                  2. check ret
  */
- HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest005, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest005, Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
     hdiLayer_->prevRSLayer_ = nullptr;
@@ -5465,7 +5465,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
 HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_SolidAndSizeMatch_True, Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
-    
+
     auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
     GraphicIRect layerSize = {0, 0, 100, 100};
@@ -5495,7 +5495,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_NotSolidOrSize
     Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
-    
+
     auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
     GraphicIRect prevLayerSize = {0, 0, 100, 100};

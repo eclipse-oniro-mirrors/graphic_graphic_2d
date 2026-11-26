@@ -1224,9 +1224,7 @@ HWTEST_F(RsRenderComposerAgentTest, MarkTunnelSurfaceInvalid_MultipleSurfaces_Al
 
     auto output = rsRenderComposer_->hdiOutput_;
     ASSERT_NE(output, nullptr);
-
     output->invalidTunnelSurfaceIds_.clear();
-
     constexpr uint64_t surfaceId1 = 91010;
     constexpr uint64_t surfaceId2 = 91011;
     constexpr uint64_t surfaceId3 = 91012;

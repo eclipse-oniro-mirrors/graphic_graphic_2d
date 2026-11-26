@@ -531,20 +531,20 @@ HWTEST_F(RSEffectRenderNodeDrawableTest, BackFaceSkipTest001, TestSize.Level2)
     auto effectDrawable = static_cast<RSEffectRenderNodeDrawable*>(
         RSRenderNodeDrawableAdapter::OnGenerate(effectNode).get());
     ASSERT_NE(effectDrawable->renderParams_, nullptr);
-    
+
     effectDrawable->renderParams_->shouldPaint_ = true;
     effectDrawable->renderParams_->contentEmpty_ = false;
-    
+
     Drawing::Matrix matrix;
     matrix.SetScale(-1.0f, 1.0f);
     effectDrawable->renderParams_->SetMatrix(matrix);
     effectDrawable->renderParams_->SetDoubleSidedEnabled(false);
-    
+
     Drawing::Canvas canvas(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
-    
+
     effectDrawable->OnDraw(paintFilterCanvas);
-    
+
     ASSERT_EQ(effectDrawable->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
 }
 
@@ -561,20 +561,20 @@ HWTEST_F(RSEffectRenderNodeDrawableTest, BackFaceSkipTest002, TestSize.Level2)
     auto effectDrawable = static_cast<RSEffectRenderNodeDrawable*>(
         RSRenderNodeDrawableAdapter::OnGenerate(effectNode).get());
     ASSERT_NE(effectDrawable->renderParams_, nullptr);
-    
+
     effectDrawable->renderParams_->shouldPaint_ = true;
     effectDrawable->renderParams_->contentEmpty_ = false;
-    
+
     Drawing::Matrix matrix;
     matrix.SetScale(-1.0f, 1.0f);
     effectDrawable->renderParams_->SetMatrix(matrix);
     effectDrawable->renderParams_->SetDoubleSidedEnabled(true);
-    
+
     Drawing::Canvas canvas(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
-    
+
     effectDrawable->OnDraw(paintFilterCanvas);
-    
+
     ASSERT_NE(effectDrawable->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
 }
 
@@ -591,20 +591,20 @@ HWTEST_F(RSEffectRenderNodeDrawableTest, BackFaceSkipTest003, TestSize.Level2)
     auto effectDrawable = static_cast<RSEffectRenderNodeDrawable*>(
         RSRenderNodeDrawableAdapter::OnGenerate(effectNode).get());
     ASSERT_NE(effectDrawable->renderParams_, nullptr);
-    
+
     effectDrawable->renderParams_->shouldPaint_ = true;
     effectDrawable->renderParams_->contentEmpty_ = false;
-    
+
     Drawing::Matrix matrix;
     matrix.SetScale(1.0f, 1.0f);
     effectDrawable->renderParams_->SetMatrix(matrix);
     effectDrawable->renderParams_->SetDoubleSidedEnabled(false);
-    
+
     Drawing::Canvas canvas(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
-    
+
     effectDrawable->OnDraw(paintFilterCanvas);
-    
+
     ASSERT_NE(effectDrawable->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
 }
 }
