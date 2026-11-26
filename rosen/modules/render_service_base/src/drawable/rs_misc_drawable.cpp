@@ -333,7 +333,7 @@ bool RSBeginBlenderDrawable::OnUpdate(const RSRenderNode& node)
             stagingIsDangerous_ = false;
         }
     }
-    if (!stagingBlender_ && blendMode && blendMode != static_cast<int>(RSColorBlendMode::NONE)) {
+    if (!stagingBlender_ && blendMode != static_cast<int>(RSColorBlendMode::NONE)) {
         if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
             stagingPropertyDescription_ = "BlendMode, blendMode: " + std::to_string(blendMode) +
                                           " blendApplyType: " + std::to_string(stagingBlendApplyType_);
@@ -411,6 +411,10 @@ void RSBeginBlenderDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect
         UpdateAdaptiveBlender(fraction);
     }
     const bool useAdaptive = hasAdaptive && colorPickedReady && activeBlender_;
+    // Nothing to apply: keep the canvas blender inherited from ancestors untouched.
+    if (!useAdaptive && blender_ == nullptr) {
+        return;
+    }
     RSBlenderDrawableUtils::BeginBlender(*paintFilterCanvas,
         useAdaptive ? activeBlender_ : blender_, blendApplyType_, isDangerous_);
 }

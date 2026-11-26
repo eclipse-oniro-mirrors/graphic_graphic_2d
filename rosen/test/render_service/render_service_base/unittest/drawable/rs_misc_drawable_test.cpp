@@ -1660,4 +1660,60 @@ HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawableAdaptive004, TestSize.Lev
     drawable->OnSync();
     EXPECT_NE(drawable->blender_, nullptr);
 }
+
+/**
+ * @tc.name: RSBeginBlenderDrawableAdaptive005
+ * @tc.desc: Verify the OnDraw guard: a drawable carrying only the adaptive channel (no NG/blendMode
+ *           blender and no usable interpolation result) must return early and keep the blender
+ *           inherited from ancestors untouched instead of clearing it.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawableAdaptive005, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSRenderNode node(id);
+    auto dark = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    auto light = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(dark, nullptr);
+    ASSERT_NE(light, nullptr);
+    auto& properties = node.GetMutableRenderProperties();
+    properties.SetNGAdaptiveDarkBlender(dark);
+    properties.SetNGAdaptiveLightBlender(light);
+
+    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
+        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
+    ASSERT_NE(drawable, nullptr);
+    drawable->OnSync();
+    // the node sets only the adaptive channel, so there is no legacy blender to fall back to
+    EXPECT_EQ(drawable->blender_, nullptr);
+
+    Drawing::Canvas canvas;
+    std::shared_ptr<RSPaintFilterCanvas> paintFilterCanvas = std::make_shared<RSPaintFilterCanvas>(&canvas);
+    // an ancestor blender is already active on the canvas
+    auto ancestorBlender = std::make_shared<Drawing::Blender>();
+    paintFilterCanvas->envStack_.top().blender_ = ancestorBlender;
+
+    Drawing::Rect rect(0, 0, 100, 100);
+    // color picking not ready: nothing to apply, the inherited blender must stay intact
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+    EXPECT_EQ(paintFilterCanvas->envStack_.top().blender_, ancestorBlender);
+
+    // adaptive channel incomplete (light side missing) with picking ready: hasAdaptive is false,
+    // the guard still returns without touching the inherited blender
+    auto saveLight = drawable->adaptiveLightBlender_;
+    drawable->adaptiveLightBlender_ = nullptr;
+    paintFilterCanvas->envStack_.top().fractionColorReady_ = true;
+    paintFilterCanvas->envStack_.top().fractionColor_ = 0x00000080;
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+    EXPECT_EQ(paintFilterCanvas->envStack_.top().blender_, ancestorBlender);
+    drawable->adaptiveLightBlender_ = saveLight;
+
+    // color picking ready and interpolation succeeds: useAdaptive becomes true, the guard is
+    // bypass and the interpolated blender replaces the inherited one
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+    if (drawable->activeBlender_ != nullptr) {
+        EXPECT_EQ(paintFilterCanvas->envStack_.top().blender_, drawable->activeBlender_);
+    }
+}
+
 } // namespace OHOS::Rosen
