@@ -581,7 +581,6 @@ HWTEST_F(RSTunnelLayerHelperTest, OnBufferAvailable001, TestSize.Level1)
     tunnelRuntime.SetActiveFromTunnelLayerAvailable(tunnelRuntime.GetTunnelLayerGeneration());
     RSMainThread::Instance()->hgmRenderContext_ = std::make_shared<HgmRenderContext>(nullptr);
     context.surfaceHandler->SetAvailableBufferCount(0);
-
     auto surfaceHandler(context.node->GetRSSurfaceHandler());
     auto rsListener = std::make_shared<RSRenderServiceListener>(context.node, surfaceHandler, nullptr);
     rsListener->OnBufferAvailable();
@@ -625,7 +624,7 @@ HWTEST_F(RSTunnelLayerHelperTest, OnBufferAvailable002, TestSize.Level1)
     ASSERT_EQ(tunnelRuntime.GetPhase(), RSTunnelRuntimeState::Phase::NORMAL_COMMITTED);
     ScopedRegisteredSurfaceNode registeredNode(context.node);
     ASSERT_TRUE(registeredNode.IsRegistered());
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, 0);
     auto connection = sptr<RecordingRenderToComposerConnection>::MakeSptr();
     auto composerManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerManager, nullptr);
@@ -638,13 +637,38 @@ HWTEST_F(RSTunnelLayerHelperTest, OnBufferAvailable002, TestSize.Level1)
     auto rsListener = std::make_shared<RSRenderServiceListener>(context.node, surfaceHandler, composerManager);
     rsListener->OnBufferAvailable();
 
-    EXPECT_FALSE(connection->commitTunnelCalled);
-    EXPECT_NE(connection->commitTunnelCallCount, 1u);
-    EXPECT_NE(connection->lastSurfaceId, context.consumer->GetUniqueId());
-    EXPECT_NE(connection->lastTunnelLayerId, state.tunnelLayerId);
-    EXPECT_EQ(connection->lastBufferId, 0u);
+    EXPECT_TRUE(connection->commitTunnelCalled);
+    EXPECT_EQ(connection->commitTunnelCallCount, 1u);
+    EXPECT_EQ(connection->lastSurfaceId, context.consumer->GetUniqueId());
+    EXPECT_EQ(connection->lastTunnelLayerId, state.tunnelLayerId);
+    EXPECT_NE(connection->lastBufferId, 0u);
     ASSERT_NE(context.surfaceHandler->GetBuffer(), nullptr);
-    EXPECT_NE(context.surfaceHandler->GetBuffer()->GetSeqNum(), connection->lastBufferId);
+    EXPECT_EQ(context.surfaceHandler->GetBuffer()->GetSeqNum(), connection->lastBufferId);
+    EXPECT_TRUE(tunnelRuntime.IsCommittedTunnelBuffer());
+    EXPECT_EQ(normalBufferOwnerCount->refCount_.load(), 0);
+    auto firstTunnelBufferOwnerCount = context.surfaceHandler->GetBufferOwnerCount();
+    ASSERT_NE(firstTunnelBufferOwnerCount, nullptr);
+    // refCount = 2: initial(1) + AddRef from CreateTunnelLayer->SetBufferOwnerCount
+    constexpr int32_t tunnelBufferRefcountAfterAddref = 2;
+    EXPECT_EQ(firstTunnelBufferOwnerCount->refCount_.load(), tunnelBufferRefcountAfterAddref);
+    EXPECT_TRUE(context.surfaceHandler->IsCurrentFrameBufferConsumed());
+    EXPECT_EQ(context.surfaceHandler->GetPreBuffer(), nullptr);
+    EXPECT_EQ(tunnelRuntime.GetTunnelState(), RSTunnelRuntimeState::TunnelState::ACTIVE);
+
+    constexpr uint32_t COMMIT_COUNT_AFTER_SECOND_BUFFER = 2;
+    ASSERT_TRUE(FlushProducerBufferForTest(context.producer));
+    context.surfaceHandler->SetAvailableBufferCount(1);
+    rsListener->OnBufferAvailable();
+    EXPECT_TRUE(connection->commitTunnelCalled);
+    EXPECT_EQ(connection->commitTunnelCallCount, COMMIT_COUNT_AFTER_SECOND_BUFFER);
+    EXPECT_NE(connection->lastBufferId, 0u);
+    ASSERT_NE(context.surfaceHandler->GetBuffer(), nullptr);
+    EXPECT_EQ(context.surfaceHandler->GetBuffer()->GetSeqNum(), connection->lastBufferId);
+    EXPECT_TRUE(tunnelRuntime.IsCommittedTunnelBuffer());
+    EXPECT_TRUE(context.surfaceHandler->IsCurrentFrameBufferConsumed());
+    EXPECT_EQ(normalBufferOwnerCount->refCount_.load(), 0);
+    EXPECT_EQ(firstTunnelBufferOwnerCount->refCount_.load(), 0);
+    EXPECT_EQ(context.surfaceHandler->GetPreBuffer(), nullptr);
 }
 
 /**
@@ -694,11 +718,14 @@ HWTEST_F(RSTunnelLayerHelperTest, OnBufferAvailable004, TestSize.Level1)
     RSTestUtil::UnregisterConsumerListener();
 
     auto surfaceHandler = node->GetMutableRSSurfaceHandler();
+    ASSERT_NE(surfaceHandler, nullptr);
     auto consumer = surfaceHandler->GetConsumer();
     sptr<IBufferConsumerListener> noopListener = new TunnelNoopConsumerListener();
     ASSERT_EQ(consumer->RegisterConsumerListener(noopListener), GSERROR_OK);
+    ASSERT_NE(consumer, nullptr);
     sptr<IBufferProducer> producerToken = consumer->GetProducer();
     auto producer = Surface::CreateSurfaceAsProducer(producerToken);
+    ASSERT_NE(producer, nullptr);
     producer->SetQueueSize(TEST_QUEUE_SIZE);
 
     std::vector<LayerStateChange> results;
@@ -715,7 +742,6 @@ HWTEST_F(RSTunnelLayerHelperTest, OnBufferAvailable004, TestSize.Level1)
     RSTunnelRouteArbiter::SetTunnelSolePresentLayer(true);
     ScopedRegisteredSurfaceNode registeredNode(node);
     ASSERT_TRUE(registeredNode.IsRegistered());
-
     auto listener =
         std::make_shared<RSRenderServiceListener>(node, surfaceHandler, std::make_shared<RSComposerClientManager>());
     ASSERT_TRUE(FlushProducerBufferForTest(producer));
@@ -754,6 +780,8 @@ HWTEST_F(RSTunnelLayerHelperTest, TryCommitTunnelLayerBufferDirect006, TestSize.
     ASSERT_TRUE(tunnelRuntime.SetActiveFromTunnelLayerAvailable(tunnelRuntime.GetTunnelLayerGeneration()));
     ScopedRegisteredSurfaceNode registeredNode(context.node);
     ASSERT_TRUE(registeredNode.IsRegistered());
+    // CreateRecordingComposerManager registers the client under screenId 0,
+    // so align node screenId to ensure CreateTunnelLayer can find the composer client.
     context.node->screenId_ = 0;
 
     auto connection = sptr<RecordingRenderToComposerConnection>::MakeSptr();
@@ -786,10 +814,11 @@ HWTEST_F(RSTunnelLayerHelperTest, TryCommitTunnelLayerBufferDirect006, TestSize.
 
     EXPECT_TRUE(RSTunnelLayerHelper::TryCommitBufferDirect(
         context.node, composerClientManager, false, tunnelRuntime));
+    // refCount = 0: initial(2) - 2 DecRefs from ReleasePreviousNormalBuffer (NORMAL_TO_TUNNEL_RELEASE_REF_COUNT)
     constexpr int32_t NORMAL_BUFFER_REFCOUNT_AFTER_TUNNEL_RELEASE = 0;
     EXPECT_EQ(currentBufferOwnerCount->refCount_.load(), NORMAL_BUFFER_REFCOUNT_AFTER_TUNNEL_RELEASE);
 }
- 
+
 /**
  * @tc.name: LastBufferStatus_TransitionsToTunnelOnSuccess
  * @tc.desc: Test tunnelBufferStatus_ transitions to TUNNEL_STATUS on successful tunnel commit
@@ -912,7 +941,7 @@ HWTEST_F(RSTunnelLayerHelperTest, TryCommitPendingBuffer_NullComposerManager_Rel
     ASSERT_TRUE(context.IsProducerReady());
 
     context.producer->SetQueueSize(TEST_QUEUE_SIZE);
-    TunnelLayerState state = { { TUNNEL_TYPE_NONE, 0 }, 0, TUNNEL_PROP_INVALID };
+    TunnelLayerState state = { {TUNNEL_TYPE_NONE, 0}, 0, TUNNEL_PROP_INVALID };
     ASSERT_TRUE(SetTunnelInfoForConsumer(context.consumer, state));
     auto& tunnelRuntime = *context.node->GetTunnelRuntimeState();
     tunnelRuntime.SetLayerInfo(state.tunnelLayerId, state.property);
@@ -1053,7 +1082,7 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_ReturnsEarlyWhenUniBufferCou
 
     auto connection = sptr<RecordingRenderToComposerConnection>::MakeSptr();
     constexpr ScreenId testScreenId = 0;
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, testScreenId);
     auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerClientManager, nullptr);
     auto composerClient = composerClientManager->GetComposerClient(testScreenId);
@@ -1066,7 +1095,8 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_ReturnsEarlyWhenUniBufferCou
     ASSERT_NE(bufferEntry.buffer, nullptr);
     ASSERT_NE(bufferEntry.bufferOwnerCount_, nullptr);
     auto layer = RSTunnelLayerHelper::CreateTunnelLayer(context.node, composerClientManager, bufferEntry);
-    ASSERT_EQ(layer, nullptr);
+    ASSERT_NE(layer, nullptr);
+    EXPECT_EQ(layer->GetBuffer(), bufferEntry.buffer);
 }
 
 /**
@@ -1087,7 +1117,7 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_InsertsUniOnDrawSet_WhenBuff
     auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerClientManager, nullptr);
     constexpr ScreenId testScreenId = 0;
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, testScreenId);
     auto composerClient = composerClientManager->GetComposerClient(testScreenId);
     ASSERT_NE(composerClient, nullptr);
     auto composerContext = composerClient->GetComposerContext();
@@ -1104,7 +1134,12 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_InsertsUniOnDrawSet_WhenBuff
     auto bufferEntry = CreateTestBufferEntry();
     ASSERT_NE(bufferEntry.buffer, nullptr);
     auto layer = RSTunnelLayerHelper::CreateTunnelLayer(context.node, composerClientManager, bufferEntry);
-    ASSERT_EQ(layer, nullptr);
+    ASSERT_NE(layer, nullptr);
+    EXPECT_EQ(layer->GetBuffer(), bufferEntry.buffer);
+    EXPECT_FALSE(uniBufferOwnerCount->uniOnDrawBuffersMap_.empty());
+    auto mapIter = uniBufferOwnerCount->uniOnDrawBuffersMap_.find(layer->GetRSLayerId());
+    ASSERT_NE(mapIter, uniBufferOwnerCount->uniOnDrawBuffersMap_.end());
+    EXPECT_EQ(mapIter->second.count(bufferEntry.buffer->GetBufferId()), 1u);
 }
 
 /**
@@ -1124,7 +1159,7 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_SkipsInsertUniOnDrawSet_When
     auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerClientManager, nullptr);
     constexpr ScreenId testScreenId = 0;
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, testScreenId);
     auto composerClient = composerClientManager->GetComposerClient(testScreenId);
     ASSERT_NE(composerClient, nullptr);
     auto composerContext = composerClient->GetComposerContext();
@@ -1141,7 +1176,8 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_SkipsInsertUniOnDrawSet_When
     emptyBufferEntry.acquireFence = SyncFence::InvalidFence();
     ASSERT_EQ(emptyBufferEntry.buffer, nullptr);
     auto layer = RSTunnelLayerHelper::CreateTunnelLayer(context.node, composerClientManager, emptyBufferEntry);
-    ASSERT_EQ(layer, nullptr);
+    ASSERT_NE(layer, nullptr);
+    EXPECT_EQ(layer->GetBuffer(), nullptr);
     EXPECT_TRUE(uniBufferOwnerCount->uniOnDrawBuffersMap_.empty());
 }
 
@@ -1162,7 +1198,7 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_SetsUniBufferOwner_WhenBuffe
     auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerClientManager, nullptr);
     constexpr ScreenId testScreenId = 0;
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, testScreenId);
     auto composerClient = composerClientManager->GetComposerClient(testScreenId);
     ASSERT_NE(composerClient, nullptr);
     auto composerContext = composerClient->GetComposerContext();
@@ -1180,7 +1216,7 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_SetsUniBufferOwner_WhenBuffe
     auto bufferEntry = CreateTestBufferEntry();
     ASSERT_NE(bufferEntry.bufferOwnerCount_, nullptr);
     auto layer = RSTunnelLayerHelper::CreateTunnelLayer(context.node, composerClientManager, bufferEntry);
-    ASSERT_EQ(layer, nullptr);
+    ASSERT_NE(layer, nullptr);
     EXPECT_TRUE(bufferEntry.bufferOwnerCount_->CheckLastUniBufferOwner(uniBufferId, context.node->GetScreenId()));
 }
 
@@ -1202,7 +1238,7 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_SkipsSetUniBufferOwner_WhenB
     auto composerClientManager = CreateRecordingComposerManager(context.node->GetId(), connection);
     ASSERT_NE(composerClientManager, nullptr);
     constexpr ScreenId testScreenId = 0;
-    context.node->screenId_ = 0;
+    AttachNodeToScreen(context.node, testScreenId);
     auto composerClient = composerClientManager->GetComposerClient(testScreenId);
     ASSERT_NE(composerClient, nullptr);
     auto composerContext = composerClient->GetComposerContext();
@@ -1222,8 +1258,8 @@ HWTEST_F(RSTunnelLayerHelperTest, CreateTunnelLayer_SkipsSetUniBufferOwner_WhenB
     ASSERT_NE(bufferEntry.bufferOwnerCount_, nullptr);
     bufferEntry.bufferOwnerCount_ = nullptr;
     auto layer = RSTunnelLayerHelper::CreateTunnelLayer(context.node, composerClientManager, bufferEntry);
-    ASSERT_EQ(layer, nullptr);
-    EXPECT_TRUE(uniBufferOwnerCount->uniBufferOwnerSeqNumMap_.empty());
+    ASSERT_NE(layer, nullptr);
+EXPECT_TRUE(uniBufferOwnerCount->uniBufferOwnerSeqNumMap_.empty());
 }
 
 /**

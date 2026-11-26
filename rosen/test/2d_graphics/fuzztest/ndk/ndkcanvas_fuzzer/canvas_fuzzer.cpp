@@ -42,6 +42,8 @@
 #include "image/pixelmap_native.h"
 
 constexpr uint32_t MAX_ARRAY_MAX = 5000;
+constexpr uint32_t SAVE_LAYER_FLAGS_NONE = 0;
+constexpr uint32_t SAVE_LAYER_FLAGS_INIT_WITH_PREVIOUS = 2;
 constexpr uint32_t ENUM_RANGE_ONE = 1;
 constexpr uint32_t ENUM_RANGE_TWO = 2;
 constexpr uint32_t ENUM_RANGE_THREE = 3;
@@ -303,6 +305,12 @@ void CanvasFuzzTest004(const uint8_t* data, size_t size)
 
     OH_Drawing_CanvasSaveLayer(canvas, rect, brush);
     OH_Drawing_CanvasSaveLayer(nullptr, rect, brush);
+
+    OH_Drawing_CanvasSaveLayerWithFlag(canvas, rect, brush, SAVE_LAYER_FLAGS_NONE);
+    OH_Drawing_CanvasSaveLayerWithFlag(canvas, rect, brush, SAVE_LAYER_FLAGS_INIT_WITH_PREVIOUS);
+    OH_Drawing_CanvasSaveLayerWithFlag(canvas, rect, brush, GetObject<uint32_t>());
+    OH_Drawing_CanvasSaveLayerWithFlag(nullptr, rect, brush, GetObject<uint32_t>());
+    OH_Drawing_CanvasSaveLayerWithFlag(canvas, nullptr, nullptr, GetObject<uint32_t>());
 
     OH_Drawing_CanvasDrawBackground(canvas, brush);
     OH_Drawing_CanvasDrawBackground(nullptr, brush);

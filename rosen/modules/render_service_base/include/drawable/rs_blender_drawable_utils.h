@@ -43,9 +43,13 @@ public:
     /* Returns nullptr for invalid params or unregistered types; callers fall back to blendMode. */
     static std::shared_ptr<Drawing::Blender> MakeBlenderFromNG(
         const std::shared_ptr<RSNGRenderBlenderBase>& blender);
+    static std::shared_ptr<Drawing::Blender> MakeAdaptiveBlenderFromNG(
+        const std::shared_ptr<RSNGRenderBlenderBase>& darkBlender,
+        const std::shared_ptr<RSNGRenderBlenderBase>& lightBlender, const float fraction);
 
     /* EDR applies only to colorful/brightness blenders, driven by their HdrEnabled tag. */
     static bool GetNGBlenderEnableEDR(const RSProperties& properties);
+    static bool GetNGAdaptiveBlenderEnableEDR(const RSProperties& properties);
 
     static std::shared_ptr<Drawing::RuntimeBlenderBuilder> MakeDynamicBrightnessBuilder();
     static std::shared_ptr<Drawing::RuntimeBlenderBuilder> MakeDynamicBrightnessLinearBuilder();

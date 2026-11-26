@@ -156,11 +156,7 @@ public:
     const std::shared_ptr<RSBaseRenderEngine> GetRenderEngine() const
     {
         RS_LOGD_IF(DEBUG_PIPELINE, "You'd better to call GetRenderEngine from RSUniRenderThread directly");
-#ifdef RS_ENABLE_GPU
         return isUniRender_ ? std::move(RSUniRenderThread::Instance().GetRenderEngine()) : renderEngine_;
-#else
-        return renderEngine_;
-#endif
     }
 
     RSContext& GetContext()
@@ -274,7 +270,7 @@ public:
         }
     }
     uint32_t SetSurfaceWatermark(pid_t pid, const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
-        const std::vector<NodeId>& nodeIdList, SurfaceWatermarkType watermarkType, bool isSystemCalling = false,
+        const std::vector<NodeId>& nodeList, SurfaceWatermarkType watermarkType, bool isSystemCalling = false,
         uint32_t rowCount = 0, uint32_t colCount = 0);
     void ClearSurfaceWatermark(pid_t pid, const std::string& name, bool isSystemCalling);
     void ClearSurfaceWatermark(pid_t pid);
@@ -370,7 +366,7 @@ public:
     {
         skipJankAnimatorFrame_.store(skipJankAnimatorFrame);
     }
-    
+
     void SetFrameIsRender(bool isRender);
     const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetSelfDrawingNodes() const;
 
@@ -609,7 +605,6 @@ private:
     void SetFocusLeashWindowId();
     void PrintCurrentStatus();
     void UpdateGpuContextCacheSize();
-
     void AddDisableReason(const std::string& reason);
     void ResetDisableReasons();
     std::string GetDisableReasons() const;
@@ -675,7 +670,6 @@ private:
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     void CleanCanvasCallbacksAndPendingBuffer(pid_t remotePid) noexcept;
 #endif
-
     void ProcessNeedAttachedNodes();
     void PostTryReclaimLastBuffer(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         std::shared_ptr<RSSurfaceHandler> surfaceHandler);
@@ -701,11 +695,9 @@ private:
     bool systemAnimatedScenesEnabled_ = false;
     mutable std::atomic_bool hasWiredMirrorDisplay_ = false;
     mutable std::atomic_bool hasVirtualMirrorDisplay_ = false;
-
     bool needDrawFrame_ = true;
     bool needPostAndWait_ = true;
     bool isLastFrameNeedPostAndWait_ = true;
-
     bool isNeedResetClearMemoryTask_ = false;
     bool watermarkFlag_ = false;
     bool lastWatermarkFlag_ = false;

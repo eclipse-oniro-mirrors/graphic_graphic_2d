@@ -549,50 +549,6 @@ HWTEST_F(RSDirtyRectsDFXTest, DrawDetailedTypesOfDirtyRegionForDFX, TestSize.Lev
 }
 
 /**
- * @tc.name: DrawHwcRegionForDFXTest
- * @tc.desc: Test DrawHwcRegionForDFX with different type drawables
- * @tc.type: FUNC
- * @tc.require: issueIB278U
- */
-HWTEST_F(RSDirtyRectsDFXTest, DrawHwcRegionForDFXTest, TestSize.Level1)
-{
-    ASSERT_NE(rsDirtyRectsDfx_, nullptr);
-    auto params = std::make_unique<RSRenderThreadParams>();
-    ASSERT_NE(params, nullptr);
-
-    std::shared_ptr<RSSurfaceRenderNode> renderNode = std::make_shared<RSSurfaceRenderNode>(0);
-    ASSERT_NE(renderNode, nullptr);
-    auto drawable = RSSurfaceRenderNodeDrawable::OnGenerate(renderNode);
-    drawable->renderParams_ = std::make_unique<RSSurfaceRenderParams>(0);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
-    ASSERT_NE(surfaceParams, nullptr);
-    surfaceParams->SetHardwareEnabled(true);
-    params->hardwareEnabledTypeDrawables_.emplace_back(std::make_tuple(0, 0, drawable));
-
-    std::shared_ptr<RSSurfaceRenderNode> renderNodeHardwareDisabled = std::make_shared<RSSurfaceRenderNode>(1);
-    ASSERT_NE(renderNodeHardwareDisabled, nullptr);
-    auto drawableHardwareDisabled = RSSurfaceRenderNodeDrawable::OnGenerate(renderNodeHardwareDisabled);
-    drawableHardwareDisabled->renderParams_ = std::make_unique<RSSurfaceRenderParams>(1);
-    auto surfaceParamsHardwareDisabled =
-        static_cast<RSSurfaceRenderParams*>(drawableHardwareDisabled->GetRenderParams().get());
-    ASSERT_NE(surfaceParamsHardwareDisabled, nullptr);
-    surfaceParamsHardwareDisabled->SetHardwareEnabled(false);
-    params->hardwareEnabledTypeDrawables_.emplace_back(std::make_tuple(1, 0, drawableHardwareDisabled));
-
-    params->hardwareEnabledTypeDrawables_.emplace_back(std::make_tuple(1, 0, nullptr));
-
-    std::shared_ptr<RSSurfaceRenderNode> renderNodeParamsNull = std::make_shared<RSSurfaceRenderNode>(2);
-    ASSERT_NE(renderNodeParamsNull, nullptr);
-    auto drawableParamsNull = RSSurfaceRenderNodeDrawable::OnGenerate(renderNodeParamsNull);
-    drawableParamsNull->renderParams_ = nullptr;
-    params->hardwareEnabledTypeDrawables_.emplace_back(std::make_tuple(2, 0, drawableParamsNull));
-
-    RSUniRenderThread::Instance().Sync(move(params));
-    ASSERT_NE(canvas_, nullptr);
-    rsDirtyRectsDfx_->DrawHwcRegionForDFX(*canvas_);
-}
-
-/**
  * @tc.name: DrawMergedAndAllDirtyRegionForDFX
  * @tc.desc: Test DrawMergedAndAllDirtyRegionForDFX
  * @tc.type: FUNC

@@ -22,6 +22,7 @@
 #include "rs_graphic_test_director.h"
 #include "rs_graphic_test_utils.h"
 #include "token_setproc.h"
+#include "rs_graphic_test_director.h"
 
 #include "transaction/rs_interfaces.h"
 
@@ -121,6 +122,7 @@ private:
 class RSLogicalDisplayNodeTest : public RSGraphicTest {
 public:
     // called before each tests
+    static inline std::shared_ptr<RSRenderInterface> rsRenderInterface_ = nullptr;
     void BeforeEach() override
     {
         LOGI("BeforeEach");
@@ -145,6 +147,9 @@ public:
         auto size = GetScreenSize();
         SetSurfaceBounds({ 0, 0, size.x_ / 2.0f, size.y_ / 2.0f });
         SetSurfaceColor(RSColor(0xffff0000));
+        auto screenId = OHOS::Rosen::RSInterfaces::GetInstance().GetDefaultScreenId();
+        auto connectToRender = RSInterfaces::GetInstance().GetConnectToRenderToken(screenId);
+        rsRenderInterface_ = std::make_shared<RSRenderInterface>(connectToRender);
     }
     // called after each tests
     void AfterEach() override {}
@@ -190,11 +195,11 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     displayNode1->SetBounds({ 1500, 0, 500, 500 });
     displayNode1->SetFrame({ 1500, 0, 500, 500 });
     displayNode1->SetBackgroundColor(SK_ColorRED);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode0, callback);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode0, callback);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }
@@ -225,11 +230,11 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     displayNode1->SetBounds({ 1500, 0, 500, 500 });
     displayNode1->SetFrame({ 1500, 0, 500, 500 });
     displayNode1->SetBackgroundColor(SK_ColorRED);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode1, callback);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode1, callback);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }
@@ -268,7 +273,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     displayNode1->SetBounds({ 1500, 0, 500, 500 });
     displayNode1->SetFrame({ 1500, 0, 500, 500 });
     displayNode1->SetBackgroundColor(SK_ColorRED);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSInterfaces::GetInstance().RemoveVirtualScreen(screenId);
@@ -302,7 +307,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     displayNode1->SetBounds({ 1500, 0, 500, 500 });
     displayNode1->SetFrame({ 1500, 0, 500, 500 });
     displayNode1->SetBackgroundColor(SK_ColorRED);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // mirrorScreen
@@ -323,7 +328,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     ASSERT_NE(displayNode2, nullptr);
     displayNode2->SetBounds({ 0, 0, width, height });
     displayNode2->SetFrame({ 0, 0, width, height });
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSInterfaces::GetInstance().RemoveVirtualScreen(screenId0);
@@ -366,7 +371,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     displayNode3->SetBounds({ 300, 0, 500, 500 });
     displayNode3->SetFrame({ 300, 0, 500, 500 });
     displayNode3->SetBackgroundColor(SK_ColorGREEN);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // mirrorScreen
@@ -388,7 +393,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     ASSERT_NE(mirrorDisplayNode, nullptr);
     mirrorDisplayNode->SetBounds({ 0, 0, width, height });
     mirrorDisplayNode->SetFrame({ 0, 0, width, height });
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSInterfaces::GetInstance().RemoveVirtualScreen(screenId0);
@@ -435,7 +440,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     displayNode3->SetBounds({ 300, 0, 500, 500 });
     displayNode3->SetFrame({ 300, 0, 500, 500 });
     displayNode3->SetBackgroundColor(SK_ColorGREEN);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSInterfaces::GetInstance().RemoveVirtualScreen(screenId);
@@ -482,7 +487,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     displayNode3->SetFrame({ 300, 0, 500, 500 });
     displayNode3->SetBackgroundColor(SK_ColorGREEN);
     displayNode3->RemoveDisplayNodeFromTree();
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSInterfaces::GetInstance().RemoveVirtualScreen(screenId);
@@ -524,11 +529,11 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     displayNode3->SetBounds({ 300, 0, 500, 500 });
     displayNode3->SetFrame({ 300, 0, 500, 500 });
     displayNode3->SetBackgroundColor(SK_ColorGREEN);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode1, callback);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode1, callback);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }
@@ -571,11 +576,11 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, SetSecurityDispla
 
     displayNode->RSNode::AddChild(surfaceNode0);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode, callback);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }
@@ -618,11 +623,11 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, SetSecurityDispla
 
     displayNode->RSNode::AddChild(surfaceNode0);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode, callback);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }
@@ -665,11 +670,11 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, SetSecurityDispla
 
     displayNode->RSNode::AddChild(surfaceNode0);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode, callback);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }
@@ -712,11 +717,11 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, SetSecurityDispla
 
     displayNode->RSNode::AddChild(surfaceNode0);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode, callback);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }
@@ -745,13 +750,13 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, SetDisplayNodeCon
     displayNode->SetFrame({ 0, 0, width, height });
     displayNode->SetBackgroundColor(SK_ColorGREEN);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSDisplayNodeConfig displayNodeConfig1 = { screenId, DisplayMode::EXPAND, 1, true };
     displayNode->SetDisplayNodeConfig(displayNodeConfig1);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSSurfaceNodeConfig surfaceNodeConfig0;
@@ -763,11 +768,11 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, SetDisplayNodeCon
     surfaceNode0->SetBackgroundColor(SK_ColorYELLOW);
     displayNode->RSNode::AddChild(surfaceNode0);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode, callback);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }
@@ -807,7 +812,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, SetDisplayNodeCon
     displayNode1->SetBackgroundColor(SK_ColorGRAY);
     displayNode1->RSNode::AddChild(surfaceNode1);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // mirrorScreen
@@ -825,7 +830,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, SetDisplayNodeCon
     auto displayNode2 = RSDisplayNode::Create(displayNodeConfig2, RSGraphicTestDirector::Instance().GetRSUIContext());
     ASSERT_NE(displayNode2, nullptr);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     RSDisplayNodeConfig displayNodeConfig3 = { screenId2, DisplayMode::MIRROR, displayNode1->GetId(), true };
@@ -834,11 +839,11 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, SetDisplayNodeCon
     displayNode2->SetFrame({ 0, 0, width, height });
     displayNode2->SetBackgroundColor(SK_ColorGREEN);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode2, callback);
+    rsRenderInterface_->TakeSurfaceCapture(displayNode2, callback);
     if (!CheckSurfaceCaptureCallback(callback)) {
         LOGE("TakeSurfaceCapture failed");
     }

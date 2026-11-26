@@ -70,8 +70,7 @@ RSCanvasNode::RSCanvasNode(bool isRenderServiceNode, NodeId id, bool isTextureEx
     shadowNodeFlag_ = true;
 }
 
-RSCanvasNode::~RSCanvasNode()
-{}
+RSCanvasNode::~RSCanvasNode() {}
 
 void RSCanvasNode::CreateRenderNode()
 {
@@ -258,11 +257,9 @@ void RSCanvasNode::SetBoundsChangedCallback(BoundsChangedCallback callback)
 
 void RSCanvasNode::SetIsOnTheTree(bool onTheTree)
 {
-#ifndef ROSEN_CROSS_PLATFORM
     if (onTheTree) {
         FlushCachedModifiers();
     }
-#endif
     RSNode::SetIsOnTheTree(onTheTree);
 }
 
@@ -276,16 +273,6 @@ bool RSCanvasNode::FlushCachedModifiers()
         flushed = modifier->FlushCachedProperty() || flushed;
     }
     return flushed;
-}
-
-void RSCanvasNode::SetPixelmap(const std::shared_ptr<Media::PixelMap>& pixelMap)
-{
-    if (!pixelMap) {
-        return;
-    }
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSCanvasNodeSetPixelmap>(GetId(), pixelMap);
-    AddCommand(command, true);
 }
 } // namespace Rosen
 } // namespace OHOS

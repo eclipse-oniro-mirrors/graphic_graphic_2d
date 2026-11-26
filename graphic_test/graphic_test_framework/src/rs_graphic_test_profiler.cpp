@@ -45,7 +45,7 @@ constexpr int LOAD_STATIC_WAIT_TIME = 100;
 constexpr int NORMAL_WAIT_TIME = 1000;
 constexpr int PLAYBACK_PREPARE_OUT_TIME = 10000;
 constexpr int DEFAULT_TIME_INTERVAL = 50;
-
+ 
 constexpr int PLAYBACK_OPERATE_INTERVAL_TIME = 100;
 constexpr int PLAYBACK_FRAME_WAIT_TIME = 30;
 constexpr int SCREEN_WIDTH = 1316;
@@ -257,7 +257,7 @@ void RSGraphicTestProfiler::PlayBackPauseAtVsync(
             float pauseTime = static_cast<float>(time) / static_cast<float>(UNIT_SEC_TO_MS);
             std::string command = "rsrecord_pause_at " +  std::to_string(pauseTime);
             std::cout << "Playback Pause At: " << command << std::endl;
-            RSGraphicTestDirector::Instance().SendProfilerCommand(command, NORMAL_WAIT_TIME);
+            RSGraphicTestDirector::Instance().SendProfilerCommand(command, 1000);
         }
         RS_TRACE_END();
         WaitTimeout(PLAYBACK_FRAME_WAIT_TIME);
@@ -306,7 +306,7 @@ void RSGraphicTestProfiler::LoadPlaybackProfilerFileWithoutJson(
         "rsrecord_replay_prepare VSYNC " + std::to_string(0) + " " + filePath;
     RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PREPARE_OUT_TIME);
     WaitTimeout(PLAYBACK_OPERATE_INTERVAL_TIME);
-
+ 
     // get replay start and end time
     command = "rsreplay_time";
     RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PREPARE_OUT_TIME);
@@ -314,16 +314,16 @@ void RSGraphicTestProfiler::LoadPlaybackProfilerFileWithoutJson(
     int startTime = static_cast<int>(startAndEndTime.first * UNIT_SEC_TO_MS);
     int endTime = static_cast<int>(startAndEndTime.second * UNIT_SEC_TO_MS);
     cout << startTime << " " << endTime << std::endl;
-    WaitTimeout(PLAYBACK_OPERATE_INTERVAL_TIME);
-
+    WaitTimeout(PLAYBACK_OPERATE_INTERVAL_TIME); 
+ 
     // playback start
     command = "rsrecord_replay";
     std::cout << "Playback Start: " << command << std::endl;
     RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PREPARE_OUT_TIME);
     WaitTimeout(PLAYBACK_OPERATE_INTERVAL_TIME);
-
+ 
     PlayBackPauseAtVsync(startTime, endTime, DEFAULT_TIME_INTERVAL, savePath);
-
+ 
     // playback stop
     command = "rsrecord_replay_stop";
     std::cout << "Playback Stop: " << command << std::endl;
@@ -425,6 +425,7 @@ void RSGraphicTestProfiler::NodeTreeTestSetUp()
         std::cout << "NodeTreeTestSetUp create test surface failed" << std::endl;
         return;
     }
+
     testSurface->SetBounds({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
     testSurface->SetFrame({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
     testSurface->SetBackgroundColor(SURFACE_COLOR);
@@ -462,8 +463,8 @@ void RSGraphicTestProfiler::TearDown()
 void RSGraphicTestProfiler::LoadNodeTreeProfilerFile(const std::string& filePath, const std::string& savePath)
 {
     RS_TRACE_NAME("RSGraphicTestProfiler::LoadNodeTreeProfilerFile");
-    std::cout << "                                                             " << std::endl;
-    std::cout << "------------------------one testcase begin----------------------" << std::endl;
+    std::cout << "                                                              "<< std::endl;
+    std::cout << "------------------------one testcase begin----------------------"<< std::endl;
     auto timepoint1 = std::chrono::high_resolution_clock::now();
     bool captureSuccess = true;
     runTestCaseNum_++;
@@ -506,8 +507,8 @@ void RSGraphicTestProfiler::LoadNodeTreeProfilerFile(const std::string& filePath
     WaitTimeout(NODETREE_WAIT_TIME);
     auto timepoint2 = std::chrono::high_resolution_clock::now();
     auto elapsed2 = std::chrono::duration_cast<std::chrono::microseconds>(timepoint2 - timepoint1);
-    std::cout << "-----------------------one testcase end, total cost: " <<
-        elapsed2.count() / MS_TO_S << " ms. ----------------------" << std::endl;
+    std::cout << "------------------------one testcase end, total cost:" <<
+        elapsed2.count() / MS_TO_S <<" ms. ----------------------" << std::endl;
 }
 
 void RSGraphicTestProfiler::LoadPlaybackProfilerFile(
@@ -703,7 +704,7 @@ bool RSGraphicTestProfiler::CropRawFile(
 {
     char srcFilePath[PATH_MAX] = {0};
     if (srcFileName.length() <= 0 || srcFileName.length() > PATH_MAX || !realpath(srcFileName.c_str(), srcFilePath)) {
-        std::cout << "Raw src file path is invalid :" << srcFileName << std::endl;
+        std::cout << "Raw src file path is invalid : " << srcFileName << std::endl;
         return false;
     }
     std::ifstream input(srcFilePath, std::ios::binary);
@@ -714,7 +715,7 @@ bool RSGraphicTestProfiler::CropRawFile(
     std::filesystem::path dstFilePath = dstFileName;
     char srcFileParentPath[PATH_MAX] = {0};
     if (!realpath(dstFilePath.parent_path().c_str(), srcFileParentPath)) {
-        std::cout << "Raw dst file path is invalid :" << dstFilePath << std::endl;
+        std::cout << "Raw dst file path is invalid : " << dstFilePath << std::endl;
         return false;
     }
     std::ofstream output(dstFilePath, std::ios::binary);

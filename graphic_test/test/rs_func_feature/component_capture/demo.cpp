@@ -17,6 +17,7 @@
 #include "image_source.h"
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
 #include "rs_graphic_test_utils.h"
 
@@ -78,11 +79,15 @@ public:
 class RSUICaptureTest : public RSGraphicTest {
 public:
     // called before each tests
+    static inline std::shared_ptr<RSRenderInterface> rsRenderInterface_ = nullptr;
     void BeforeEach() override
     {
         auto size = GetScreenSize();
         SetSurfaceBounds({0, 0, size.x_ / 2.0f, size.y_ / 2.0f});
         SetSurfaceColor(RSColor(0xffff0000));
+        auto screenId = OHOS::Rosen::RSInterfaces::GetInstance().GetDefaultScreenId();
+        sptr<IRemoteObject> connectToRender = RSInterfaces::GetInstance().GetConnectToRenderToken(screenId);
+        rsRenderInterface_ = std::make_shared<RSRenderInterface>(connectToRender);
     }
 
     // called after each tests
@@ -149,11 +154,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_01
     recordingCanvas->DrawTextBlob(textblob.get(), 50, 50);
     recordingCanvas->DetachBrush();
     canvasNode->FinishRecording();
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -172,11 +177,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_02
     canvasNode->SetBackgroundColor(SK_ColorYELLOW);
     canvasNode->SetAlpha(0.5f);
     GetRootNode()->AddChild(canvasNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 2, 2);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 2, 2);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -195,11 +200,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_03
     canvasNode->SetBackgroundColor(0x5500ff00);
     canvasNode->SetColorBlendMode(RSColorBlendMode::XOR);
     GetRootNode()->AddChild(canvasNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 2, 2);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 2, 2);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -234,11 +239,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_04
     rosenImage->SetImageRepeat(3);
     rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
     canvasNode->SetBgImage(rosenImage);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -262,11 +267,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_05
     childNode->SetTranslate({100, 100});
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -291,11 +296,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_06
     childNode->SetRotation(45);
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -320,11 +325,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_07
     childNode->SetScale(0.5);
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -349,11 +354,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_08
     childNode->SetBackgroundColor(SK_ColorBLACK);
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -378,11 +383,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_09
     childNode->SetBackgroundColor(SK_ColorBLACK);
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -401,11 +406,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_10
     canvasNode->SetFrame({0, 0, 400, 500});
     canvasNode->SetRotation(45);
     canvasNode->SetBackgroundColor(SK_ColorYELLOW);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -439,11 +444,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_11
     rosenImage->SetImageRepeat(3);
     rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
     canvasNode->SetBgImage(rosenImage);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -477,11 +482,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_12
     rosenImage->SetImageRepeat(3);
     rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
     canvasNode->SetBgImage(rosenImage);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -504,11 +509,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_13
     childNode->SetBackgroundColor(SK_ColorBLUE);
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -532,12 +537,12 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_14
     childNode->SetBackgroundColor(SK_ColorBLUE);
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     childNode->SetBackgroundColor(SK_ColorGREEN);
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -579,12 +584,12 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_15
     rosenImage->SetImageRepeat(3);
     rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
     childNode->SetBgImage(rosenImage);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     childNode->SetBackgroundColor(SK_ColorGREEN);
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(childNode, callback);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(childNode, callback);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(childNode);
@@ -604,7 +609,7 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_16
     canvasNode->SetBackgroundColor(SK_ColorYELLOW);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -627,12 +632,12 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_17
     childNode->SetBackgroundColor(SK_ColorBLUE);
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     childNode->SetBackgroundColor(SK_ColorGREEN);
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -650,11 +655,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_18
     canvasNode->SetBounds({0, 0, 400, 500});
     canvasNode->SetFrame({0, 0, 400, 500});
     canvasNode->SetBackgroundColor(SK_ColorYELLOW);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -684,11 +689,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_19
     testNodeBackGround->SetBackgroundBlurBrightness(brightness);
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -719,11 +724,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_20
     testNodeBackGround->SetBackgroundBlurBrightness(brightness);
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -754,11 +759,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_21
     testNodeBackGround->SetBackgroundBlurBrightness(brightness);
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -798,11 +803,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_22
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -842,11 +847,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_23
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -886,11 +891,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_24
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -930,11 +935,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_25
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -974,11 +979,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_26
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1018,11 +1023,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_27
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1062,11 +1067,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_28
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1106,11 +1111,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_29
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1150,11 +1155,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_30
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1194,11 +1199,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_31
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1236,11 +1241,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_32
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1278,11 +1283,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_33
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1320,11 +1325,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_34
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1362,11 +1367,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_35
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1404,11 +1409,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_36
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1446,11 +1451,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_37
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1488,11 +1493,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_38
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1532,11 +1537,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_39
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1576,11 +1581,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_40
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1620,11 +1625,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_41
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1664,11 +1669,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_42
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1708,11 +1713,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_43
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1752,11 +1757,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_44
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1796,11 +1801,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_45
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1840,11 +1845,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_46
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1876,11 +1881,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_47
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1912,11 +1917,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_48
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1948,11 +1953,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_49
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -1984,11 +1989,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_50
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2020,11 +2025,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_51
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2056,11 +2061,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_52
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2093,11 +2098,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_53
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2130,11 +2135,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_54
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2167,11 +2172,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_55
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2204,11 +2209,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_56
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2241,11 +2246,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_57
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2278,11 +2283,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_58
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2315,11 +2320,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_59
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2352,11 +2357,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_60
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2389,11 +2394,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_61
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2426,11 +2431,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_62
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2463,11 +2468,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_63
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2500,11 +2505,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_64
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);
@@ -2537,11 +2542,11 @@ GRAPHIC_N_TEST(RSUICaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_UI_CAPTURE_65
     GetRootNode()->AddChild(canvasNode);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
-    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
+    rsRenderInterface_->TakeSurfaceCaptureForUI(canvasNode, callback, 1, 1, true);
     CheckSurfaceCaptureCallback(callback);
     // created node should be registered to preserve ref_count
     RegisterNode(canvasNode);

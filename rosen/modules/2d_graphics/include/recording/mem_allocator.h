@@ -66,8 +66,14 @@ public:
                 return nullptr;
             }
         }
+        // Zero the object space first: padding bytes (and inactive union members) the
+        // constructor never writes must not carry stale heap content into the serialized
+        // [0, size_) region that later crosses IPC.
         T* obj = nullptr;
-        void* addr = static_cast<void*>(startPtr_ + size_);
+        void* addr = PreparePlacement(sizeof(T));
+        if (addr == nullptr) {
+            return nullptr;
+        }
         obj = new (addr) T{std::forward<Args>(args)...};
         if (obj) {
             size_ += sizeof(T);
@@ -112,7 +118,12 @@ public:
     MemAllocator(const MemAllocator&) = default;
     MemAllocator& operator=(MemAllocator&&) = delete;
     MemAllocator& operator=(const MemAllocator&) = default;
+
 private:
+    // Zero the next objSize bytes a placement-new object will occupy, so bytes its
+    // constructor never writes stay zero instead of leaking stale heap content.
+    void* PreparePlacement(size_t objSize);
+
     bool Resize(size_t size);
     void Clear();
 

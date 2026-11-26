@@ -144,7 +144,7 @@ private:
     void InitDumper(const std::shared_ptr<AppExecFwk::EventHandler>& handler);
     bool RemoveConnection(pid_t remotePid, const sptr<RSIConnectionToken>& token);
     std::pair<sptr<RSIClientToRenderConnection>, uint64_t> AddConnection(pid_t remotePid, uint64_t tokenMaskId,
-        sptr<IRemoteObject>& token, sptr<RSIClientToRenderConnection> connectToRenderConnection);
+        const sptr<IRemoteObject>& token, const sptr<RSIClientToRenderConnection> connectToRenderConnection);
     std::pair<sptr<RSIClientToRenderConnection>, uint64_t> FindClientToRenderConnection(pid_t remotePid);
     void AddTransactionDataPidInfo(pid_t remotePid);
     RSMainThread* GetMainThread()

@@ -1164,6 +1164,7 @@ DrawingError EffectImageChain::ApplyStickerEmboss(
 
     // the chain input image is the sticker whose contour the emboss effect extracts
     embossData->sticker = image_;
+    embossData->transparentBg = true;
 
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageChain::ApplyStickerEmboss");
 

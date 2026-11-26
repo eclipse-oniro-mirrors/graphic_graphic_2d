@@ -95,4 +95,4 @@ GRAPHIC_TEST(OHFilterReededGlassTest, EFFECT_TEST, ReededGlassTest)
         OH_Filter_Release(ohFilter);
     }
 }
-} // namespace OHOS::Rosen
+}  // namespace OHOS::Rosen

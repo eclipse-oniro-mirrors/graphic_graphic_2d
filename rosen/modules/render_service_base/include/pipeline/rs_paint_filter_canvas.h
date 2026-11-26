@@ -262,6 +262,11 @@ public:
     void RestoreEnvToCount(int count);
     void SetColorPicked(Drawing::ColorQuad color);
     Drawing::ColorQuad GetColorPicked(ColorPlaceholder placeholder) const;
+    float GetColorPickedFraction() const;
+    bool IsColorPickedReady() const
+    {
+        return !envStack_.empty() && envStack_.top().fractionColorReady_;
+    }
 
     // blendmode and blender related
     void SaveLayer(const Drawing::SaveLayerOps& saveLayerOps) override;

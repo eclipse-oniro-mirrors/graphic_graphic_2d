@@ -206,11 +206,9 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
         !RSUniRenderJudgement::IsUniRender() || GetIsTextureExportNode()) {
         return;
     }
-
     if (!dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE))) {
         return;
     }
-#ifdef RS_ENABLE_GPU
     auto stagingRenderParams = static_cast<RSCanvasDrawingRenderParams*>(GetStagingRenderParams().get());
     auto surfaceParams = stagingRenderParams->GetCanvasDrawingSurfaceParams();
     if (surfaceParams.width == 0 || surfaceParams.height == 0) {
@@ -218,7 +216,6 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
             "width[%{public}d], height[%{public}d]", GetId(), surfaceParams.width, surfaceParams.height);
         return;
     }
-#endif
 
     // only update content_style dirtyType
     auto saveDirtyTypesNG = dirtyTypesNG_;
@@ -255,9 +252,7 @@ void RSCanvasDrawingRenderNode::SetNeedProcess(bool needProcess)
     if (!stagingRenderParams_) {
         return;
     }
-#ifdef RS_ENABLE_GPU
     stagingRenderParams_->SetNeedSync(needProcess);
-#endif
 }
 
 bool RSCanvasDrawingRenderNode::ResetSurface(int width, int height, RSPaintFilterCanvas& canvas)
@@ -493,7 +488,6 @@ bool RSCanvasDrawingRenderNode::IsNeedResetSurface() const
 
 void RSCanvasDrawingRenderNode::InitRenderParams()
 {
-#ifdef RS_ENABLE_GPU
     auto renderParams = std::make_unique<RSCanvasDrawingRenderParams>(GetId());
 #ifdef RS_MODIFIERS_DRAW_ENABLE
     renderParams->SetBufferDraw(IsBufferDraw());
@@ -507,7 +501,6 @@ void RSCanvasDrawingRenderNode::InitRenderParams()
         HILOG_COMM_ERROR("RSCanvasDrawingRenderNode::InitRenderParams failed");
         return;
     }
-#endif
 }
 
 CM_INLINE void RSCanvasDrawingRenderNode::ApplyModifiers()
@@ -721,10 +714,8 @@ void RSCanvasDrawingRenderNode::ResetSurface(int width, int height, uint32_t res
 
     auto stagingRenderParams = static_cast<RSCanvasDrawingRenderParams*>(stagingRenderParams_.get());
     if (stagingRenderParams != nullptr) {
-#ifdef RS_ENABLE_GPU
         stagingRenderParams->SetCanvasDrawingSurfaceChanged(true);
         stagingRenderParams->SetCanvasDrawingSurfaceParams(width, height, colorSpace);
-#endif
         stagingRenderParams->SetCanvasDrawingResetSurfaceIndex(resetSurfaceMark);
     }
 #ifdef RS_MODIFIERS_DRAW_ENABLE
@@ -902,13 +893,13 @@ void RSCanvasDrawingRenderNode::UpdateBufferInfo(const sptr<SurfaceBuffer>& buff
     canvasParams->SetBufferDraw(IsBufferDraw());
     AddToPendingSyncList();
 }
- 
+
 void RSCanvasDrawingRenderNode::OnDestoryTokenNode()
 {
     if (surfaceHandler_ == nullptr) {
         return;
     }
- 
+
     if (auto context = GetContext().lock()) {
         context->GetMutableNodeMap().RegisterSurfaceHandler(GetId(), surfaceHandler_);
     }
@@ -918,7 +909,7 @@ void RSCanvasDrawingRenderNode::OnDestoryTokenNode()
         stagingParams->SetConsumerSurface(nullptr);
     }
 }
- 
+
 void RSCanvasDrawingRenderNode::InitSurfaceHandler()
 {
     auto nodeId = GetId();
@@ -927,10 +918,10 @@ void RSCanvasDrawingRenderNode::InitSurfaceHandler()
         RS_LOGE("RSCanvasDrawingRenderNode::InitSurfaceHandler: context is nullptr, nodeId=%{public}" PRIu64, nodeId);
         return;
     }
- 
+
     surfaceHandler_ = context->GetMutableNodeMap().GetSurfaceHandler(nodeId, true);
 }
- 
+
 void RSCanvasDrawingRenderNode::SetSurfaceHandler(std::shared_ptr<RSSurfaceHandler> surfaceHandler)
 {
     surfaceHandler_ = surfaceHandler;
@@ -944,12 +935,12 @@ void RSCanvasDrawingRenderNode::SetSurfaceHandler(std::shared_ptr<RSSurfaceHandl
         stagingParams->SetConsumerSurface(consumerSurface);
     }
 }
- 
+
 bool RSCanvasDrawingRenderNode::IsBufferDraw() const
 {
     return bufferDraw_;
 }
- 
+
 bool RSCanvasDrawingRenderNode::IsHybridEnabled()
 {
     return hybridEnabled_;

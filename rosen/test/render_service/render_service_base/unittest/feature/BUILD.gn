@@ -643,7 +643,12 @@ ohos_unittest("RSDelegateCompositeCallbackManagerTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:export_config",
   ]
 
-  include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
+  include_dirs = [
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/rosen/modules/render_service_base/src",
+    "$graphic_2d_root/rosen/include",
+    "$graphic_2d_root/rosen/test/include",
+  ]
 
   deps = [
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
@@ -655,12 +660,10 @@ ohos_unittest("RSDelegateCompositeCallbackManagerTest") {
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "googletest:gtest_main",
-    "graphic_surface:surface",
-    "graphic_surface:sync_fence",
     "hilog:libhilog",
     "init:libbegetutil",
-    "skia:skia_canvaskit",
   ]
+
   subsystem_name = "graphic"
 }
 

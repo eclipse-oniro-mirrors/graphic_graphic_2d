@@ -43,7 +43,7 @@ GRAPHIC_TEST(ShadowClipTypeTest, CONTENT_DISPLAY_TEST, Shadow_ClipType_Normal_Te
     int nodeSize = 250;
 
     // 0: DEFAULT_SHAPE (clip by path), 1: BOUNDS_SHAPE (clip by bounds rrect)
-    int clipTypeList[] = { 0, 1 };
+    ShadowClipType clipTypeList[] = { ShadowClipType::DEFAULT_SHAPE, ShadowClipType::BOUNDS_SHAPE };
 
     // Irregular star shadow path with tips extending beyond node bounds
     Drawing::Path drawingPath;
@@ -173,7 +173,7 @@ GRAPHIC_TEST(ShadowClipTypeTest, CONTENT_DISPLAY_TEST, Shadow_ClipType_CornerRad
         testNode->SetShadowAlpha(1.0f);
         testNode->SetShadowRadius(80);
         testNode->SetShadowPath(shadowPath);
-        testNode->SetShadowClipType(1); // BOUNDS_SHAPE
+        testNode->SetShadowClipType(ShadowClipType::BOUNDS_SHAPE); // BOUNDS_SHAPE
         testNode->SetCornerRadius(radiusList[i]);
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
@@ -193,7 +193,7 @@ GRAPHIC_TEST(ShadowClipTypeTest, CONTENT_DISPLAY_TEST, Shadow_ClipType_CornerRad
         testNode->SetShadowAlpha(1.0f);
         testNode->SetShadowRadius(80);
         testNode->SetShadowPath(shadowPath);
-        testNode->SetShadowClipType(0); // DEFAULT_SHAPE
+        testNode->SetShadowClipType(ShadowClipType::DEFAULT_SHAPE); // DEFAULT_SHAPE
         testNode->SetCornerRadius(radiusList[i]);
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);

@@ -119,8 +119,8 @@ private:
  */
 GRAPHIC_TEST(OHFilterCascadeTest, EFFECT_TEST, All_Effects_Cascade_Test)
 {
-    const size_t columnCount = 6;
-    const int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
+    int columnCount = 2;
+    int rowCount = static_cast<int>(OHFilterTestDataGroupParamsType::COUNT);
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight * columnCount / rowCount;
 
@@ -192,7 +192,7 @@ GRAPHIC_TEST(OHFilterCascadeTest, EFFECT_TEST, All_Effects_Cascade_Test)
             &params, false);
 
         OH_Filter_GetEffectPixelMap(ohFilter, &pixelMapNative);
-
+        
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
         DrawBackgroundNodeOHPixelMap(pixelMapNative, {x, y, sizeX, sizeY});

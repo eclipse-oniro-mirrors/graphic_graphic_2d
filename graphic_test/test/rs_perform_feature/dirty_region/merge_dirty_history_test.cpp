@@ -16,6 +16,7 @@
 
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_utils.h"
 
 #include "pipeline/rs_dirty_region_manager.h"
@@ -38,7 +39,7 @@ class DirtyRegionTest02 : public RSGraphicTest {
 private:
     const int screenWidth = 1200;
     const int screenHeight = 2000;
-
+ 
 public:
     // called before each tests
     void BeforeEach() override

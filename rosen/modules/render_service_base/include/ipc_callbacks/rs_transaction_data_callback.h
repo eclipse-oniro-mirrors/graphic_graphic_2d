@@ -30,7 +30,7 @@ public:
 
     virtual void OnAfterProcess(uint64_t token, uint64_t timeStamp) = 0;
 };
-}// namespace Rosen
-}// namespace OHOS
+} // namespace Rosen
+} // namespace OHOS
 
 #endif // ROSEN_RENDER_SERVICE_BASE_ITRANSACTION_DATA_CALLBACK_H

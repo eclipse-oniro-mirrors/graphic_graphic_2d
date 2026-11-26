@@ -37,6 +37,8 @@ public:
     void SetColorBlendMode(RSColorBlendMode colorBlendMode);
     void SetColorBlendApplyType(RSColorBlendApplyType colorBlendApplyType);
     void SetNGBlenderBase(std::shared_ptr<RSNGBlenderBase> blender);
+    void SetNGAdaptiveDarkBlender(std::shared_ptr<RSNGBlenderBase> blender);
+    void SetNGAdaptiveLightBlender(std::shared_ptr<RSNGBlenderBase> blender);
 
     RSColorBlendMode GetColorBlendMode() const;
     RSColorBlendApplyType GetColorBlendApplyType() const;

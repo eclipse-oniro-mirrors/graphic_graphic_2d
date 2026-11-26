@@ -26,6 +26,7 @@ class SurfaceUtils;
 
 namespace Rosen {
 class RSUniRenderThread;
+
 class RSRenderPipelineAgent : public RefBase {
 public:
     explicit RSRenderPipelineAgent(std::shared_ptr<RSRenderPipeline> rsRenderPipeline);
@@ -37,24 +38,19 @@ public:
 
     ErrCode CreateDisplayNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId,
         bool& success, bool isSceneBoard = false);
-
     ErrCode CreateNode(const RSSurfaceRenderNodeConfig& config, bool& success);
 
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app);
 
-    ErrCode RegisterBufferClearListener(
-        NodeId id, sptr<RSIBufferClearCallback> callback);
-
+    ErrCode RegisterBufferClearListener(NodeId id, sptr<RSIBufferClearCallback> callback);
     ErrCode RegisterBufferAvailableListener(
         NodeId id, sptr<RSIBufferAvailableCallback> callback, bool isFromRenderThread);
 
     ErrCode SetGlobalDarkColorMode(bool isDark);
 
-    ErrCode SetSystemAnimatedScenes(
-        SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation, bool& success);
-
-    ErrCode SetHardwareEnabled(NodeId id, bool isEnabled,
-        SelfDrawingNodeType selfDrawingType, bool dynamicHardwareEnable);
+    ErrCode SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation, bool& success);
+    ErrCode SetHardwareEnabled(
+        NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType, bool dynamicHardwareEnable);
 
     ErrCode SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent, uint32_t& resCode);
 
@@ -62,50 +58,32 @@ public:
 
     void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam,
-        const Drawing::Rect& specifiedAreaRect = Drawing::Rect(0.f, 0.f, 0.f, 0.f),
-        RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions());
-
+        const Drawing::Rect& specifiedAreaRect, RSSurfaceCapturePermissions permissions);
     std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> TakeSurfaceCaptureSoloNode(
-        NodeId id, const RSSurfaceCaptureConfig& captureConfig,
-        RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions());
-
+        NodeId id, const RSSurfaceCaptureConfig& captureConfig, RSSurfaceCapturePermissions permissions);
     void TakeSelfSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, bool isSystemCalling);
-
-    ErrCode SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
-        const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam, bool isSystemCalling);
-
     ErrCode TakeSurfaceCaptureWithAllWindows(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, bool checkDrmAndSurfaceLock,
-        RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions());
-
+        RSSurfaceCapturePermissions permissions);
     ErrCode FreezeScreen(NodeId id, bool isFreeze, bool needSync);
-
+    ErrCode SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
+        const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam, bool isSystemCalling);
     void TakeUICaptureInRange(
         NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
         RSSurfaceCapturePermissions permissions);
-
-    ErrCode SetHwcNodeBounds(NodeId rsNodeId, float positionX, float positionY,
-        float positionZ, float positionW);
-
+    ErrCode SetHwcNodeBounds(NodeId rsNodeId, float positionX, float positionY, float positionZ, float positionW);
     ErrCode GetScreenHDRStatus(ScreenId id, HdrStatus& hdrStatus, int32_t& resCode);
-
-    ErrCode DropFrameByPid(const std::vector<int32_t> pidList, int32_t dropFrameLevel);
-
+    ErrCode DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel);
     ErrCode SetAncoForceDoDirect(bool direct, bool& res);
-
-    ErrCode SetLayerTopForHWC(NodeId nodeId, bool isTop, uint32_t zOrder);
-
     ErrCode RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
         sptr<RSISurfaceBufferCallback> callback);
     ErrCode UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid);
-
+    ErrCode SetLayerTopForHWC(NodeId nodeId, bool isTop, uint32_t zOrder);
     void RegisterTransactionDataCallback(uint64_t token,
         uint64_t timeStamp, sptr<RSITransactionDataCallback> callback, pid_t callingPid);
-
     ErrCode SetWindowContainer(NodeId nodeId, bool value);
     void ClearUifirstCache(NodeId id);
-
     int32_t SetLogicalCameraRotationCorrection(ScreenId screenId, ScreenRotation logicalCorrection);
 
     int32_t SetGlobalBlackList(const std::vector<NodeId>& blackList);
@@ -119,6 +97,7 @@ public:
 
     int32_t SubmitCanvasPreAllocatedBuffer(NodeId nodeId, sptr<SurfaceBuffer> buffer, uint32_t resetSurfaceIndex);
 #endif
+
     ErrCode SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
     ErrCode GetBitmap(NodeId id, Drawing::Bitmap& bitmap, bool& success);
     ErrCode ReportJankStats();
@@ -160,6 +139,7 @@ public:
     void ConvertBuffersToPixelMaps(
         const std::vector<std::tuple<sptr<SurfaceBuffer>, std::string, RectI>>& sfBufferInfoVector,
         std::vector<PixelMapInfo>& pixelMapInfoVector);
+
     float GetRotationInfoFromSurfaceBuffer(const sptr<SurfaceBuffer>& buffer);
     void SetVmaCacheStatus(bool flag);
     ErrCode SetUIMode3D(UIMode3D mode);
@@ -199,11 +179,11 @@ public:
     ErrCode RepaintEverything();
     ErrCode SetRogScreenResolution(ScreenId screenId, uint32_t width, uint32_t height,
         ScreenSamplingMode samplingMode);
-    ErrCode SetColorFollow(const std::string &nodeIdStr, bool isColorFollow);
     void UpdateScreenNodesResolution(RSRenderNodeMap& nodeMap, ScreenId screenId, uint32_t width, uint32_t height,
         ScreenSamplingMode samplingMode);
     void AdjustBootAnimationBounds(RSRenderNodeMap& nodeMap, uint32_t width, uint32_t height);
     void SetBootAnimationBounds(const std::shared_ptr<RSSurfaceRenderNode>& node, uint32_t width, uint32_t height);
+    ErrCode SetColorFollow(const std::string &nodeIdStr, bool isColorFollow);
     void Clean(pid_t pid, bool forRefresh = false);
     void SetFreeMultiWindowStatus(bool enable);
     int32_t RegisterSelfDrawingNodeRectChangeCallback(
@@ -236,9 +216,9 @@ public:
     bool RemoveConnection(pid_t remotePid, const sptr<RSIConnectionToken>& token);
     void AddTransactionDataPidInfo(pid_t remotePid);
     std::pair<sptr<RSIClientToRenderConnection>, uint64_t> AddConnection(pid_t remotePid, uint64_t tokenMaskId,
-        sptr<IRemoteObject>& token, sptr<RSIClientToRenderConnection> connectToRenderConnection);
+        const sptr<IRemoteObject>& token, const sptr<RSIClientToRenderConnection>& connectToRenderConnection);
     void SetCacheEnabledForRotation(bool enabled);
-    std::pair<sptr<RSIClientToRenderConnection>, uint64_t> FindClientToRenderConnection(uint64_t remotePid);
+    std::pair<sptr<RSIClientToRenderConnection>, uint64_t> FindClientToRenderConnection(pid_t remotePid);
     int32_t RegisterFrameStabilityDetection(
         pid_t pid,
         const FrameStabilityTarget& target,
@@ -251,23 +231,25 @@ public:
         const FrameStabilityTarget& target,
         const FrameStabilityConfig& config);
     int32_t GetFrameStabilityResult(pid_t pid, const FrameStabilityTarget& target, bool& result);
+
     int32_t UpdateFrameStabilityDetection(
         pid_t pid,
         const FrameStabilityTarget& oldTarget,
         const FrameStabilityTarget& newTarget
     );
 
+    bool SetDelegateMode(NodeId id, bool isSetDelegateMode, pid_t pid);
+    bool RegisterSurfaceTransactionListener(sptr<RSISurfaceTransactionListener> listener,
+        uint64_t listenerId, uint32_t pid, uint32_t tid);
+    bool UnRegisterSurfaceTransactionListener(uint64_t listenerId);
+    bool RegisterSurfaceNodeBufferReleaseListener(pid_t pid, sptr<RSISurfaceNodeBufferReleaseCallback> listener);
+    bool UnRegisterSurfaceNodeBufferReleaseListener(pid_t pid);
+    bool CleanDelegateModeBufferCmd(NodeId id, pid_t pid);
+
 #ifdef RS_MODIFIERS_DRAW_ENABLE
     sptr<Surface> CreateCanvasDrawingNodeSurface(NodeId nodeId, pid_t remotePid);
     void ReleaseCanvasDrawingNodeSurface(NodeId nodeId, pid_t remotePid);
 #endif
-    bool SetDelegateMode(NodeId id, bool isSetDelegateMode, pid_t pid);
-    bool RegisterSurfaceTransactionListener(sptr<RSISurfaceTransactionListener> listener,
-    uint64_t listenerId, uint32_t pid, uint32_t tid);
-    bool UnRegisterSurfaceTransactionListener(uint64_t listenerId);
-    bool RegisterSurfaceNodeBufferReleaseListener(pid_t pid, sptr<RSISurfaceNodeBufferReleaseCallback> listener);
-    bool UnRegisterSurfaceNodeBufferReleaseListener(pid_t pid);
-    bool CleanDelegateModeBufferCmd(NodeId nodeId, pid_t pid);
 
 private:
     void ConfigureForceTunnelLayer(const RSSurfaceRenderNodeConfig& config, const sptr<IConsumerSurface>& surface);

@@ -31,14 +31,12 @@ public:
     void OnDraw(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
 
-#if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
     uint32_t CheckAndSetThreadIdx();
     void SetSurfaceClearFunc(ThreadInfo threadInfo, pid_t threadId = 0)
     {
         curThreadInfo_ = threadInfo;
         threadId_ = threadId;
     }
-#endif
 
     bool CheckPostplaybackParamValid(NodeId, pid_t);
     void PostPlaybackInCorrespondThread();
@@ -158,10 +156,8 @@ private:
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
     std::atomic<pid_t> threadId_ = RSUniRenderThread::Instance().GetTid();
 
-#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     ThreadInfo curThreadInfo_ = { UNI_RENDER_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
     ThreadInfo preThreadInfo_ = { UNI_RENDER_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
-#endif
 
     // setted in render thread, used and resetted in main thread
     std::atomic<bool> needDraw_ = false;

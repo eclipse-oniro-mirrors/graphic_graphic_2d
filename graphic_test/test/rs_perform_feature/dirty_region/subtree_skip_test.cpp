@@ -89,7 +89,7 @@ public:
         RSAnimationTimingProtocol protocol;
         protocol.SetDuration(duration);
         auto timingCurve = RSAnimationTimingCurve::EASE_IN_OUT;
-        RSNode::Animate(nullptr, protocol, timingCurve, [&]() {
+        RSNode::Animate(protocol, timingCurve, [&]() {
             canvasNode->SetTranslate(translate);
         }, []() {
             std::cout << "animation finish callback" << std::endl;
@@ -167,12 +167,12 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip01)
 
     Vector2f translate = { 0, -1419 };
     DoAnimation(canvasNode2, translate);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector2f translate2 = { 800, 0 };
     DoAnimation(canvasNode3, translate2);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector4f bounds7 = { 0, 2398, 0, 0 };
@@ -181,7 +181,7 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip01)
     pureCanvas->RemoveChild(canvasNode4);
     canvasNode2->RemoveChild(pureCanvas);
     canvasNode1->RemoveChild(canvasNode2);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -228,12 +228,12 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip02)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     float alpha = 0.1f;
     parentCanvasNode->SetAlpha(alpha);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -280,11 +280,11 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip03)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetVisible(false);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -332,11 +332,11 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip04)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetVisible(true);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -383,11 +383,11 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip05)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetClipToBounds(true);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -435,11 +435,11 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip06)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetClipToBounds(false);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -487,11 +487,11 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip07)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetClipToFrame(true);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -540,11 +540,11 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip08)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetClipToFrame(false);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -592,14 +592,14 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip09)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Drawing::Path drawingPath;
     drawingPath.AddRect(0, 0, 400, 600, Drawing::PathDirection::CW_DIRECTION);
     auto clipPath = RSPath::CreateRSPath(drawingPath);
     parentCanvasNode->SetClipBounds(clipPath);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -651,14 +651,14 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip10)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Drawing::Path drawingPath2;
     drawingPath2.AddRect(0, 0, 1200, 1200, Drawing::PathDirection::CW_DIRECTION);
     auto clipPath2 = RSPath::CreateRSPath(drawingPath2);
     parentCanvasNode->SetClipBounds(clipPath2);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -706,13 +706,13 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip11)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector4f rect = { 0, 0, 400, 400 };
     Vector4f radius = { 100.0, 100.0, 100.0, 100.0 };
     parentCanvasNode->SetClipRRect(rect, radius);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -763,13 +763,13 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip12)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector4f rect2 = { 0, 0, 1200, 1200 };
     Vector4f radius2 = { 50.0, 50.0, 50.0, 50.0 };
     parentCanvasNode->SetClipRRect(rect2, radius2);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -818,12 +818,12 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip13)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     float alpha2 = 1.0f;
     parentCanvasNode->SetAlpha(alpha2);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -871,18 +871,18 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip14)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetClipToBounds(false);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector2f translate2 = { 200, 0 };
     Vector2f translate3 = { 600, 0 };
     childCanvasNode->SetTranslate(translate2);
     DoAnimation(childCanvasNode, translate3);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -931,18 +931,18 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip15)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetClipToFrame(false);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector2f translate2 = { 200, 0 };
     Vector2f translate3 = { 600, 0 };
     childCanvasNode->SetTranslate(translate2);
     DoAnimation(childCanvasNode, translate3);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -994,21 +994,21 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip16)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Drawing::Path drawingPath2;
     drawingPath2.AddRect(-300, -300, 1200, 1200, Drawing::PathDirection::CW_DIRECTION);
     auto clipPath2 = RSPath::CreateRSPath(drawingPath2);
     parentCanvasNode->SetClipBounds(clipPath2);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector2f translate2 = { 200, 0 };
     Vector2f translate3 = { 600, 0 };
     childCanvasNode->SetTranslate(translate2);
     DoAnimation(childCanvasNode, translate3);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -1059,19 +1059,19 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip17)
     parentCanvasNode->RSNode::AddChild(animateNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector4f radius2 = { 50.0, 50.0, 50.0, 50.0 };
     parentCanvasNode->SetClipRRect(bounds4, radius2);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector2f translate2 = { 200, 0 };
     Vector2f translate3 = { 600, 0 };
     childCanvasNode->SetTranslate(translate2);
     DoAnimation(childCanvasNode, translate3);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -1115,11 +1115,11 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip18)
     parentCanvasNode->RSNode::AddChild(pictureNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetClipToBounds(false);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -1162,11 +1162,11 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip19)
     parentCanvasNode->RSNode::AddChild(pictureNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetClipToBounds(true);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -1210,11 +1210,11 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip20)
     parentCanvasNode->RSNode::AddChild(pictureNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetClipToFrame(false);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -1257,11 +1257,11 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip21)
     parentCanvasNode->RSNode::AddChild(pictureNode);
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     parentCanvasNode->SetClipToFrame(true);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -1304,13 +1304,13 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip22)
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
     parentCanvasNode->RSNode::AddChild(pictureNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector4f rect = { 0, 0, 400, 400 };
     Vector4f radius = { 100.0, 100.0, 100.0, 100.0 };
     parentCanvasNode->SetClipRRect(rect, radius);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -1356,13 +1356,13 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip23)
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
     parentCanvasNode->RSNode::AddChild(pictureNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Vector4f rect2 = { 0, 0, 900, 900 };
     Vector4f radius2 = { 50.0, 50.0, 50.0, 50.0 };
     parentCanvasNode->SetClipRRect(rect2, radius2);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -1406,14 +1406,14 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip24)
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
     parentCanvasNode->RSNode::AddChild(pictureNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Drawing::Path drawingPath;
     drawingPath.AddRect(0, 0, 400, 600, Drawing::PathDirection::CW_DIRECTION);
     auto clipPath = RSPath::CreateRSPath(drawingPath);
     parentCanvasNode->SetClipBounds(clipPath);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();
@@ -1460,14 +1460,14 @@ GRAPHIC_N_TEST(DirtyRegionTest07, CONTENT_DISPLAY_TEST, SubTreeSkip25)
     parentCanvasNode->RSNode::AddChild(childCanvasNode);
     parentCanvasNode->RSNode::AddChild(pictureNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     Drawing::Path drawingPath2;
     drawingPath2.AddRect(0, 0, 900, 900, Drawing::PathDirection::CW_DIRECTION);
     auto clipPath2 = RSPath::CreateRSPath(drawingPath2);
     parentCanvasNode->SetClipBounds(clipPath2);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     TestCaseCapture();

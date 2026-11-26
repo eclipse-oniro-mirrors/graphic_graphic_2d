@@ -51,8 +51,8 @@ RSGraphicTestProfilerThread::~RSGraphicTestProfilerThread()
 
 void RSGraphicTestProfilerThread::RestartRenderService()
 {
-    system("param set persist.graphic.profiler.enabled 0");
-    WaitTimeout(INIT_WAIT_TIME);
+ 	system("param set persist.graphic.profiler.enabled 0");
+ 	WaitTimeout(INIT_WAIT_TIME);
     system("param set persist.graphic.profiler.enabled 1");
     WaitTimeout(INIT_WAIT_TIME);
 }
@@ -244,7 +244,7 @@ void RSGraphicTestProfilerThread::ProcessLogMessage(const std::vector<char>& dat
 {
     std::string out(data.begin(), data.end());
     std::cout << "recieved message:[" << out << "]" << std::endl;
-
+ 
     if (out.rfind(expectedMessages[REPLAY_TIME_INDEX], 0) == 0) {
         std::istringstream iss(out.substr(expectedMessages[REPLAY_TIME_INDEX].size()));
         double startTime = 0.0;
@@ -254,7 +254,7 @@ void RSGraphicTestProfilerThread::ProcessLogMessage(const std::vector<char>& dat
             timeRange_ = {startTime, endTime};
         }
     }
-
+ 
     if (waitReceive_) {
         bool reveive = IsReceiveWaitMessage(out);
         if (reveive) {

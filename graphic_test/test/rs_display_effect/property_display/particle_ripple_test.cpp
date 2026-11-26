@@ -14,6 +14,7 @@
  */
 
 #include "rs_graphic_test.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
 #include "animation/rs_particle_ripple_field.h"
 
@@ -275,41 +276,6 @@ GRAPHIC_TEST(ParticleRippleTest, CONTENT_DISPLAY_TEST, ParticleRippleTest_008)
             GetRootNode()->AddChild(testNode);
             RegisterNode(testNode);
         }
-    }
-}
-
-/*
- * @tc.name: ParticleRippleTest_009
- * @tc.desc: Test SetParticleRippleFields with pixelmap
- * @tc.type: FUNC
- * @tc.require: issueI7N7M2
- */
-GRAPHIC_TEST(ParticleRippleTest, CONTENT_DISPLAY_TEST, ParticleRippleTest_009)
-{
-    auto pixelMap = DecodePixelMap("/data/local/tmp/appearance_test.jpg",
-                                   Media::AllocatorType::SHARE_MEM_ALLOC);
-
-    std::vector<std::tuple<float, float, float>> paramsList = {
-        { 50.0f, 50.0f, 150.0f },
-        { 100.0f, 50.0f, 200.0f },
-        { 150.0f, 50.0f, 300.0f },
-        { 200.0f, 50.0f, 400.0f }
-    };
-
-    for (size_t i = 0; i < paramsList.size(); i++) {
-        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
-        testNode->SetBounds({ (int)i * 280 + 50, 50, 250, 250 });
-        testNode->SetPixelmap(pixelMap);
-
-        auto [param1, param2, param3] = paramsList[i];
-        auto fields = std::make_shared<ParticleRippleFields>();
-        auto field = std::make_shared<ParticleRippleField>(
-            Vector2f(125.0f, 125.0f), param1, param2, param3);
-        fields->AddRippleField(field);
-        testNode->SetParticleRippleFields(fields);
-
-        GetRootNode()->AddChild(testNode);
-        RegisterNode(testNode);
     }
 }
 

@@ -119,7 +119,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary01)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -142,7 +142,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary02)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -165,7 +165,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary03)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -188,7 +188,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary04)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -209,7 +209,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary05)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -230,7 +230,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary06)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -251,7 +251,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary07)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -272,7 +272,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary08)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -294,7 +294,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary09)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -316,7 +316,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary10)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -338,7 +338,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary11)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }
@@ -360,7 +360,7 @@ GRAPHIC_N_TEST(DirtyRegionTest08, CONTENT_DISPLAY_TEST, ScreenBoundary12)
 
     GetRootNode()->AddChild(testNode);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     TestCaseCapture();
 }

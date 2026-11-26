@@ -28,7 +28,7 @@ namespace OHOS {
 namespace Rosen {
 
 template <typename Derived, typename RenderEffect>
-class RSNGEffectBase : public std::enable_shared_from_this<Derived> {
+class [[clang::lto_visibility_public]] RSNGEffectBase : public std::enable_shared_from_this<Derived> {
 public:
     using RenderEffectBase = RenderEffect;
 

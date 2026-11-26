@@ -14,6 +14,7 @@
  */
 
 #include "rs_graphic_test.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
 #include "animation/rs_particle_velocity_field.h"
 
@@ -300,40 +301,6 @@ GRAPHIC_TEST(ParticleVelocityTest, CONTENT_DISPLAY_TEST, ParticleVelocityTest_00
         testNode->SetBackgroundColor(0xffff0000);
 
         auto [param1, param2, param3] = extremeParams[i];
-        auto fields = std::make_shared<ParticleVelocityFields>();
-        auto field = std::make_shared<ParticleVelocityField>(Vector2f(param1, param2));
-        fields->AddVelocityField(field);
-        testNode->SetParticleVelocityFields(fields);
-
-        GetRootNode()->AddChild(testNode);
-        RegisterNode(testNode);
-    }
-}
-
-/*
- * @tc.name: ParticleVelocityTest_010
- * @tc.desc: Test SetParticleVelocityFields with pixelmap
- * @tc.type: FUNC
- * @tc.require: issueI7N7M3
- */
-GRAPHIC_TEST(ParticleVelocityTest, CONTENT_DISPLAY_TEST, ParticleVelocityTest_010)
-{
-    auto pixelMap = DecodePixelMap("/data/local/tmp/appearance_test.jpg",
-                                   Media::AllocatorType::SHARE_MEM_ALLOC);
-
-    std::vector<std::tuple<float, float, float>> paramsList = {
-        { 1.0f, 2.0f, 3.0f },
-        { 3.0f, 6.0f, 9.0f },
-        { 5.0f, 10.0f, 15.0f },
-        { 7.0f, 14.0f, 21.0f }
-    };
-
-    for (size_t i = 0; i < paramsList.size(); i++) {
-        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
-        testNode->SetBounds({ (int)i * 280 + 50, 50, 250, 250 });
-        testNode->SetPixelmap(pixelMap);
-
-        auto [param1, param2, param3] = paramsList[i];
         auto fields = std::make_shared<ParticleVelocityFields>();
         auto field = std::make_shared<ParticleVelocityField>(Vector2f(param1, param2));
         fields->AddVelocityField(field);

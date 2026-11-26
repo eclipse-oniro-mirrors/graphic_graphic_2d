@@ -52,7 +52,7 @@ public:
 
     /**
      * @brief Get the type of the RSNode.
-     * 
+     *
      * @return The type of the RSNode.
      */
     RSUINodeType GetType() const override
@@ -67,7 +67,7 @@ public:
 
     /**
      * @brief Creates a shared pointer to an RSCanvasNode.
-     * 
+     *
      * @param isRenderServiceNode Indicates whether the node is a render service node. Defaults to false.
      * @param isTextureExportNode Indicates whether the node is a texture export node. Defaults to false.
      * @param rsUIContext A shared pointer to an RSUIContext object. Defaults to nullptr.
@@ -78,7 +78,7 @@ public:
 
     /**
      * @brief Begins recording drawing commands on the canvas.
-     * 
+     *
      * @param width The width of the recording canvas.
      * @param height The height of the recording canvas.
      * @return A pointer to an ExtendRecordingCanvas object for recording drawing commands.
@@ -87,7 +87,7 @@ public:
 
     /**
      * @brief Checks if the canvas is currently recording.
-     * 
+     *
      * @return true if the canvas is recording; false otherwise.
      */
     bool IsRecording() const;
@@ -99,14 +99,14 @@ public:
 
     /**
      * @brief Gets the width of the paint used in the canvas node.
-     * 
+     *
      * @return The width of the paint.
      */
     float GetPaintWidth() const;
 
     /**
      * @brief Gets the height of the paint used in the canvas node.
-     * 
+     *
      * @return The height of the paint.
      */
     float GetPaintHeight() const;
@@ -163,13 +163,6 @@ public:
      */
     bool FlushCachedModifiers() override;
 
-    /**
-     * @brief Set a pixel map.
-     *
-     * @param pixelMap A shared pointer to a Media::PixelMap object.
-     */
-    void SetPixelmap(const std::shared_ptr<Media::PixelMap>& pixelMap);
-
 protected:
     RSCanvasNode(bool isRenderServiceNode, bool isTextureExportNode = false,
         std::shared_ptr<RSUIContext> rsUIContext = nullptr);
@@ -180,10 +173,11 @@ protected:
     RSCanvasNode& operator=(const RSCanvasNode&) = delete;
     RSCanvasNode& operator=(const RSCanvasNode&&) = delete;
 
+    // recreate canvas node
     void CreateRenderNode() override;
 
     BoundsChangedCallback boundsChangedCallback_;
- 
+
     virtual void OnFinishRecording(Drawing::DrawCmdListPtr& drawCmdList, ModifierNG::RSModifierType modifierType);
 private:
     ExtendRecordingCanvas* recordingCanvas_ = nullptr;

@@ -67,7 +67,7 @@ public:
 
     /**
      * @brief Gets the type of the RSNode.
-     * 
+     *
      * @return The type of the RSNode.
      */
     RSUINodeType GetType() const override
@@ -82,7 +82,7 @@ public:
 
     /**
      * @brief Create a new RSCanvasDrawingNode instance.
-     * 
+     *
      * @param isRenderServiceNode Indicates if the node is a render service node.
      * @param isTextureExportNode Indicates if the node is a texture export node.
      * @param rsUIContext The RSUIContext to be used.
@@ -96,7 +96,7 @@ public:
      *
      * @param bitmap The bitmap object to store the retrieved drawing content.
      * @param drawCmdList Optional parameter specifying a list of drawing commands to apply. Defaults to nullptr.
-     * @param rect Optional parameter specifying the rectangular region to retrieve. 
+     * @param rect Optional parameter specifying the rectangular region to retrieve.
      * @return true if the bitmap is successfully retrieved; false otherwise.
      */
     bool GetBitmap(Drawing::Bitmap& bitmap,
@@ -171,9 +171,9 @@ protected:
     bool SetNodeState(RSNodeState state) override;
 
     bool IsSkipContentModifierDraw() override;
- 
+
     void SetSkipContentModifierDraw(bool skip) override;
- 
+
 #ifdef RS_MODIFIERS_DRAW_ENABLE
     void OnFinishRecording(Drawing::DrawCmdListPtr& drawCmdList, ModifierNG::RSModifierType modifierType) override;
     bool RenderInClient(Drawing::DrawCmdListPtr drawCmdList) override;
@@ -244,7 +244,7 @@ private:
     static inline std::atomic<bool> isSceneBoard_ = false;
 
     bool skipContentModifierDraw_ = false;
- 
+
     bool sizeOutOfGpuLimit_ = false;
 #endif
 

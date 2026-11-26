@@ -80,7 +80,8 @@ GRAPHIC_TEST(ForegroundTest02, CONTENT_DISPLAY_TEST, LightIntensity_Test_SetCove
             pointLightShader->Setter<PointLightLightPositionTag>(Vector4f(200, 200, 300, 0.0f));
         }
         pointLightShader->Setter<PointLightIlluminatedBorderWidthTag>(100.0f);
-        pointLightShader->Setter<PointLightIlluminatedTypeTag>(intensityList[i / 3]);
+        pointLightShader->Setter<PointLightIlluminatedTypeTag>(
+            static_cast<int>(intensityList[i / 3]));
         testNode->SetCoverageNGShader(pointLightShader);
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
@@ -103,7 +104,8 @@ GRAPHIC_TEST(ForegroundTest02, CONTENT_DISPLAY_TEST, LightIntensity_Test_SetBack
             pointLightShader->Setter<PointLightLightPositionTag>(Vector4f(200, 200, 300, 0.0f));
         }
         pointLightShader->Setter<PointLightIlluminatedBorderWidthTag>(100.0f);
-        pointLightShader->Setter<PointLightIlluminatedTypeTag>(intensityList[i / 3]);
+        pointLightShader->Setter<PointLightIlluminatedTypeTag>(
+            static_cast<int>(intensityList[i / 3]));
         testNode->SetBackgroundNGShader(pointLightShader);
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
@@ -126,7 +128,8 @@ GRAPHIC_TEST(ForegroundTest02, CONTENT_DISPLAY_TEST, LightIntensity_Test_SetOver
             pointLightShader->Setter<PointLightLightPositionTag>(Vector4f(200, 200, 300, 0.0f));
         }
         pointLightShader->Setter<PointLightIlluminatedBorderWidthTag>(100.0f);
-        pointLightShader->Setter<PointLightIlluminatedTypeTag>(intensityList[i / 3]);
+        pointLightShader->Setter<PointLightIlluminatedTypeTag>(
+            static_cast<int>(intensityList[i / 3]));
         testNode->SetOverlayNGShader(pointLightShader);
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
@@ -149,7 +152,8 @@ GRAPHIC_TEST(ForegroundTest02, CONTENT_DISPLAY_TEST, LightIntensity_Test_SetFore
             pointLightShader->Setter<PointLightLightPositionTag>(Vector4f(200, 200, 300, 0.0f));
         }
         pointLightShader->Setter<PointLightIlluminatedBorderWidthTag>(100.0f);
-        pointLightShader->Setter<PointLightIlluminatedTypeTag>(intensityList[i / 3]);
+        pointLightShader->Setter<PointLightIlluminatedTypeTag>(
+            static_cast<int>(intensityList[i / 3]));
         testNode->SetForegroundShader(pointLightShader);
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
@@ -172,7 +176,8 @@ GRAPHIC_TEST(ForegroundTest02, CONTENT_DISPLAY_TEST, LightIntensity_Test_SetMate
             pointLightShader->Setter<PointLightLightPositionTag>(Vector4f(200, 200, 300, 0.0f));
         }
         pointLightShader->Setter<PointLightIlluminatedBorderWidthTag>(100.0f);
-        pointLightShader->Setter<PointLightIlluminatedTypeTag>(intensityList[i / 3]);
+        pointLightShader->Setter<PointLightIlluminatedTypeTag>(
+            static_cast<int>(intensityList[i / 3]));
         testNode->SetMaterialShader(pointLightShader);
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);

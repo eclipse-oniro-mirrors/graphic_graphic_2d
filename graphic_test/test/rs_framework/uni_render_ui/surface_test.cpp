@@ -17,6 +17,7 @@
 #include "image_source.h"
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
 #include "rs_graphic_test_utils.h"
 
@@ -72,7 +73,7 @@ public:
         rsSurfaceNodeConfig1.isSync = false;
         RSSurfaceNodeType rsSurfaceNodeType = RSSurfaceNodeType::APP_WINDOW_NODE;
         auto surfaceNode = RSSurfaceNode::Create(rsSurfaceNodeConfig1, rsSurfaceNodeType, true, false,
-        RSGraphicTestDirector::Instance().GetRSUIContext());
+            RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({ 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
         surfaceNode->SetFrame({ 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
         surfaceNode->SetBackgroundColor(SK_ColorBLACK);
@@ -87,7 +88,7 @@ public:
  * @tc.desc: test surface capture function of node drawTextblob
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_01)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_01)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -108,7 +109,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_01)
     recordingCanvas->DrawTextBlob(textblob.get(), 50, 50);
     recordingCanvas->DetachBrush();
     canvasNode->FinishRecording();
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -120,7 +121,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_01)
  * @tc.desc: test surface capture function of node set alpha and scale
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_02)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_02)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -130,7 +131,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_02)
     canvasNode->SetBackgroundColor(SK_ColorYELLOW);
     canvasNode->SetAlpha(0.5f);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -142,7 +143,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_02)
  * @tc.desc: test surface capture function of node set blendMode
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_03)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_03)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -152,7 +153,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_03)
     canvasNode->SetBackgroundColor(0x5500ff00);
     canvasNode->SetColorBlendMode(RSColorBlendMode::XOR);
     surfaceNode->AddChild(canvasNode, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -164,7 +165,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_03)
  * @tc.desc: test surface capture function of node draw pixelmap and blur
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_04)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_04)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -190,7 +191,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_04)
     rosenImage->SetImageRepeat(3);
     rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
     canvasNode->SetBgImage(rosenImage);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -202,7 +203,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_04)
  * @tc.desc: test surface capture function of node set translate
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_05)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_05)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     surfaceNode->SetTranslate({ 100, 100 });
@@ -218,7 +219,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_05)
     childNode->SetTranslate({100, 100});
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -231,7 +232,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_05)
  * @tc.desc: test surface capture function of node set rotation
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_06)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_06)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     surfaceNode->SetRotation(45);
@@ -247,7 +248,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_06)
     childNode->SetRotation(45);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -260,7 +261,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_06)
  * @tc.desc: test surface capture function of node set scale
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_07)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_07)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     surfaceNode->SetRotation(45);
@@ -276,7 +277,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_07)
     childNode->SetScale(0.5);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -289,7 +290,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_07)
  * @tc.desc: test surface capture function of parent node set translate
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_08)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_08)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     surfaceNode->SetTranslate({ 50, 50 });
@@ -305,7 +306,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_08)
     childNode->SetBackgroundColor(SK_ColorBLACK);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -318,7 +319,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_08)
  * @tc.desc: test surface capture function of node draw dma pixelmap
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_9)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_9)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -343,7 +344,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_9)
     rosenImage->SetImageRepeat(3);
     rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
     canvasNode->SetBgImage(rosenImage);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -355,7 +356,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_9)
  * @tc.desc: test surface capture function of node draw astc pixelmap
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_10)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_10)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -380,7 +381,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_10)
     rosenImage->SetImageRepeat(3);
     rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
     canvasNode->SetBgImage(rosenImage);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -392,7 +393,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_10)
  * @tc.desc: test surface capture function of node is over parent node
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_11)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_11)
 {
     struct RSSurfaceNodeConfig rsSurfaceNodeConfig1;
     rsSurfaceNodeConfig1.SurfaceNodeName = "AppWindow";
@@ -414,7 +415,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_11)
     childNode->SetBackgroundColor(SK_ColorBLUE);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -427,7 +428,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_11)
  * @tc.desc: test surface capture function of node set properties before takeUICapture
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_12)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_12)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -441,7 +442,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_12)
     childNode->SetBackgroundColor(SK_ColorBLUE);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(childNode);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
     childNode->SetBackgroundColor(SK_ColorGREEN);
     // created node should be registered to preserve ref_count
@@ -454,7 +455,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_12)
  * @tc.desc: test surface capture function of effectNode and child set use effect
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_13)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_13)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -486,7 +487,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_13)
     rosenImage->SetImageRepeat(3);
     rosenImage->SetImageFit(static_cast<int>(ImageFit::FILL));
     childNode->SetBgImage(rosenImage);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -499,7 +500,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_13)
  * @tc.desc: test surface capture function of node of blur of brightness
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_14)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_14)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -520,7 +521,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_14)
     testNodeBackGround->SetBackgroundBlurBrightness(brightness);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -533,7 +534,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_14)
  * @tc.desc: test surface capture function of node of blur of brightness 1
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_15)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_15)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -554,7 +555,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_15)
     testNodeBackGround->SetBackgroundBlurBrightness(brightness);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -567,7 +568,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_15)
  * @tc.desc: test surface capture function of node of blur of brightness 200
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_16)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_16)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -588,7 +589,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_16)
     testNodeBackGround->SetBackgroundBlurBrightness(brightness);
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -601,7 +602,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_16)
  * @tc.desc: test surface capture function of node of background blur color node
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_17)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_17)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -631,7 +632,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_17)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -644,7 +645,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_17)
  * @tc.desc: test surface capture function of node of background blur color node 2
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_18)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_18)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -674,7 +675,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_18)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -687,7 +688,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_18)
  * @tc.desc: test surface capture function of node of background green color node 3
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_19)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_19)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -717,7 +718,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_19)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -730,7 +731,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_19)
  * @tc.desc: test surface capture function of node of background green color node 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_20)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_20)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -760,7 +761,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_20)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -773,7 +774,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_20)
  * @tc.desc: test surface capture function of node of background green color node 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_21)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_21)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -803,7 +804,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_21)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -816,7 +817,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_21)
  * @tc.desc: test surface capture function of node of background green color node 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_22)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_22)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -846,7 +847,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_22)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -859,7 +860,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_22)
  * @tc.desc: test surface capture function of node of background green color node 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_23)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_23)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -889,7 +890,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_23)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -902,7 +903,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_23)
  * @tc.desc: test surface capture function of node of background green color node 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_24)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_24)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -932,7 +933,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_24)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -945,7 +946,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_24)
  * @tc.desc: test surface capture function of node of background green color node 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_25)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_25)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -975,7 +976,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_25)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -988,7 +989,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_25)
  * @tc.desc: test surface capture function of node of background green color node 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_26)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_26)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1018,7 +1019,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_26)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1031,7 +1032,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_26)
  * @tc.desc: test surface capture function of node of blur and mask color
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_27)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_27)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1059,7 +1060,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_27)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1072,7 +1073,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_27)
  * @tc.desc: test surface capture function of node of blur and mask color 2
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_28)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_28)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1100,7 +1101,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_28)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1113,7 +1114,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_28)
  * @tc.desc: test surface capture function of node of blur and mask color 3
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_29)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_29)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1141,7 +1142,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_29)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1154,7 +1155,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_29)
  * @tc.desc: test surface capture function of node of blur and mask color 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_30)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_30)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1182,7 +1183,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_30)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1195,7 +1196,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_30)
  * @tc.desc: test surface capture function of node of blur and mask color 5
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_31)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_31)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1223,7 +1224,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_31)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1236,7 +1237,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_31)
  * @tc.desc: test surface capture function of node of blur and mask color 5
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_32)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_32)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1264,7 +1265,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_32)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1277,7 +1278,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_32)
  * @tc.desc: test surface capture function of node of blur and mask color 5
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_33)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_33)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1305,7 +1306,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_33)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1318,7 +1319,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_33)
  * @tc.desc: test surface capture function of node of blur mask color and alpha
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_34)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_34)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1348,7 +1349,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_34)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1361,7 +1362,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_34)
  * @tc.desc: test surface capture function of node of blur mask color and alpha 2
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_35)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_35)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1391,7 +1392,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_35)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1404,7 +1405,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_35)
  * @tc.desc: test surface capture function of node of blur mask color and alpha 3
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_36)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_36)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1434,7 +1435,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_36)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1447,7 +1448,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_36)
  * @tc.desc: test surface capture function of node of blur mask color and alpha 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_37)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_37)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1477,7 +1478,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_37)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1490,7 +1491,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_37)
  * @tc.desc: test surface capture function of node of blur mask color and alpha 5
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_38)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_38)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1520,7 +1521,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_38)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1533,7 +1534,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_38)
  * @tc.desc: test surface capture function of node of blur mask color and alpha 6
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_39)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_39)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1563,7 +1564,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_39)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1576,7 +1577,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_39)
  * @tc.desc: test surface capture function of node of blur mask color and alpha 7
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_40)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_40)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1606,7 +1607,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_40)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1619,7 +1620,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_40)
  * @tc.desc: test surface capture function of node of blur mask color and alpha 8
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_41)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_41)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1649,7 +1650,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_41)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1662,7 +1663,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_41)
  * @tc.desc: test surface capture function of node of blackground blur radius
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_42)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_42)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1684,7 +1685,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_42)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1697,7 +1698,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_42)
  * @tc.desc: test surface capture function of node of blackground blur radius 2
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_43)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_43)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1719,7 +1720,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_43)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1732,7 +1733,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_43)
  * @tc.desc: test surface capture function of node of blackground blur radius 3
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_44)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_44)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1754,7 +1755,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_44)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1767,7 +1768,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_44)
  * @tc.desc: test surface capture function of node of blackground blur radius 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_45)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_45)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1789,7 +1790,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_45)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1802,7 +1803,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_45)
  * @tc.desc: test surface capture function of node of blackground blur radius 5
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_46)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_46)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1824,7 +1825,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_46)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1837,7 +1838,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_46)
  * @tc.desc: test surface capture function of node of blackground blur radius 6
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_47)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_47)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1859,7 +1860,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_47)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1872,7 +1873,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_47)
  * @tc.desc: test surface capture function of node of blackground blur radius X
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_48)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_48)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1895,7 +1896,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_48)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1908,7 +1909,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_48)
  * @tc.desc: test surface capture function of node of blackground blur radius X 2
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_49)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_49)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1931,7 +1932,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_49)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1944,7 +1945,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_49)
  * @tc.desc: test surface capture function of node of blackground blur radius X 3
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_50)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_50)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -1967,7 +1968,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_50)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -1980,7 +1981,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_50)
  * @tc.desc: test surface capture function of node of blackground blur radius X 4
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_51)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_51)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -2003,7 +2004,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_51)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -2016,7 +2017,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_51)
  * @tc.desc: test surface capture function of node of blackground blur radius Y
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_52)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_52)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -2039,7 +2040,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_52)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -2052,7 +2053,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_52)
  * @tc.desc: test surface capture function of node of blackground blur radius Y 2
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_53)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_53)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -2075,7 +2076,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_53)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -2088,7 +2089,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_53)
  * @tc.desc: test surface capture function of node of blackground blur radius Y 2
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_54)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_54)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -2111,7 +2112,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_54)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
@@ -2124,7 +2125,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_54)
  * @tc.desc: test surface capture function of node of blackground blur radius Y 3
  * @tc.type: FUNC
  */
-GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_55)
+GRAPHIC_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_55)
 {
     auto surfaceNode = CreateTestSurfaceNode();
     GetRootNode()->SetTestSurface(surfaceNode);
@@ -2147,7 +2148,7 @@ GRAPHIC_N_TEST(RSSurfaceTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SURFACE_55)
     surfaceNode->AddChild(canvasNode, -1);
     canvasNode->AddChild(testNodeBackGround);
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSGraphicTestDirector::Instance().rsUiDirector_->SendMessages();
     usleep(SLEEP_TIME_FOR_PROXY);
 
     // created node should be registered to preserve ref_count
