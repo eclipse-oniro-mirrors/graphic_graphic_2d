@@ -72,8 +72,7 @@ public:
     bool IsThemeTypeface() const override { return false; }
     void SetIsThemeTypeface(bool) override {}
     // Return default-constructed Data whose skData_ is null → GetData() returns nullptr
-    std::shared_ptr<Drawing::Data> Serialize(
-        Drawing::SerializeBehavior behavior) const override
+    std::shared_ptr<Drawing::Data> Serialize(Drawing::SerializeBehavior) const override
     {
         return std::make_shared<Drawing::Data>();
     }
@@ -111,8 +110,7 @@ public:
     bool IsThemeTypeface() const override { return false; }
     void SetIsThemeTypeface(bool) override {}
     // Return Data built with BuildEmpty() → GetData() non-null but GetSize() == 0
-    std::shared_ptr<Drawing::Data> Serialize(
-        Drawing::SerializeBehavior behavior) const override
+    std::shared_ptr<Drawing::Data> Serialize(Drawing::SerializeBehavior) const override
     {
         auto data = std::make_shared<Drawing::Data>();
         data->BuildEmpty();
@@ -205,8 +203,6 @@ HWTEST_F(RSTypefaceCacheTest, MemorySnapshotTest001, TestSize.Level1)
     // clear context
     RSTypefaceCache::Instance().RemoveDrawingTypefacesByPid(pid1);
     RSTypefaceCache::Instance().RemoveDrawingTypefacesByPid(pid2);
-    std::set<pid_t> exitedPidSet = { pid1, pid2 };
-    MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPidSet);
 }
 
 /**
@@ -597,6 +593,7 @@ HWTEST_F(RSTypefaceCacheTest, ReplayDeserializeTest010, TestSize.Level1)
     EXPECT_FALSE(error.empty());
     EXPECT_EQ(typefaceCache.typefaceHashCode_.find(existingId), typefaceCache.typefaceHashCode_.end());
 }
+
 /**
  * @tc.name: ReplayClearTest001
  * @tc.desc: Verify function ReplayClear

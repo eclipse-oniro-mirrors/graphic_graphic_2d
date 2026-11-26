@@ -17,7 +17,6 @@
 #include "gtest/gtest.h"
 #include "skia_adapter/skia_canvas.h"
 #include "draw/core_canvas.h"
-#include "draw/prim_list.h"
 #include "skia_adapter/skia_canvas_autocache.h"
 #include "skia_adapter/skia_oplist_handle.h"
 #include "utils/shadow_util.h"
@@ -1089,8 +1088,7 @@ HWTEST_F(SkiaCanvasTest, DrawTextBlob001, TestSize.Level1)
     Paint paint;
     paint.SetStyle(Paint::PaintStyle::PAINT_FILL);
     skiaCanvas->DrawTextBlob(nullptr, 0, 0, paint);
-    auto typeface = Typeface::MakeDefault();
-    Font font = Font(typeface, 1 ,1, 1);
+    Font font;
     auto textBlob = TextBlob::MakeFromString("11", font, TextEncoding::UTF8);
     skiaCanvas->DrawTextBlob(textBlob.get(), 0, 0, paint);
     skiaCanvas->ImportSkCanvas(nullptr);
@@ -1112,15 +1110,12 @@ HWTEST_F(SkiaCanvasTest, DrawGlyphs001, TestSize.Level1)
     uint16_t glyphs[3] = {0, 1, 2};
     Point positions[3] = {{0, 0}, {0, 1}, {0, 2}};
     Font font;
-    skiaCanvas->DrawGlyphs(0, glyphs, positions, {0, 0}, &font, paint);
     skiaCanvas->DrawGlyphs(0, nullptr, nullptr, {0, 0}, nullptr, paint);
     skiaCanvas->DrawGlyphs(0, glyphs, nullptr, {0, 0}, &font, paint);
     skiaCanvas->DrawGlyphs(0, nullptr, positions, {0, 0}, &font, paint);
+    skiaCanvas->DrawGlyphs(0, glyphs, positions, {0, 0}, &font, paint);
     skiaCanvas->ImportSkCanvas(nullptr);
-    skiaCanvas->DrawGlyphs(0, glyphs, positions, {0, 0}, &font, paint);
-    skiaCanvas->DrawGlyphs(0, nullptr, nullptr, {0, 0}, nullptr, paint);
-    skiaCanvas->DrawGlyphs(0, glyphs, nullptr, {0, 0}, &font, paint);
-    skiaCanvas->DrawGlyphs(0, nullptr, positions, {0, 0}, &font, paint);
+    skiaCanvas->DrawTextBlob(nullptr, 0, 0, paint);
 }
 
 /**
@@ -1326,37 +1321,6 @@ HWTEST_F(SkiaCanvasTest, DrawUIColor001, TestSize.Level1)
     ASSERT_TRUE(skiaCanvas != nullptr);
     UIColor uiColor(0.5f, 0.6f, 0.7f, 0.8f, 2.0f);
     skiaCanvas->DrawUIColor(uiColor, BlendMode::SRC_OVER);
-}
-
-/**
- * @tc.name: BeginAndEndPrimListCollecting001
- * @tc.desc: Test for BeginPrimListCollecting and EndPrimListCollecting on SkiaCanvas.
- * @tc.type: FUNC
- * @tc.author:
- */
-HWTEST_F(SkiaCanvasTest, BeginAndEndPrimListCollecting001, TestSize.Level1)
-{
-    auto skiaCanvas = std::make_shared<SkiaCanvas>();
-    ASSERT_TRUE(skiaCanvas != nullptr);
-    Rect bounds(0.0f, 0.0f, 100.0f, 100.0f);
-    skiaCanvas->BeginPrimListCollecting(bounds);
-    auto primList = skiaCanvas->EndPrimListCollecting();
-    EXPECT_EQ(primList, nullptr);
-}
-
-/**
- * @tc.name: DrawPrimList001
- * @tc.desc: Test for DrawPrimList on SkiaCanvas, verifying return value is false.
- * @tc.type: FUNC
- * @tc.author:
- */
-HWTEST_F(SkiaCanvasTest, DrawPrimList001, TestSize.Level1)
-{
-    auto skiaCanvas = std::make_shared<SkiaCanvas>();
-    ASSERT_TRUE(skiaCanvas != nullptr);
-    PrimList primList;
-    bool result = skiaCanvas->DrawPrimList(primList);
-    EXPECT_FALSE(result);
 }
 
 /**
