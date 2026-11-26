@@ -272,6 +272,7 @@ public:
     void SaveLayer(const Drawing::SaveLayerOps& saveLayerOps) override;
     void SetBlendMode(std::optional<int> blendMode);
     void SetBlender(std::shared_ptr<Drawing::Blender>);
+    std::shared_ptr<Drawing::Blender> GetBlender() const;
     bool HasOffscreenLayer() const;
 
     // round corner related

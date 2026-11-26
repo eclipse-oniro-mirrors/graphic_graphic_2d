@@ -16,6 +16,7 @@
 #ifndef ROSEN_ENGINE_CORE_RENDER_UI_SHADER_BASE_H
 #define ROSEN_ENGINE_CORE_RENDER_UI_SHADER_BASE_H
 
+#include "effect/rs_frame_cache_level.h"
 #include "effect/rs_render_shader_base.h"
 #include "ui_effect/property/include/rs_ui_property_tag.h"
 #include "ui_effect/property/include/rs_ui_template.h"
@@ -29,6 +30,48 @@ public:
 
     RSC_EXPORT static std::shared_ptr<RSNGShaderBase> Create(RSNGEffectType type);
     RSC_EXPORT static std::shared_ptr<RSNGShaderBase> Create(std::shared_ptr<VisualEffectPara> effectPara);
+
+    void EnableCache(RSFrameCacheLevel level, const RSFrameSkipPolicy& skipPolicy)
+    {
+        stagingCacheLevel_ = level;
+        stagingSkipPolicy_ = skipPolicy;
+        auto current = nextEffect_;
+        while (current) {
+            current->stagingCacheLevel_ = level;
+            current->stagingSkipPolicy_ = skipPolicy;
+            current = current->nextEffect_;
+        }
+    }
+
+    RSFrameCacheLevel GetFrameCacheLevel() const { return stagingCacheLevel_; }
+
+    const RSFrameSkipPolicy& GetFrameSkipPolicy() const { return stagingSkipPolicy_; }
+
+    void OnCopyCachePolicyTo(RSNGRenderShaderBase& server) override
+    {
+        server.SetCachePolicy(stagingCacheLevel_, stagingSkipPolicy_);
+        cacheLevel_ = stagingCacheLevel_;
+        skipPolicy_ = stagingSkipPolicy_;
+    }
+
+    void OnCopyCachePolicyFrom(const RSNGShaderBase& other) override
+    {
+        stagingCacheLevel_ = other.stagingCacheLevel_;
+        stagingSkipPolicy_ = other.stagingSkipPolicy_;
+    }
+
+    bool CachePolicyNeedsSync(const RSNGShaderBase& other) const override
+    {
+        return other.stagingCacheLevel_ != cacheLevel_ ||
+            other.stagingSkipPolicy_.mode != skipPolicy_.mode ||
+            other.stagingSkipPolicy_.skipInterval != skipPolicy_.skipInterval;
+    }
+
+protected:
+    RSFrameCacheLevel stagingCacheLevel_ = RSFrameCacheLevel::NONE;
+    RSFrameSkipPolicy stagingSkipPolicy_ {};
+    RSFrameCacheLevel cacheLevel_ = RSFrameCacheLevel::NONE;
+    RSFrameSkipPolicy skipPolicy_ {};
 };
 
 template<RSNGEffectType Type, typename... PropertyTags>

@@ -137,4 +137,48 @@ HWTEST_F(RSUIShaderBaseTest, RSNGShaderBaseCreateBorderSDFLGColor, TestSize.Leve
     EXPECT_NE(shader, nullptr);
     EXPECT_EQ(shader->GetType(), RSNGEffectType::BORDER_SDF_LG_COLOR);
 }
+
+/**
+ * @tc.name: EnableCache_Chain_PropagatesToAllEffects
+ * @tc.desc: Verify EnableCache propagates cache policy to all effects in the chain
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUIShaderBaseTest, EnableCache_Chain_PropagatesToAllEffects, TestSize.Level1)
+{
+    auto head = RSNGShaderBase::Create(RSNGEffectType::AIBAR_GLOW);
+    ASSERT_NE(head, nullptr);
+    auto tail = RSNGShaderBase::Create(RSNGEffectType::FLOW_LIGHT_SWEEP);
+    ASSERT_NE(tail, nullptr);
+    head->nextEffect_ = tail;
+
+    head->EnableCache(RSFrameCacheLevel::CONTAINER, { RSFrameSkipMode::FIXED_INTERVAL, 5 });
+
+    EXPECT_EQ(head->GetFrameCacheLevel(), RSFrameCacheLevel::CONTAINER);
+    EXPECT_EQ(head->GetFrameSkipPolicy().mode, RSFrameSkipMode::FIXED_INTERVAL);
+    EXPECT_EQ(head->GetFrameSkipPolicy().skipInterval, 5u);
+
+    EXPECT_EQ(tail->GetFrameCacheLevel(), RSFrameCacheLevel::CONTAINER);
+    EXPECT_EQ(tail->GetFrameSkipPolicy().mode, RSFrameSkipMode::FIXED_INTERVAL);
+    EXPECT_EQ(tail->GetFrameSkipPolicy().skipInterval, 5u);
+}
+
+/**
+ * @tc.name: SetValue_CachePolicyNeedsSync_ReturnsFalse
+ * @tc.desc: Verify SetValue returns false when cache policy changed since last GetRenderEffect commit
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUIShaderBaseTest, SetValue_CachePolicyNeedsSync_ReturnsFalse, TestSize.Level1)
+{
+    auto oldShader = RSNGShaderBase::Create(RSNGEffectType::AIBAR_GLOW);
+    ASSERT_NE(oldShader, nullptr);
+    oldShader->EnableCache(RSFrameCacheLevel::PER_EFFECT, { RSFrameSkipMode::ON_PARAM_SAME, 2 });
+
+    auto newShader = RSNGShaderBase::Create(RSNGEffectType::AIBAR_GLOW);
+    ASSERT_NE(newShader, nullptr);
+    newShader->EnableCache(RSFrameCacheLevel::CONTAINER, { RSFrameSkipMode::FIXED_INTERVAL, 3 });
+    newShader->GetRenderEffect();
+
+    RSNode node(false);
+    EXPECT_FALSE(newShader->SetValue(oldShader, node, {}));
+}
 } // namespace OHOS::Rosen
