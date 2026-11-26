@@ -762,7 +762,6 @@ void RSLogicalDisplayRenderNodeDrawable::DrawSecurityMask()
     // Set canvas to black if imagePtr is null
     auto image = RSPixelMapUtil::ExtractDrawingImage(imagePtr);
     if (!image || image->GetWidth() == 0 || image->GetHeight() == 0) {
-        RS_LOGE("RSLogicalDisplayRenderNodeDrawable::%{public}s, image is invalid, SetCanvasBlack", __func__);
         RS_TRACE_NAME_FMT("%s, image is invalid, SetCanvasBlack", __func__);
         curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
         curCanvas_->SetDisableFilterCache(false);
