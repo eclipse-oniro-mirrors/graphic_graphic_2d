@@ -859,10 +859,6 @@ VKAPI_ATTR VkResult CreateImages(uint32_t &numImages, Swapchain* swapchain, cons
     VkImageCreateInfo &imageCreate, VkDevice device)
 {
     ScopedBytrace trace(__func__);
-    if (numImages > MAX_BUFFER_SIZE) {
-        SWLOGE("Swapchain numImages[%{public}u] exceeds max buffer count", numImages);
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
     VkLayerDispatchTable* pDisp =
         GetLayerDataPtr(GetDispatchKey(device))->deviceDispatchTable.get();
     Surface &surface = *SurfaceFromHandle(createInfo->surface);
