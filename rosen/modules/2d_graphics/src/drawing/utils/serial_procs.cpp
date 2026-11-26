@@ -22,6 +22,8 @@ namespace Rosen {
 namespace Drawing {
 SerialProcs::SerialProcs() noexcept : serialProcsImplPtr_(ImplFactory::CreateSerialProcsImpl()) {}
 
+SerialProcs::~SerialProcs() {}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
