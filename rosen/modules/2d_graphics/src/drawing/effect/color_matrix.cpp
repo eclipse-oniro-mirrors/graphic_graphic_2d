@@ -142,6 +142,21 @@ void ColorMatrix::SetSaturation(scalar sat)
     // alpha vetor scale
     array_[SCALE_FACTOR_FOR_A] = 1;
 }
+
+bool ColorMatrix::operator==(const ColorMatrix& other) const
+{
+    for (int i = 0; i < MATRIX_SIZE; ++i) {
+        if (array_[i] != other.array_[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ColorMatrix::operator!=(const ColorMatrix& other) const
+{
+    return !(*this == other);
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
