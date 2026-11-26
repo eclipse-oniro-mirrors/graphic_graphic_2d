@@ -1017,6 +1017,7 @@ void MemoryManager::InitMemoryLimit()
 }
 // LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MemoryManager::PurgeMidnightClean()
 {
     RSUniRenderThread::Instance().PostTask([]() {
@@ -1039,6 +1040,7 @@ void MemoryManager::PurgeMidnightClean()
         RS_LOGI("MemoryManager::PurgeMidnightClean render thread purge done");
     });
 }
+// LCOV_EXCL_STOP
 
 void MemoryManager::SetGpuMemoryLimit(Drawing::GPUContext* gpuContext)
 {

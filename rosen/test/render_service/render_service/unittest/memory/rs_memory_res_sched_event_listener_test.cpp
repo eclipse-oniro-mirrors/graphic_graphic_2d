@@ -17,6 +17,9 @@
 #include "gtest/gtest.h"
 #include "memory/rs_memory_res_sched_event_listener.h"
 #include "res_value.h"
+#include "pipeline/rs_test_util.h"
+#include "pipeline/main_thread/rs_main_thread.h"
+#include "pipeline/render_thread/rs_render_engine.h"
 using namespace testing;
 using namespace testing::ext;
 
@@ -33,8 +36,8 @@ uint64_t SteadyNowMs()
 
 class RSMemoryResSchedEventListenerTest : public testing::Test {
 public:
-    static void SetUpTestCase() {}
-    static void TearDownTestCase() {}
+    static void SetUpTestCase();
+    static void TearDownTestCase();
     void SetUp() override
     {
         auto listener = RSMemoryResSchedEventListener::GetInstance();
@@ -44,6 +47,98 @@ public:
     }
     void TearDown() override {}
 };
+
+void RSMemoryResSchedEventListenerTest::SetUpTestCase()
+{
+    auto& rtThread = RSUniRenderThread::Instance();
+    if (rtThread.uniRenderEngine_) {
+        if (rtThread.uniRenderEngine_->renderContext_) {
+            rtThread.uniRenderEngine_->renderContext_->drGPUContext_ = nullptr;
+        }
+        if (rtThread.uniRenderEngine_->protectedRenderContext_) {
+            rtThread.uniRenderEngine_->protectedRenderContext_->drGPUContext_ = nullptr;
+        }
+        rtThread.uniRenderEngine_->skContext_ = nullptr;
+        rtThread.uniRenderEngine_->renderContext_ = nullptr;
+        rtThread.uniRenderEngine_->protectedRenderContext_ = nullptr;
+        rtThread.uniRenderEngine_->imageManager_ = nullptr;
+        rtThread.uniRenderEngine_->gpuCacheManager_ = nullptr;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        rtThread.uniRenderEngine_->colorSpaceConverterDisplay_ = nullptr;
+#endif
+        rtThread.uniRenderEngine_ = nullptr;
+    }
+    auto mainThread = RSMainThread::Instance();
+    if (mainThread && mainThread->renderEngine_) {
+        if (mainThread->renderEngine_->renderContext_) {
+            mainThread->renderEngine_->renderContext_->drGPUContext_ = nullptr;
+        }
+        if (mainThread->renderEngine_->protectedRenderContext_) {
+            mainThread->renderEngine_->protectedRenderContext_->drGPUContext_ = nullptr;
+        }
+        mainThread->renderEngine_->skContext_ = nullptr;
+        mainThread->renderEngine_->renderContext_ = nullptr;
+        mainThread->renderEngine_->protectedRenderContext_ = nullptr;
+        mainThread->renderEngine_->imageManager_ = nullptr;
+        mainThread->renderEngine_->gpuCacheManager_ = nullptr;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        mainThread->renderEngine_->colorSpaceConverterDisplay_ = nullptr;
+#endif
+        mainThread->renderEngine_ = nullptr;
+    }
+    RSTestUtil::InitRenderNodeGC();
+}
+
+void RSMemoryResSchedEventListenerTest::TearDownTestCase()
+{
+    auto mainThread = RSMainThread::Instance();
+    if (!mainThread || !mainThread->context_) {
+        return;
+    }
+    auto& renderNodeMap = mainThread->context_->GetMutableNodeMap();
+    renderNodeMap.renderNodeMap_.clear();
+    renderNodeMap.surfaceNodeMap_.clear();
+    renderNodeMap.residentSurfaceNodeMap_.clear();
+    renderNodeMap.screenNodeMap_.clear();
+    renderNodeMap.canvasDrawingNodeMap_.clear();
+    renderNodeMap.uiExtensionSurfaceNodes_.clear();
+
+    auto& rtThread = RSUniRenderThread::Instance();
+    if (rtThread.uniRenderEngine_) {
+        if (rtThread.uniRenderEngine_->renderContext_) {
+            rtThread.uniRenderEngine_->renderContext_->drGPUContext_ = nullptr;
+        }
+        if (rtThread.uniRenderEngine_->protectedRenderContext_) {
+            rtThread.uniRenderEngine_->protectedRenderContext_->drGPUContext_ = nullptr;
+        }
+        rtThread.uniRenderEngine_->skContext_ = nullptr;
+        rtThread.uniRenderEngine_->renderContext_ = nullptr;
+        rtThread.uniRenderEngine_->protectedRenderContext_ = nullptr;
+        rtThread.uniRenderEngine_->imageManager_ = nullptr;
+        rtThread.uniRenderEngine_->gpuCacheManager_ = nullptr;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        rtThread.uniRenderEngine_->colorSpaceConverterDisplay_ = nullptr;
+#endif
+        rtThread.uniRenderEngine_ = nullptr;
+    }
+    if (mainThread && mainThread->renderEngine_) {
+        if (mainThread->renderEngine_->renderContext_) {
+            mainThread->renderEngine_->renderContext_->drGPUContext_ = nullptr;
+        }
+        if (mainThread->renderEngine_->protectedRenderContext_) {
+            mainThread->renderEngine_->protectedRenderContext_->drGPUContext_ = nullptr;
+        }
+        mainThread->renderEngine_->skContext_ = nullptr;
+        mainThread->renderEngine_->renderContext_ = nullptr;
+        mainThread->renderEngine_->protectedRenderContext_ = nullptr;
+        mainThread->renderEngine_->imageManager_ = nullptr;
+        mainThread->renderEngine_->gpuCacheManager_ = nullptr;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        mainThread->renderEngine_->colorSpaceConverterDisplay_ = nullptr;
+#endif
+        mainThread->renderEngine_ = nullptr;
+    }
+}
 
 /**
  * @tc.name: GetInstanceTest001

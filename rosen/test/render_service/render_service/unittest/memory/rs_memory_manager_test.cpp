@@ -48,6 +48,42 @@ public:
 
 void RSMemoryManagerTest::SetUpTestCase()
 {
+    auto& rtThread = RSUniRenderThread::Instance();
+    if (rtThread.uniRenderEngine_) {
+        if (rtThread.uniRenderEngine_->renderContext_) {
+            rtThread.uniRenderEngine_->renderContext_->drGPUContext_ = nullptr;
+        }
+        if (rtThread.uniRenderEngine_->protectedRenderContext_) {
+            rtThread.uniRenderEngine_->protectedRenderContext_->drGPUContext_ = nullptr;
+        }
+        rtThread.uniRenderEngine_->skContext_ = nullptr;
+        rtThread.uniRenderEngine_->renderContext_ = nullptr;
+        rtThread.uniRenderEngine_->protectedRenderContext_ = nullptr;
+        rtThread.uniRenderEngine_->imageManager_ = nullptr;
+        rtThread.uniRenderEngine_->gpuCacheManager_ = nullptr;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        rtThread.uniRenderEngine_->colorSpaceConverterDisplay_ = nullptr;
+#endif
+        rtThread.uniRenderEngine_ = nullptr;
+    }
+    auto mainThread = RSMainThread::Instance();
+    if (mainThread && mainThread->renderEngine_) {
+        if (mainThread->renderEngine_->renderContext_) {
+            mainThread->renderEngine_->renderContext_->drGPUContext_ = nullptr;
+        }
+        if (mainThread->renderEngine_->protectedRenderContext_) {
+            mainThread->renderEngine_->protectedRenderContext_->drGPUContext_ = nullptr;
+        }
+        mainThread->renderEngine_->skContext_ = nullptr;
+        mainThread->renderEngine_->renderContext_ = nullptr;
+        mainThread->renderEngine_->protectedRenderContext_ = nullptr;
+        mainThread->renderEngine_->imageManager_ = nullptr;
+        mainThread->renderEngine_->gpuCacheManager_ = nullptr;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        mainThread->renderEngine_->colorSpaceConverterDisplay_ = nullptr;
+#endif
+        mainThread->renderEngine_ = nullptr;
+    }
     RSTestUtil::InitRenderNodeGC();
 }
 
@@ -64,6 +100,42 @@ void RSMemoryManagerTest::TearDownTestCase()
     renderNodeMap.screenNodeMap_.clear();
     renderNodeMap.canvasDrawingNodeMap_.clear();
     renderNodeMap.uiExtensionSurfaceNodes_.clear();
+
+    auto& rtThread = RSUniRenderThread::Instance();
+    if (rtThread.uniRenderEngine_) {
+        if (rtThread.uniRenderEngine_->renderContext_) {
+            rtThread.uniRenderEngine_->renderContext_->drGPUContext_ = nullptr;
+        }
+        if (rtThread.uniRenderEngine_->protectedRenderContext_) {
+            rtThread.uniRenderEngine_->protectedRenderContext_->drGPUContext_ = nullptr;
+        }
+        rtThread.uniRenderEngine_->skContext_ = nullptr;
+        rtThread.uniRenderEngine_->renderContext_ = nullptr;
+        rtThread.uniRenderEngine_->protectedRenderContext_ = nullptr;
+        rtThread.uniRenderEngine_->imageManager_ = nullptr;
+        rtThread.uniRenderEngine_->gpuCacheManager_ = nullptr;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        rtThread.uniRenderEngine_->colorSpaceConverterDisplay_ = nullptr;
+#endif
+        rtThread.uniRenderEngine_ = nullptr;
+    }
+    if (mainThread && mainThread->renderEngine_) {
+        if (mainThread->renderEngine_->renderContext_) {
+            mainThread->renderEngine_->renderContext_->drGPUContext_ = nullptr;
+        }
+        if (mainThread->renderEngine_->protectedRenderContext_) {
+            mainThread->renderEngine_->protectedRenderContext_->drGPUContext_ = nullptr;
+        }
+        mainThread->renderEngine_->skContext_ = nullptr;
+        mainThread->renderEngine_->renderContext_ = nullptr;
+        mainThread->renderEngine_->protectedRenderContext_ = nullptr;
+        mainThread->renderEngine_->imageManager_ = nullptr;
+        mainThread->renderEngine_->gpuCacheManager_ = nullptr;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        mainThread->renderEngine_->colorSpaceConverterDisplay_ = nullptr;
+#endif
+        mainThread->renderEngine_ = nullptr;
+    }
 }
 
 void RSMemoryManagerTest::SetUp() {}
@@ -956,7 +1028,7 @@ HWTEST_F(RSMemoryManagerTest, SetGpuMemoryLimit003, testing::ext::TestSize.Level
     // Should not crash; SkiaGPUContext implementations are no-ops.
     MemoryManager::SetGpuMemoryLimit(gpuContext);
     EXPECT_EQ(MemoryManager::gpuMemoryControl_, testGpuMemoryLimit);
-    // Restore the uninitizlized sentinel to avoid polluting other tests.
+    // Restore the uninitialized sentinel to avoid polluting other tests.
     MemoryManager::gpuMemoryControl_ = UINT64_MAX;
     delete gpuContext;
 }
@@ -2332,9 +2404,9 @@ HWTEST_F(RSMemoryManagerTest, IsAbnormalProcessFromEngineTest001, TestSize.Level
 
 /**
  * @tc.name: IsAbnormalProcessFromEngineTest002
- * @tc.desc: Verify IsAbnormalProcessFromEngine distinguishes between multiple processes: only the
+ * @tc.desc: Verify IsAbnormalProcessFromeEngine distinguishes between multiple processes: only the
  *     pid that was marked abnormal returns true while another pid in the same set returns false.
- *     Also verifies that pid == 0 short-circuits to false even when it has been marked abnormal.
+ *     Also verifies that pid == 0 short-circuts to false even when it has been marked abnormal.
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -2350,16 +2422,16 @@ HWTEST_F(RSMemoryManagerTest, IsAbnormalProcessFromEngineTest002, TestSize.Level
 
     // Mark only abnormalPid as abnormal.
     MemorySnapshot::Instance().SetAbnormalProcess(abnormalPid);
-    EXPECT_TRUE(MemoryManager::IsAbnormalProcessFromEngine(abnormalPid));
-    EXPECT_FALSE(MemoryManager::IsAbnormalProcessFromEngine(normalPid));
+    ASSERT_TRUE(MemoryManager::IsAbnormalProcessFromEngine(abnormalPid));
+    ASSERT_FALSE(MemoryManager::IsAbnormalProcessFromEngine(normalPid));
 
     // pid == 0 must short-circuit to false regardless of the abnormal set.
     MemorySnapshot::Instance().SetAbnormalProcess(0);
-    EXPECT_FALSE(MemoryManager::IsAbnormalProcessFromEngine(0));
+    ASSERT_FALSE(MemoryManager::IsAbnormalProcessFromEngine(0));
 
     // Removing the abnormal mark should make the pid report as normal again.
     MemorySnapshot::Instance().RemoveAbnormalProcess(abnormalPid);
-    EXPECT_FALSE(MemoryManager::IsAbnormalProcessFromEngine(abnormalPid));
+    ASSERT_FALSE(MemoryManager::IsAbnormalProcessFromEngine(abnormalPid));
 
     // Cleanup
     MemorySnapshot::Instance().RemoveAbnormalProcess(0);
