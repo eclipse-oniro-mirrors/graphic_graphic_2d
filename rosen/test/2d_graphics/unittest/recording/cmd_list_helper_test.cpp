@@ -605,7 +605,7 @@ HWTEST_F(CmdListHelperTest, FontInfo00, TestSize.Level1)
     auto sptr = CmdListHelper::GetFontFromCmdList(*cmdList, handle, 0);
     auto cmdList1 = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
     auto typeface = Typeface::MakeDefault();
-    Font font = Font(typeface, 1, 1, 1);
+    Font font = Font(typeface, 1 ,1, 1);
     OpFontHandle handle1 = CmdListHelper::AddFontToCmdList(*cmdList1, &font);
     auto sptr1 = CmdListHelper::GetFontFromCmdList(*cmdList1, handle1, 0);
     EXPECT_EQ(sptr, nullptr);
