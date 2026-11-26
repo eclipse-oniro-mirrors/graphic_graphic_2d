@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef RSERVICETORENDERCONNECTIONSTUB_FUZZER_H
-#define RSERVICETORENDERCONNECTIONSTUB_FUZZER_H
+#ifndef RSSERVICE2RENDERCONNECTIONSTUB_FUZZER_H
+#define RSSERVICE2RENDERCONNECTIONSTUB_FUZZER_H
 
-#define FUZZ_PROJECT_NAME "rsservicetorenderconnectionstub_fuzzer"
+#define FUZZ_PROJECT_NAME "rsservice2renderconnectionstub_fuzzer"
 
-#endif // RSERVICETORENDERCONNECTIONSTUB_FUZZER_H
+#endif // RSSERVICE2RENDERCONNECTIONSTUB_FUZZER_H

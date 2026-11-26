@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "rsservicetorenderconnectionstub_fuzzer.h"
+#include "rsservice2renderconnectionstub_fuzzer.h"
 
 #include <cstddef>
 #include <cstdint>
