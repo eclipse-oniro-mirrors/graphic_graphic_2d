@@ -46,6 +46,7 @@ ohos_shared_library("libdrawing_demo") {
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "image_framework:image_native",
+    "selinux_adapter:librestorecon",
     "window_manager:libdm",
   ]
 
