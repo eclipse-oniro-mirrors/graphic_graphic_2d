@@ -29,8 +29,8 @@
 #include "feature/hwc/hpae_offline/rs_gpu_offline_buffer.h"
 #include "feature/hwc/hpae_offline/rs_gpu_offline_thread.h"
 #include "feature/hwc/hpae_offline/rs_offline_device.h"
-#include "feature/hwc/hpae_offline/rs_hpae_offline_process_syncer.h"
 #include "feature/hwc/hpae_offline/rs_hpae_offline_thread_manager.h"
+#include "feature/hwc/hpae_offline/rs_hpae_offline_process_syncer.h"
 #include "feature/hwc/hpae_offline/rs_offline_result.h"
 
 namespace OHOS {
@@ -41,6 +41,7 @@ struct GPUOfflineDrawParams {
     float displayNit = 0.0f;
     float brightnessRatio = 1.0f;
     std::vector<float> layerLinearMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+
     bool useBilinearInterpolation = false;
     bool ignoreAlpha = false;
     bool colorFollow = false;
@@ -85,9 +86,9 @@ struct GPUOfflineDrawParams {
 };
 
 struct GPUOfflineSubThreadData {
-    NodeId nodeId = 0; // only used in GPUOfflineThread (copy)
-    std::shared_ptr<RSGPUOfflineBuffer> offlineBuffer = nullptr; // only used in GPUOfflineThread (copy)
-    GPUOfflineDrawParams drawParams; // only used in GPUOfflineThread (copy)
+    NodeId nodeId = 0;                                            // only used in GPUOfflineThread (copy)
+    std::shared_ptr<RSGPUOfflineBuffer> offlineBuffer = nullptr;  // only used in GPUOfflineThread (copy)
+    GPUOfflineDrawParams drawParams;                              // only used in GPUOfflineThread (copy)
     // snapshot of surface params for async processing
     sptr<SurfaceBuffer> srcBuffer = nullptr;
     std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount = nullptr;
@@ -98,22 +99,25 @@ struct GPUOfflineSubThreadData {
 };
 
 struct GPUOfflineContext {
-    NodeId nodeId = 0; // shared:copy to GPUOfflineThread
-    std::shared_ptr<RSGPUOfflineBuffer> offlineBuffer = nullptr; // shared:copy to GPUOfflineThread
-    GPUOfflineDrawParams drawParams; // shared:copy to GPUOfflineThread
+    NodeId nodeId = 0;                                            // shared: copy to GPUOfflineThread
+    std::shared_ptr<RSGPUOfflineBuffer> offlineBuffer = nullptr;  // shared: copy to GPUOfflineThread
+    GPUOfflineDrawParams drawParams;                              // shared: copy to GPUOfflineThread
     std::atomic<bool> skipDraw = false;
     std::atomic<bool> hasDrawn = false;
     std::atomic<size_t> invalidFrames = 0;
     std::atomic<bool> timeout = false;
-    int64_t timestamp = 0; // mainthread only (for LRU)
+    int64_t timestamp = 0;                                       // mainThread only (for LRU)
 };
+
 
 class RSGPUOfflineDevice : public RSOfflineDevice, public std::enable_shared_from_this<RSGPUOfflineDevice> {
 public:
     explicit RSGPUOfflineDevice();
     ~RSGPUOfflineDevice() override;
     OfflineDeviceType GetDeviceType() const override { return OfflineDeviceType::GPU_OFFLINE_DEVICE; }
+
     static bool CheckCondition(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
+    static void ProcessEdrNodes(RSScreenRenderNode& screenNode);
     bool IsRSOfflineDeviceReady(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) override;
     bool PostProcessOfflineTask(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>& surfaceDrawable,
         offlineTaskId taskId) override;
@@ -126,6 +130,7 @@ public:
 
 private:
     static constexpr size_t MAX_CACHE_SIZE = 4;
+    static constexpr int SCALE_WIDTH_LIMIT = 2560;
 
     void CheckAndPostPreAllocBuffersTask();
     void CheckAndHandleTimeoutEvent(std::shared_ptr<ProcessOfflineFuture>& futurePtr, NodeId nodeId);
@@ -151,6 +156,10 @@ private:
     GPUOfflineDrawParams CollectDrawParams(std::shared_ptr<RSSurfaceRenderNode> surfaceNode,
         RSSurfaceRenderParams& surfaceParams);
     void ClearContextCache(NodeId nodeId);
+    static void SetGpuOfflineEnable(RSScreenRenderNode& node, std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
+    static void GetEdrNodes(RSScreenRenderNode& screenNode,
+        std::vector<std::shared_ptr<RSSurfaceRenderNode>>& edrSurfaceNodeVec);
+    static void ChooseEdrHwc(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& edrSurfaceNodeVec);
 
     RSHpaeOfflineProcessSyncer offlineResultSync_;
     RSGPUOfflineThread offlineThread_;

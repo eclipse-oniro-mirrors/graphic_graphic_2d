@@ -22,6 +22,8 @@
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/hwc/hpae_offline/rs_gpu_offline_device.h"
 #include "feature/hwc/hpae_offline/rs_offline_util.h"
+#include "feature/hwc/hpae_offline/rs_offline_processor.h"
+#include "feature/hwc/rs_uni_hwc_compute_util.h"
 #include "engine/rs_base_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
@@ -61,10 +63,6 @@ bool RSGPUOfflineDevice::IsRSOfflineDeviceReady(std::shared_ptr<RSSurfaceRenderN
     }
     if (currentFrameNodeCount_ >= MAX_CACHE_SIZE) {
         RS_LOGI("RSGPUOfflineDevice::Already processed %{public}zu nodes in this vsync, skip", currentFrameNodeCount_);
-        return false;
-    }
-    if (!CheckCondition(surfaceNode)) {
-        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::CheckCondition failed.");
         return false;
     }
     RS_LOGD_IF(DEBUG_PREVALIDATE,
@@ -112,7 +110,7 @@ bool RSGPUOfflineDevice::PostProcessOfflineTask(
     auto* params = surfaceNode->GetStagingRenderParams().get();
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(params);
     RS_LOGD_IF(DEBUG_PREVALIDATE,
-        "RSGPUOfflineDevice::PostProcessOfflineTask task[%{public}" PRIu64 "-%{public}" PRIu64 "] by node",
+        "RSGPUOfflineDevice::post offline task[%{public}" PRIu64 "-%{public}" PRIu64 "] by node",
         taskId.first, taskId.second);
     return PostOfflineTaskCommon(offlineContext, surfaceParams, taskId);
 }
@@ -132,7 +130,7 @@ bool RSGPUOfflineDevice::PostProcessOfflineTask(
     auto* params = surfaceDrawable->GetRenderParams().get();
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(params);
     RS_LOGD_IF(DEBUG_PREVALIDATE,
-        "RSGPUOfflineDevice::PostProcessOfflineTask task[%{public}" PRIu64 "-%{public}" PRIu64 "] by drawable",
+        "RSGPUOfflineDevice::post offline task[%{public}" PRIu64 "-%{public}" PRIu64 "] by drawable",
         taskId.first, taskId.second);
     return PostOfflineTaskCommon(offlineContext, surfaceParams, taskId);
 }
@@ -161,7 +159,7 @@ bool RSGPUOfflineDevice::PostOfflineTaskCommon(std::shared_ptr<GPUOfflineContext
     }
     auto futurePtr = offlineResultSync_.RegisterPostedTask(taskId);
     if (!futurePtr) {
-        RS_LOGE("RSGPUOfflineDevice::RegisterPostedTask failed!");
+        RS_LOGE("RSGPUOfflineDevice::register post task failed!");
         return false;
     }
     offlineThread_.PostTask([futurePtr, taskId, this,
@@ -183,7 +181,7 @@ bool RSGPUOfflineDevice::FillOfflineResult(std::shared_ptr<RSGPUOfflineBuffer>& 
     auto offlineSurfaceHandler = offlineBuffer->GetSurfaceHandler();
     result.buffer = offlineBuffer->ConsumeAndGetBuffer();
     if (result.buffer == nullptr) {
-        RS_LOGE("RSGPUOfflineDevice::FillOfflineResult buffer is nullptr");
+        RS_LOGE("RSGPUOfflineDevice::result.buffer is nullptr");
         return false;
     }
     result.preBuffer = offlineSurfaceHandler->GetPreBuffer();
@@ -202,7 +200,7 @@ bool RSGPUOfflineDevice::SetResultWhenSkipDraw(std::shared_ptr<GPUOfflineContext
     const GPUOfflineSubThreadData& taskContext, offlineTaskId taskId)
 {
     RS_LOGD_IF(DEBUG_PREVALIDATE,
-        "RSGPUOfflineDevice::SetResultWhenSkipDraw task[%{public}" PRIu64 "-%{public}" PRIu64 "]",
+        "RSGPUOfflineDevice::skipDraw: skip offline task[%{public}" PRIu64 "-%{public}" PRIu64 "]",
         taskId.first, taskId.second);
     ProcessOfflineResult result;
     auto offlineBuffer = offlineContext->offlineBuffer;
@@ -211,20 +209,16 @@ bool RSGPUOfflineDevice::SetResultWhenSkipDraw(std::shared_ptr<GPUOfflineContext
         RS_LOGW("RSGPUOfflineDevice::FillOfflineResult failed");
         return false;
     }
-    result.preBuffer = nullptr; // need to set nullptr in skipdraw
+    result.preBuffer = nullptr;  // need to set nullptr in skipdraw
     result.taskSuccess = true;
     offlineResultSync_.SetDirectResult(taskId, result);
-
-    // set status after skipdraw
-    offlineContext->invalidFrames = 0;
-    offlineContext->hasDrawn = true;
     return true;
 }
 
 bool RSGPUOfflineDevice::WaitForProcessOfflineResult(offlineTaskId taskId,
     std::chrono::milliseconds timeout, ProcessOfflineResult& result)
 {
-    RS_TRACE_NAME("RSGPUOfflineDevice::WaitForProcessOfflineResult");
+    RS_TRACE_NAME("RSGPUOfflineDevice::Wait for node offline process");
     bool waitSuccess = offlineResultSync_.WaitForTaskAndGetResult(taskId, timeout, result);
     auto context = GetOfflineContext(taskId.second);
     // Context may have been deleted by main thread via GetOrCreateOfflineContext when cache is full.
@@ -233,7 +227,6 @@ bool RSGPUOfflineDevice::WaitForProcessOfflineResult(offlineTaskId taskId,
         return waitSuccess;
     }
     context->hasDrawn = result.taskSuccess;
-    context->invalidFrames = result.taskSuccess ? 0 : context->invalidFrames + 1;
     return waitSuccess;
 }
 
@@ -243,10 +236,17 @@ void RSGPUOfflineDevice::CheckAndPostClearOfflineResourceTask(const std::vector<
     {
         std::lock_guard<std::mutex> lock(cacheMutex_);
         for (auto& [nodeId, context] : offlineContextCache_) {
+            auto it = std::find(offlineNodeIds.begin(), offlineNodeIds.end(), nodeId);
+            if (it != offlineNodeIds.end()) { // if nodeId in offlineNodeIds
+                context->invalidFrames = 0;
+                continue;
+            }
+
             if (context->invalidFrames >= MAX_NUM_INVALID_FRAME) {
                 nodesToRemove.push_back(nodeId);
             }
             context->invalidFrames++;
+            context->hasDrawn = false;
         }
     }
     for (auto& nodeId : nodesToRemove) {
@@ -282,18 +282,19 @@ void RSGPUOfflineDevice::CheckAndHandleTimeoutEvent(std::shared_ptr<ProcessOffli
 {
     std::lock_guard<std::mutex> lock(futurePtr->mtx);
     if (futurePtr->timeout) {
-        RS_LOGW("RSGPUOfflineDevice::GPU timeout! disable offline in this scene");
-        RS_TRACE_NAME("RSGPUOfflineDevice::Timeout! disable offline in this scene");
+        RS_LOGW("RSGPUOfflineDevice::gpu timeout! disable offline in this scene");
+        RS_TRACE_NAME("RSGPUOfflineDevice::timeout! disable offline in this scene");
         auto context = GetOfflineContext(nodeId);
         if (context != nullptr) {
             context->timeout = true;
+            context->invalidFrames = MAX_NUM_INVALID_FRAME;
         }
     }
 }
 
 bool RSGPUOfflineDevice::CheckCondition(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
 {
-    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::CheckCondition");
+    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::Check EDR condition");
     if (!RSSystemProperties::GetGPUOfflineEnabled() || !RSSystemProperties::GetXcomponentEdrEnabled()) {
         return false;
     }
@@ -305,29 +306,132 @@ bool RSGPUOfflineDevice::CheckCondition(const std::shared_ptr<RSSurfaceRenderNod
 
     auto srcBuffer = surfaceHandler->GetBuffer();
     if (!srcBuffer) {
-        RS_LOGW("RSGPUOfflineDevice::GetBuffer failed!");
+        RS_LOGW("RSGPUOfflineDevice::Offline srcBuffer get buffer failed!");
         return false;
     }
     if (!RSBaseHdrUtil::CheckIsHDRSelfProcessingBuffer(srcBuffer)) {
-        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::Not HDRSelfProcessingBuffer!");
-        return false;
-    }
-    if (RSBaseHdrUtil::GetRGBA1010108Enabled()) {
-        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::Has b38");
+        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::not HDRSelfProcessingBuffer!");
         return false;
     }
 
     Rect crop = {0, 0, 0, 0};
     if (srcBuffer->GetCropMetadata(crop)) {
-        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::Has crop metadata!");
+        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::has crop metadata!");
         return false;
     }
     if (surfaceParams->GetLayerInfo().transformType != GraphicTransformType::GRAPHIC_ROTATE_NONE &&
         surfaceParams->GetLayerInfo().transformType != GraphicTransformType::GRAPHIC_ROTATE_180) {
-        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::Has transform!");
+        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::has transform!");
         return false;
     }
     return true;
+}
+
+void RSGPUOfflineDevice::ChooseEdrHwc(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& edrSurfaceNodeVec)
+{
+    bool onlyOneEdr = (edrSurfaceNodeVec.size() == 1);
+    auto hwcEdrIt = edrSurfaceNodeVec.end();
+    uint64_t maxFlushTime = 0;
+    // rule1: hwc only support one layer
+    for (auto it = edrSurfaceNodeVec.begin(); it != edrSurfaceNodeVec.end(); ++it) {
+        auto surfaceNode = *it;
+        // rule2: !B38 && toplayer && HDR, not support
+        if (surfaceNode->IsLayerTop() && !RSBaseHdrUtil::GetRGBA1010108Enabled()) {
+            continue;
+        }
+        // rule3: HDR && width > 2560 && width is odd, not support
+        if ((surfaceNode->GetSrcRect().GetWidth() > SCALE_WIDTH_LIMIT) &&
+            (surfaceNode->GetSrcRect().GetWidth() % 2 == 1)) {
+            continue;
+        }
+        if (surfaceNode->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed() || onlyOneEdr) {
+            hwcEdrIt = it;
+            break;
+        } else {
+            auto bufferFlushTime = surfaceNode->GetRSSurfaceHandler()->GetBuffer()->GetFlushedTimestamp();
+            if (bufferFlushTime > maxFlushTime) {
+                maxFlushTime = bufferFlushTime;
+                hwcEdrIt = it;
+            }
+        }
+    }
+    if (hwcEdrIt != edrSurfaceNodeVec.end()) {
+        edrSurfaceNodeVec.erase(hwcEdrIt);
+    }
+}
+
+void RSGPUOfflineDevice::GetEdrNodes(RSScreenRenderNode& screenNode,
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>>& edrSurfaceNodeVec)
+{
+    auto& selfDrawingNodes = RSMainThread::Instance()->GetSelfDrawingNodes();
+    if (selfDrawingNodes.empty()) {
+        return;
+    }
+    bool onlyEdrSurface = true;
+    for (auto it = selfDrawingNodes.begin(); it != selfDrawingNodes.end(); ++it) {
+        auto surfaceNode = *it;
+        if (!surfaceNode || !surfaceNode->IsOnTheTree()) {
+            continue;
+        }
+        auto ancestor = surfaceNode->GetAncestorScreenNode().lock();
+        if (!ancestor || screenNode.GetId() != ancestor->GetId()) {
+            RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::GetEdrNodes not current screen selfDrawingNode");
+            continue;
+        }
+        if (surfaceNode->IsHardwareForcedDisabled() || surfaceNode->GetVideoHdrStatus() == HdrStatus::NO_HDR ||
+            surfaceNode->GetVideoHdrStatus() == HdrStatus::AI_HDR_VIDEO_GAINMAP ||
+            !surfaceNode->GetRSSurfaceHandler() || !surfaceNode->GetRSSurfaceHandler()->GetBuffer()) {
+            continue;
+        }
+        // HDR video
+        if (!RSBaseHdrUtil::CheckIsHDRSelfProcessingBuffer(surfaceNode->GetRSSurfaceHandler()->GetBuffer())) {
+            onlyEdrSurface = false;
+        } else if (RSGPUOfflineDevice::CheckCondition(surfaceNode)) { // is edr
+            edrSurfaceNodeVec.push_back(surfaceNode);
+        }
+    }
+    if (onlyEdrSurface) {
+        ChooseEdrHwc(edrSurfaceNodeVec);
+    }
+}
+
+void RSGPUOfflineDevice::ProcessEdrNodes(RSScreenRenderNode& screenNode)
+{
+    if (!RSSystemProperties::GetXcomponentEdrEnabled() || !RSSystemProperties::GetGPUOfflineEnabled()) {
+        return;
+    }
+
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> edrSurfaceNodeVec;
+    GetEdrNodes(screenNode, edrSurfaceNodeVec);
+    std::vector<uint64_t> gpuOffineNodeIds;
+    if (!edrSurfaceNodeVec.empty()) {
+        for (auto surfaceNode : edrSurfaceNodeVec) {
+            SetGpuOfflineEnable(screenNode, surfaceNode);
+            auto transform = RSUniHwcComputeUtil::GetLayerTransform(*surfaceNode);
+            surfaceNode->UpdateHwcNodeLayerInfo(transform);
+            if (surfaceNode->GetDeviceOfflineEnable()) {
+                gpuOffineNodeIds.push_back(surfaceNode->GetId());
+            }
+        }
+    }
+
+    RSOfflineProcessor::GetOfflineProcessor().CheckAndPostClearOfflineResourceTask(
+        OfflineDeviceType::GPU_OFFLINE_DEVICE, gpuOffineNodeIds);
+}
+
+void RSGPUOfflineDevice::SetGpuOfflineEnable(RSScreenRenderNode& node,
+    std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
+{
+    if (!RSOfflineProcessor::GetOfflineProcessor().IsRSOfflineProcessorReady(
+        surfaceNode, OfflineDeviceType::GPU_OFFLINE_DEVICE)) {
+        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by GPU offline not ready ",
+            surfaceNode->GetName().c_str(), surfaceNode->GetId());
+        surfaceNode->SetHardwareForcedDisabledState(true);
+        surfaceNode->SetDeviceOfflineEnable(false);
+        node.GetDirtyManager()->MergeDirtyRect(surfaceNode->GetDstRect());
+        return;
+    }
+    surfaceNode->SetDeviceOfflineEnable(true);
 }
 
 bool RSGPUOfflineDevice::UpdateContext(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
@@ -336,26 +440,26 @@ bool RSGPUOfflineDevice::UpdateContext(std::shared_ptr<RSSurfaceRenderNode>& sur
     RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::UpdateContext");
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
     auto surfaceHandler = surfaceNode->GetRSSurfaceHandler();
-    if (!surfaceHandler || !surfaceParams) {
+    if (!surfaceHandler ||!surfaceParams) {
         return false;
     }
-    // generate drawParams
+    // generate drawparmas
     GPUOfflineDrawParams currentDrawParams = CollectDrawParams(surfaceNode, *surfaceParams);
     // skipDraw: buffer not consumed + previous frame drawn + same params
     bool bufferConsumed = surfaceHandler->IsCurrentFrameBufferConsumed();
     if (!bufferConsumed && offlineContext->hasDrawn &&
-         offlineContext->drawParams == currentDrawParams &&
-         currentDrawParams.switchType == SingleBufferMode::SINGLE_BUFFER_MODE_NONE) {
+        offlineContext->drawParams == currentDrawParams &&
+        currentDrawParams.switchType == SingleBufferMode::SINGLE_BUFFER_MODE_NONE) {
         offlineContext->skipDraw = true;
-        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::SkipDraw: reuse previous frame");
+        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::skipDraw: reuse previous frame");
         return true;
     }
     // normal drawing
     offlineContext->skipDraw = false;
     offlineContext->hasDrawn = false;
     offlineContext->drawParams = currentDrawParams;
-    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::Need GPU offline process, bufferConsumed=%{public}d",
-        bufferConsumed);
+    RS_LOGD_IF(DEBUG_PREVALIDATE,
+        "RSGPUOfflineDevice::need gpu offline process, bufferConsumed=%{public}d", bufferConsumed);
     return true;
 }
 
@@ -389,21 +493,21 @@ GPUOfflineDrawParams RSGPUOfflineDevice::CollectDrawParams(std::shared_ptr<RSSur
 bool RSGPUOfflineDevice::DoProcessOfflineWithContext(
     ProcessOfflineResult& result, const GPUOfflineSubThreadData& taskContext)
 {
-    RS_TRACE_NAME_FMT("RSGPUOfflineDevice::DoProcessOfflineWithContext");
-    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::DoProcessOfflineWithContext start");
+    RS_TRACE_NAME_FMT("RSGPUOfflineDevice::do process offline with context");
+    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::Offline process start");
     if (!taskContext.srcBuffer || !taskContext.bufferOwnerCount) {
-        RS_LOGW("RSGPUOfflineDevice::GetBuffer failed!");
+        RS_LOGW("RSGPUOfflineDevice::Offline srcSurfaceBuffer get buffer failed!");
         return false;
     }
     BufferOwnerCountGuard guard(taskContext.bufferOwnerCount);
     auto offlineBuffer = taskContext.offlineBuffer;
     if (offlineBuffer == nullptr) {
-        RS_LOGW("RSGPUOfflineDevice::OfflineBuffer is null");
+        RS_LOGW("RSGPUOfflineDevice::GPU offline buffer is null");
         return false;
     }
     bool drawRet = DrawHDRImage(taskContext);
     if (!drawRet) {
-        RS_LOGW("RSGPUOfflineDevice::DrawHDRImage failed");
+        RS_LOGW("RSGPUOfflineDevice::GPU Offline draw failed");
         return false;
     }
     bool fillOutRet = FillOfflineResult(offlineBuffer, taskContext, result);
@@ -412,7 +516,7 @@ bool RSGPUOfflineDevice::DoProcessOfflineWithContext(
         return false;
     }
     RS_LOGD_IF(DEBUG_PREVALIDATE,
-        "RSGPUOfflineDevice::offline process done, bufferRect: [%{public}d %{public}d %{public}d %{public}d]",
+        "RSGPUOfflineDevice::Offline process done, bufferRect: [%{public}d %{public}d %{public}d %{public}d]",
         result.bufferRect.x, result.bufferRect.y,
         result.bufferRect.w, result.bufferRect.h);
     return true;
@@ -422,14 +526,14 @@ bool RSGPUOfflineDevice::DrawHDRImage(const GPUOfflineSubThreadData& taskContext
 {
     auto offlineBuffer = taskContext.offlineBuffer;
     if (offlineBuffer == nullptr || taskContext.srcBuffer == nullptr) {
-        RS_LOGW("RSGPUOfflineDevice::OfflineBuffer is null");
+        RS_LOGW("RSGPUOfflineDevice::GPU offline buffer creation failed");
         return false;
     }
     BufferRequestConfig bufferConfig = GetGPUBufferConfig(taskContext);
     auto engine = offlineThread_.GetRenderEngine();
     auto renderFrame = offlineBuffer->RequestFrame(engine, bufferConfig, false, taskContext.drawParams.switchType);
     if (renderFrame == nullptr) {
-        RS_LOGW("RSGPUOfflineDevice::RequestFrame failed, force redraw next frame");
+        RS_LOGW("RSGPUOfflineDevice::GPU offline RequestFrame failed, force redraw next frame");
         return false;
     }
 
@@ -444,8 +548,9 @@ bool RSGPUOfflineDevice::DrawHDRImage(const GPUOfflineSubThreadData& taskContext
     canvas->ConcatMatrix(drawParams.matrix);
     engine->DrawImage(*canvas, drawParams);
     canvas->Restore();
+
     renderFrame->Flush();
-    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::DrawHDRImage finished");
+    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSGPUOfflineDevice::GPU Offline draw finished");
     return true;
 }
 
@@ -488,7 +593,7 @@ BufferRequestConfig RSGPUOfflineDevice::GetGPUBufferConfig(const GPUOfflineSubTh
     config.colorGamut = taskContext.drawParams.targetColorGamut;
     config.format = GRAPHIC_PIXEL_FMT_RGBA_8888;
     config.usage = BUFFER_USAGE_HW_RENDER | BUFFER_USAGE_HW_TEXTURE |
-        BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_HW_COMPOSER | BUFFER_USAGE_CPU_READ;
+                   BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_HW_COMPOSER | BUFFER_USAGE_CPU_READ;
     config.timeout = 0;
     config.transform = GraphicTransformType::GRAPHIC_ROTATE_NONE;
     return config;
@@ -512,10 +617,10 @@ std::shared_ptr<GPUOfflineContext> RSGPUOfflineDevice::GetOrCreateOfflineContext
     }
 
     if (offlineContextCache_.size() >= MAX_CACHE_SIZE) {
-        RS_LOGI("RSGPUOfflineDevice::Can't create new context!");
+        RS_LOGI("RSGPUOfflineDevice::can't create new context!");
         return nullptr;
     }
-    auto buffer = std::make_shared<RSGPUOfflineBuffer>(std::to_string(nodeId), nodeId);
+    auto buffer = std::make_shared<RSGPUOfflineBuffer>("GPUOfflineLayer_" + std::to_string(nodeId), nodeId);
     auto offlineContext = std::make_shared<GPUOfflineContext>();
     offlineContext->nodeId = nodeId;
     offlineContext->offlineBuffer = buffer;
