@@ -73,7 +73,7 @@ void ColorMatrix::SetConcat(const ColorMatrix& m1, const ColorMatrix& m2)
     for (int j = 0; j < MATRIX_SIZE; j = j + 5) {  // 5 means color matrix cols
         for (int i = 0; i < 4; i++) {  // 4 means color matrix rows
             target[index++] = m1.array_[j + 0] * m2.array_[i + 0] +  // 0 means color matrix offset
-                m1.array_[j + 1] * m2.array_[i + 5] +  // 1 5 means color matrix offset 
+                m1.array_[j + 1] * m2.array_[i + 5] +  // 1 5 means color matrix offset
                 m1.array_[j + 2] * m2.array_[i + 10] +  // 2 10 means color matrix offset
                 m1.array_[j + 3] * m2.array_[i + 15];  // 3 15 means color matrix offset
         }

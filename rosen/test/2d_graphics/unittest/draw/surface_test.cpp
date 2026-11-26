@@ -22,9 +22,7 @@
 #include "effect/runtime_effect.h"
 #include "image/gpu_context.h"
 
-#define private public
 #include "draw/surface.h"
-#undef private
 
 using namespace testing;
 using namespace testing::ext;

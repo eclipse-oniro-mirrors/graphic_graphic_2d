@@ -166,7 +166,7 @@ HWTEST_F(SkiaStaticFactoryTest, MakeFromYUVAPixmaps003, TestSize.Level1)
     YUVInfo info(100, 100, YUVInfo::PlaneConfig::Y_UV, YUVInfo::SubSampling::K420,
         YUVInfo::YUVColorSpace::JPEG_FULL_YUVCOLORSPACE,
         YUVInfo::YUVDataType::UNORM_8);
-    void* memory = malloc(1024);    
+    void* memory = malloc(1024);
     std::shared_ptr<ColorSpace> colorSpace = nullptr;
     auto skiaStatic = SkiaStaticFactory::MakeFromYUVAPixmaps(gpuContext, info, memory, colorSpace);
     ASSERT_TRUE(memory != nullptr);

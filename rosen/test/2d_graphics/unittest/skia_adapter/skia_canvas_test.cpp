@@ -1090,7 +1090,7 @@ HWTEST_F(SkiaCanvasTest, DrawTextBlob001, TestSize.Level1)
     paint.SetStyle(Paint::PaintStyle::PAINT_FILL);
     skiaCanvas->DrawTextBlob(nullptr, 0, 0, paint);
     auto typeface = Typeface::MakeDefault();
-    Font font = Font(typeface, 1 ,1, 1);
+    Font font = Font(typeface, 1, 1, 1);
     auto textBlob = TextBlob::MakeFromString("11", font, TextEncoding::UTF8);
     skiaCanvas->DrawTextBlob(textBlob.get(), 0, 0, paint);
     skiaCanvas->ImportSkCanvas(nullptr);

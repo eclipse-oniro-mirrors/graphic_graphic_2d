@@ -736,6 +736,37 @@ napi_value JsPath::OnRCubicTo(napi_env env, napi_callback_info info)
     return nullptr;
 }
 
+static bool ParsePolygonPoint(napi_env env, napi_value array, uint32_t index, Point& point)
+{
+    napi_value tempRunBuffer = nullptr;
+    if (napi_get_element(env, array, index, &tempRunBuffer) != napi_ok || tempRunBuffer == nullptr) {
+        ROSEN_LOGE("JsPath::OnAddPolygon element access failed at index %{public}u", index);
+        return false;
+    }
+
+    napi_value tempValue = nullptr;
+    double positionX = 0.0;
+    double positionY = 0.0;
+    if (napi_get_named_property(env, tempRunBuffer, "x", &tempValue) != napi_ok || tempValue == nullptr) {
+        ROSEN_LOGE("JsPath::OnAddPolygon get x property failed at index %{public}u", index);
+        return false;
+    }
+    bool isPositionXOk = ConvertFromJsValue(env, tempValue, positionX);
+    if (napi_get_named_property(env, tempRunBuffer, "y", &tempValue) != napi_ok || tempValue == nullptr) {
+        ROSEN_LOGE("JsPath::OnAddPolygon get y property failed at index %{public}u", index);
+        return false;
+    }
+    bool isPositionYOk = ConvertFromJsValue(env, tempValue, positionY);
+    if (!(isPositionXOk && isPositionYOk)) {
+        ROSEN_LOGE("JsPath::OnAddPolygon Argv is invalid");
+        return false;
+    }
+
+    point.SetX(positionX);
+    point.SetY(positionY);
+    return true;
+}
+
 napi_value JsPath::OnAddPolygon(napi_env env, napi_callback_info info)
 {
     if (m_path == nullptr) {
@@ -757,33 +788,10 @@ napi_value JsPath::OnAddPolygon(napi_env env, napi_callback_info info)
     std::vector<Point> points;
     points.reserve(size);
     for (uint32_t i = 0; i < size; i++) {
-        napi_value tempRunBuffer = nullptr;
-        if (napi_get_element(env, array, i, &tempRunBuffer) != napi_ok || tempRunBuffer == nullptr) {
-            ROSEN_LOGE("JsPath::OnAddPolygon element access failed at index %{public}u", i);
-            return nullptr;
-        }
-
-        napi_value tempValue = nullptr;
         Point point = Point();
-        double positionX = 0.0;
-        double positionY = 0.0;
-        if (napi_get_named_property(env, tempRunBuffer, "x", &tempValue) != napi_ok || tempValue == nullptr) {
-            ROSEN_LOGE("JsPath::OnAddPolygon get x property failed at index %{public}u", i);
+        if (!ParsePolygonPoint(env, array, i, point)) {
             return nullptr;
         }
-        bool isPositionXOk = ConvertFromJsValue(env, tempValue, positionX);
-        if (napi_get_named_property(env, tempRunBuffer, "y", &tempValue) != napi_ok || tempValue == nullptr) {
-            ROSEN_LOGE("JsPath::OnAddPolygon get y property failed at index %{public}u", i);
-            return nullptr;
-        }
-        bool isPositionYOk = ConvertFromJsValue(env, tempValue, positionY);
-        if (!(isPositionXOk && isPositionYOk)) {
-            ROSEN_LOGE("JsPath::OnAddPolygon Argv is invalid");
-            return napi_value();
-        }
-
-        point.SetX(positionX);
-        point.SetY(positionY);
         points.emplace_back(point);
     }
     if (points.size() != size) {

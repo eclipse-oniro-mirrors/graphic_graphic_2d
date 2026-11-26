@@ -708,9 +708,9 @@ OH_Drawing_ErrorCode OH_Drawing_PathApproximate(OH_Drawing_Path* cPath, float ac
 }
 
 OH_Drawing_ErrorCode OH_Drawing_PathGetPointData(
-   const OH_Drawing_Path* path, OH_Drawing_Point2D* points, uint32_t* count)
+    const OH_Drawing_Path* path, OH_Drawing_Point2D* points, uint32_t* count)
 {
-   const Path* drawingPath = CastToPath(path);
+    const Path* drawingPath = CastToPath(path);
     if (drawingPath == nullptr || count == nullptr) {
         return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
     }
@@ -731,9 +731,9 @@ OH_Drawing_ErrorCode OH_Drawing_PathGetPointData(
 }
 
 OH_Drawing_ErrorCode OH_Drawing_PathGetVerbData(
-   const OH_Drawing_Path* path, OH_Drawing_PathIteratorVerb* verbs, uint32_t* count)
+    const OH_Drawing_Path* path, OH_Drawing_PathIteratorVerb* verbs, uint32_t* count)
 {
-   const Path* drawingPath = CastToPath(path);
+    const Path* drawingPath = CastToPath(path);
     if (drawingPath == nullptr || count == nullptr) {
         return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
     }
@@ -753,9 +753,9 @@ OH_Drawing_ErrorCode OH_Drawing_PathGetVerbData(
 }
 
 OH_Drawing_ErrorCode OH_Drawing_PathGetConicWeightData(
-   const OH_Drawing_Path* path, float* conicWeights, uint32_t* count)
+    const OH_Drawing_Path* path, float* conicWeights, uint32_t* count)
 {
-   const Path* drawingPath = CastToPath(path);
+    const Path* drawingPath = CastToPath(path);
     if (drawingPath == nullptr || count == nullptr) {
         return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
     }

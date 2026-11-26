@@ -801,7 +801,7 @@ OH_Drawing_ErrorCode OH_Drawing_PathApproximate(OH_Drawing_Path* path, float acc
  * @since 26.0.0
  */
 OH_Drawing_ErrorCode OH_Drawing_PathGetPointData(
-   const OH_Drawing_Path* path, OH_Drawing_Point2D* points, uint32_t* count);
+    const OH_Drawing_Path* path, OH_Drawing_Point2D* points, uint32_t* count);
 
 /**
  * @brief Get path verb data.
@@ -815,7 +815,7 @@ OH_Drawing_ErrorCode OH_Drawing_PathGetPointData(
  * @since 26.0.0
  */
 OH_Drawing_ErrorCode OH_Drawing_PathGetVerbData(
-   const OH_Drawing_Path* path, OH_Drawing_PathIteratorVerb* verbs, uint32_t* count);
+    const OH_Drawing_Path* path, OH_Drawing_PathIteratorVerb* verbs, uint32_t* count);
 
 /**
  * @brief Get path conic weight data.
@@ -829,7 +829,7 @@ OH_Drawing_ErrorCode OH_Drawing_PathGetVerbData(
  * @since 26.0.0
  */
 OH_Drawing_ErrorCode OH_Drawing_PathGetConicWeightData(
-   const OH_Drawing_Path* path, float* conicWeights, uint32_t* count);
+    const OH_Drawing_Path* path, float* conicWeights, uint32_t* count);
 
 /**
  * @brief Performs interpolation between the current path and another path based on a given weight, and stores the
