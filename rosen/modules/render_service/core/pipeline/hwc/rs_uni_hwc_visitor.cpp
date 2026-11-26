@@ -123,8 +123,8 @@ void RSUniHwcVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absR
         dstRect = dstRect.IntersectRect(clipRect);
     }
     const auto& screenProperty = uniRenderVisitor_.curScreenNode_->GetScreenProperty();
-    // Scale dstRect logical->physical only for hardware top surfaces under HDI ROG; hard-cursor surfaces are excluded.
-    if (node.IsHardwareEnabledTopSurface() && !node.GetHardCursorStatus() && screenProperty.GetHdiRogEnable()) {
+    // cursor needs logical->physical scaling unless HDI ROG already handles hard cursor.
+    if (node.IsHardwareEnabledTopSurface() && !(node.GetHardCursorStatus() && screenProperty.GetHdiRogEnable())) {
         auto widthRatio = uniRenderVisitor_.curScreenNode_->GetScreenInfo().GetRogWidthRatio();
         auto heightRatio = uniRenderVisitor_.curScreenNode_->GetScreenInfo().GetRogHeightRatio();
         dstRect.left_ = static_cast<int32_t>(std::floor(dstRect.left_ * widthRatio));
