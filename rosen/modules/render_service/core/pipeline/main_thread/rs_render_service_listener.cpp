@@ -246,13 +246,8 @@ void RSRenderServiceListener::OnCleanCache(uint32_t *bufSeqNum)
             node->OnCleanCache(tmpSet);
             handler->EnqueueAndFlushGPUCacheCleanup(tmpSet);
         });
-<<<<<<< HEAD
     RS_TRACE_NAME_FMT("RSRenderServiceListener::OnCleanCache cleanCacheBufSeqNum : %d, nodeId : %" PRId64,
                       bufSeqNumValue, nodeId_);
-=======
-    RS_TRACE_NAME_FMT("RSRenderServiceListener::OnCleanCache cleanCacheBufSeqNum:%d nodeId:%" PRIu64,
-                      cleanCacheBufSeqNum_, nodeId_);
->>>>>>> origin/master
     CleanLayerBufferCache();
 }
 
