@@ -26,7 +26,26 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
-class RSComposerToRenderConnectionTest : public Test {};
+class RSComposerToRenderConnectionTest : public Test {
+public:
+    static void SetUpTestCase();
+    static void TearDownTestCase();
+    void SetUp() override;
+    void TearDown() override;
+};
+
+void RSComposerToRenderConnectionTest::SetUpTestCase()
+{
+    RSUniRenderThread::Instance().composerClientManager_ = std::make_shared<RSComposerClientManager>();
+}
+
+void RSComposerToRenderConnectionTest::TearDownTestCase()
+{
+    RSUniRenderThread::Instance().composerClientManager_ = nullptr;
+}
+
+void RSComposerToRenderConnectionTest::SetUp() {}
+void RSComposerToRenderConnectionTest::TearDown() {}
 
 /**
  * Function: Connection_ReleaseLayerBuffers_ComposerNull
@@ -56,7 +75,6 @@ HWTEST_F(RSComposerToRenderConnectionTest, Connection_ReleaseLayerBuffers_Normal
     RSComposerToRenderConnection conn;
     uint64_t screenId = 102u;
     auto client = RSComposerClient::Create(nullptr, nullptr);
-    RSUniRenderThread::Instance().composerClientManager_ = std::make_shared<RSComposerClientManager>();
     RSUniRenderThread::Instance().GetComposerClientManager()->AddComposerClient(screenId, client);
 
     ReleaseLayerBuffersInfo info;
