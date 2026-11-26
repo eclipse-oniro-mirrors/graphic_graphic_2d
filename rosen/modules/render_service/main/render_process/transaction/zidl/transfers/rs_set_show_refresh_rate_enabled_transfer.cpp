@@ -16,7 +16,7 @@
 #include "rs_set_show_refresh_rate_enabled_transfer.h"
 
 #include "core/rs_render_pipeline_agent.h"
-#include "ipc_persistence/rs_ipc_persistence_manager.h"
+#include "rs_ipc_persistence_manager.h"
 
 #include "platform/common/rs_log.h"
 
@@ -102,10 +102,15 @@ bool SetShowRefreshRateEnabledTransfer::Apply(const sptr<RSRenderPipelineAgent>&
     return true;
 }
 
+int32_t SetShowRefreshRateEnabledTransfer::ExtractResult() const
+{
+    return ERR_OK;
+}
+
 // Explicit ODR-use: guarantee factory registration at static init time, independent of
 // whether any SetShowRefreshRateEnabledTransfer is constructed before CreateTransferByTypeId.
 [[maybe_unused]] const auto* g_setShowRefreshRateRegistrar =
-    &TransferRegistrationChecker<SetShowRefreshRateEnabledTransfer>::registrar;
+    &Detail::TransferRegistrationChecker<SetShowRefreshRateEnabledTransfer>::registrar;
 
 } // namespace Rosen
 } // namespace OHOS

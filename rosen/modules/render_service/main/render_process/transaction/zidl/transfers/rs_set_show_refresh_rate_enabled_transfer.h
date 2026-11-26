@@ -65,11 +65,8 @@ public:
     FanoutPolicy GetFanoutPolicy() const override { return FanoutPolicy::ANY_SUCCESS; }
 
     bool Apply(const sptr<RSRenderPipelineAgent>& agent) override;
+    int32_t ExtractResult() const override;
     bool ProxyMarshalling(Parcel& parcel) const override;
-    std::shared_ptr<RSIpcTransferBase> CopyTransfer() const override
-    {
-        return std::make_shared<SetShowRefreshRateEnabledTransfer>(inputData_);
-    }
     void ClearPid(pid_t) override {}
 
     SetShowRefreshRateEnabledTransfer(const SetShowRefreshRateEnabledTransfer&) = delete;
@@ -82,7 +79,7 @@ protected:
 
 private:
     static constexpr bool registered_ = true;
-    friend struct TransferRegistrationChecker<SetShowRefreshRateEnabledTransfer>;
+    friend struct Detail::TransferRegistrationChecker<SetShowRefreshRateEnabledTransfer>;
     std::shared_ptr<SetShowRefreshRateEnabledInput> inputData_;
 };
 
