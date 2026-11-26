@@ -80,9 +80,9 @@ void AdapterFontCollectionTest::SetUp()
     FontCollection::RegisterLoadFontStartCallback(nullptr);
     auto fc = std::make_shared<txt::FontCollection>();
     ASSERT_NE(fc, nullptr);
-    sktFontCollection_ = fc->CreateSktFontCollection();
-    fontCollection_ = OHOS::Rosen::FontCollection::From(std::move(fc));
+    fontCollection_ = OHOS::Rosen::FontCollection::From(fc);
     ASSERT_NE(fontCollection_, nullptr);
+    sktFontCollection_ = fc->CreateSktFontCollection();
     fontMgr_ = fontCollection_->GetFontMgr();
     ASSERT_NE(fontMgr_, nullptr);
 }
