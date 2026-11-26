@@ -624,6 +624,7 @@ void HgmFrameRateManager::DVSyncTaskProcessor(int64_t delayTime, uint64_t target
     int64_t controllerRate)
 {
     bool needUpdate = isNeedUpdateAppOffset_;
+    // Change data is passed by value and moved into the async task to avoid extra copies.
     RSTaskMessage::RSTask task =
         [this, targetTime, controllerRate,
             appChangeData = std::move(appChangeData),

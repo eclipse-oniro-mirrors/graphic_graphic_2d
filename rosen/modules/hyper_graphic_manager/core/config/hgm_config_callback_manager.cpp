@@ -268,6 +268,7 @@ void HgmConfigCallbackManager::SyncXComponentExpectedFrameRateCallback(
     if (auto iter = xcomponentExpectedFrameRate_.find(pid); iter != xcomponentExpectedFrameRate_.end()) {
         auto& xcomponentIdFps = iter->second;
         auto frameRateIter = xcomponentIdFps.find(xcomponentId);
+
         if (frameRateIter != xcomponentIdFps.end() && frameRateIter->second == expectedFrameRate) {
             return;
         }
