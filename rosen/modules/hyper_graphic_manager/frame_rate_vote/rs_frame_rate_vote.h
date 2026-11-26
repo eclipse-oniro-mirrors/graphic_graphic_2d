@@ -19,9 +19,9 @@
 #include <iconsumer_surface.h>
 #include <array>
 
-#include "rs_video_frame_rate_vote.h"
 #include "ffrt.h"
 #include "hgm_frame_rate_manager.h"
+#include "rs_video_frame_rate_vote.h"
 #include "singleton.h"
 
 namespace OHOS {
