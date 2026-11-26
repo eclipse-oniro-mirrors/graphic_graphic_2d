@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 #include "limit_number.h"
 #include "parameters.h"
+#include "params/rs_screen_render_params.h"
 
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "feature/hyper_graphic_manager/hgm_render_context.h"
@@ -2850,6 +2851,7 @@ HWTEST_F(RSBaseRenderUtilTest, CreateYuvToRGBABitMap_PaddingHeight001, TestSize.
     bool result = RSBaseRenderUtil::CreateYuvToRGBABitMap(buffer, newBuffer, bitmap);
     EXPECT_TRUE(result);
 }
+
 /**
  * @tc.name: GetFrameBufferRequestConfig_DeviceGpuSampling
  * @tc.desc: Test GetFrameBufferRequestConfig when SamplingMode is DEVICE_GPU, usePhysicalSize should be true
@@ -2873,7 +2875,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetFrameBufferRequestConfig_DeviceGpuSampling, Te
 
     GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
     GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888;
-    BufferRequestConfig config =
+    BufferRequestConfig config = 
         RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, false, colorGamut, pixelFormat);
 
     EXPECT_EQ(config.width, static_cast<int32_t>(PHY_WIDTH));
@@ -2903,7 +2905,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetFrameBufferRequestConfig_SamplingOn, TestSize.
 
     GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
     GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888;
-    BufferRequestConfig config =
+    BufferRequestConfig config = 
         RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, false, colorGamut, pixelFormat);
 
     EXPECT_EQ(config.width, static_cast<int32_t>(PHY_WIDTH));
@@ -2933,7 +2935,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetFrameBufferRequestConfig_NoPhysicalSize, TestS
 
     GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
     GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888;
-    BufferRequestConfig config =
+    BufferRequestConfig config = 
         RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, false, colorGamut, pixelFormat);
 
     EXPECT_EQ(config.width, static_cast<int32_t>(RENDER_WIDTH));
