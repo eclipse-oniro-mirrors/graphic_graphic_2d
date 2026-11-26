@@ -353,17 +353,17 @@ void RSUniHwcPrevalidateUtil::ComputeSurfaceSrcRect(RequestLayerInfo& info,
         float scaleX = static_cast<float>(crop.w) / bufferWidth;
         float scaleY = static_cast<float>(crop.h) / bufferHeight;
         info.srcRect = {
-            static_cast<uint32_t>(std::max(0.f, std::ceil(src.left_ * scaleX))),
-            static_cast<uint32_t>(std::max(0.f, std::ceil(src.top_ * scaleY))),
-            static_cast<uint32_t>(std::max(0.f, std::floor(src.width_ * scaleX))),
-            static_cast<uint32_t>(std::max(0.f, std::floor(src.height_ * scaleY)))
+            static_cast<uint32_t>(std::ceil(src.left_ * scaleX)),
+            static_cast<uint32_t>(std::ceil(src.top_ * scaleY)),
+            static_cast<uint32_t>(std::floor(src.width_ * scaleX)),
+            static_cast<uint32_t>(std::floor(src.height_ * scaleY))
         };
     } else {
         info.srcRect = {
-            static_cast<uint32_t>(std::max(0, src.left_)),
-            static_cast<uint32_t>(std::max(0, src.top_)),
-            static_cast<uint32_t>(std::max(0, src.width_)),
-            static_cast<uint32_t>(std::max(0, src.height_))
+            static_cast<uint32_t>(src.left_),
+            static_cast<uint32_t>(src.top_),
+            static_cast<uint32_t>(src.width_),
+            static_cast<uint32_t>(src.height_)
         };
     }
 }
@@ -374,10 +374,10 @@ void RSUniHwcPrevalidateUtil::ComputeSurfaceDstRect(RequestLayerInfo& info,
     auto dst = node->GetDstRect();
     if (!screenProperty.IsRogResolution() || screenProperty.GetHdiRogEnable() || node->IsHardwareEnabledTopSurface()) {
         info.dstRect = {
-            static_cast<uint32_t>(std::max(0, dst.left_)),
-            static_cast<uint32_t>(std::max(0, dst.top_)),
-            static_cast<uint32_t>(std::max(0, dst.width_)),
-            static_cast<uint32_t>(std::max(0, dst.height_))
+            static_cast<uint32_t>(dst.left_),
+            static_cast<uint32_t>(dst.top_),
+            static_cast<uint32_t>(dst.width_),
+            static_cast<uint32_t>(dst.height_)
         };
     } else {
         auto rogWidthRatio = screenProperty.GetRogWidthRatio();
