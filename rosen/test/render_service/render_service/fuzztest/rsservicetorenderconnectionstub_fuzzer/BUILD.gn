@@ -25,7 +25,7 @@ ohos_fuzztest("RSServiceToRenderConnectionStubFuzzTest") {
     cfi_cross_dso = true
     debug = true
   }
-  fuzz_config_file = "$graphic_2d_root/rosen/test/render_service/render_service/fuzztest/rsservice2renderconnectionstub_fuzzer"
+  fuzz_config_file = "$graphic_2d_root/rosen/test/render_service/render_service/fuzztest/rsservicetorenderconnectionstub_fuzzer"
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service/main/render_process/transaction",
     "$graphic_2d_root/rosen/modules/render_service/main/render_process/transaction/ipc_persistence",
@@ -74,7 +74,7 @@ ohos_fuzztest("RSServiceToRenderConnectionStubFuzzTest") {
     "-Dprotected=public",
   ]
 
-  sources = [ "rsservice2renderconnectionstub_fuzzer.cpp" ]
+  sources = [ "rsservicetorenderconnectionstub_fuzzer.cpp" ]
 
   external_deps = [
     "c_utils:utils",
