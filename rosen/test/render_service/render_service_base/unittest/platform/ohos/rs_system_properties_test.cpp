@@ -1171,7 +1171,7 @@ HWTEST_F(RSSystemPropertiesTest, GetSupportScreenFreezeEnabledTest, TestSize.Lev
  * @tc.name: GetScaleImageAsyncEnabled
  * @tc.desc: GetScaleImageAsyncEnabledTest
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issuesICQ74B
  */
 HWTEST_F(RSSystemPropertiesTest, GetScaleImageAsyncEnabledTest, TestSize.Level1)
 {
@@ -1185,7 +1185,7 @@ HWTEST_F(RSSystemPropertiesTest, GetScaleImageAsyncEnabledTest, TestSize.Level1)
  * @tc.name: GetMemoryWatermarkEnabled
  * @tc.desc: GetMemoryWatermarkEnabledTest
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issuesICQ74B
  */
 HWTEST_F(RSSystemPropertiesTest, GetMemoryWatermarkEnabledTest, TestSize.Level1)
 {

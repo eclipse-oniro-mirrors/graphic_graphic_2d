@@ -2008,9 +2008,9 @@ HWTEST_F(RSUniRenderUtilTest, GetMatrixByDegree001, TestSize.Level1)
 
 /**
  * @tc.name: ProcessSingleSelfDrawingNode001
-* @tc.desc: Test ProcessSingleSelfDrawingNode with empty vector
+ * @tc.desc: test ProcessSingleSelfDrawingNode with empty vector
  * @tc.type: FUNC
-* @tc.require: issueI22872
+ * @tc.require: #ICGE8J
  */
 HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode001, TestSize.Level1)
 {
@@ -2042,9 +2042,9 @@ HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode001, TestSize.Level1)
 
 /**
  * @tc.name: ProcessSingleSelfDrawingNode002
-* @tc.desc: Test ProcessSingleSelfDrawingNode with invalid surfacetype
+ * @tc.desc: test ProcessSingleSelfDrawingNode with invalid surfacetype
  * @tc.type: FUNC
-* @tc.require: issueI22872
+ * @tc.require: #ICGE8J
  */
 HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode002, TestSize.Level1)
 {
@@ -2081,9 +2081,9 @@ HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode002, TestSize.Level1)
 
 /**
  * @tc.name: ProcessSingleSelfDrawingNode003
-* @tc.desc: Test ProcessSingleSelfDrawingNode with valid surfacetype
+ * @tc.desc: test ProcessSingleSelfDrawingNode with valid surfacetype
  * @tc.type: FUNC
-* @tc.require: issueI22872
+ * @tc.require: #ICGE8J
  */
 HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode003, TestSize.Level1)
 {
@@ -2171,9 +2171,9 @@ HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode004, TestSize.Level1)
 
 /**
  * @tc.name: DrawSingleSelfDrawingNode001
-* @tc.desc: Test DrawSingleSelfDrawingNode with nullptr surfaceParams
+ * @tc.desc: test DrawSingleSelfDrawingNode with nullptr surfaceParams
  * @tc.type: FUNC
-* @tc.require: issueI22872
+ * @tc.require: #ICGE8J
  */
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode001, TestSize.Level1)
 {
@@ -2235,10 +2235,10 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode002, TestSize.Level1)
 }
 
 /**
- * @tc.name: DrawSingleSelfDrawingNode003
-* @tc.desc: Test DrawSingleSelfDrawingNode
+ * @tc.name: DrawSingleSelfDrawingNode002
+ * @tc.desc: test DrawSingleSelfDrawingNode with special layer
  * @tc.type: FUNC
-* @tc.require: issueI22872
+ * @tc.require: #ICGE8J
  */
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode003, TestSize.Level1)
 {
@@ -2275,9 +2275,9 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode003, TestSize.Level1)
 
 /**
  * @tc.name: DrawSingleSelfDrawingNode004
-* @tc.desc: Test DrawSingleSelfDrawingNode with whitelist
+ * @tc.desc: test DrawSingleSelfDrawingNode with whitelist
  * @tc.type: FUNC
-* @tc.require: issueI22872
+ * @tc.require: #ICGE8J
  */
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode004, TestSize.Level1)
 {
@@ -2327,9 +2327,9 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode004, TestSize.Level1)
 
 /**
  * @tc.name: DrawSingleSelfDrawingNode005
-* @tc.desc: Test DrawSingleSelfDrawingNode with renderEngine is nullptr
+ * @tc.desc: test DrawSingleSelfDrawingNode with renderEngine is nullptr
  * @tc.type: FUNC
-* @tc.require: issueI22872
+ * @tc.require: #ICGE8J
  */
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode005, TestSize.Level1)
 {
@@ -2422,7 +2422,7 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode006, TestSize.Level1)
 
 /**
  * @tc.name: DrawSingleSelfDrawingNode007
-* @tc.desc: Test DrawSingleSelfDrawingNode with hardwareEnabled and hwcEnabledBySolidLayer
+ * @tc.desc: Test DrawSingleSelfDrawingNode with hardware and hwcEnabledBySolidLayer
  * @tc.type: FUNC
  * @tc.require: issueI22872
  */

@@ -515,8 +515,8 @@ HWTEST_F(RSSurfaceRenderParamsTest, LayerLinearMatrixTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetSourceDisplayRenderNodeDrawable
- * @tc.desc: Test function GetSourceDisplayRenderNodeDrawable
+ * @tc.name: GetSourceScreenRenderNodeDrawable
+ * @tc.desc: Test function GetSourceScreenRenderNodeDrawable
  * @tc.type:FUNC
  * @tc.require: issueIBKU7U
  */
@@ -690,7 +690,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetIsParticipateInOcclusionTest, TestSize.Le
 }
 /**
  * @tc.name: SwapRelatedRenderParamsTest
- * @tc.desc: Test SwapRelatedRenderParams swaps occludedByFilterCache, skipDraw, m
+ * @tc.desc: Test SwapRelatedRenderParams swaps occludedByFilterCache, skipDraw, matrix and shouldPaint
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -964,7 +964,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetRebuildingStateOnSync001, TestSize.Level1
  * @tc.name: SetUifirstDisabledByAnimationOverlap001
  * @tc.desc: Test SetUifirstDisabledByAnimationOverlap with needSync behavior
  * @tc.type: FUNC
- * @tc.require: issueAnimationOverlap
+ * @tc.require: issue26284
  */
 HWTEST_F(RSSurfaceRenderParamsTest, SetUifirstDisabledByAnimationOverlap001, TestSize.Level1)
 {
@@ -985,7 +985,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetUifirstDisabledByAnimationOverlap001, Tes
  * @tc.name: SetUifirstDisabledByAnimationOverlapOnSync001
  * @tc.desc: Test OnSync copies uifirstDisabledByAnimationOverlap from staging to target
  * @tc.type: FUNC
- * @tc.require: issueAnimationOverlap
+ * @tc.require: issue26284
  */
 HWTEST_F(RSSurfaceRenderParamsTest, SetUifirstDisabledByAnimationOverlapOnSync001, TestSize.Level1)
 {
@@ -999,8 +999,8 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetUifirstDisabledByAnimationOverlapOnSync00
 }
 
 /**
- * @tc.name: SetSolidLayerEnabled_001
- * @tc.desc: 设 true 后 GetSolidLayerEnabled 返回 true
+ * @tc.name: SetCrossNodeLayerConversionMatrix001
+ * @tc.desc: Test the layer conversion is kept apart from the skip display conversion and is synced to the target
  * @tc.type: FUNC
  * @tc.require:
  */

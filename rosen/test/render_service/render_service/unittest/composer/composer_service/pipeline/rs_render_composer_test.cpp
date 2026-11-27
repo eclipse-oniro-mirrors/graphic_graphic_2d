@@ -9680,8 +9680,6 @@ HWTEST_F(RsRenderComposerTest, CommitTunnelLayerBySurfaceId001, TestSize.Level1)
     static std::vector<std::string> emptyParamKeys;
     EXPECT_CALL(*hdiDeviceMock_, GetSupportedLayerPerFrameParameterKey())
         .WillRepeatedly(testing::ReturnRef(emptyParamKeys));
-    // SetRSLayers before SetComposerToRenderConnection so that any tunnel fallback callback
-    // during layer creation is silently dropped (composerToRenderConnection_ is still nullptr).
     output->SetRSLayers({ rsLayer });
     sptr<RSComposerToRenderConnection> connection = new RSComposerToRenderConnection();
     struct CallbackResult {

@@ -53,7 +53,7 @@ public:
  * CaseDescription: 1. create RCD layer and Zorder command
  *                  2. call UpdateRSLayerCmd
  *                  3. expect GetZorder equals set value
- *                   Cover branch: command != nullptr (line 46 false), rsRenderLayer != nullptr (line 54 false),
+ *                   cover branch: command != nullptr (line 46 false), rsRenderLayer != nullptr (line 54 false),
  *                               it != cmdHandlers_.end() (line 58 true)
  */
 HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_Zorder_Applied, TestSize.Level1)
@@ -73,7 +73,7 @@ HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_Zorder_Applied, TestSize.Le
  * CaseDescription: 1. create RCD layer
  *                  2. call UpdateRSLayerCmd with nullptr
  *                  3. expect no crash
- *                   Cover branch: command == nullptr (line 46 true) -> return
+ *                   cover branch: command == nullptr (line 46 true) -> return
  */
 HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_NullCommand_NoCrash, TestSize.Level1)
 {
@@ -91,7 +91,7 @@ HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_NullCommand_NoCrash, TestSi
  * CaseDescription: 1. create RCD layer and a command with INVALID type
  *                  2. call UpdateRSLayerCmd
  *                  3. expect no crash and no property change
- *                   Cover branch: command != nullptr (line 46 false), rsRenderLayer != nullptr (line 54 false),
+ *                   cover branch: command != nullptr (line 46 false), rsRenderLayer != nullptr (line 54 false),
  *                               it == cmdHandlers_.end() (line 58 false) -> else branch
  */
 HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_InvalidType_NoCrash, TestSize.Level1)

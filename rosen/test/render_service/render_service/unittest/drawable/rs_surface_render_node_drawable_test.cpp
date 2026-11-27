@@ -963,7 +963,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawUifirstContentChildrenTest, TestSi
  * @tc.name: SyncUifirstDrawCmdsTest
  * @tc.desc: Test SyncUifirstDrawCmds
  * @tc.type: FUNC
- * @tc.require: #IB1MHP
+ * @tc.require: #issueI9UTMA
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, SyncUifirstDrawCmdsTest, TestSize.Level1)
 {
@@ -1092,7 +1092,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest002, TestSiz
     surfaceDrawable_->curCanvas_->SetMatrix(matrix);
     ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
 
-    // case2: offscreenSurface_ != nullptr, maxRenderSize_ = 100;
+    // case2: offscreenSurface_ != nullptr, maxRenderSize_ = 100
     surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
     surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
     surfaceDrawable_->offscreenRotationInfo_->offscreenSurface_ = surface->MakeSurface(100, 100);
@@ -1101,7 +1101,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest002, TestSiz
     surfaceDrawable_->curCanvas_->SetMatrix(matrix);
     ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
 
-    // case3: offscreenSurface_ = nullptr, maxRenderSize_ = 0;
+    // case3: offscreenSurface_ = nullptr, maxRenderSize_ = 0
     surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
     surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
     surfaceDrawable_->offscreenRotationInfo_->offscreenSurface_ = surface->MakeSurface(100, 100);
@@ -1619,7 +1619,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawSelfDrawingNodeBufferTest, TestSiz
  * @tc.name: DealWithSelfDrawingNodeBuffer
  * @tc.desc: Test DealWithSelfDrawingNodeBuffer
  * @tc.type: FUNC
- * @tc.require: issueIAJM4Z
+ * @tc.require: issueIAOJHQ
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithSelfDrawingNodeBufferTest001, TestSize.Level1)
 {
@@ -1666,7 +1666,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithSelfDrawingNodeBufferTest001, 
  * @tc.name: DealWithSelfDrawingNodeBuffer
  * @tc.desc: Test DealWithSelfDrawingNodeBuffer
  * @tc.type: FUNC
- * @tc.require: issueIAEDYI
+ * @tc.require: issueIAOJHQ
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithSelfDrawingNodeBufferTest002, TestSize.Level1)
 {
@@ -1710,7 +1710,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithSelfDrawingNodeBufferTest002, 
  * @tc.name: DrawSelfDrawingNodeBuffer
  * @tc.desc: Test DrawSelfDrawingNodeBuffer
  * @tc.type: FUNC
- * @tc.require: issueIAEDYI
+ * @tc.require: issueIAOJHQ
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawSelfDrawingNodeBufferTest001, TestSize.Level1)
 {
@@ -1899,7 +1899,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckDrawAndCacheWindowContentTest, Te
  * @tc.name: CheckDrawAndCacheWindowContentClearCacheTest
  * @tc.desc: Test CheckDrawAndCacheWindowContent clears RSDrawWindowCache for cross node
  * @tc.type: FUNC
- * @tc.require: issue26514
+ * @tc.require: issueB2YOV
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckDrawAndCacheWindowContentClearCacheTest, TestSize.Level1)
 {
@@ -2188,9 +2188,9 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawMagnificationRegionTest, TestSize.
 #ifdef SUBTREE_PARALLEL_ENABLE
 /**
  * @tc.name: OnDraw004
- * @tc.desc: Test OnDraw for subtree
+ * @tc.desc: Test OnDraw
  * @tc.type: FUNC
- * @tc.require: #I9NVOG
+ * @tc.require: issueIAEDYI
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw004, TestSize.Level1)
 {
@@ -2343,7 +2343,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw008, TestSize.Level1)
  * @tc.name: CalculateVisibleDirtyRegion002
  * @tc.desc: Test CalculateVisibleDirtyRegion
  * @tc.type: FUNC
- * @tc.require: #IA940V
+ * @tc.require: issueIAEDYI
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, CalculateVisibleDirtyRegion002, TestSize.Level1)
 {
@@ -2438,6 +2438,12 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, QuickDrawTest, TestSize.Level1)
     surfaceDrawable_->QuickGetDrawState(canvas_.get(), region, params);
 }
 
+/**
+ * @tc.name: UpdateSurfaceDirtyRegion
+ * @tc.desc: Test UpdateSurfaceDirtyRegion
+ * @tc.type: FUNC
+ * @tc.require: issueIAEDYI
+ */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, UpdateSurfaceDirtyRegionTest, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
@@ -2462,7 +2468,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, UpdateSurfaceDirtyRegionTest, TestSize
  * @tc.name: GetSurfaceDrawRegion
  * @tc.desc: Test GetSurfaceDrawRegion
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueIAEDYI
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetSurfaceDrawRegionTest, TestSize.Level1)
 {
@@ -2475,7 +2481,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, GetSurfaceDrawRegionTest, TestSize.Lev
  * @tc.name: DrawBufferForRotationFixed
  * @tc.desc: Test DrawBufferForRotationFixed
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueIAEDYI
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawBufferForRotationFixedTest, TestSize.Level1)
 {
@@ -3793,7 +3799,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, FinishOffscreenRenderHDR002, TestSize.
     RotateOffScreenParam::SetRotateOffScreenDowngradeEnable(false);
 }
 
-/*
+/**
  * @tc.name: DrawSelfDrawingNodeBuffer_GetRenderEngineByTid_True
  * @tc.desc: Test DrawSelfDrawingNodeBuffer when GetRenderEngineByTid returns true
  * @tc.type: FUNC

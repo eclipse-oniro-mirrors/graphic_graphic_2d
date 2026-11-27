@@ -842,9 +842,9 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, CheckParticipateInOcclusion002, TestSize.Le
 
 /**
  * @tc.name: CheckParticipateInOcclusion003
- * @tc.desc: test results of CheckParticipateInOcclusion
+ * @tc.desc: test all results of CheckParticipateInOcclusion
  * @tc.type: FUNC
- * @tc.require: issueIA4VTS
+ * @tc.require: issue20843
  */
 HWTEST_F(RSSurfaceRenderNodeTwoTest, CheckParticipateInOcclusion003, TestSize.Level1)
 {

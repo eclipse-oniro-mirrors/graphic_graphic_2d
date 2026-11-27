@@ -615,28 +615,23 @@ HWTEST_F(RSRenderParamsTest, SetNodeGroupHasChildInBlacklistTest, TestSize.Level
     RSRenderParams params(id);
     auto renderParams = static_cast<RSRenderParams*>(target.get());
 
-    // Test initial state
     EXPECT_FALSE(renderParams->NodeGroupHasChildInBlacklist());
     ASSERT_EQ(renderParams->renderGroupCache_, nullptr);
 
-    // Test setting to true
     renderParams->SetNodeGroupHasChildInBlacklist(true);
     EXPECT_TRUE(renderParams->NodeGroupHasChildInBlacklist());
     ASSERT_NE(renderParams->renderGroupCache_, nullptr);
     EXPECT_TRUE(renderParams->needSync_);
 
-    // Test setting to false
     renderParams->SetNodeGroupHasChildInBlacklist(false);
     EXPECT_FALSE(renderParams->NodeGroupHasChildInBlacklist());
     EXPECT_TRUE(renderParams->needSync_);
 
-    // Test setting same value (should not need sync)
     renderParams->needSync_ = false;
     renderParams->SetNodeGroupHasChildInBlacklist(false);
     EXPECT_FALSE(renderParams->NodeGroupHasChildInBlacklist());
     EXPECT_FALSE(renderParams->needSync_);
 
-    // Test setting to true again
     renderParams->SetNodeGroupHasChildInBlacklist(true);
     EXPECT_TRUE(renderParams->NodeGroupHasChildInBlacklist());
     EXPECT_TRUE(renderParams->needSync_);

@@ -1044,7 +1044,6 @@ HWTEST_F(RsRenderComposerAgentTest, SetVsyncManagerCallbacks_CallbacksExecute, T
     auto agent = std::make_shared<RSRenderComposerAgent>(rsRenderComposer_);
     ASSERT_NE(agent->rsRenderComposer_, nullptr);
 
-    // Create callbacks that track execution
     std::atomic<bool> hardwareTaskNumCalled { false };
     std::atomic<bool> taskEndWithTimeCalled { false };
     std::atomic<bool> realTimeOffsetCalled { false };
@@ -1056,12 +1055,8 @@ HWTEST_F(RsRenderComposerAgentTest, SetVsyncManagerCallbacks_CallbacksExecute, T
         return 0;
     };
 
-    // Register callbacks
     agent->SetVsyncManagerCallbacks(setHardwareTaskNumCb, setTaskEndWithTimeCb, getRealTimeOffsetOfDvsyncCb);
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-    // Verify function completed without crash
-    // Note: Callbacks may not be executed immediately as they are forwarded to composer
     EXPECT_NE(agent->rsRenderComposer_, nullptr);
 }
 
@@ -1108,18 +1103,13 @@ HWTEST_F(RsRenderComposerAgentTest, SetVsyncManagerCallbacks_NullCallbacks, Test
     auto agent = std::make_shared<RSRenderComposerAgent>(rsRenderComposer_);
     ASSERT_NE(agent->rsRenderComposer_, nullptr);
 
-    // Create null callbacks
     SetHardwareTaskNumCallback nullSetHardwareTaskNumCb = nullptr;
     SetTaskEndWithTimeCallback nullSetTaskEndWithTimeCb = nullptr;
     GetRealTimeOffsetOfDvsyncCallback nullGetRealTimeOffsetOfDvsyncCb = nullptr;
 
-    // Call SetVsyncManagerCallbacks with null callbacks
-    // This should not crash as callbacks are optional
     agent->SetVsyncManagerCallbacks(
         nullSetHardwareTaskNumCb, nullSetTaskEndWithTimeCb, nullGetRealTimeOffsetOfDvsyncCb);
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-    // Verify no crash and composer is still valid
     EXPECT_NE(agent->rsRenderComposer_, nullptr);
 }
 

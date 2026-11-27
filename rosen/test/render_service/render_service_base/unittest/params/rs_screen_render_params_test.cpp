@@ -284,7 +284,7 @@ HWTEST_F(RSScreenRenderParamsTest, SetForceFreeze, TestSize.Level1)
  * @tc.name: SetHasMirroredScreenChanged
  * @tc.desc: test result of SetHasMirroredScreenChanged
  * @tc.type: FUNC
- * @tc.require: issue
+ * @tc.require: issue20471
  */
 HWTEST_F(RSScreenRenderParamsTest, SetHasMirroredScreenChanged, TestSize.Level1)
 {
