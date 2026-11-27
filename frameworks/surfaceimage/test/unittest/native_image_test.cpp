@@ -2012,7 +2012,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_AcquireLatestNativeWindowBuffer002, Fun
 }
 
 /*
-* Function: OH_NativeImage_IsReleased
+ * Function: OH_NativeImage_IsReleased
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
@@ -2029,7 +2029,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_IsReleased001, Function | MediumTest | 
 }
 
 /*
-* Function: OH_NativeImage_IsReleased
+ * Function: OH_NativeImage_IsReleased
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
@@ -2052,7 +2052,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_IsReleased002, Function | MediumTest | 
 }
 
 /*
-* Function: OH_NativeImage_IsReleased
+ * Function: OH_NativeImage_IsReleased
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
@@ -2121,7 +2121,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_IsReleased003, Function | MediumTest | 
 }
 
 /*
-* Function: OH_NativeImage_Release
+ * Function: OH_NativeImage_Release
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
@@ -2137,7 +2137,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_Release001, Function | MediumTest | Lev
 }
 
 /*
-* Function: OH_NativeImage_Release
+ * Function: OH_NativeImage_Release
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
