@@ -67,6 +67,7 @@ void RSRealtimeRefreshRateManager::SetShowRefreshRateEnabled(bool enabled, int32
         type >= static_cast<int32_t>(RealtimeRefreshRateType::END)) {
         return;
     }
+
     std::unique_lock<std::mutex> lock(realtimeRateMutex_);
     RealtimeRefreshRateType enumType = static_cast<RealtimeRefreshRateType>(type);
     if (enumType == RealtimeRefreshRateType::SHOW) {

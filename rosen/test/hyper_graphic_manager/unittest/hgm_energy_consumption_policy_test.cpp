@@ -1070,18 +1070,19 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallPid, TestSize.Level0)
     auto savedVideoCallPid = policy.videoCallPid_.load();
     auto savedIsVideoCall = policy.isVideoCall_.load();
     auto savedIsSyncVideoCallToRp = policy.isSyncVideoCallToRp_.load();
- 
+
     policy.videoCallPid_.store(12345);
     policy.isVideoCall_.store(true);
     pid_t result = policy.GetVideoCallPid();
- 
+
     ASSERT_TRUE(policy.isSyncVideoCallToRp_.load());
     ASSERT_EQ(result, 12345);
- 
+
     policy.videoCallPid_.store(savedVideoCallPid);
     policy.isVideoCall_.store(savedIsVideoCall);
     policy.isSyncVideoCallToRp_.store(savedIsSyncVideoCallToRp);
 }
+
 /**
  * @tc.name: SetCurrentPkgNameTest
  * @tc.desc: test results of SetCurrentPkgNameTest

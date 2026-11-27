@@ -509,6 +509,38 @@ HWTEST_F(HgmFrameRateMgrTest, HgmConfigCallbackManagerTest005, Function | SmallT
 }
 
 /**
+ * @tc.name: RegisterChangeCallback_ExceedPidLimit
+ * @tc.desc: Verify RegisterChangeCallback_ExceedPidLimit rejects pid when reaching limit
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmFrameRateMgrTest, RegisterChangeCallback_ExceedPidLimit, Function | SmallTest | Level1)
+{
+    std::unique_ptr<XMLParser> parser = std::make_unique<XMLParser>();
+    if (parser->LoadConfiguration(xmlConfig) == EXEC_SUCCESS) {
+        auto manager = HgmConfigCallbackManager::GetInstance();
+        sptr<CustomHgmCallback> cb = new CustomHgmCallback();
+        constexpr pid_t PID_BASE = 30000;
+        constexpr int32_t MAX_PID_KEYS = 256;
+        for (int32_t i = 0; i <= MAX_PID_KEYS; i++) {
+            manager->RegisterHgmConfigChangeCallback(PID_BASE + i, cb);
+            manager->RegisterHgmRefreshRateModeChangeCallback(PID_BASE + i, cb);
+            manager->RegisterHgmRefreshRateUpdateCallback(PID_BASE + i, cb);
+            manager->SyncXComponentExpectedFrameRateCallback(PID_BASE + i, "test", OLED_60_HZ);
+        }
+        EXPECT_EQ(manager->animDynamicCfgCallbacks_.size(), MAX_PID_KEYS);
+        EXPECT_EQ(manager->refreshRateModeCallbacks_.size(), MAX_PID_KEYS);
+        EXPECT_EQ(manager->refreshRateUpdateCallbacks_.size(), MAX_PID_KEYS);
+        EXPECT_EQ(manager->xcomponentExpectedFrameRate_.size(), MAX_PID_KEYS);
+        for (int32_t i = 0; i <= MAX_PID_KEYS; i++) {
+            manager->UnRegisterHgmConfigChangeCallback(PID_BASE + i);
+        }
+    } else {
+        EXPECT_EQ(parser->LoadConfiguration(xmlConfig), XML_FILE_LOAD_FAIL);
+    }
+}
+
+/**
  * @tc.name: HgmConfigCallbackManagerTest006
  * @tc.desc: Verify HgmConfigCallbackManager rejects pid when reaching limit
  * @tc.type: FUNC
