@@ -1404,15 +1404,15 @@ HWTEST_F(HdiDeviceTest, GetLayerSolidFilledColor_MultipleLayerIds, Function | Me
 }
 
 /**
-* Function: RegHwcDeadCallback_ComposerValid_FalseBranch
-* Type: Function
-* Rank: Important(3)
-* EnvConditions: N/A
-* CaseDescription: 1. g_composer is valid (initialized in SetUpTestCase)
-*                  2. call RegHwcDeadCallback via real HdiDeviceImpl
-*                  3. CHECK_FUNC_RETURN_BOOL condition is false (g_composer != nullptr)
-*                  4. function proceeds past the check to AddDeathRecipient
-*/
+ * Function: RegHwcDeadCallback_ComposerValid_FalseBranch
+ * Type: Function
+ * Rank: Important(3)
+ * EnvConditions: N/A
+ * CaseDescription: 1. g_composer is valid (initialized in SetUpTestCase)
+ *                  2. call RegHwcDeadCallback via real HdiDeviceImpl
+ *                  3. CHECK_FUNC_RETURN_BOOL condition is false (g_composer != nullptr)
+ *                  4. function proceeds past the check to AddDeathRecipient
+ */
 HWTEST_F(HdiDeviceTest, RegHwcDeadCallback_ComposerValid_FalseBranch, Function | MediumTest| Level3)
 {
     ASSERT_NE(HdiDeviceTest::hdiDevice_, nullptr);
@@ -1421,16 +1421,16 @@ HWTEST_F(HdiDeviceTest, RegHwcDeadCallback_ComposerValid_FalseBranch, Function |
 }
 
 /**
-* Function: RegHwcDeadCallback_ComposerNull_TrueBranch
-* Type: Function
-* Rank: Important(3)
-* EnvConditions: N/A
-* CaseDescription: 1. call Destroy to set g_composer to nullptr
-*                  2. call RegHwcDeadCallback via real HdiDeviceImpl
-*                  3. CHECK_FUNC_RETURN_BOOL condition is true (g_composer == nullptr)
-*                  4. expect return false
-*                  5. re-init g_composer via GetInstance for subsequent tests
-*/
+ * Function: RegHwcDeadCallback_ComposerNull_TrueBranch
+ * Type: Function
+ * Rank: Important(3)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call Destroy to set g_composer to nullptr
+ *                  2. call RegHwcDeadCallback via real HdiDeviceImpl
+ *                  3. CHECK_FUNC_RETURN_BOOL condition is true (g_composer == nullptr)
+ *                  4. expect return false
+ *                  5. re-init g_composer via GetInstance for subsequent tests
+ */
 HWTEST_F(HdiDeviceTest, RegHwcDeadCallback_ComposerNull_TrueBranch, Function | MediumTest| Level3)
 {
     ASSERT_NE(HdiDeviceTest::hdiDevice_, nullptr);

@@ -2199,9 +2199,9 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode001, TestSize.Level1)
 
 /**
  * @tc.name: DrawSingleSelfDrawingNode002
-* @tc.desc: Test DrawSingleSelfDrawingNode with special layer
+ * @tc.desc: Test DrawSingleSelfDrawingNode with special layer
  * @tc.type: FUNC
-* @tc.require: issueI22872
+ * @tc.require: issueI22872
  */
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode002, TestSize.Level1)
 {

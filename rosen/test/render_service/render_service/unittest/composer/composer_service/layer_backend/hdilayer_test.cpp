@@ -5483,7 +5483,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_SolidAndSizeMa
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
 
-/*
+/**
  * Function: SetPerFrameLayerSolidFillParam_PrevNotNull_NotSolidOrSizeMismatch_False
  * Type: Function
  * Rank: Important(1)
@@ -5515,7 +5515,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_NotSolidOrSize
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
 
-/*
+/**
  * Function: SetPerFrameLayerSolidFillParam_PrevNull_NotSolid_True
  * Type: Function
  * Rank: Important(1)
@@ -5538,7 +5538,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNull_NotSolid_True, Fu
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
 
-/*
+/**
  * Function: SetPerFrameLayerSolidFillParam_PrevNull_Solid_False
  * Type: Function
  * Rank: Important(1)
