@@ -86,7 +86,6 @@ void RSScreenPreprocessor::OnHwcEvent(uint32_t deviceId, uint32_t eventId,
 
 void RSScreenPreprocessor::OnScreenVBlankIdle(uint32_t devId, uint64_t ns, void* data)
 {
-    RS_LOGI("%{public}s: devid:%{public}u, ns:" RSPUBU64, __func__, devId, ns);
     RS_TRACE_NAME_FMT("OnScreenVBlankIdle devId:%u, ns:%u", devId, ns);
     CreateVSyncSampler()->StartSample(true);
     RSScreenPreprocessor* processor = static_cast<RSScreenPreprocessor*>(data);
