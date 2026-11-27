@@ -326,9 +326,11 @@ group("test") {
   testonly = true
   deps = [
     ":RSGraphicTest",
-    ":RSGraphicTestFrameworkTest",
     ":RenderServiceRenderProfilerTest"
   ]
+  if (is_emulator) {
+    deps += [ ":RSGraphicTestFrameworkTest" ]
+  }
 }
 
 ## Build RSGraphicTest
@@ -403,35 +405,37 @@ ohos_unittest("RSGraphicTest") {
 }
 
 ## Build framework tests for emulator support
-ohos_unittest("RSGraphicTestFrameworkTest") {
-  module_out_path = module_output_path
-  sources = framework_emulator_test_sources
+if (is_emulator) {
+  ohos_unittest("RSGraphicTestFrameworkTest") {
+    module_out_path = module_output_path
+    sources = framework_emulator_test_sources
 
-  deps = [
-    "$graphic_2d_root/graphic_test/graphic_test_framework:rs_graphic_test_src",
-  ]
+    deps = [
+      "$graphic_2d_root/graphic_test/graphic_test_framework:rs_graphic_test_src",
+    ]
 
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken_shared",
-    "access_token:libtoken_setproc",
-    "ffrt:libffrt",
-    "cJSON:cjson",
-    "googletest:gtest_main",
-    "graphic_surface:surface",
-    "graphics_effect:graphics_effect_core",
-    "hilog:libhilog",
-    "hitrace:hitrace_meter",
-    "image_framework:image_native",
-    "init:libbegetutil",
-    "libpng:libpng",
-    "window_manager:libdm",
-    "zlib:libz",
-  ]
+    external_deps = [
+      "access_token:libaccesstoken_sdk",
+      "access_token:libnativetoken_shared",
+      "access_token:libtoken_setproc",
+      "ffrt:libffrt",
+      "cJSON:cjson",
+      "googletest:gtest_main",
+      "graphic_surface:surface",
+      "graphics_effect:graphics_effect_core",
+      "hilog:libhilog",
+      "hitrace:hitrace_meter",
+      "image_framework:image_native",
+      "init:libbegetutil",
+      "libpng:libpng",
+      "window_manager:libdm",
+      "zlib:libz",
+    ]
 
-  cflags_cc = [ "-std=c++17" ]
-  subsystem_name = "graphic"
-  part_name = "graphic_2d"
+    cflags_cc = [ "-std=c++17" ]
+    subsystem_name = "graphic"
+    part_name = "graphic_2d"
+  }
 }
 
 ohos_unittest("RenderServiceRenderProfilerTest") {
