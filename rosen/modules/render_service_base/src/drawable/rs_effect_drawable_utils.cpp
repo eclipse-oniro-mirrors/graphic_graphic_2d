@@ -229,22 +229,22 @@ void RSEffectDrawableUtils::DrawColorNGFilter(Drawing::Canvas* canvas, const Dra
     const std::shared_ptr<Drawing::GEVisualEffectContainer>& visualEffectContainer)
 {
     if (canvas == nullptr || rect == nullptr || visualEffectContainer == nullptr) {
-        ROSEN_LOGD("RSEffectDrawableUtils::DrawColorNGFilter invalid input param");
+        ROSEN_LOGE("RSEffectDrawableUtils::DrawColorNGFilter invalid input param");
         return;
     }
     auto surface = canvas->GetSurface();
     if (surface == nullptr) {
-        ROSEN_LOGD("RSEffectDrawableUtils::DrawColorNGFilter surface is nullptr");
+        ROSEN_LOGE("RSEffectDrawableUtils::DrawColorNGFilter surface is nullptr");
         return;
     }
     Drawing::RectI drawRect = canvas->GetDeviceClipBounds();
     if (drawRect.IsEmpty()) {
-        ROSEN_LOGD("RSEffectDrawableUtils::DrawColorNGFilter drawRect is empty");
+        ROSEN_LOGE("RSEffectDrawableUtils::DrawColorNGFilter drawRect is empty");
         return;
     }
     auto image = surface->GetImageSnapshot(drawRect);
     if (image == nullptr) {
-        ROSEN_LOGD("RSEffectDrawableUtils::DrawColorNGFilter image snapshot is nullptr");
+        ROSEN_LOGE("RSEffectDrawableUtils::DrawColorNGFilter image snapshot is nullptr");
         return;
     }
     Drawing::Rect localRect(0.f, 0.f,
@@ -254,14 +254,14 @@ void RSEffectDrawableUtils::DrawColorNGFilter(Drawing::Canvas* canvas, const Dra
     auto resImage = geRender->ApplyImageEffect(*canvas, *visualEffectContainer, geContext,
         Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE));
     if (resImage == nullptr) {
-        ROSEN_LOGD("RSEffectDrawableUtils::DrawColorNGFilter ApplyImageEffect failed");
+        ROSEN_LOGE("RSEffectDrawableUtils::DrawColorNGFilter ApplyImageEffect failed");
         return;
     }
     Drawing::Matrix identityMatrix;
     auto imageShader = Drawing::ShaderEffect::CreateImageShader(*resImage, Drawing::TileMode::CLAMP,
         Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), identityMatrix);
     if (imageShader == nullptr) {
-        ROSEN_LOGD("RSEffectDrawableUtils::DrawColorNGFilter imageShader is nullptr");
+        ROSEN_LOGE("RSEffectDrawableUtils::DrawColorNGFilter imageShader is nullptr");
         return;
     }
     Drawing::Brush brush;
