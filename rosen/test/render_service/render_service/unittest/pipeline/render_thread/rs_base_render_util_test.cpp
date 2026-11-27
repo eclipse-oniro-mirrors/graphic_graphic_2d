@@ -2875,7 +2875,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetFrameBufferRequestConfig_DeviceGpuSampling, Te
 
     GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
     GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888;
-    BufferRequestConfig config = 
+    BufferRequestConfig config =
         RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, false, colorGamut, pixelFormat);
 
     EXPECT_EQ(config.width, static_cast<int32_t>(PHY_WIDTH));
@@ -2905,7 +2905,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetFrameBufferRequestConfig_SamplingOn, TestSize.
 
     GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
     GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888;
-    BufferRequestConfig config = 
+    BufferRequestConfig config =
         RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, false, colorGamut, pixelFormat);
 
     EXPECT_EQ(config.width, static_cast<int32_t>(PHY_WIDTH));
@@ -2935,7 +2935,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetFrameBufferRequestConfig_NoPhysicalSize, TestS
 
     GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
     GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888;
-    BufferRequestConfig config = 
+    BufferRequestConfig config =
         RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, false, colorGamut, pixelFormat);
 
     EXPECT_EQ(config.width, static_cast<int32_t>(RENDER_WIDTH));
