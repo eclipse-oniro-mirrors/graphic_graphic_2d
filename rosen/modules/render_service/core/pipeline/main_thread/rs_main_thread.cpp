@@ -6669,7 +6669,9 @@ void RSMainThread::DoDirectCompositionForDelegateModeIfNeed(std::shared_ptr<RSBa
 {
     std::optional<bool> ret =
         RsDelegateCompositeCallbackManager::GetInstance().GetDoDirectCompositionSupportByHwcEnable();
-    if (!ret.has_value()) {
+    if (!ret.has_value() || forceUpdateUniRenderFlag_) {
+        RS_OPTIONAL_TRACE_NAME_FMT("DoDirectCompositionForDelegateMode not need: %d, %d",
+            !ret.has_value(), forceUpdateUniRenderFlag_);
         return;
     }
     doDirectComposition_ = ret.value();
