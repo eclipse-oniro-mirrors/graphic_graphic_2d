@@ -451,7 +451,7 @@ const RSVcldParam& RSSurfaceLayer::GetVcldInfo() const
     return vcldInfo_;
 }
 
-void RSSurfaceLayer::SetColorTransform(const std::vector<float> &matrix)
+void RSSurfaceLayer::SetColorTransform(const std::vector<float>& matrix)
 {
     if (colorTransformMatrix_ == matrix) {
         return;
