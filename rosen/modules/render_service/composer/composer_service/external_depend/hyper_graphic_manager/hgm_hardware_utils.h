@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef RENDER_SERVICE_COMPOSER_SERVICE_EXTERNER_DEPEND_HYPER_GRAPHIC_MANAGER_HGM_HARDWARE_UTILS_H
 #define RENDER_SERVICE_COMPOSER_SERVICE_EXTERNER_DEPEND_HYPER_GRAPHIC_MANAGER_HGM_HARDWARE_UTILS_H
 

@@ -57,7 +57,6 @@ public:
         TunnelLayerParam::SetNewTunnelEnabled(isEnable);
     }
 };
-
 class ScopedNewTunnelSwitch {
 public:
     explicit ScopedNewTunnelSwitch(bool enabled)
@@ -318,7 +317,7 @@ HWTEST_F(RSSurfaceLayerTest, TunnelLayerDestroyedCallback_NodeIdFallbackSkipped0
     ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
     auto consumer = IConsumerSurface::Create();
     ASSERT_NE(consumer, nullptr);
- 
+
     constexpr uint64_t testNodeId = 5002u;
     std::vector<LayerStateChange> reportedStates;
     auto context = CreateContextWithLayerStateRecorder(sMgr, screenId, reportedStates);
@@ -521,7 +520,7 @@ HWTEST_F(RSSurfaceLayerTest, SetGlassFree3D_GetGlassFree3D, Function | SmallTest
     lyr->SetGlassFree3D(false);
     EXPECT_FALSE(lyr->GetGlassFree3D());
 }
- 
+
 /**
  * @tc.name: SetGlassFree3D_SameValueNoCommand
  * @tc.desc: Verify SetGlassFree3D with same value returns early without generating command
@@ -857,17 +856,17 @@ HWTEST_F(RSSurfaceLayerTest, SetOriginalBufferOwnerCount_BasicTest, Function | S
 {
     auto lyr = std::make_shared<RSSurfaceLayer>(0, nullptr);
     ASSERT_NE(lyr, nullptr);
- 
+
     auto boc = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
     boc->bufferId_ = 200u;
     int initialRef = boc->refCount_.load();
- 
+
     lyr->SetOriginalBufferOwnerCount(boc);
- 
+
     EXPECT_EQ(boc->refCount_.load(), initialRef + 1);
     EXPECT_EQ(lyr->GetOriginalBufferOwnerCount(), boc);
 }
- 
+
 /**
  * @tc.name: SetOriginalBufferOwnerCount_DuplicateBufferNoAddRef
  * @tc.desc: Verify SetOriginalBufferOwnerCount does NOT AddRef when bufferId already exists
@@ -877,17 +876,17 @@ HWTEST_F(RSSurfaceLayerTest, SetOriginalBufferOwnerCount_DuplicateBufferNoAddRef
 {
     auto lyr = std::make_shared<RSSurfaceLayer>(0, nullptr);
     ASSERT_NE(lyr, nullptr);
- 
+
     auto boc = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
     boc->bufferId_ = 201u;
     lyr->SetOriginalBufferOwnerCount(boc);
- 
+
     int refAfterFirst = boc->refCount_.load();
     lyr->SetOriginalBufferOwnerCount(boc);
- 
+
     EXPECT_EQ(boc->refCount_.load(), refAfterFirst);
 }
- 
+
 /**
  * @tc.name: SetOriginalBufferOwnerCount_NullptrIgnored
  * @tc.desc: Verify SetOriginalBufferOwnerCount ignores nullptr input
@@ -897,7 +896,7 @@ HWTEST_F(RSSurfaceLayerTest, SetOriginalBufferOwnerCount_NullptrIgnored, Functio
 {
     auto lyr = std::make_shared<RSSurfaceLayer>(0, nullptr);
     ASSERT_NE(lyr, nullptr);
- 
+
     lyr->SetOriginalBufferOwnerCount(nullptr);
     EXPECT_EQ(lyr->GetOriginalBufferOwnerCount(), nullptr);
 }

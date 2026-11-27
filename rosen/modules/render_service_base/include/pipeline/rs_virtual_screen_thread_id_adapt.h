@@ -29,12 +29,11 @@ public:
             auto threadIndex = curCanvas->GetParallelThreadIdx();
             if (threadIndex >= VIRTUAL_SCREEN_THREAD_INDEX.first &&
                 threadIndex <= VIRTUAL_SCREEN_THREAD_INDEX.second) {
-                    threadId = -threadIndex;
-                }
+                threadId = -threadIndex;
+            }
         }
     }
 };
 } // namespace Rosen
 } // namespace OHOS
-
 #endif // PIPELINE_RS_VIRTUAL_SCREEN_THREAD_ID_ADAPT_H

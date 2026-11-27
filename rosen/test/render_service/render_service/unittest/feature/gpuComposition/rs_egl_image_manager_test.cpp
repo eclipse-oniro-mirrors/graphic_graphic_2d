@@ -1095,21 +1095,21 @@ HWTEST_F(RSEglImageManagerTest, CreateTest, TestSize.Level1)
  */
 HWTEST_F(RSEglImageManagerTest, CreateImageFromBufferTest, TestSize.Level1)
 {
-    int canvasHeight = 10;
-    int canvasWidth = 10;
+        int canvasHeight = 10;
+        int canvasWidth = 10;
     std::unique_ptr<Drawing::Canvas> drawingCanvas = std::make_unique<Drawing::Canvas>(canvasHeight, canvasWidth);
     std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
-    BufferDrawParam params;
-    params.buffer = nullptr;
-    params.acquireFence = nullptr;
-    params.threadIndex = 0;
-    std::shared_ptr<Drawing::ColorSpace> drawingColorSpace = nullptr;
-    auto renderContext = std::make_shared<RenderContextGL>();
-    renderContext->Init();
-    renderContext->SetUpGpuContext();
+        BufferDrawParam params;
+        params.buffer = nullptr;
+        params.acquireFence = nullptr;
+        params.threadIndex = 0;
+        std::shared_ptr<Drawing::ColorSpace> drawingColorSpace = nullptr;
+        auto renderContext = std::make_shared<RenderContextGL>();
+        renderContext->Init();
+        renderContext->SetUpGpuContext();
     std::shared_ptr<RSImageManager> imageManager = std::make_shared<RSEglImageManager>(renderContext->GetEGLDisplay());
-    auto res = imageManager->CreateImageFromBuffer(*canvas, params, drawingColorSpace);
-    EXPECT_EQ(res, nullptr);
+        auto res = imageManager->CreateImageFromBuffer(*canvas, params, drawingColorSpace);
+        EXPECT_EQ(res, nullptr);
 }
 
 /**
@@ -1203,16 +1203,16 @@ HWTEST_F(RSEglImageManagerTest, CreateImageFromBufferTest003, TestSize.Level1)
  */
 HWTEST_F(RSEglImageManagerTest, GetIntersectImageTest, TestSize.Level1)
 {
-    auto renderContext = std::make_shared<RenderContextGL>();
-    renderContext->Init();
-    renderContext->SetUpGpuContext();
+        auto renderContext = std::make_shared<RenderContextGL>();
+        renderContext->Init();
+        renderContext->SetUpGpuContext();
     std::shared_ptr<RSImageManager> imageManager = std::make_shared<RSEglImageManager>(renderContext->GetEGLDisplay());
-    Drawing::RectI imgCutRect = Drawing::RectI{0, 0, 10, 10};
-    std::shared_ptr<Drawing::GPUContext> context = std::make_shared<Drawing::GPUContext>();
-    BufferDrawParam params;
-    params.acquireFence = nullptr;
-    params.threadIndex = 0;
-    params.buffer = SurfaceBuffer::Create();
+        Drawing::RectI imgCutRect = Drawing::RectI{0, 0, 10, 10};
+        std::shared_ptr<Drawing::GPUContext> context = std::make_shared<Drawing::GPUContext>();
+        BufferDrawParam params;
+        params.acquireFence = nullptr;
+        params.threadIndex = 0;
+        params.buffer = SurfaceBuffer::Create();
     // Allocate memory for the buffer to avoid crash in eglCreateImageKHR
     if (params.buffer != nullptr) {
         BufferRequestConfig requestConfig = {

@@ -19,7 +19,6 @@
 #include <functional>
 #include <refbase.h>
 #include <unordered_map>
-
 #include "graphic_error.h"
 #include "hdi_device.h"
 #include "hdi_output.h"

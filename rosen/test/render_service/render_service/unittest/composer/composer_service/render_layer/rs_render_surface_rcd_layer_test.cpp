@@ -54,7 +54,7 @@ public:
  *                  2. call UpdateRSLayerCmd
  *                  3. expect GetZorder equals set value
  *                  cover branch: command != nullptr (line 46 false), rsRenderLayer != nullptr (line 54 false),
- *                               it != cmdHandlers_.end() (line 58 true)
+ *                                it != cmdHandlers_.end() (line 58 true)
  */
 HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_Zorder_Applied, TestSize.Level1)
 {
@@ -92,7 +92,7 @@ HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_NullCommand_NoCrash, TestSi
  *                  2. call UpdateRSLayerCmd
  *                  3. expect no crash and no property change
  *                  cover branch: command != nullptr (line 46 false), rsRenderLayer != nullptr (line 54 false),
- *                               it == cmdHandlers_.end() (line 58 false) -> else branch
+ *                                it == cmdHandlers_.end() (line 58 false) -> else branch
  */
 HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_InvalidType_NoCrash, TestSize.Level1)
 {

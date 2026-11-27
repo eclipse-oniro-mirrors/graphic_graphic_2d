@@ -1274,7 +1274,7 @@ HWTEST(RSRenderLayerCmdTest, SplitLayerTag_Marshalling_Unmarshalling_Success, Te
     auto out = RSRenderLayerCmd::Unmarshalling(parcel);
     ASSERT_NE(out, nullptr);
     EXPECT_EQ(out->GetRSRenderLayerCmdType(), RSLayerCmdType::SPLIT_LAYER_TAG);
-    
+
     auto outProp = std::static_pointer_cast<RSRenderLayerCmdProperty<bool>>(out->GetRSRenderLayerProperty());
     ASSERT_NE(outProp, nullptr);
     EXPECT_EQ(outProp->Get(), value);
@@ -1295,7 +1295,7 @@ HWTEST(RSRenderLayerCmdTest, SplitLayerTag_SetFalseValue_Success, TestSize.Level
     ASSERT_TRUE(cmd->Marshalling(parcel));
     auto out = RSRenderLayerCmd::Unmarshalling(parcel);
     ASSERT_NE(out, nullptr);
-    
+
     auto outProp = std::static_pointer_cast<RSRenderLayerCmdProperty<bool>>(out->GetRSRenderLayerProperty());
     ASSERT_NE(outProp, nullptr);
     EXPECT_FALSE(outProp->Get());
@@ -1311,7 +1311,7 @@ HWTEST(RSRenderLayerCmdTest, SplitLayerTag_Unmarshalling_InvalidData_ReturnsNull
 {
     MessageParcel parcel;
     parcel.WriteUint32(0xFFFFFFFF); // invalid cmd type
-    
+
     auto out = RSRenderLayerCmd::Unmarshalling(parcel);
     EXPECT_EQ(out, nullptr);
 }
