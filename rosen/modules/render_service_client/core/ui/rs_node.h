@@ -2269,13 +2269,7 @@ protected:
         rsCmdModifierQueue_.push_back(modifier);
     }
 
-    void PopFrontRSCmdModifierQueue()
-    {
-        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
-        if (!rsCmdModifierQueue_.empty()) {
-            rsCmdModifierQueue_.pop_front();
-        }
-    }
+    void PopFrontRSCmdModifierQueue();
 
     std::vector<PropertyId> GetModifierIds() const;
 

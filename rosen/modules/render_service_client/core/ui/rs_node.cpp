@@ -23,6 +23,7 @@
 #include <numeric>
 #include <vector>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -3344,6 +3345,23 @@ void RSNode::ClearAllModifiers()
     }
     modifiersNG_.clear();
     properties_.clear();
+}
+
+void RSNode::PopFrontRSCmdModifierQueue()
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    // The render side handles RSCanvasNodeClearRecording by removing the oldest
+    // anonymous modifier from every draw slot (RemoveModifierNG). Mirror that here:
+    // drop the oldest queued modifier of each draw slot instead of only the front one.
+    std::set<uint16_t> clearedSlots;
+    for (auto it = rsCmdModifierQueue_.begin(); it != rsCmdModifierQueue_.end();) {
+        auto drawSlot = (*it) != nullptr ? (*it)->GetDrawSlot() : RSCmdModifier::INVALID_DRAW_SLOT;
+        if (drawSlot != RSCmdModifier::INVALID_DRAW_SLOT && clearedSlots.insert(drawSlot).second) {
+            it = rsCmdModifierQueue_.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void RSNode::LoadRenderNodeIfNeed() const

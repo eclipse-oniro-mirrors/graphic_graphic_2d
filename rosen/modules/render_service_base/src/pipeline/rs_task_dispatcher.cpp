@@ -26,28 +26,34 @@ RSTaskDispatcher& RSTaskDispatcher::GetInstance()
 
 void RSTaskDispatcher::RegisterTaskDispatchFunc(pid_t tid, const std::function<void(RSTask, bool)>& taskDispatchFunc)
 {
-    if (taskDispatchFunc) {
-        taskDispatchFuncMap_.emplace(tid, taskDispatchFunc);
+    if (!taskDispatchFunc) {
+        return;
     }
+    std::lock_guard<std::mutex> lock(mutex_);
+    taskDispatchFuncMap_.emplace(tid, taskDispatchFunc);
 }
 
 void RSTaskDispatcher::PostTask(pid_t tid, const RSTask& task, bool isSyncTask)
 {
-    if (taskDispatchFuncMap_.count(tid)) {
-        taskDispatchFuncMap_.at(tid)(task, isSyncTask);
-    } else {
-        if (task) {
-            task();
+    std::function<void(RSTask, bool)> taskDispatchFunc;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = taskDispatchFuncMap_.find(tid);
+        if (it != taskDispatchFuncMap_.end()) {
+            taskDispatchFunc = it->second;
         }
+    }
+    if (taskDispatchFunc) {
+        taskDispatchFunc(task, isSyncTask);
+    } else if (task) {
+        task();
     }
 }
 
 bool RSTaskDispatcher::HasRegisteredTask(pid_t tid) const
 {
-    if (taskDispatchFuncMap_.count(tid)) {
-        return true;
-    }
-    return false;
+    std::lock_guard<std::mutex> lock(mutex_);
+    return taskDispatchFuncMap_.find(tid) != taskDispatchFuncMap_.end();
 }
 } // namespace Rosen
 } // namespace OHOS
