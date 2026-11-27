@@ -2253,6 +2253,16 @@ bool RSRenderServiceClient::AvcodecVideoGetRecent()
     }
     return true;
 }
+
+void RSRenderServiceClient::ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type)
+{
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
+    if (!clientToService) {
+        ROSEN_LOGE("RSRenderServiceClient::ReleaseGpuMemory clientToService is nullptr!");
+        return;
+    }
+    clientToService->ReleaseGpuMemory(surfaceNodeId, type);
+}
 #endif
 } // namespace Rosen
 } // namespace OHOS

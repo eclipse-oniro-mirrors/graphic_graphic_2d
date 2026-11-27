@@ -662,6 +662,10 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_SKIP_COLOR_SPACE_CONVERSION");
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::RELEASE_GPU_MEMORY): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::RELEASE_GPU_MEMORY");
+            break;
+        }
         default: {
             hasPermission = false;
             break;

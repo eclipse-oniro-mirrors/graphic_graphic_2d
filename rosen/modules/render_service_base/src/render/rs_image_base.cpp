@@ -320,6 +320,27 @@ void RSImageBase::Purge()
 #endif
 }
 
+void RSImageBase::PurgeGpuImageOnly()
+{
+#ifdef ROSEN_OHOS
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!image_) {
+        return;
+    }
+    // one in this RSImage, one in RSImageCache
+    constexpr int32_t USE_COUNT_FOR_PURGE_GPU = 2;
+    if (image_.use_count() <= USE_COUNT_FOR_PURGE_GPU) {
+        image_ = nullptr;
+        isDrawn_ = false;
+    } else {
+        RS_LOGI("RSImageBase::PurgeGpuImageOnly can't purge image_.use_count:%{public}ld",
+            image_.use_count());
+    }
+    // DO NOT touch pixelMap_ or compressData_, allowing safe GPU
+    // texture rebuild from CPU data
+#endif
+}
+
 void RSImageBase::DePurge()
 {
 #ifdef ROSEN_OHOS

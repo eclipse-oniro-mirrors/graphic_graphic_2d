@@ -144,6 +144,8 @@ public:
         ScreenSamplingMode samplingMode) = 0;
 
     virtual int32_t SendTransfer(const std::shared_ptr<RSIpcTransferBase>& transfer) = 0;
+
+    virtual void ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type) = 0;
 };
 
 } // namespace Rosen

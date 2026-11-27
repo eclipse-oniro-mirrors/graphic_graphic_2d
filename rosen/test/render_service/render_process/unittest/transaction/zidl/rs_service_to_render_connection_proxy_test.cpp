@@ -2938,4 +2938,76 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, SendTransfer_ProxyUnmarshallingFa
     EXPECT_NE(mockProxy->SendTransfer(transfer), SUCCESS);
 }
 
+/**
+ * @tc.name: ReleaseGpuMemory_SendRequestFailed
+ * @tc.desc: Test ReleaseGpuMemory when SendRequest returns non-NO_ERROR, should not crash
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, ReleaseGpuMemory_SendRequestFailed, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Return(-1));
+
+    mockProxy->ReleaseGpuMemory(3001, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: ReleaseGpuMemory_Success
+ * @tc.desc: Test ReleaseGpuMemory with SendRequest returning NO_ERROR, should complete normally
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, ReleaseGpuMemory_Success, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Return(NO_ERROR));
+
+    mockProxy->ReleaseGpuMemory(3002, GpuMemoryType::MIPMAP_AND_IMAGE_GPU);
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: ReleaseGpuMemory_VerifyParcelContent
+ * @tc.desc: Test ReleaseGpuMemory writes correct IPC code, surfaceNodeId and type to parcel
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, ReleaseGpuMemory_VerifyParcelContent, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+
+    const NodeId expectedNodeId = 3003;
+    const GpuMemoryType expectedType = GpuMemoryType::MIPMAP_AND_IMAGE_GPU;
+    const uint32_t expectedCode =
+        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::RELEASE_GPU_MEMORY);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillOnce([&](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption&) {
+            EXPECT_EQ(code, expectedCode);
+            data.ReadInterfaceToken();
+            uint64_t nodeId = 0;
+            EXPECT_TRUE(data.ReadUint64(nodeId));
+            EXPECT_EQ(nodeId, expectedNodeId);
+            uint8_t typeVal = 0;
+            EXPECT_TRUE(data.ReadUint8(typeVal));
+            EXPECT_EQ(typeVal, static_cast<uint8_t>(expectedType));
+            return NO_ERROR;
+        });
+
+    mockProxy->ReleaseGpuMemory(expectedNodeId, expectedType);
+    ASSERT_TRUE(true);
+}
+
 } // namespace OHOS::Rosen

@@ -843,5 +843,9 @@ bool RSRenderServiceClient::AvcodecVideoGetRecent()
 {
     return false;
 }
+
+void RSRenderServiceClient::ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type)
+{
+}
 } // namespace Rosen
 } // namespace OHOS

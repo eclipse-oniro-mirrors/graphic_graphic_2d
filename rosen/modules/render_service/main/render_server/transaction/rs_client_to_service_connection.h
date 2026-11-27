@@ -63,6 +63,7 @@ public:
     }
 
     void RegisterRemoteRefreshCallback() override;
+    void ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type) override;
 
 private:
     void CleanVirtualScreens() noexcept;

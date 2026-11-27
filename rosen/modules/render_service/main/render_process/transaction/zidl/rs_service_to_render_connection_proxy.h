@@ -133,6 +133,8 @@ public:
 
     int32_t SendTransfer(const std::shared_ptr<RSIpcTransferBase>& transfer) override;
 
+    void ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type) override;
+
 private:
     static inline BrokerDelegator<RSServiceToRenderConnectionProxy> delegator_;
     int32_t SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

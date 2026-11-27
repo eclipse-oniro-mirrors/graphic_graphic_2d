@@ -1879,5 +1879,30 @@ int32_t RSServiceToRenderConnectionProxy::SendTransfer(const std::shared_ptr<RSI
     return StatusCode::SUCCESS;
 }
 
+void RSServiceToRenderConnectionProxy::ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        RS_LOGE("RSServiceToRenderConnectionProxy::ReleaseGpuMemory WriteInterfaceToken err.");
+        return;
+    }
+    if (!data.WriteUint64(surfaceNodeId)) {
+        RS_LOGE("RSServiceToRenderConnectionProxy::ReleaseGpuMemory WriteUint64 surfaceNodeId err.");
+        return;
+    }
+    if (!data.WriteUint8(static_cast<uint8_t>(type))) {
+        RS_LOGE("RSServiceToRenderConnectionProxy::ReleaseGpuMemory WriteUint8 GpuMemoryType err.");
+        return;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::RELEASE_GPU_MEMORY);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        RS_LOGE("RSServiceToRenderConnectionProxy::ReleaseGpuMemory SendRequest err.");
+    }
+}
+
 } // namespace Rosen
 } // namespace OHOS

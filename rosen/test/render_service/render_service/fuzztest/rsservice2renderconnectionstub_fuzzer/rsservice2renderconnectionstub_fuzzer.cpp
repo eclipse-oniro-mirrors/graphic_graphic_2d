@@ -68,10 +68,34 @@ bool FuzzStubSendRenderProcessData(const uint8_t* data, size_t size)
     stub->OnRemoteRequest(code, parcel, reply, option);
     return true;
 }
+
+bool FuzzReleaseGpuMemory(const uint8_t* data, size_t size)
+{
+    if (data == nullptr || size < sizeof(uint64_t) + sizeof(uint8_t)) {
+        return false;
+    }
+    static sptr<RSServiceToRenderConnection> stub =
+        new RSServiceToRenderConnection(sptr<RSRenderPipelineAgent>(nullptr));
+    MessageParcel parcel;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    parcel.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor());
+    uint64_t surfaceNodeId = *reinterpret_cast<const uint64_t*>(data);
+    parcel.WriteUint64(surfaceNodeId);
+    uint8_t typeVal = data[sizeof(uint64_t)];
+    parcel.WriteUint8(typeVal);
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::RELEASE_GPU_MEMORY);
+    stub->OnRemoteRequest(code, parcel, reply, option);
+    return true;
+}
 } // namespace OHOS::Rosen
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     OHOS::Rosen::FuzzStubSendRenderProcessData(data, size);
+    if (size >= sizeof(uint64_t) + sizeof(uint8_t)) {
+        OHOS::Rosen::FuzzReleaseGpuMemory(data, size);
+    }
     return 0;
 }

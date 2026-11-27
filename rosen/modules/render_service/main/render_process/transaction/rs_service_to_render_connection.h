@@ -137,6 +137,8 @@ public:
 
     int32_t SendTransfer(const std::shared_ptr<RSIpcTransferBase>& transfer) override;
 
+    void ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type) override;
+
 private:
     const sptr<RSRenderProcessAgent> renderProcessAgent_;
     const sptr<RSRenderPipelineAgent> renderPipelineAgent_;

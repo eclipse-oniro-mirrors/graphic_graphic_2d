@@ -1114,6 +1114,28 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             }
             break;
         }
+        case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::RELEASE_GPU_MEMORY): {
+            NodeId surfaceNodeId { 0 };
+            if (!data.ReadUint64(surfaceNodeId)) {
+                RS_LOGE("RSServiceToRenderStub::RELEASE_GPU_MEMORY Read surfaceNodeId failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            GpuMemoryType type { GpuMemoryType::MIPMAP_AND_IMAGE_GPU };
+            if (!data.ReadUint8(reinterpret_cast<uint8_t&>(type))) {
+                RS_LOGE("RSServiceToRenderStub::RELEASE_GPU_MEMORY Read GpuMemoryType failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (static_cast<uint8_t>(type) >= static_cast<uint8_t>(GpuMemoryType::MAX)) {
+                RS_LOGE("RSServiceToRenderStub::RELEASE_GPU_MEMORY invalid GpuMemoryType:%{public}d",
+                    static_cast<uint8_t>(type));
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            ReleaseGpuMemory(surfaceNodeId, type);
+            break;
+        }
         default:
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }

@@ -444,6 +444,8 @@ public:
 
     void NotifyScreenSwitched();
 
+    void ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type);
+
     int32_t RegisterSelfDrawingNodeRectChangeCallback(
         const RectConstraint& constraint, const SelfDrawingNodeRectChangeCallback& callback);
 
