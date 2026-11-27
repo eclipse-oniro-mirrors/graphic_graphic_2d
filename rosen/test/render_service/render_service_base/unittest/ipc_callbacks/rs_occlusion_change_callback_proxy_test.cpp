@@ -41,6 +41,7 @@ void RSOcclusionChangeCallbackProxyTest::TearDown() {}
  * @tc.name: OnOcclusionVisibleChanged001
  * @tc.desc: Verify the OnOcclusionVisibleChanged
  * @tc.type:FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSOcclusionChangeCallbackProxyTest, OnOcclusionVisibleChanged001, TestSize.Level1)
 {
@@ -50,13 +51,14 @@ HWTEST_F(RSOcclusionChangeCallbackProxyTest, OnOcclusionVisibleChanged001, TestS
     ASSERT_TRUE(occlusionChangeCallbackProxy != nullptr);
     occlusionChangeCallbackProxy->OnOcclusionVisibleChanged(std::make_shared<RSOcclusionData>());
     ASSERT_EQ(remoteMocker->receivedCode_,
-              static_cast<uint32_t>(RSIOcclusionChangeCallbackInterfaceCode::ON_OCCLUSION_VISIBLE_CHANGED));
+        static_cast<uint32_t>(RSIOcclusionChangeCallbackInterfaceCode::ON_OCCLUSION_VISIBLE_CHANGED));
 }
 
 /**
  * @tc.name: OnOcclusionVisibleChanged002
  * @tc.desc: Verify the OnOcclusionVisibleChanged
  * @tc.type:FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSOcclusionChangeCallbackProxyTest, OnOcclusionVisibleChanged002, TestSize.Level1)
 {
@@ -67,13 +69,14 @@ HWTEST_F(RSOcclusionChangeCallbackProxyTest, OnOcclusionVisibleChanged002, TestS
     ASSERT_TRUE(occlusionChangeCallbackProxy != nullptr);
     occlusionChangeCallbackProxy->OnOcclusionVisibleChanged(std::make_shared<RSOcclusionData>());
     ASSERT_EQ(remoteMocker->receivedCode_,
-              static_cast<uint32_t>(RSIOcclusionChangeCallbackInterfaceCode::ON_OCCLUSION_VISIBLE_CHANGED));
+        static_cast<uint32_t>(RSIOcclusionChangeCallbackInterfaceCode::ON_OCCLUSION_VISIBLE_CHANGED));
 }
 
 /**
  * @tc.name: OnOcclusionVisibleChanged003
  * @tc.desc: Verify the OnOcclusionVisibleChanged
  * @tc.type:FUNC
+ * @tc.require: issueIABHAX
  */
 HWTEST_F(RSOcclusionChangeCallbackProxyTest, OnOcclusionVisibleChanged003, TestSize.Level1)
 {

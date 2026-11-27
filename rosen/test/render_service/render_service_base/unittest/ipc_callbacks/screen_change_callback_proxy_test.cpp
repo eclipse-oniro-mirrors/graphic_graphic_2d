@@ -41,6 +41,7 @@ void RSScreenChangeCallbackProxyTest::TearDown() {}
  * @tc.name: OnScreenChanged001
  * @tc.desc: Verify the OnScreenChanged
  * @tc.type:FUNC
+ * @tc.require: issueI9L0VL
  */
 HWTEST_F(RSScreenChangeCallbackProxyTest, OnScreenChanged001, TestSize.Level1)
 {
@@ -50,13 +51,14 @@ HWTEST_F(RSScreenChangeCallbackProxyTest, OnScreenChanged001, TestSize.Level1)
     ASSERT_TRUE(screenChangeCallbackProxy != nullptr);
     screenChangeCallbackProxy->OnScreenChanged(INVALID_SCREEN_ID, ScreenEvent::UNKNOWN);
     ASSERT_EQ(remoteMocker->receivedCode_,
-              static_cast<uint32_t>(RSIScreenChangeCallbackInterfaceCode::ON_SCREEN_CHANGED));
+        static_cast<uint32_t>(RSIScreenChangeCallbackInterfaceCode::ON_SCREEN_CHANGED));
 }
 
 /**
  * @tc.name: OnScreenChanged002
  * @tc.desc: Verify the OnScreenChanged
  * @tc.type:FUNC
+ * @tc.require: issueI9L0VL
  */
 HWTEST_F(RSScreenChangeCallbackProxyTest, OnScreenChanged002, TestSize.Level1)
 {
@@ -67,13 +69,14 @@ HWTEST_F(RSScreenChangeCallbackProxyTest, OnScreenChanged002, TestSize.Level1)
     ASSERT_TRUE(screenChangeCallbackProxy != nullptr);
     screenChangeCallbackProxy->OnScreenChanged(INVALID_SCREEN_ID, ScreenEvent::CONNECTED);
     ASSERT_EQ(remoteMocker->receivedCode_,
-              static_cast<uint32_t>(RSIScreenChangeCallbackInterfaceCode::ON_SCREEN_CHANGED));
+        static_cast<uint32_t>(RSIScreenChangeCallbackInterfaceCode::ON_SCREEN_CHANGED));
 }
 
 /**
  * @tc.name: OnScreenChanged003
  * @tc.desc: Verify the OnScreenChanged
  * @tc.type:FUNC
+ * @tc.require: issueI9L0VL
  */
 HWTEST_F(RSScreenChangeCallbackProxyTest, OnScreenChanged003, TestSize.Level1)
 {

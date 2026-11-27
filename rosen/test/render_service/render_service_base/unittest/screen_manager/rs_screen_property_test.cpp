@@ -99,6 +99,7 @@ HWTEST_F(RSScreenPropertyTest, MarshallingTest002, TestSize.Level1)
     ADD_PROP(ScreenPropertyType::ENABLE_SKIP_WINDOW, false);
     ADD_PROP(ScreenPropertyType::POWER_STATUS, static_cast<uint32_t>(ScreenPowerStatus::INVALID_POWER_STATUS));
     ADD_PROP(ScreenPropertyType::SCREEN_TYPE, static_cast<uint32_t>(RSScreenType::UNKNOWN_TYPE_SCREEN));
+    using MultiSurfaceConfigs = std::vector<SurfaceRegionConfig>;
     ADD_PROP(ScreenPropertyType::MULTI_SURFACE_CONFIGS, MultiSurfaceConfigs());
     ADD_PROP(ScreenPropertyType::SCALE_MODE, static_cast<uint32_t>(ScreenScaleMode::UNISCALE_MODE));
     ADD_PROP(ScreenPropertyType::SCREEN_STATUS, static_cast<uint32_t>(VIRTUAL_SCREEN_PLAY));
