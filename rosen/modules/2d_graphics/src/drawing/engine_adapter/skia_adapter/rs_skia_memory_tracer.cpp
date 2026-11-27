@@ -208,7 +208,7 @@ void SkiaMemoryTracer::LogOutput(DfxString& log)
     for (const auto& sourceItem : sourceTagResults_) {
         if (itemizeType_) {
             log.AppendFormat("  %s:\n", sourceItem.first.c_str()); // source_xx
-            for (const auto& tagItem: sourceItem.second) {
+            for (const auto& tagItem : sourceItem.second) {
                 log.AppendFormat("    %s:\n", tagItem.first.c_str()); // skia/sk_glyph_cache
                 for (const auto& typeItem : tagItem.second) {
                     TraceValue traceValue = ConvertUnits(typeItem.second);

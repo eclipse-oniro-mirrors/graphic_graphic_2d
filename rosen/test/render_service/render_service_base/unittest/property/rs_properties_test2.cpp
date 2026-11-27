@@ -4570,5 +4570,50 @@ HWTEST_F(PropertiesTest, SetGeoDirtyTest002, TestSize.Level1)
     properties.SetGeoDirty();
     EXPECT_TRUE(properties.IsGeoDirty());
 }
+/**
+ * @tc.name: NGAdaptiveBlenderTest
+ * @tc.desc: Test the adaptive NG blender slots: independent storage, the ColorfulBrightness type
+ *           gate and IsNGBlenderValid() covering both adaptive channels.
+ * @tc.type:FUNC
+ */
+HWTEST_F(PropertiesTest, NGAdaptiveBlenderTest, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.GetNGAdaptiveDarkBlender(), nullptr);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), nullptr);
+    EXPECT_FALSE(properties.IsNGBlenderValid());
+
+    auto dark = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    auto light = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(dark, nullptr);
+    ASSERT_NE(light, nullptr);
+
+    // adaptive-only nodes still count as "has blender"
+    properties.SetNGAdaptiveDarkBlender(dark);
+    EXPECT_EQ(properties.GetNGAdaptiveDarkBlender(), dark);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), nullptr);
+    EXPECT_TRUE(properties.IsNGBlenderValid());
+
+    properties.SetNGAdaptiveLightBlender(light);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), light);
+
+    // other blender types are rejected by the entry check
+    auto brightness = RSNGRenderBlenderBase::Create(RSNGEffectType::BRIGHTNESS_BLENDER);
+    ASSERT_NE(brightness, nullptr);
+    properties.SetNGAdaptiveDarkBlender(brightness);
+    EXPECT_EQ(properties.GetNGAdaptiveDarkBlender(), dark);
+    properties.SetNGAdaptiveLightBlender(brightness);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), light);
+
+    // clearing an empty slot twice exercises the no-op branch
+    properties.SetNGAdaptiveDarkBlender(nullptr);
+    properties.SetNGAdaptiveDarkBlender(nullptr);
+    EXPECT_EQ(properties.GetNGAdaptiveDarkBlender(), nullptr);
+    EXPECT_TRUE(properties.IsNGBlenderValid());
+    properties.SetNGAdaptiveLightBlender(nullptr);
+    EXPECT_EQ(properties.GetNGAdaptiveLightBlender(), nullptr);
+    EXPECT_FALSE(properties.IsNGBlenderValid());
+}
+
 } // namespace Rosen
 } // namespace OHOS

@@ -25,7 +25,7 @@ namespace Drawing {
 class SerialProcs {
 public:
     SerialProcs() noexcept;
-    virtual ~SerialProcs() {}
+    virtual ~SerialProcs();
     template <typename T>
     T* GetImpl() const
     {

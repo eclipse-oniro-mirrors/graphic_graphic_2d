@@ -339,6 +339,7 @@ ohos_unittest("RSEffectUtilsTest") {
     "eventhandler:libeventhandler",
     "googletest:gmock_main",
     "googletest:gtest_main",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",

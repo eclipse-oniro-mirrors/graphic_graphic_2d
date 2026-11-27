@@ -1406,6 +1406,20 @@ public:
     void SetBlender(const Blender* blender);
 
     /**
+     * @brief Sets the adaptive Blender, which switches between dark and light Blender
+     *        according to the contrast color picked by ColorPicker.
+     *
+     * @param darkBlender NG blender used when the picked background is light.
+     * @param lightBlender NG blender used when the picked background is dark.
+     *
+     * @note Both must be non-null, or both null to clear the adaptive Blender.
+     *       Only ColorfulBrightnessBlender is supported. The adaptive Blender takes effect only when this node or
+     *       one of its ancestors has an active ColorPicker pick; otherwise the regular Blender is used.
+     */
+    void SetAdaptiveBlender(const std::shared_ptr<RSNGBlenderBase>& darkBlender,
+        const std::shared_ptr<RSNGBlenderBase>& lightBlender);
+
+    /**
      * @brief Sets the NG blender, sent through a single FOREGROUND_NG_BLENDER IPC property.
      *
      * @param blender NG blender object converted from an old-style Blender.
@@ -2255,13 +2269,7 @@ protected:
         rsCmdModifierQueue_.push_back(modifier);
     }
 
-    void PopFrontRSCmdModifierQueue()
-    {
-        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
-        if (!rsCmdModifierQueue_.empty()) {
-            rsCmdModifierQueue_.pop_front();
-        }
-    }
+    void PopFrontRSCmdModifierQueue();
 
     std::vector<PropertyId> GetModifierIds() const;
 

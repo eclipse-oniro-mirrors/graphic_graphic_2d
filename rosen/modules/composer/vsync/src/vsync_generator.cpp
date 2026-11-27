@@ -452,14 +452,20 @@ int64_t VSyncGenerator::SetCurrentRefreshRate(uint32_t currRefreshRate, uint32_t
     if (!DVSyncLibManager::Instance().IsInitialized()) {
         return delayTime;
     }
-    std::lock_guard<std::mutex> locker(mutex_);
-    delayTime = DVSyncLibManager::Instance().SetCurrentRefreshRate(currRefreshRate, lastRefreshRate);
-    if (currRefreshRate != 0 && delayTime != 0) {
-        WaitForTimeoutConNotifyLocked();
-        isLtpoNeedChange_ = true;
+    bool isLtpoNeedChangeFlag = false;
+    {
+        std::lock_guard<std::mutex> locker(mutex_);
+        delayTime = DVSyncLibManager::Instance().SetCurrentRefreshRate(currRefreshRate, lastRefreshRate);
+        isLtpoNeedChangeFlag = currRefreshRate != 0 && delayTime != 0;
+        if (isLtpoNeedChangeFlag) {
+            isLtpoNeedChange_ = true;
+        }
+        RS_TRACE_NAME_FMT("DVSync::setCurrentRefreshRate isLtpoNeedChange:%d, currRefreshRate:%u, delayTime:%ld",
+            isLtpoNeedChange_, currRefreshRate, delayTime);
     }
-    RS_TRACE_NAME_FMT("DVSync::UiDVSync setCurrentRefreshRate isLtpoNeedChange:%d, currRefreshRate:%u, delayTime:%ld",
-        isLtpoNeedChange_, currRefreshRate, delayTime);
+    if (isLtpoNeedChangeFlag) {
+        WaitForTimeoutConNotifyLocked();
+    }
     return delayTime;
 }
 

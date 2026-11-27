@@ -1435,6 +1435,11 @@ void RSPaintFilterCanvas::SetBlender(std::shared_ptr<Drawing::Blender> blender)
     envStack_.top().blender_ = blender;
 }
 
+std::shared_ptr<Drawing::Blender> RSPaintFilterCanvas::GetBlender() const
+{
+    return envStack_.empty() ? nullptr : envStack_.top().blender_;
+}
+
 int RSPaintFilterCanvas::SaveEnv()
 {
     // make a copy of top of stack
@@ -1505,6 +1510,14 @@ Drawing::ColorQuad RSPaintFilterCanvas::GetColorPicked(ColorPlaceholder placehol
     auto fraction = static_cast<float>(envStack_.top().fractionColor_ & 0x000000FF) / 255.f;
     auto colorPair = RSColorPickerUtils::GetColorForPlaceholder(placeholder);
     return RSColorPickerUtils::InterpolateColor(colorPair.first, colorPair.second, fraction);
+}
+
+float RSPaintFilterCanvas::GetColorPickedFraction() const
+{
+    if (envStack_.empty()) {
+        return -1.0f;
+    }
+    return static_cast<float>(envStack_.top().fractionColor_ & 0x000000FF) / 255.f;
 }
 
 RSPaintFilterCanvas::SaveStatus RSPaintFilterCanvas::SaveAllStatus(SaveType type)
@@ -1695,7 +1708,6 @@ std::optional<Drawing::Rect> RSPaintFilterCanvas::GetLocalClipBounds(const Drawi
     inverse.MapRect(dst, bounds);
     return dst;
 }
-
 
 void RSPaintFilterCanvas::SetEffectData(const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData>& effectData)
 {

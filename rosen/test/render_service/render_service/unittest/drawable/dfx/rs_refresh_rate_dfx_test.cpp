@@ -22,7 +22,6 @@
 #include "pipeline/rs_logical_display_render_node.h"
 
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/hardware_thread/rs_hardware_thread.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "params/rs_logical_display_render_params.h"
 
@@ -103,7 +102,6 @@ HWTEST_F(RSRefreshRateDfxTest, OnDrawTest002, TestSize.Level1)
     instance.SetShowRefreshRateEnabled(false, 1);
     bool ret = instance.GetShowRefreshRateEnabled();
     EXPECT_EQ(ret, false);
-
     EXPECT_NE(displayDrawable_, nullptr);
 
     RSRefreshRateDfx rsRefreshRateDfx(*displayDrawable_);

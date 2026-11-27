@@ -220,6 +220,11 @@ public:
         return Type;
     }
 
+    uint16_t GetDrawSlot() const override
+    {
+        return param_.modifierType_;
+    }
+
     bool SetParam(const FinishRecordCmdParam& param)
     {
         param_ = param;
@@ -258,6 +263,11 @@ public:
         return Type;
     }
 
+    uint16_t GetDrawSlot() const override
+    {
+        return param_.modifierType_;
+    }
+    
     bool SetParam(const DrawOnNodeCmdParam& param)
     {
         param_ = param;

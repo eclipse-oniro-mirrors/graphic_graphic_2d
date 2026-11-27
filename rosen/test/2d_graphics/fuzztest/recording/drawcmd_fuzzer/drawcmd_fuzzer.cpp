@@ -2804,7 +2804,6 @@ bool DrawCmdFuzzTest080(const uint8_t* data, size_t size)
         &constructorHandle);
     std::string out;
     clipAdaptiveRoundRectOpItem.Dump(out);
-
     int32_t width = GetObject<int32_t>();
     int32_t height = GetObject<int32_t>();
     Canvas canvas = Canvas(width, height);
@@ -2960,7 +2959,7 @@ bool DrawCmdFuzzTest083(const uint8_t* data, size_t size)
     if (data == nullptr) {
         return false;
     }
-
+ 
     size_t length = GetObject<size_t>() % MAX_SIZE + 1;
     char* dataText = new char[length];
     for (size_t i = 0; i < length; i++) {
@@ -2987,7 +2986,7 @@ bool DrawCmdFuzzTest084(const uint8_t* data, size_t size)
     if (data == nullptr) {
         return false;
     }
-
+ 
     ResetClipOpItem resetClipOpItem = ResetClipOpItem();
     int32_t width = GetObject<int32_t>();
     int32_t height = GetObject<int32_t>();

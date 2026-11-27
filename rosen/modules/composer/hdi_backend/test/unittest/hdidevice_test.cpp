@@ -140,8 +140,7 @@ HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
     std::vector<GraphicColorGamut> gamuts;
     EXPECT_CALL(*hdiDeviceMock_,
         GetScreenSupportedColorGamuts(_, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
-    EXPECT_EQ(hdiDeviceMock_->GetScreenSupportedColorGamuts(screenId, gamuts),
-              GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_EQ(hdiDeviceMock_->GetScreenSupportedColorGamuts(screenId, gamuts), GRAPHIC_DISPLAY_SUCCESS);
     GraphicColorGamut gamut = GRAPHIC_COLOR_GAMUT_INVALID;
     EXPECT_CALL(*hdiDeviceMock_, SetScreenColorGamut(_, _))
         .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_NOT_SUPPORT));
@@ -240,8 +239,7 @@ HWTEST_F(HdiDeviceTest, LayerFuncs001, Function | MediumTest| Level3)
     layerBuffer.cacheIndex = 0;
     EXPECT_CALL(*hdiDeviceMock_,
         SetLayerBuffer(_, _, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
-    EXPECT_EQ(hdiDeviceMock_->SetLayerBuffer(screenId, layerId, layerBuffer),
-              GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_EQ(hdiDeviceMock_->SetLayerBuffer(screenId, layerId, layerBuffer), GRAPHIC_DISPLAY_SUCCESS);
     GraphicCompositionType cmpType = GRAPHIC_COMPOSITION_CLIENT;
     EXPECT_CALL(*hdiDeviceMock_, SetLayerCompositionType(_, _, _))
         .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
@@ -427,8 +425,7 @@ HWTEST_F(HdiDeviceTest, LayerFuncs003, Function | MediumTest| Level3)
     layerBuffer.cacheIndex = 0;
     EXPECT_CALL(*hdiDeviceMock_,
         SetLayerBuffer(_, _, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
-    EXPECT_EQ(hdiDeviceMock_->SetLayerBuffer(screenId, layerId, layerBuffer),
-              GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_EQ(hdiDeviceMock_->SetLayerBuffer(screenId, layerId, layerBuffer), GRAPHIC_DISPLAY_SUCCESS);
     GraphicCompositionType cmpType = GRAPHIC_COMPOSITION_CLIENT;
     EXPECT_CALL(*hdiDeviceMock_, SetLayerCompositionType(_, _, _))
         .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
@@ -534,8 +531,7 @@ HWTEST_F(HdiDeviceTest, LayerFuncs004, Function | MediumTest| Level3)
     layerBuffer.cacheIndex = 0;
     EXPECT_CALL(*hdiDeviceMock_,
         SetLayerBuffer(_, _, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
-    EXPECT_EQ(hdiDeviceMock_->SetLayerBuffer(screenId, layerId, layerBuffer),
-              GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_EQ(hdiDeviceMock_->SetLayerBuffer(screenId, layerId, layerBuffer), GRAPHIC_DISPLAY_SUCCESS);
     GraphicCompositionType cmpType = GRAPHIC_COMPOSITION_DEVICE;
     EXPECT_CALL(*hdiDeviceMock_, SetLayerCompositionType(_, _, _))
         .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
@@ -641,8 +637,7 @@ HWTEST_F(HdiDeviceTest, LayerFuncs005, Function | MediumTest| Level3)
     layerBuffer.cacheIndex = 0;
     EXPECT_CALL(*hdiDeviceMock_,
         SetLayerBuffer(_, _, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
-    EXPECT_EQ(hdiDeviceMock_->SetLayerBuffer(screenId, layerId, layerBuffer),
-              GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_EQ(hdiDeviceMock_->SetLayerBuffer(screenId, layerId, layerBuffer), GRAPHIC_DISPLAY_SUCCESS);
     GraphicCompositionType cmpType = GRAPHIC_COMPOSITION_DEVICE;
     EXPECT_CALL(*hdiDeviceMock_, SetLayerCompositionType(_, _, _))
         .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
@@ -749,8 +744,7 @@ HWTEST_F(HdiDeviceTest, LayerFuncs006, Function | MediumTest| Level3)
     layerBuffer.cacheIndex = 0;
     EXPECT_CALL(*hdiDeviceMock_,
         SetLayerBuffer(_, _, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
-    EXPECT_EQ(hdiDeviceMock_->SetLayerBuffer(screenId, layerId, layerBuffer),
-              GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_EQ(hdiDeviceMock_->SetLayerBuffer(screenId, layerId, layerBuffer), GRAPHIC_DISPLAY_SUCCESS);
     GraphicCompositionType cmpType = GRAPHIC_COMPOSITION_DEVICE;
     EXPECT_CALL(*hdiDeviceMock_, SetLayerCompositionType(_, _, _))
         .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
@@ -1255,7 +1249,7 @@ HWTEST_F(HdiDeviceTest, GetLayerSolidFilledColor_Success, Function | MediumTest|
     EXPECT_CALL(*hdiDeviceMock_, GetLayerSolidFilledColor(_, _, _))
         .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     EXPECT_EQ(hdiDeviceMock_->GetLayerSolidFilledColor(screenId, layerId, solidFilledColor),
-              GRAPHIC_DISPLAY_SUCCESS);
+            GRAPHIC_DISPLAY_SUCCESS);
 }
 
 /**
@@ -1276,7 +1270,7 @@ HWTEST_F(HdiDeviceTest, GetLayerSolidFilledColor_Failed, Function | MediumTest| 
     EXPECT_CALL(*hdiDeviceMock_, GetLayerSolidFilledColor(_, _, _))
         .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_FAILURE));
     EXPECT_EQ(hdiDeviceMock_->GetLayerSolidFilledColor(screenId, layerId, solidFilledColor),
-              GRAPHIC_DISPLAY_FAILURE);
+            GRAPHIC_DISPLAY_FAILURE);
 }
 
 /**
@@ -1296,7 +1290,7 @@ HWTEST_F(HdiDeviceTest, GetLayerSolidFilledColor_NullPtr, Function | MediumTest|
     EXPECT_CALL(*hdiDeviceMock_, GetLayerSolidFilledColor(_, _, _))
         .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_NULL_PTR));
     EXPECT_EQ(hdiDeviceMock_->GetLayerSolidFilledColor(screenId, layerId, solidFilledColor),
-              GRAPHIC_DISPLAY_NULL_PTR);
+            GRAPHIC_DISPLAY_NULL_PTR);
 }
 
 /**

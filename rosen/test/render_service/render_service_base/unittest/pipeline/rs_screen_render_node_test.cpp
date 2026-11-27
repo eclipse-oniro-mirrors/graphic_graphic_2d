@@ -1709,6 +1709,7 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateRenderParamsRecordChildAndEitherOrWhiteLi
     auto display = std::make_shared<RSLogicalDisplayRenderNode>(displayId, displayConfig, rsContext);
     display->SetWindowRecordConfig(recordConfig);
     screen->AddChild(display);
+    screen->ApplyModifiers();
     // The display prepares before the screen in production; the screen still rebuilds the record
     // white list from the node map because config equality alone cannot prove freshness.
     display->InitRenderParams();
@@ -1768,6 +1769,7 @@ HWTEST_F(RSScreenRenderNodeTest, NormalizeWindowRecordDisplaysRejectsMultiDispla
     auto rsContext = std::make_shared<RSContext>();
     auto screen = std::make_shared<RSScreenRenderNode>(screenNodeId, testScreenId, rsContext);
     screen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    screen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(screenNodeId);
 
     RSSurfaceRenderNodeConfig mainConfig { .id = mainId, .nodeType = RSSurfaceNodeType::APP_WINDOW_NODE };
     auto mainNode = std::make_shared<RSSurfaceRenderNode>(mainConfig, rsContext);
@@ -1782,6 +1784,8 @@ HWTEST_F(RSScreenRenderNodeTest, NormalizeWindowRecordDisplaysRejectsMultiDispla
     recordConfig.surfaceNodeIds = { mainId };
     auto firstDisplay = std::make_shared<RSLogicalDisplayRenderNode>(firstDisplayId, displayConfig, rsContext);
     auto secondDisplay = std::make_shared<RSLogicalDisplayRenderNode>(secondDisplayId, displayConfig, rsContext);
+    firstDisplay->SetDisplayMode(displayConfig.displayMode);
+    secondDisplay->SetDisplayMode(displayConfig.displayMode);
     firstDisplay->SetWindowRecordConfig(recordConfig);
     secondDisplay->SetWindowRecordConfig(recordConfig);
     firstDisplay->stagingRenderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(firstDisplayId);
@@ -1912,6 +1916,7 @@ HWTEST_F(RSScreenRenderNodeTest, PublishWindowRecordSourceSwitchReleasesOldScree
     auto rsContext = std::make_shared<RSContext>();
     auto outputScreen = std::make_shared<RSScreenRenderNode>(outputScreenNodeId, outputScreenId, rsContext);
     outputScreen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    outputScreen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(outputScreenNodeId);
     auto firstSourceScreen =
         std::make_shared<RSScreenRenderNode>(firstSourceScreenNodeId, firstSourceScreenId, rsContext);
     firstSourceScreen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(firstSourceScreenNodeId);
@@ -1929,6 +1934,7 @@ HWTEST_F(RSScreenRenderNodeTest, PublishWindowRecordSourceSwitchReleasesOldScree
     recordConfig.surfaceNodeIds = { firstMainId };
     display->SetWindowRecordConfig(recordConfig);
     outputScreen->AddChild(display);
+    outputScreen->ApplyModifiers();
 
     constexpr ScreenId secondSourceScreenId = 7667;
     constexpr NodeId secondSourceScreenNodeId = 7668;
@@ -1980,6 +1986,7 @@ HWTEST_F(RSScreenRenderNodeTest, PublishWindowRecordDmsRecoverySyncsScreenRelati
     auto rsContext = std::make_shared<RSContext>();
     auto outputScreen = std::make_shared<RSScreenRenderNode>(outputScreenNodeId, outputScreenId, rsContext);
     outputScreen->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    outputScreen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(outputScreenNodeId);
     auto dmsScreen = std::make_shared<RSScreenRenderNode>(dmsScreenNodeId, dmsScreenId, rsContext);
     dmsScreen->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(dmsScreenNodeId);
     auto dmsParams = static_cast<RSScreenRenderParams*>(dmsScreen->stagingRenderParams_.get());
@@ -1997,6 +2004,7 @@ HWTEST_F(RSScreenRenderNodeTest, PublishWindowRecordDmsRecoverySyncsScreenRelati
     display->SetDisplayMode(DisplayMode::MIRROR);
     display->SetMirrorSource(dmsDisplay);
     outputScreen->AddChild(display);
+    outputScreen->ApplyModifiers();
 
     // No active record session: the single-display MIRROR source is synchronized to the screen.
     outputScreen->PublishWindowRecordMirrorSource();

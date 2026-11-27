@@ -149,7 +149,8 @@ HWTEST_F(RSVKImageManagerTest, MapAndUnMapVkImage003, TestSize.Level1)
         ASSERT_NE(buffer, nullptr);
 
         bufferSeqNums[i - 1] = buffer->GetBufferId();
-        auto imageCache = vkImageManager_->MapVkImageFromSurfaceBuffer(buffer, SyncFence::INVALID_FENCE, fakeTid_);
+        auto imageCache = vkImageManager_->MapVkImageFromSurfaceBuffer(
+            buffer, SyncFence::INVALID_FENCE, fakeTid_);
         EXPECT_NE(imageCache, nullptr);
         if (i <= MAX_CACHE_SIZE) {
             EXPECT_EQ(i, vkImageManager_->imageCacheSeqs_.size());
@@ -546,8 +547,8 @@ HWTEST_F(RSVKImageManagerTest, UnMapImageFromSurfaceBuffer001, TestSize.Level1)
 
         bufferSeqNums.insert(buffer->GetBufferId());
         bufferSeqInvalidNums.insert(buffer->GetBufferId() / 2);
-        auto imageCache = vkImageManager_->MapVkImageFromSurfaceBuffer(
-            buffer, SyncFence::INVALID_FENCE, UNI_RENDER_THREAD_INDEX);
+        auto imageCache =
+            vkImageManager_->MapVkImageFromSurfaceBuffer(buffer, SyncFence::INVALID_FENCE, UNI_RENDER_THREAD_INDEX);
         EXPECT_NE(imageCache, nullptr);
         EXPECT_EQ(i, vkImageManager_->imageCacheSeqs_.size());
     }
@@ -577,8 +578,7 @@ HWTEST_F(RSVKImageManagerTest, UnMapImageFromSurfaceBuffer002, TestSize.Level1)
         ASSERT_NE(buffer, nullptr);
 
         bufferSeqNums.insert(buffer->GetBufferId());
-        auto imageCache = vkImageManager_->MapVkImageFromSurfaceBuffer(
-            buffer, SyncFence::INVALID_FENCE, tid);
+        auto imageCache = vkImageManager_->MapVkImageFromSurfaceBuffer(buffer, SyncFence::INVALID_FENCE, tid);
         EXPECT_NE(imageCache, nullptr);
         if (i <= MAX_CACHE_SIZE) {
             EXPECT_EQ(i, vkImageManager_->imageCacheSeqs_.size());
@@ -610,8 +610,7 @@ HWTEST_F(RSVKImageManagerTest, UnMapImageFromSurfaceBuffer003, TestSize.Level1)
         ASSERT_NE(buffer, nullptr);
 
         bufferSeqNums.insert(buffer->GetBufferId());
-        auto imageCache = vkImageManager_->MapVkImageFromSurfaceBuffer(
-            buffer, SyncFence::INVALID_FENCE, tid);
+        auto imageCache = vkImageManager_->MapVkImageFromSurfaceBuffer(buffer, SyncFence::INVALID_FENCE, tid);
         EXPECT_NE(imageCache, nullptr);
         if (i <= MAX_CACHE_SIZE) {
             EXPECT_EQ(i, vkImageManager_->imageCacheSeqs_.size());

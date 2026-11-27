@@ -257,6 +257,36 @@ HWTEST_F(RSShaderDrawableTest, RSShaderDrawableBaseOnDraw004, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RSShaderDrawableBaseOnDraw005
+ * @tc.desc: Base OnDraw with cacheStore set and compatible canvas (alpha 1.0, no blender)
+ *           keeps the container cache compatible.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSShaderDrawableTest, RSShaderDrawableBaseOnDraw005, TestSize.Level1)
+{
+    RSRenderNode node(0);
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    ASSERT_NE(shader, nullptr);
+    shader->SetCachePolicy(RSFrameCacheLevel::CONTAINER, { RSFrameSkipMode::NONE, 0 });
+    auto drawable = std::make_shared<TestableShaderDrawable>();
+    ASSERT_NE(drawable, nullptr);
+    drawable->SetTestShader(shader);
+    EXPECT_TRUE(drawable->OnUpdate(node));
+    drawable->OnSync();
+    ASSERT_NE(drawable->visualEffectContainer_, nullptr);
+    auto cacheStore = drawable->visualEffectContainer_->GetCacheStore();
+    ASSERT_NE(cacheStore, nullptr);
+
+    drawable->drawRect_ = RectF(0, 0, 100, 100);
+    auto baseCanvas = std::make_shared<Drawing::Canvas>();
+    auto canvas = std::make_shared<RSPaintFilterCanvas>(baseCanvas.get());
+    auto rect = std::make_shared<Drawing::Rect>(0, 0, 100, 100);
+    // Default canvas: alpha == 1.0 and no blender, so MarkCacheIncompatible(false).
+    drawable->OnDraw(canvas.get(), rect.get());
+    EXPECT_FALSE(cacheStore->IsCacheIncompatible());
+}
+
+/**
  * @tc.name: RSForegroundShaderDrawableOnGenerate001
  * @tc.desc: Foreground OnGenerate returns nullptr without a foreground shader
  * @tc.type: FUNC

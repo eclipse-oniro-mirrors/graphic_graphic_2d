@@ -67,12 +67,12 @@ void DrawPixelMapMeshBuilderProcess(std::shared_ptr<Media::PixelMap> pixelMap,
     const float dx = width / meshWidth;
     Drawing::Point* texsPit = texsPoint;
     float y = 0;
-    for (uint32_t i = 0; i <= meshWidth; i++) {
-        if (i == meshWidth) {
+    for (uint32_t i = 0; i <= meshHeight; i++) {
+        if (i == meshHeight) {
             y = height;
         }
         float x = 0;
-        for (uint32_t j = 0; j < meshHeight; j++) {
+        for (uint32_t j = 0; j < meshWidth; j++) {
             texsPit->Set(x, y);
             texsPit += 1;
             x += dx;
@@ -84,13 +84,13 @@ void DrawPixelMapMeshBuilderProcess(std::shared_ptr<Media::PixelMap> pixelMap,
     uint16_t* dexIndices = indices;
     uint32_t indexIndices = 0;
     uint32_t indexSteps = 2;
-    for (uint32_t i = 0; i < meshWidth; i++) {
-        for (uint32_t j = 0; j < meshHeight; j++) {
+    for (uint32_t i = 0; i < meshHeight; i++) {
+        for (uint32_t j = 0; j < meshWidth; j++) {
             *dexIndices++ = static_cast<uint16_t>(indexIndices);
-            *dexIndices++ = static_cast<uint16_t>(indexIndices + meshHeight + 1);
-            *dexIndices++ = static_cast<uint16_t>(indexIndices + meshHeight + indexSteps);
+            *dexIndices++ = static_cast<uint16_t>(indexIndices + meshWidth + 1);
+            *dexIndices++ = static_cast<uint16_t>(indexIndices + meshWidth + indexSteps);
             *dexIndices++ = static_cast<uint16_t>(indexIndices);
-            *dexIndices++ = static_cast<uint16_t>(indexIndices + meshHeight + indexSteps);
+            *dexIndices++ = static_cast<uint16_t>(indexIndices + meshWidth + indexSteps);
             *dexIndices++ = static_cast<uint16_t>(indexIndices + 1);
             indexIndices += 1;
         }

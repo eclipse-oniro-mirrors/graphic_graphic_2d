@@ -90,6 +90,7 @@ public:
      * Only the pixelMap_ with one RefCount and one UseCount can be purged.
     */
     void Purge();
+    void PurgeGpuImageOnly();
     void DePurge();
     void FlushCache();
 

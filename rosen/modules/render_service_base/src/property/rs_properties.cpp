@@ -38,6 +38,7 @@
 #include "draw/color.h"
 #include "drawable/rs_effect_drawable_utils.h"
 #include "drawable/rs_property_drawable_utils.h"
+#include "effect/rs_render_blender_base.h"
 #include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_mask_base.h"
 #include "effect/rs_render_shader_base.h"
@@ -177,7 +178,6 @@ RSProperties::RSProperties()
 }
 
 RSProperties::~RSProperties() = default;
-
 
 void RSProperties::SetBounds(Vector4f bounds)
 {
@@ -1121,7 +1121,6 @@ float RSProperties::GetBackgroundShaderProgress() const
     return decoration_ ? decoration_->bgShaderProgress_ : -1.f;
 }
 
-
 void RSProperties::SetBgImage(const std::shared_ptr<RSImage>& image)
 {
     if (!decoration_) {
@@ -1944,7 +1943,72 @@ std::shared_ptr<RSNGRenderBlenderBase> RSProperties::GetNGBlender() const
 
 bool RSProperties::IsNGBlenderValid() const
 {
-    return GetNGBlender() != nullptr;
+    return GetNGBlender() != nullptr || GetNGAdaptiveDarkBlender() != nullptr ||
+        GetNGAdaptiveLightBlender() != nullptr;
+}
+
+namespace {
+bool IsColorfulBrightnessBlender(const std::shared_ptr<RSNGRenderBlenderBase>& blender, const char* funcName)
+{
+    if (blender != nullptr && blender->GetType() != RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER) {
+        ROSEN_LOGE("RSProperties::%{public}s: unsupported blender type %{public}d, ignore", funcName,
+            static_cast<int>(blender->GetType()));
+        return false;
+    }
+    return true;
+}
+} // namespace
+
+void RSProperties::SetNGAdaptiveDarkBlender(const std::shared_ptr<RSNGRenderBlenderBase>& blender)
+{
+    if (!IsColorfulBrightnessBlender(blender, "SetNGAdaptiveDarkBlender")) {
+        return;
+    }
+    auto& blenderEffect = GetEffectProperties().GetBlenderEffect();
+    if (blender) {
+        isDrawn_ = true;
+        blenderEffect.ngAdaptiveDarkBlender_ = blender;
+    } else {
+        if (blenderEffect.ngAdaptiveDarkBlender_ == nullptr) {
+            return; // nothing to clear, keep untouched nodes out of the dirty cycle
+        }
+        blenderEffect.ngAdaptiveDarkBlender_ = nullptr;
+    }
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderBlenderBase> RSProperties::GetNGAdaptiveDarkBlender() const
+{
+    const auto* blenderEffect = GetEffectProperties().GetBlenderEffect();
+    return blenderEffect != nullptr ? blenderEffect->ngAdaptiveDarkBlender_ : nullptr;
+}
+
+void RSProperties::SetNGAdaptiveLightBlender(const std::shared_ptr<RSNGRenderBlenderBase>& blender)
+{
+    if (!IsColorfulBrightnessBlender(blender, "SetNGAdaptiveLightBlender")) {
+        return;
+    }
+    auto& blenderEffect = GetEffectProperties().GetBlenderEffect();
+    if (blender) {
+        isDrawn_ = true;
+        blenderEffect.ngAdaptiveLightBlender_ = blender;
+    } else {
+        if (blenderEffect.ngAdaptiveLightBlender_ == nullptr) {
+            return;
+        }
+        blenderEffect.ngAdaptiveLightBlender_ = nullptr;
+    }
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderBlenderBase> RSProperties::GetNGAdaptiveLightBlender() const
+{
+    const auto* blenderEffect = GetEffectProperties().GetBlenderEffect();
+    return blenderEffect != nullptr ? blenderEffect->ngAdaptiveLightBlender_ : nullptr;
 }
 
 void RSProperties::SetGreyCoef(const std::optional<Vector2f>& greyCoef)

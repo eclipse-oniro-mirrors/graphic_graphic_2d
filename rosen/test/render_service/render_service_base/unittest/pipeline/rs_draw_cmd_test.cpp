@@ -26,12 +26,27 @@
 
 #include "pipeline/rs_draw_cmd.h"
 #include "pipeline/rs_recording_canvas.h"
+#include "pipeline/rs_render_node_gc.h"
+#include "params/rs_surface_render_params.h"
+#include "pipeline/rs_context.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "transaction/rs_marshalling_helper.h"
 
 using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
+namespace {
+class TestDrawCmdDrawableAdapter : public DrawableV2::RSRenderNodeDrawableAdapter {
+public:
+    explicit TestDrawCmdDrawableAdapter(std::shared_ptr<const RSRenderNode> node)
+        : RSRenderNodeDrawableAdapter(std::move(node))
+    {
+        renderParams_ = std::make_unique<RSSurfaceRenderParams>(nodeId_);
+    }
+    void Draw(Drawing::Canvas& canvas) {}
+};
+} // namespace
 class RSDrawCmdTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -152,6 +167,7 @@ HWTEST_F(RSDrawCmdTest, Playback001, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issueI9H4AD
  */
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 HWTEST_F(RSDrawCmdTest, PreProcessPixelMap, TestSize.Level1)
 {
     Drawing::Canvas canvas;
@@ -165,6 +181,7 @@ HWTEST_F(RSDrawCmdTest, PreProcessPixelMap, TestSize.Level1)
     extendImageObject.PreProcessPixelMap(canvas, pixelMapT, sampling);
     ASSERT_TRUE(true);
 }
+#endif
 
 /**
  * @tc.name: Playback002
@@ -1489,4 +1506,109 @@ HWTEST_F(RSDrawCmdTest, RSExtendImageObjectFlushImageCacheTest002, TestSize.Leve
     extendImageLatticeObjWithPixelMap.FlushImageCache();
     ASSERT_NE(extendImageLatticeObjWithPixelMap.rsImage_, nullptr);
 }
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+/**
+ * @tc.name: PreProcessPixelMapAstcReserveImageInfo_001
+ * @tc.desc: Verify PreProcessPixelMap ASTC path calls ReserveImageInfo when !imageInfoReserved_ and
+ *          ExtractPid(GetNodeId()) == RSRenderNodeGC::Instance().GetScbPid()
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSDrawCmdTest, PreProcessPixelMapAstcReserveImageInfo_001, TestSize.Level1)
+{
+    constexpr NodeId surfaceNodeId = 51001;
+    Drawing::Canvas canvas;
+    Media::InitializationOptions opts;
+    opts.size.width = 200;
+    opts.size.height = 150;
+    opts.editable = true;
+    std::shared_ptr<Media::PixelMap> astcPixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(astcPixelMap, nullptr);
+    astcPixelMap->isAstc_ = true;
+    Drawing::SamplingOptions sampling;
+    auto extendImageObject = std::make_shared<RSExtendImageObject>(astcPixelMap, imageInfo);
+    extendImageObject->rsImage_ = std::make_shared<RSImage>();
+    pid_t scbPid = RSRenderNodeGC::Instance().GetScbPid();
+    NodeId testNodeId = (static_cast<NodeId>(scbPid) << 32) | 0x1;
+    extendImageObject->SetNodeId(testNodeId);
+    extendImageObject->SetImageInfoReserved(false);
+
+    auto context = std::make_shared<RSContext>();
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(testNodeId, context);
+    auto drawable = std::make_shared<TestDrawCmdDrawableAdapter>(surfaceNode);
+    ASSERT_NE(drawable, nullptr);
+    ASSERT_NE(drawable->GetRenderParams(), nullptr);
+    drawable->GetRenderParams()->SetFirstLevelNode(surfaceNodeId);
+    DrawableV2::RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.emplace(testNodeId, drawable);
+
+    extendImageObject->PreProcessPixelMap(canvas, astcPixelMap, sampling);
+    EXPECT_TRUE(extendImageObject->IsImageInfoReserved());
+    {
+        auto& imageCache = RSImageCache::Instance();
+        std::lock_guard<std::mutex> lock(imageCache.rsImageInfoMapMutex_);
+        EXPECT_EQ(imageCache.rsImageInfoMap.count(surfaceNodeId), 1u);
+        imageCache.rsImageInfoMap.clear();
+    }
+    DrawableV2::RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.erase(testNodeId);
+}
+
+/**
+ * @tc.name: PreProcessPixelMapAstcReserveImageInfo_002
+ * @tc.desc: Verify PreProcessPixelMap ASTC path skips ReserveImageInfo when imageInfoReserved_ is already true
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSDrawCmdTest, PreProcessPixelMapAstcReserveImageInfo_002, TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    Media::InitializationOptions opts;
+    opts.size.width = 200;
+    opts.size.height = 150;
+    opts.editable = true;
+    std::shared_ptr<Media::PixelMap> astcPixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(astcPixelMap, nullptr);
+    astcPixelMap->isAstc_ = true;
+    Drawing::SamplingOptions sampling;
+    RSExtendImageObject extendImageObject(astcPixelMap, imageInfo);
+    extendImageObject.rsImage_ = std::make_shared<RSImage>();
+    pid_t scbPid = RSRenderNodeGC::Instance().GetScbPid();
+    NodeId testNodeId = (static_cast<NodeId>(scbPid) << 32) | 0x2;
+    extendImageObject.SetNodeId(testNodeId);
+    extendImageObject.SetImageInfoReserved(true);
+
+    extendImageObject.PreProcessPixelMap(canvas, astcPixelMap, sampling);
+    EXPECT_TRUE(extendImageObject.IsImageInfoReserved());
+    RSImageCache::Instance().rsImageInfoMap.clear();
+}
+
+/**
+ * @tc.name: PreProcessPixelMapAstcReserveImageInfo_003
+ * @tc.desc: Verify PreProcessPixelMap ASTC path skips ReserveImageInfo when pid != GetScbPid()
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSDrawCmdTest, PreProcessPixelMapAstcReserveImageInfo_003, TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    Media::InitializationOptions opts;
+    opts.size.width = 200;
+    opts.size.height = 150;
+    opts.editable = true;
+    std::shared_ptr<Media::PixelMap> astcPixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(astcPixelMap, nullptr);
+    astcPixelMap->isAstc_ = true;
+    Drawing::SamplingOptions sampling;
+    RSExtendImageObject extendImageObject(astcPixelMap, imageInfo);
+    extendImageObject.rsImage_ = std::make_shared<RSImage>();
+    pid_t nonScbPid = RSRenderNodeGC::Instance().GetScbPid() + 1;
+    NodeId testNodeId = (static_cast<NodeId>(nonScbPid) << 32) | 0x3;
+    extendImageObject.SetNodeId(testNodeId);
+    extendImageObject.SetImageInfoReserved(false);
+
+    extendImageObject.PreProcessPixelMap(canvas, astcPixelMap, sampling);
+    EXPECT_FALSE(extendImageObject.IsImageInfoReserved());
+    RSImageCache::Instance().rsImageInfoMap.clear();
+}
+#endif
 } // namespace OHOS::Rosen

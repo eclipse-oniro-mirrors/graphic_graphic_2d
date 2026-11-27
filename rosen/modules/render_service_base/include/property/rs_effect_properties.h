@@ -139,6 +139,8 @@ struct ShaderEffectParams {
 
 struct BlenderEffectParams {
     std::shared_ptr<RSNGRenderBlenderBase> ngBlender_ = nullptr;
+    std::shared_ptr<RSNGRenderBlenderBase> ngAdaptiveDarkBlender_ = nullptr;
+    std::shared_ptr<RSNGRenderBlenderBase> ngAdaptiveLightBlender_ = nullptr;
     std::optional<RSDynamicBrightnessPara> bgBrightnessParams_;
     int colorBlendMode_ = 0;
     int colorBlendApplyType_ = 0;

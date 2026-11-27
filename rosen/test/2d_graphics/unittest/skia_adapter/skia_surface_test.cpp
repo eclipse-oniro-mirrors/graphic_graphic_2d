@@ -465,6 +465,20 @@ HWTEST_F(SkiaSurfaceTest, SkiaSurfaceGetSkSurface001, TestSize.Level1)
     auto skSurface = skiaSurface.GetSkSurface();
     EXPECT_EQ(skSurface, nullptr);
 }
+
+/**
+ * @tc.name: GetRenderAreaGranularity001
+ * @tc.desc: Test GetRenderAreaGranularity
+ * @tc.type: FUNC
+ * @tc.require:I91EDT
+ */
+HWTEST_F(SkiaSurfaceTest, GetRenderAreaGranularity001, TestSize.Level1)
+{
+    SkiaSurface skiaSurface;
+    TileGranularity granularity = skiaSurface.GetRenderAreaGranularity();
+    EXPECT_EQ(granularity.width, 0u);
+    EXPECT_EQ(granularity.height, 0u);
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

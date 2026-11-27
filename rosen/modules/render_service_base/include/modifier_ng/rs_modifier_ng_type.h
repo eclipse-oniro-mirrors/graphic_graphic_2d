@@ -351,6 +351,8 @@ public:
             case RSPropertyType::CLIP_SHAPE: return "ClipShape";
             case RSPropertyType::FOREGROUND_NG_BLENDER: return "ForegroundNGBlender";
             case RSPropertyType::COLOR_MATRIX: return "ColorMatrix";
+            case RSPropertyType::ADAPTIVE_DARK_BLENDER: return "AdaptiveDarkBlender";
+            case RSPropertyType::ADAPTIVE_LIGHT_BLENDER: return "AdaptiveLightBlender";
             default: return "Unknown";
         }
         return "Unknown";

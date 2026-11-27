@@ -2818,5 +2818,21 @@ bool RSClientToServiceConnection::ProfilerIsSecureScreen()
 #endif
 }
 
+void RSClientToServiceConnection::ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type)
+{
+    if (renderProcessManagerAgent_ == nullptr) {
+        RS_LOGE("%{public}s renderProcessManagerAgent_ is nullptr", __func__);
+        return;
+    }
+    auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
+    if (serviceToRenderConns.empty()) {
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
+        return;
+    }
+    for (auto conn : serviceToRenderConns) {
+        conn->ReleaseGpuMemory(surfaceNodeId, type);
+    }
+}
+
 } // namespace Rosen
 } // namespace OHOS

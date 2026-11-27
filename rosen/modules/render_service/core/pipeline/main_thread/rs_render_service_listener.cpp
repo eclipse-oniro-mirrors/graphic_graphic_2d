@@ -205,17 +205,24 @@ void RSRenderServiceListener::OnCleanCache(uint32_t *bufSeqNum)
     }
 
     auto node = surfaceBufferInterface_.lock();
-    if (node == nullptr) {
-        std::lock_guard<std::mutex> lock(pendingStateMutex_);
-        pendingCallbackBits_ |= PENDING_ON_CLEAN_CACHE_BIT;
-    }
 
     uint64_t curBufferId = 0;
+    uint32_t bufSeqNumValue = 0;
     auto curBuffer = surfaceHandler->GetBuffer();
-    if (curBuffer && bufSeqNum) {
-        *bufSeqNum = curBuffer->GetSeqNum();
+    bool hasBufferSeqNum = curBuffer != nullptr && bufSeqNum != nullptr;
+    if (hasBufferSeqNum) {
+        bufSeqNumValue = curBuffer->GetSeqNum();
+        *bufSeqNum = bufSeqNumValue;
         curBufferId = curBuffer->GetBufferId();
-        cleanCacheBufSeqNum_ = *bufSeqNum;
+    }
+    {
+        std::lock_guard<std::mutex> lock(pendingStateMutex_);
+        if (hasBufferSeqNum) {
+            cleanCacheBufSeqNum_ = bufSeqNumValue;
+        }
+        if (node == nullptr) {
+            pendingCallbackBits_ |= PENDING_ON_CLEAN_CACHE_BIT;
+        }
     }
     surfaceHandler->ResetBufferAvailableCount();
 
@@ -239,8 +246,8 @@ void RSRenderServiceListener::OnCleanCache(uint32_t *bufSeqNum)
             node->OnCleanCache(tmpSet);
             handler->EnqueueAndFlushGPUCacheCleanup(tmpSet);
         });
-    RS_TRACE_NAME_FMT("RSRenderServiceListener::OnCleanCache cleanCacheBufSeqNum:%d nodeId:%" PRIu64,
-                      cleanCacheBufSeqNum_, nodeId_);
+    RS_TRACE_NAME_FMT("RSRenderServiceListener::OnCleanCache cleanCacheBufSeqNum : %d, nodeId : %" PRId64,
+                      bufSeqNumValue, nodeId_);
     CleanLayerBufferCache();
 }
 

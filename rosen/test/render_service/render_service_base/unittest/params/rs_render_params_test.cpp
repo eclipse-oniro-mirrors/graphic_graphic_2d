@@ -1079,6 +1079,7 @@ HWTEST_F(RSRenderParamsTest, SwapRelatedRenderParamsTest, TestSize.Level1)
     ASSERT_EQ(paramsA.GetMatrix().Get(Drawing::Matrix::SCALE_X), 3.0f);
     ASSERT_EQ(paramsB.GetMatrix().Get(Drawing::Matrix::SCALE_X), 2.0f);
 }
+
 /**
  * @tc.name: OnSync003
  * @tc.desc: Test nodeColorSpace_ is synced in OnSync
@@ -1177,7 +1178,7 @@ HWTEST_F(RSRenderParamsTest, ApplyAlphaAndMatrixToCanvas_HasSandBoxFalse_ApplyMa
     Drawing::Matrix testMatrix;
     testMatrix.SetScale(2.0f, 2.0f);
     renderParams.SetMatrix(testMatrix);
-    
+
     auto prevMatrix = canvas.GetTotalMatrix();
     renderParams.ApplyAlphaAndMatrixToCanvas(canvas, true);
 

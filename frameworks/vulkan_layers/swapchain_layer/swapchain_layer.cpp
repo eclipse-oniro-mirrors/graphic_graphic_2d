@@ -1612,14 +1612,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(
     if (pSurfaceFormats == nullptr) {
         return GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, pSurfaceInfo->surface, pSurfaceFormatCount, nullptr);
     }
-    // Get pSurfaceFormats
-    uint32_t formatCount = *pSurfaceFormatCount;
 
-    std::vector<VkSurfaceFormatKHR> surfaceFormats(formatCount);
+    std::vector<VkSurfaceFormatKHR> surfaceFormats(*pSurfaceFormatCount);
     VkResult res = GetPhysicalDeviceSurfaceFormatsKHR(
         physicalDevice, pSurfaceInfo->surface, pSurfaceFormatCount, surfaceFormats.data());
     if (res == VK_SUCCESS || res == VK_INCOMPLETE) {
-        for (uint32_t i = 0; i < formatCount; i++) {
+        for (uint32_t i = 0; i < *pSurfaceFormatCount; i++) {
             pSurfaceFormats[i].surfaceFormat = surfaceFormats[i];
         }
     }

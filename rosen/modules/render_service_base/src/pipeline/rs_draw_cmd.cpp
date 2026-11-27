@@ -27,6 +27,7 @@
 #include "transaction/rs_marshalling_helper.h"
 #include "utils/system_properties.h"
 #include "pipeline/rs_task_dispatcher.h"
+#include "pipeline/rs_render_node_gc.h"
 #include "platform/common/rs_system_properties.h"
 #include "pipeline/rs_virtual_screen_thread_id_adapt.h"
 #include "pipeline/sk_resource_manager.h"
@@ -353,6 +354,14 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
             }
         }
         rsImage_->SetCompressData(fileData);
+#if defined(RS_ENABLE_VK)
+        // Only reserve ASTC image info for the SceneBoard process: the cleanup
+        // interface targets the desktop process, keeping non-SCB processes on
+        // the original(untracked) baseline to minimize the impact of registration.
+        if (!imageInfoReserved_ && ExtractPid(GetNodeId()) == RSRenderNodeGC::Instance().GetScbPid()) {
+            RSImageCache::Instance().ReserveImageInfo(rsImage_, GetNodeId(), weak_from_this());
+        }
+#endif
         return;
     }
     if (RSPixelMapUtil::IsYUVFormat(pixelMap)) {

@@ -394,6 +394,8 @@ private:
 
     void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow) override;
 
+    void ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type) override;
+
     void RemoveToken() override {};
 
 #ifdef RS_ENABLE_OVERLAY_DISPLAY

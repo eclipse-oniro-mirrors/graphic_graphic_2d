@@ -60,8 +60,7 @@ HWTEST_F(DeliverVoteTest, DeliverVoteTest_001, Function | SmallTest | Level0) {
 /**
  * @tc.name  : DeliverVote
  * @tc.number: DeliverVoteTest_002
- * @tc.desc  : When pid is 0 and eventStatus is false,
-DeliverVote should clear vec and return true
+ * @tc.desc  : When pid is 0 and eventStatus is false, DeliverVote should clear vec and return true
  */
 HWTEST_F(DeliverVoteTest, DeliverVoteTest_002, Function | SmallTest | Level0) {
     auto voter = std::make_shared<HgmVoter>(voters);
@@ -81,8 +80,7 @@ HWTEST_F(DeliverVoteTest, DeliverVoteTest_002, Function | SmallTest | Level0) {
 /**
  * @tc.name  : DeliverVote
  * @tc.number: DeliverVoteTest_003
- * @tc.desc  : When eventStatus is false and pid matches,
-DeliverVote should delete the matching record and return true
+ * @tc.desc  : When eventStatus is false and pid matches, DeliverVote should delete the matching record and return true
  */
 HWTEST_F(DeliverVoteTest, DeliverVoteTest_003, Function | SmallTest | Level0) {
     auto voter = std::make_shared<HgmVoter>(voters);
@@ -102,8 +100,7 @@ HWTEST_F(DeliverVoteTest, DeliverVoteTest_003, Function | SmallTest | Level0) {
 /**
  * @tc.name  : DeliverVote
  * @tc.number: DeliverVoteTest_004
- * @tc.desc  : When eventStatus is true and pid matches,
-DeliverVote should modify the matched record and return true.
+ * @tc.desc  : When eventStatus is true and pid matches, DeliverVote should modify the matched record and return true
  */
 HWTEST_F(DeliverVoteTest, DeliverVoteTest_004, Function | SmallTest | Level0) {
     auto voter = std::make_shared<HgmVoter>(voters);
@@ -145,8 +142,7 @@ HWTEST_F(DeliverVoteTest, DeliverVoteTest_004, Function | SmallTest | Level0) {
 /**
  * @tc.name  : DeliverVote
  * @tc.number: DeliverVoteTest_005
- * @tc.desc  : When eventStatus is true and pid does not match,
-DeliverVote should add a new record and return true
+ * @tc.desc  : When eventStatus is true and pid does not match, DeliverVote should add a new record and return true
  */
 HWTEST_F(DeliverVoteTest, DeliverVoteTest_005, Function | SmallTest | Level0) {
     auto voter = std::make_shared<HgmVoter>(voters);

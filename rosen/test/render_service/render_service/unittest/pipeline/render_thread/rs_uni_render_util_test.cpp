@@ -27,7 +27,7 @@
 #include "pipeline/render_thread/rs_virtual_screen_parallel_manager.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
- #include "pipeline/rs_logical_display_render_node.h"
+#include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_test_util.h"
 #include "pixel_map.h"
 #include "property/rs_properties_def.h"
@@ -168,7 +168,7 @@ HWTEST_F(RSUniRenderUtilTest, SrcRectScaleDown_003, Function | SmallTest | Level
     bottom = 1;
     RectF localBounds = RectF(left, top, right, bottom);
     RSUniRenderUtil::SrcRectScaleDown(params, node->GetRSSurfaceHandler()->GetBuffer(), localBounds);
-   
+
     params.srcRect.SetRight(right);
     params.srcRect.SetBottom(bottom);
     right = 1;
@@ -230,7 +230,7 @@ HWTEST_F(RSUniRenderUtilTest, SrcRectScaleFit_003, Function | SmallTest | Level2
     bottom = 1;
     RectF localBounds = RectF(left, top, right, bottom);
     RSUniRenderUtil::SrcRectScaleFit(params, node->GetRSSurfaceHandler()->GetBuffer(), localBounds);
-   
+
     params.srcRect.SetRight(right);
     params.srcRect.SetBottom(bottom);
     right = 1;
@@ -1553,8 +1553,7 @@ HWTEST_F(RSUniRenderUtilTest, MergeDirtyHistoryInVirtual001, TestSize.Level1)
 
     params->SetAllMainAndLeashSurfaceDrawables(surfaceAdapters);
     ScreenInfo screenInfo;
-    auto rects = RSUniRenderUtil::MergeDirtyHistoryInVirtual(
-        *screenDrawable, bufferAge, screenInfo, defaultDisplayId);
+    auto rects = RSUniRenderUtil::MergeDirtyHistoryInVirtual(*screenDrawable, bufferAge, screenInfo, defaultDisplayId);
     EXPECT_EQ(rects.empty(), true);
     screenDrawable = nullptr;
 }
@@ -1830,6 +1829,7 @@ HWTEST_F(RSUniRenderUtilTest, AdjustZOrderAndDrawSurfaceNode, TestSize.Level1)
     if (RSUniRenderThread::Instance().uniRenderEngine_ == nullptr) {
         RSUniRenderThread::Instance().uniRenderEngine_ = std::make_shared<RSRenderEngine>();
     }
+
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> drawables;
     Drawing::Canvas canvas;
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
@@ -2007,11 +2007,11 @@ HWTEST_F(RSUniRenderUtilTest, GetMatrixByDegree001, TestSize.Level1)
 }
 
 /**
- * @tc.name: ProcessSingleSelfDrawingNode001
+* @tc.name: ProcessSingleSelfDrawingNode001
  * @tc.desc: test ProcessSingleSelfDrawingNode with empty vector
- * @tc.type: FUNC
+* @tc.type: FUNC
  * @tc.require: #ICGE8J
- */
+*/
 HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode001, TestSize.Level1)
 {
     RSDisplayNodeConfig config;
@@ -2029,23 +2029,22 @@ HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode001, TestSize.Level1)
     RSScreenRenderNodeDrawable* screenDrawable = GenerateDisplayDrawableById(defaultDisplayId, 0, rsContext);
     ASSERT_NE(screenDrawable, nullptr);
     std::unique_ptr<RSScreenRenderParams> screenParams = std::make_unique<RSScreenRenderParams>(defaultDisplayId);
-
     screenParams->layerSkipContext_.screenLayerInvalid_ = true;
 
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
     std::vector<NodeId> relevantSurfaceNodeIds;
-    screenParams->layerSkipContext_.relevantSurfaceNodeIds_ = relevantSurfaceNodeIds;
+    screenParams->layerSkipContext_.relevantSurfaceNodeIds_= relevantSurfaceNodeIds;
     auto result = RSUniRenderUtil::ProcessSingleSelfDrawingNode(canvas, *screenParams, *displayParams);
     ASSERT_EQ(result, false);
 }
 
 /**
- * @tc.name: ProcessSingleSelfDrawingNode002
+* @tc.name: ProcessSingleSelfDrawingNode002
  * @tc.desc: test ProcessSingleSelfDrawingNode with invalid surfacetype
- * @tc.type: FUNC
+* @tc.type: FUNC
  * @tc.require: #ICGE8J
- */
+*/
 HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode002, TestSize.Level1)
 {
     RSDisplayNodeConfig config;
@@ -2061,30 +2060,28 @@ HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode002, TestSize.Level1)
     RSScreenRenderNodeDrawable* screenDrawable = GenerateDisplayDrawableById(defaultDisplayId, 0, rsContext);
     ASSERT_NE(screenDrawable, nullptr);
     std::unique_ptr<RSScreenRenderParams> screenParams = std::make_unique<RSScreenRenderParams>(defaultDisplayId);
-
     screenParams->layerSkipContext_.screenLayerInvalid_ = true;
 
     NodeId surfaceId = 3;
     std::shared_ptr<RSSurfaceRenderNode> surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
     ASSERT_NE(surfaceNode, nullptr);
-
     auto surfaceDrawableAdapter = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode);
     surfaceDrawableAdapter->nodeType_ = RSRenderNodeType::CANVAS_DRAWING_NODE;
 
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
-    std::vector<NodeId> relevantSurfaceNodeIds = { surfaceId };
-    screenParams->layerSkipContext_.relevantSurfaceNodeIds_ = relevantSurfaceNodeIds;
+    std::vector<NodeId> relevantSurfaceNodeIds = {surfaceId};
+    screenParams->layerSkipContext_.relevantSurfaceNodeIds_= relevantSurfaceNodeIds;
     auto result = RSUniRenderUtil::ProcessSingleSelfDrawingNode(canvas, *screenParams, *displayParams);
     ASSERT_EQ(result, false);
 }
 
 /**
- * @tc.name: ProcessSingleSelfDrawingNode003
+* @tc.name: ProcessSingleSelfDrawingNode003
  * @tc.desc: test ProcessSingleSelfDrawingNode with valid surfacetype
- * @tc.type: FUNC
+* @tc.type: FUNC
  * @tc.require: #ICGE8J
- */
+*/
 HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode003, TestSize.Level1)
 {
     RSDisplayNodeConfig config;
@@ -2100,7 +2097,6 @@ HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode003, TestSize.Level1)
     RSScreenRenderNodeDrawable* screenDrawable = GenerateDisplayDrawableById(defaultDisplayId, 0, rsContext);
     ASSERT_NE(screenDrawable, nullptr);
     std::unique_ptr<RSScreenRenderParams> screenParams = std::make_unique<RSScreenRenderParams>(defaultDisplayId);
-
     screenParams->layerSkipContext_.virtualScreenLayerInvalid_ = true;
 
     NodeId surfaceId = 3;
@@ -2114,18 +2110,18 @@ HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode003, TestSize.Level1)
 
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
-    std::vector<NodeId> relevantSurfaceNodeIds = { surfaceId };
-    screenParams->layerSkipContext_.virtualRelevantSurfaceNodeIds_ = relevantSurfaceNodeIds;
+    std::vector<NodeId> relevantSurfaceNodeIds = {surfaceId};
+    screenParams->layerSkipContext_.virtualRelevantSurfaceNodeIds_= relevantSurfaceNodeIds;
     auto result = RSUniRenderUtil::ProcessSingleSelfDrawingNode(canvas, *screenParams, *displayParams);
     ASSERT_EQ(result, true);
 }
 
 /**
- * @tc.name: ProcessSingleSelfDrawingNode004
- * @tc.desc: test ProcessSingleSelfDrawingNode with valid surfacetype
- * @tc.type: FUNC
- * @tc.require: #23391
- */
+* @tc.name: ProcessSingleSelfDrawingNode004
+* @tc.desc: test ProcessSingleSelfDrawingNode with valid surfacetype
+* @tc.type: FUNC
+* @tc.require: #23391
+*/
 HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode004, TestSize.Level1)
 {
     constexpr NodeId displayNodeId = 1;
@@ -2170,11 +2166,11 @@ HWTEST_F(RSUniRenderUtilTest, ProcessSingleSelfDrawingNode004, TestSize.Level1)
 }
 
 /**
- * @tc.name: DrawSingleSelfDrawingNode001
+* @tc.name: DrawSingleSelfDrawingNode001
  * @tc.desc: test DrawSingleSelfDrawingNode with nullptr surfaceParams
- * @tc.type: FUNC
+* @tc.type: FUNC
  * @tc.require: #ICGE8J
- */
+*/
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode001, TestSize.Level1)
 {
     RSDisplayNodeConfig config;
@@ -2190,7 +2186,8 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode001, TestSize.Level1)
     RSPaintFilterCanvas canvas(&drawingCanvas);
     NodeId surfaceId = 2;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
-    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
+    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(
+        RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
     auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
     surfaceDrawable->renderParams_ = nullptr;
     auto result = RSUniRenderUtil::DrawSingleSelfDrawingNode(canvas, surfaceDrawable, *displayParams);
@@ -2220,7 +2217,8 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode002, TestSize.Level1)
     NodeId surfaceId = 2;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
 
-    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
+    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(
+        RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
     auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
     auto renderParams = std::make_unique<RSSurfaceRenderParams>(surfaceId);
     RSSpecialLayerManager slManager;
@@ -2239,7 +2237,7 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode002, TestSize.Level1)
  * @tc.desc: test DrawSingleSelfDrawingNode with special layer
  * @tc.type: FUNC
  * @tc.require: #ICGE8J
- */
+*/
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode003, TestSize.Level1)
 {
     RSDisplayNodeConfig config;
@@ -2259,7 +2257,8 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode003, TestSize.Level1)
     NodeId surfaceId = 3;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
 
-    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
+    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(
+        RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
     auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
     auto renderParams = std::make_unique<RSSurfaceRenderParams>(surfaceId);
     RSSpecialLayerManager slManager;
@@ -2274,11 +2273,11 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode003, TestSize.Level1)
 }
 
 /**
- * @tc.name: DrawSingleSelfDrawingNode004
+* @tc.name: DrawSingleSelfDrawingNode004
  * @tc.desc: test DrawSingleSelfDrawingNode with whitelist
- * @tc.type: FUNC
+* @tc.type: FUNC
  * @tc.require: #ICGE8J
- */
+*/
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode004, TestSize.Level1)
 {
     RSDisplayNodeConfig config;
@@ -2296,12 +2295,13 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode004, TestSize.Level1)
     NodeId surfaceId = 2;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
 
-    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
+    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(
+        RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
     auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
     auto renderParams = std::make_unique<RSSurfaceRenderParams>(surfaceId);
     RSSpecialLayerManager slManager;
     renderParams->specialLayerManager_ = slManager;
-    std::unordered_set<NodeId> whiteList = { surfaceId };
+    std::unordered_set<NodeId> whiteList = {surfaceId};
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
     RSUniRenderThread::Instance().SetWhiteList(whiteList);
     surfaceDrawable->renderParams_ = std::move(renderParams);
@@ -2326,11 +2326,11 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode004, TestSize.Level1)
 }
 
 /**
- * @tc.name: DrawSingleSelfDrawingNode005
+* @tc.name: DrawSingleSelfDrawingNode005
  * @tc.desc: test DrawSingleSelfDrawingNode with renderEngine is nullptr
- * @tc.type: FUNC
+* @tc.type: FUNC
  * @tc.require: #ICGE8J
- */
+*/
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode005, TestSize.Level1)
 {
     RSDisplayNodeConfig config;
@@ -2348,7 +2348,8 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode005, TestSize.Level1)
     NodeId surfaceId = 2;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
 
-    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
+    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(
+        RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
     auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
     auto renderParams = std::make_unique<RSSurfaceRenderParams>(surfaceId);
     RSSpecialLayerManager slManager;
@@ -2374,11 +2375,11 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode005, TestSize.Level1)
 }
 
 /**
- * @tc.name: DrawSingleSelfDrawingNode006
- * @tc.desc: Test DrawSingleSelfDrawingNode with varify hardware and hwcEnabledBySolidLayer
- * @tc.type: FUNC
- * @tc.require: issueI22872
- */
+* @tc.name: DrawSingleSelfDrawingNode006
+* @tc.desc: Test DrawSingleSelfDrawingNode with varify hardware and hwcEnabledBySolidLayer
+* @tc.type: FUNC
+* @tc.require: issueI22872
+*/
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode006, TestSize.Level1)
 {
     RSDisplayNodeConfig config;
@@ -2394,7 +2395,8 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode006, TestSize.Level1)
     RSPaintFilterCanvas canvas(&drawingCanvas);
     NodeId surfaceId = 2;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
-    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
+    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawable(
+        RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode));
     auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
     surfaceDrawable->renderParams_ = std::make_unique<RSSurfaceRenderParams>(surfaceId);
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->renderParams_.get());
@@ -2403,9 +2405,9 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode006, TestSize.Level1)
     surfaceParams->buffer_ = OHOS::SurfaceBuffer::Create();
     surfaceParams->buffer_->SetSurfaceBufferWidth(1920);
     surfaceParams->buffer_->SetSurfaceBufferHeight(1080);
-    surfaceParams->layerInfo_.srcRect = { 0, 0, 1920, 1080 };
-    surfaceParams->layerInfo_.dstRect = { 0, 0, 1920, 1080 };
-    surfaceParams->boundsRect_ = { 0, 0, 1920, 1080 };
+    surfaceParams->layerInfo_.srcRect = {0, 0, 1920, 1080};
+    surfaceParams->layerInfo_.dstRect = {0, 0, 1920, 1080};
+    surfaceParams->boundsRect_ = {0, 0, 1920, 1080};
     surfaceParams->layerInfo_.matrix.SetMatrix(1, 0, 0, 0, 1, 0, 0, 0, 1);
     surfaceParams->SetHardwareEnabled(true);
     surfaceParams->SetIsHwcEnabledBySolidLayer(false);
@@ -2421,11 +2423,11 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode006, TestSize.Level1)
 }
 
 /**
- * @tc.name: DrawSingleSelfDrawingNode007
+* @tc.name: DrawSingleSelfDrawingNode007
  * @tc.desc: Test DrawSingleSelfDrawingNode with hardware and hwcEnabledBySolidLayer
- * @tc.type: FUNC
- * @tc.require: issueI22872
- */
+* @tc.type: FUNC
+* @tc.require: issueI22872
+*/
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode007, TestSize.Level1)
 {
     RSDisplayNodeConfig config;
@@ -2448,9 +2450,9 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode007, TestSize.Level1)
     surfaceParams->buffer_ = OHOS::SurfaceBuffer::Create();
     surfaceParams->buffer_->SetSurfaceBufferWidth(1920);
     surfaceParams->buffer_->SetSurfaceBufferHeight(1080);
-    surfaceParams->layerInfo_.srcRect = { 0, 0, 1920, 1080 };
-    surfaceParams->layerInfo_.dstRect = { 0, 0, 1920, 1080 };
-    surfaceParams->boundsRect_ = { 0, 0, 1920, 1080 };
+    surfaceParams->layerInfo_.srcRect = {0, 0, 1920, 1080};
+    surfaceParams->layerInfo_.dstRect = {0, 0, 1920, 1080};
+    surfaceParams->boundsRect_ = {0, 0, 1920, 1080};
     surfaceParams->layerInfo_.matrix.SetMatrix(1, 0, 0, 0, 1, 0, 0, 0, 1);
     surfaceParams->SetHardwareEnabled(true);
     surfaceParams->SetIsHwcEnabledBySolidLayer(true);

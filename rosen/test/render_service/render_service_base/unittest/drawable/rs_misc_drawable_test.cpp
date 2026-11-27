@@ -1443,4 +1443,277 @@ HWTEST_F(RSChildrenDrawableTest, RSRenderNodeDrawableAdapterOnGenerate011, TestS
     node->renderDrawable_ = nullptr;
     DrawableV2::RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.clear();
 }
+/**
+ * @tc.name: RSBeginBlenderDrawableAdaptive001
+ * @tc.desc: Test the adaptive NG blender channel: OnGenerate needs both blenders, EDR follows
+ *           their HdrEnabled tags, and clearing one of them removes the drawable again.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawableAdaptive001, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSRenderNode node(id);
+    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
+
+    auto dark = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    auto light = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(dark, nullptr);
+    ASSERT_NE(light, nullptr);
+    std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(dark)
+        ->Setter<ColorfulBrightnessBlenderHdrEnabledRenderTag>(true);
+    std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(light)
+        ->Setter<ColorfulBrightnessBlenderHdrEnabledRenderTag>(true);
+
+    auto& properties = node.GetMutableRenderProperties();
+    // only one side set: the adaptive channel stays inactive
+    properties.SetNGAdaptiveDarkBlender(dark);
+    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
+
+    properties.SetNGAdaptiveLightBlender(light);
+    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
+        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
+    ASSERT_NE(drawable, nullptr);
+    ASSERT_TRUE(drawable->GetEnableEDR());
+    drawable->OnSync();
+
+    // EDR requires both sides to enable HDR
+    std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(light)
+        ->Setter<ColorfulBrightnessBlenderHdrEnabledRenderTag>(false);
+    auto drawableSdr = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
+        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
+    ASSERT_NE(drawableSdr, nullptr);
+    ASSERT_FALSE(drawableSdr->GetEnableEDR());
+
+    properties.SetNGAdaptiveLightBlender(nullptr);
+    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
+}
+
+/**
+ * @tc.name: RSBeginBlenderDrawableAdaptive002
+ * @tc.desc: Test OnDraw with an adaptive blender and a color-picked canvas: the fraction is taken
+ *           from the canvas, the interpolated blender is cached and reused for the same fraction.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawableAdaptive002, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSRenderNode node(id);
+    auto dark = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    auto light = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(dark, nullptr);
+    ASSERT_NE(light, nullptr);
+    auto& properties = node.GetMutableRenderProperties();
+    properties.SetNGAdaptiveDarkBlender(dark);
+    properties.SetNGAdaptiveLightBlender(light);
+
+    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
+        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
+    ASSERT_NE(drawable, nullptr);
+    drawable->OnSync();
+
+    Drawing::Canvas canvas;
+    std::shared_ptr<RSPaintFilterCanvas> paintFilterCanvas = std::make_shared<RSPaintFilterCanvas>(&canvas);
+    RSPaintFilterCanvas::Env env = { RSColor(), nullptr, nullptr, nullptr, true };
+    env.fractionColor_ = 0x80;
+    paintFilterCanvas->envStack_.push(env);
+
+    Drawing::Rect rect(0, 0, 100, 100);
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+    // same fraction again: the cached blender is reused (early return branch)
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+    // a different fraction rebuilds the cached blender
+    paintFilterCanvas->envStack_.top().fractionColor_ = 0x40;
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+    SUCCEED();
+}
+
+/**
+ * @tc.name: RSBlenderDrawableUtilsAdaptive001
+ * @tc.desc: Test MakeAdaptiveBlenderFromNG parameter checks and the adaptive EDR helper branches.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBlenderDrawableUtilsAdaptive001, TestSize.Level1)
+{
+    auto dark = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    auto light = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(dark, nullptr);
+    ASSERT_NE(light, nullptr);
+
+    // both present: the interpolation path is executed
+    RSBlenderDrawableUtils::MakeAdaptiveBlenderFromNG(dark, light, 0.5f);
+
+    // either side missing: rejected up front
+    EXPECT_EQ(RSBlenderDrawableUtils::MakeAdaptiveBlenderFromNG(nullptr, light, 0.5f), nullptr);
+    EXPECT_EQ(RSBlenderDrawableUtils::MakeAdaptiveBlenderFromNG(dark, nullptr, 0.5f), nullptr);
+    EXPECT_EQ(RSBlenderDrawableUtils::MakeAdaptiveBlenderFromNG(nullptr, nullptr, 0.5f), nullptr);
+
+    // the lerp hdrEnabled_ conjunction: from-dark true with to-light false, then both true
+    auto darkHdr = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    auto lightHdr = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(darkHdr, nullptr);
+    ASSERT_NE(lightHdr, nullptr);
+    std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(darkHdr)
+        ->Setter<ColorfulBrightnessBlenderHdrEnabledRenderTag>(true);
+    RSBlenderDrawableUtils::MakeAdaptiveBlenderFromNG(darkHdr, lightHdr, 0.5f);
+    std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(lightHdr)
+        ->Setter<ColorfulBrightnessBlenderHdrEnabledRenderTag>(true);
+    RSBlenderDrawableUtils::MakeAdaptiveBlenderFromNG(darkHdr, lightHdr, 0.5f);
+
+    RSProperties properties;
+    EXPECT_FALSE(RSBlenderDrawableUtils::GetNGAdaptiveBlenderEnableEDR(properties));
+    properties.SetNGAdaptiveDarkBlender(dark);
+    EXPECT_FALSE(RSBlenderDrawableUtils::GetNGAdaptiveBlenderEnableEDR(properties));
+    properties.SetNGAdaptiveLightBlender(light);
+    EXPECT_FALSE(RSBlenderDrawableUtils::GetNGAdaptiveBlenderEnableEDR(properties));
+    std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(dark)
+        ->Setter<ColorfulBrightnessBlenderHdrEnabledRenderTag>(true);
+    std::static_pointer_cast<RSNGRenderColorfulBrightnessBlender>(light)
+        ->Setter<ColorfulBrightnessBlenderHdrEnabledRenderTag>(true);
+    EXPECT_TRUE(RSBlenderDrawableUtils::GetNGAdaptiveBlenderEnableEDR(properties));
+}
+
+/**
+ * @tc.name: RSBeginBlenderDrawableAdaptive003
+ * @tc.desc: Cover the remaining adaptive drawable branches: non paint-filter canvas, color picking
+ *           not ready, adaptive channel incomplete, and the fraction cache hit/miss.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawableAdaptive003, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSRenderNode node(id);
+    auto dark = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    auto light = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(dark, nullptr);
+    ASSERT_NE(light, nullptr);
+    auto& properties = node.GetMutableRenderProperties();
+    properties.SetNGAdaptiveDarkBlender(dark);
+    properties.SetNGAdaptiveLightBlender(light);
+
+    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
+        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
+    ASSERT_NE(drawable, nullptr);
+    drawable->OnSync();
+
+    Drawing::Rect rect(0, 0, 100, 100);
+
+    // plain canvas: OnDraw returns before touching the adaptive channel
+    Drawing::Canvas plainCanvas;
+    drawable->OnDraw(&plainCanvas, &rect);
+
+    // paint filter canvas without a color pick result
+    std::shared_ptr<RSPaintFilterCanvas> paintFilterCanvas =
+        std::make_shared<RSPaintFilterCanvas>(&plainCanvas);
+    RSPaintFilterCanvas::Env env = { RSColor(), nullptr, nullptr, nullptr, false };
+    paintFilterCanvas->envStack_.push(env);
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+
+    // only one adaptive blender present: the channel is inactive
+    auto savedLight = drawable->adaptiveLightBlender_;
+    drawable->adaptiveLightBlender_ = nullptr;
+    paintFilterCanvas->envStack_.top().fractionColorReady_ = true;
+    paintFilterCanvas->envStack_.top().fractionColor_ = 0x00000080;
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+    drawable->adaptiveLightBlender_ = savedLight;
+
+    // color pick ready: interpolated blender is built (result depends on the runtime effect)
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+
+    // cover the fraction cache branches deterministically
+    drawable->activeBlender_ = std::make_shared<Drawing::Blender>();
+    drawable->lastFraction_ = 0.5f;
+    drawable->UpdateAdaptiveBlender(0.5f);   // cache hit: early return
+    drawable->UpdateAdaptiveBlender(0.25f);  // cache miss: rebuild
+
+    // both adaptive slots cleared: MakeAdaptiveBlenderFromNG returns nullptr and lastFraction_
+    // keeps its previous value (the "no blender built" branch)
+    drawable->adaptiveLightBlender_ = nullptr;
+    drawable->adaptiveDarkBlender_ = nullptr;
+    drawable->activeBlender_ = nullptr;
+    drawable->lastFraction_ = -2.0f;
+    drawable->UpdateAdaptiveBlender(0.75f);
+    EXPECT_EQ(drawable->lastFraction_, -2.0f);
+    SUCCEED();
+}
+
+/**
+ * @tc.name: RSBeginBlenderDrawableAdaptive004
+ * @tc.desc: Cover the OnUpdate fallback branch: an NG blender of an unmakable type leaves
+ *           stagingBlender_ empty, so the blendMode path takes over and the drawable is
+ *           generated by the legacy blender instead.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawableAdaptive004, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSRenderNode node(id);
+    // an unknow-type NG blender cannot be unpacked (MakeBlenderFromNG returns nullptr)
+    node.GetMutableRenderProperties().SetNGBlender(
+        RSNGRenderBlenderBase::Create(RSNGEffectType::NONE));
+    ASSERT_EQ(DrawableV2::RSBeginBlenderDrawable::OnGenerate(node), nullptr);
+
+    // with a blendMode set, the legacy blender takes over the failed NG unpacking
+    node.GetMutableRenderProperties().SetColorBlendMode(12);
+    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
+        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
+    ASSERT_NE(drawable, nullptr);
+    drawable->OnSync();
+    EXPECT_NE(drawable->blender_, nullptr);
+}
+
+/**
+ * @tc.name: RSBeginBlenderDrawableAdaptive005
+ * @tc.desc: Verify the OnDraw guard: a drawable carrying only the adaptive channel (no NG/blendMode
+ *           blender and no usable interpolation result) must return early and keep the blender
+ *           inherited from ancestors untouched instead of clearing it.
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSChildrenDrawableTest, RSBeginBlenderDrawableAdaptive005, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSRenderNode node(id);
+    auto dark = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    auto light = RSNGRenderBlenderBase::Create(RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER);
+    ASSERT_NE(dark, nullptr);
+    ASSERT_NE(light, nullptr);
+    auto& properties = node.GetMutableRenderProperties();
+    properties.SetNGAdaptiveDarkBlender(dark);
+    properties.SetNGAdaptiveLightBlender(light);
+
+    auto drawable = std::static_pointer_cast<DrawableV2::RSBeginBlenderDrawable>(
+        DrawableV2::RSBeginBlenderDrawable::OnGenerate(node));
+    ASSERT_NE(drawable, nullptr);
+    drawable->OnSync();
+    // the node sets only the adaptive channel, so there is no legacy blender to fall back to
+    EXPECT_EQ(drawable->blender_, nullptr);
+
+    Drawing::Canvas canvas;
+    std::shared_ptr<RSPaintFilterCanvas> paintFilterCanvas = std::make_shared<RSPaintFilterCanvas>(&canvas);
+    // an ancestor blender is already active on the canvas
+    auto ancestorBlender = std::make_shared<Drawing::Blender>();
+    paintFilterCanvas->envStack_.top().blender_ = ancestorBlender;
+
+    Drawing::Rect rect(0, 0, 100, 100);
+    // color picking not ready: nothing to apply, the inherited blender must stay intact
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+    EXPECT_EQ(paintFilterCanvas->envStack_.top().blender_, ancestorBlender);
+
+    // adaptive channel incomplete (light side missing) with picking ready: hasAdaptive is false,
+    // the guard still returns without touching the inherited blender
+    auto saveLight = drawable->adaptiveLightBlender_;
+    drawable->adaptiveLightBlender_ = nullptr;
+    paintFilterCanvas->envStack_.top().fractionColorReady_ = true;
+    paintFilterCanvas->envStack_.top().fractionColor_ = 0x00000080;
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+    EXPECT_EQ(paintFilterCanvas->envStack_.top().blender_, ancestorBlender);
+    drawable->adaptiveLightBlender_ = saveLight;
+
+    // color picking ready and interpolation succeeds: useAdaptive becomes true, the guard is
+    // bypass and the interpolated blender replaces the inherited one
+    drawable->OnDraw(paintFilterCanvas.get(), &rect);
+    if (drawable->activeBlender_ != nullptr) {
+        EXPECT_EQ(paintFilterCanvas->envStack_.top().blender_, drawable->activeBlender_);
+    }
+}
+
 } // namespace OHOS::Rosen

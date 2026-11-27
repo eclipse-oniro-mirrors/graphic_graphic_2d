@@ -99,6 +99,7 @@ OH_NativeVSync* OH_NativeVSync_Create_ForAssociatedWindow(uint64_t windowID, con
         VLOGE("name is nullptr, please check");
         return nullptr;
     }
+    length = length >= MAX_VSYNC_NAME_LENGTH ? MAX_VSYNC_NAME_LENGTH : length;
     std::string vsyncName(name, length);
     NativeVSync* nativeVSync = new NativeVSync;
     if (nativeVSync == nullptr) {

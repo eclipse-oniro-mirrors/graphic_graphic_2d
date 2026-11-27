@@ -57,18 +57,15 @@ void RSFrameRateVoteTest::SetUpTestCase()
     HgmTestBase::SetUpTestCase();
 }
 void RSFrameRateVoteTest::TearDownTestCase() {}
-
 void RSFrameRateVoteTest::SetUp()
 {
     auto instance = DelayedSingleton<RSFrameRateVote>::GetInstance();
+    // Cancel any pending delayed vote task to prevent stale async operations
     if (instance->ffrtQueue_ && instance->taskHandler_) {
         instance->ffrtQueue_->cancel(instance->taskHandler_);
         instance->taskHandler_ = nullptr;
     }
-    if (instance->ffrtQueue_) {
-        auto handle = instance->ffrtQueue_->submit_h([]() {});
-        instance->ffrtQueue_->wait(handle);
-    }
+    // Clear maps first — destroys RSVideoFrameRateVote objects and cancels their delay tasks
     instance->surfaceVideoFrameRateVote_.clear();
     instance->surfaceVideoRate_.clear();
     instance->videoRateInfo_.clear();
@@ -87,18 +84,15 @@ void RSFrameRateVoteTest::SetUp()
     instance->bufferCountHistory_.fill(0);
     instance->currentUpdateTime_ = 0;
 }
-
 void RSFrameRateVoteTest::TearDown()
 {
     auto instance = DelayedSingleton<RSFrameRateVote>::GetInstance();
+    // Cancel any pending delayed vote task
     if (instance->ffrtQueue_ && instance->taskHandler_) {
         instance->ffrtQueue_->cancel(instance->taskHandler_);
         instance->taskHandler_ = nullptr;
     }
-    if (instance->ffrtQueue_) {
-        auto handle = instance->ffrtQueue_->submit_h([]() {});
-        instance->ffrtQueue_->wait(handle);
-    }
+    // Clear maps to prevent stale async operations from affecting subsequent tests
     instance->surfaceVideoFrameRateVote_.clear();
     instance->surfaceVideoRate_.clear();
 }
@@ -1748,7 +1742,7 @@ HWTEST_F(RSFrameRateVoteTest, VideoFrameRateVote014, Function | SmallTest | Leve
 
 /**
  * @tc.name: SetVideoRateInfo015
- * @tc.desc: test SetVideoRateInfo when decRate is 0 and cancelVoteRate should be called
+ * @tc.desc: test SetVideoRateInfo when decRate is 0 and CancelVoteRate should be called
  * @tc.type: FUNC
  * @tc.require:
  */

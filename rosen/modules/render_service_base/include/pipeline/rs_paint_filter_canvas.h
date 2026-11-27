@@ -262,11 +262,17 @@ public:
     void RestoreEnvToCount(int count);
     void SetColorPicked(Drawing::ColorQuad color);
     Drawing::ColorQuad GetColorPicked(ColorPlaceholder placeholder) const;
+    float GetColorPickedFraction() const;
+    bool IsColorPickedReady() const
+    {
+        return !envStack_.empty() && envStack_.top().fractionColorReady_;
+    }
 
     // blendmode and blender related
     void SaveLayer(const Drawing::SaveLayerOps& saveLayerOps) override;
     void SetBlendMode(std::optional<int> blendMode);
     void SetBlender(std::shared_ptr<Drawing::Blender>);
+    std::shared_ptr<Drawing::Blender> GetBlender() const;
     bool HasOffscreenLayer() const;
 
     // round corner related

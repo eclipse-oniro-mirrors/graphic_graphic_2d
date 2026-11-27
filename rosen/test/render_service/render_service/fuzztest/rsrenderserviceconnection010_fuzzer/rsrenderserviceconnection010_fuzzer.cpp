@@ -88,7 +88,8 @@ const uint8_t DO_GET_SCREEN_VCP_FEATURE = 7;
 const uint8_t DO_SET_SCREEN_VCP_FEATURE = 8;
 const uint8_t DO_SET_APS_CONFIG_PARAMS = 9;
 const uint8_t DO_SEND_VIDEO_RATE_INFO = 10;
-const uint8_t TARGET_SIZE = 11;
+const uint8_t DO_RELEASE_GPU_MEMORY = 11;
+const uint8_t TARGET_SIZE = 12;
 
 const uint8_t* DATA = nullptr;
 size_t g_size = 0;
@@ -252,6 +253,22 @@ bool DoSetApsConfigParams()
         dataParcel.WriteString(key);
         dataParcel.WriteString(value);
     }
+    g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    return true;
+}
+
+bool DoReleaseGpuMemory()
+{
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::RELEASE_GPU_MEMORY);
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    MessageOption option;
+
+    uint64_t surfaceNodeId = GetData<uint64_t>();
+    uint8_t typeVal = GetData<uint8_t>();
+    dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    dataParcel.WriteUint64(surfaceNodeId);
+    dataParcel.WriteUint8(typeVal);
     g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
     return true;
 }
@@ -609,6 +626,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             break;
         case OHOS::Rosen::DO_SEND_VIDEO_RATE_INFO:
             OHOS::Rosen::DoSendVideoRateInfo();
+            break;
+        case OHOS::Rosen::DO_RELEASE_GPU_MEMORY:
+            OHOS::Rosen::DoReleaseGpuMemory();
             break;
         default:
             return -1;

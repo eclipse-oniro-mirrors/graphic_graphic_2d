@@ -1545,6 +1545,17 @@ bool DoSetApsConfigParams()
     return true;
 }
 
+bool DoReleaseGpuMemory()
+{
+    if (rsToServiceConn_ == nullptr) {
+        return false;
+    }
+    NodeId surfaceNodeId = GetData<uint64_t>();
+    GpuMemoryType type = static_cast<GpuMemoryType>(GetData<uint8_t>());
+    rsToServiceConn_->ReleaseGpuMemory(surfaceNodeId, type);
+    return true;
+}
+
 class CustomFirstFrameCommitCallback : public RSFirstFrameCommitCallbackStub {
 public:
     explicit CustomFirstFrameCommitCallback(const FirstFrameCommitCallback& callback) : cb_(callback) {}
@@ -1768,6 +1779,7 @@ void DoFuzzerTest3()
     DoSetBehindWindowFilterEnabled();
     DoGetBehindWindowFilterEnabled();
     DoSetApsConfigParams();
+    DoReleaseGpuMemory();
     DoSetVirtualScreenAutoRotation();
     DoProfilerServiceOpenFile();
     DoProfilerServicePopulateFiles();

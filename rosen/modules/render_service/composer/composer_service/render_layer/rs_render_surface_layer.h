@@ -191,7 +191,6 @@ public:
     void SetDelegateMode(bool isDelegateMode) override;
     void SetAlphaType(GraphicAlphaType alphaType) override;
     GraphicAlphaType GetAlphaType() const override;
-
 private:
     // rs layer pipeline info
     RSLayerId rsLayerId_ = 0;

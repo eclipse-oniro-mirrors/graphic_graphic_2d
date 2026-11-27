@@ -1045,7 +1045,7 @@ void RSSurfaceLayer::SetHpaeOriginalInfo(const HpaeOriginalInfo& hpaeOriginalInf
     hpaeOriginalInfo_ = hpaeOriginalInfo;
     SetRSLayerCmd<RSRenderLayerHpaeOriginalInfoCmd>(hpaeOriginalInfo);
 }
- 
+
 const HpaeOriginalInfo& RSSurfaceLayer::GetHpaeOriginalInfo() const
 {
     return hpaeOriginalInfo_;
@@ -1194,7 +1194,7 @@ void RSSurfaceLayer::SetOriginalBufferOwnerCount(
     bufferOwnerCounts_[bufferOwnerCount->bufferId_] = bufferOwnerCount;
     originalBufferOwnerCount_ = bufferOwnerCount;
 }
- 
+
 std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceLayer::GetOriginalBufferOwnerCount() const
 {
     std::lock_guard<std::mutex> lockGuard(ownerCountMutex_);

@@ -200,28 +200,20 @@ int32_t HgmCore::InitXmlConfig()
     if (!mParser_) {
         mParser_ = std::make_unique<XMLParser>();
     }
-    int32_t loadRet = mParser_->LoadConfiguration(GetHgmXmlPath().c_str());
-    if (loadRet != EXEC_SUCCESS) {
-        HGM_LOGE("failed to load prod xml configuration file, ret %{public}d", loadRet);
+    if (mParser_->LoadConfiguration(GetHgmXmlPath().c_str()) != EXEC_SUCCESS) {
+        HGM_LOGW("failed to load prod xml configuration file");
     }
-    int32_t parseRet = mParser_->Parse();
-    if (parseRet != EXEC_SUCCESS) {
-        HGM_LOGE("failed to parse prod xml configuration, ret %{public}d", parseRet);
+    if (mParser_->Parse() != EXEC_SUCCESS) {
+        HGM_LOGW("failed to parse prod xml configuration");
     }
 
-    // adopt whatever was parsed, even partially (historical behaviour): a mid-file parse
-    // error must not discard the entries that were parsed before it
     if (!mPolicyConfigData_) {
         mPolicyConfigData_ = mParser_->GetParsedData();
     }
-    if (mPolicyConfigData_ == nullptr) {
-        // keep the historical degraded behaviour: hgm keeps running with an empty config
-        // (frameRateManager is still created downstream); the failure is visible via logs above
-        HGM_LOGE("no usable xml config, hgm runs with an empty config");
-        return EXEC_SUCCESS;
+    if (mPolicyConfigData_ != nullptr) {
+        mPolicyConfigVisitor_ = std::make_shared<PolicyConfigVisitorImpl>(*mPolicyConfigData_);
+        hgmAbilityEnabled_ = mPolicyConfigData_->hgmAbilityEnabled_;
     }
-    mPolicyConfigVisitor_ = std::make_shared<PolicyConfigVisitorImpl>(*mPolicyConfigData_);
-    hgmAbilityEnabled_ = mPolicyConfigData_->hgmAbilityEnabled_;
     return EXEC_SUCCESS;
 }
 
@@ -309,7 +301,6 @@ void HgmCore::SetLtpoConfig()
         ltpoEnabled_ = 0;
         HGM_LOGW("failed to find switch strategy for LTPO");
     }
-
     if (auto iter = ltpoConfig.find("alignRate"); iter != ltpoConfig.end() && XMLParser::IsNumber(iter->second)) {
         alignRate_ = std::stoul(iter->second);
     } else {
@@ -421,7 +412,6 @@ int32_t HgmCore::SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate
         HGM_LOGW("failed to get screen of: " PUBU64, id);
         return HGM_ERROR;
     }
-
     if (rate <= 0) {
         HGM_LOGW("refuse an illegal framerate: %{public}d", rate);
         return HGM_ERROR;
@@ -479,7 +469,6 @@ void HgmCore::NotifyScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
     if (hgmFrameRateMgr_ != nullptr) {
         hgmFrameRateMgr_->HandleScreenPowerStatus(id, status);
     }
-
     if (refreshRateModeChangeCallback_ != nullptr) {
         auto refreshRateModeName = GetCurrentRefreshRateModeName();
         refreshRateModeChangeCallback_(refreshRateModeName);
@@ -491,7 +480,6 @@ void HgmCore::NotifyScreenRectFrameRateChange(ScreenId id, const Rect& activeRec
     if (hgmFrameRateMgr_ != nullptr) {
         hgmFrameRateMgr_->HandleScreenRectFrameRate(id, activeRect);
     }
-
     if (refreshRateModeChangeCallback_ != nullptr) {
         auto refreshRateModeName = GetCurrentRefreshRateModeName();
         refreshRateModeChangeCallback_(refreshRateModeName);
@@ -594,7 +582,6 @@ uint32_t HgmCore::GetScreenCurrentRefreshRate(ScreenId id) const
         HGM_LOGD("failed to find screen: " PUBU64, id);
         return static_cast<uint32_t>(EXEC_SUCCESS);
     }
-
     return screen->GetActiveRefreshRate();
 }
 
@@ -629,7 +616,6 @@ sptr<HgmScreen> HgmCore::GetScreen(ScreenId id) const
             return screen;
         }
     }
-
     return nullptr;
 }
 
@@ -641,7 +627,6 @@ std::vector<uint32_t> HgmCore::GetScreenSupportedRefreshRates(ScreenId id)
         HGM_LOGW("failed to find screen: " PUBU64, id);
         return std::vector<uint32_t>(static_cast<uint32_t>(EXEC_SUCCESS));
     }
-
     const auto& supportedRates = screen->GetSupportedRates();
     std::vector<uint32_t> retVec;
     retVec.assign(supportedRates.begin(), supportedRates.end());

@@ -91,7 +91,7 @@ void RuntimeShaderBuilder::SetUniform(const std::string& name, const Matrix44& u
 {
     impl_->SetUniform(name, uniformMatrix44);
 }
-
+ 
 void RuntimeShaderBuilder::SetUniformVec4(const std::string& name, float x, float y, float z, float w)
 {
     impl_->SetUniformVec4(name, x, y, z, w);

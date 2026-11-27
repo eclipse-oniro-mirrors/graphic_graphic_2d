@@ -368,5 +368,14 @@ int32_t RSServiceToRenderConnection::SendTransfer(const std::shared_ptr<RSIpcTra
     }
     return transfer->Apply(renderPipelineAgent_) ? StatusCode::SUCCESS : StatusCode::RS_CONNECTION_ERROR;
 }
+
+void RSServiceToRenderConnection::ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type)
+{
+    if (renderPipelineAgent_ == nullptr) {
+        RS_LOGE("RSServiceToRenderConnection::ReleaseGpuMemory renderPipelineAgent_ is nullptr");
+        return;
+    }
+    renderPipelineAgent_->ReleaseGpuMemory(surfaceNodeId, type);
+}
 } // namespace Rosen
 } // namespace OHOS

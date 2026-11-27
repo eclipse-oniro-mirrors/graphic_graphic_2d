@@ -455,6 +455,8 @@ public:
     virtual void RemoveToken() = 0;
 
     virtual void RegisterRemoteRefreshCallback() = 0;
+
+    virtual void ReleaseGpuMemory(NodeId surfaceNodeId, GpuMemoryType type) = 0;
 #endif
 };
 } // namespace Rosen

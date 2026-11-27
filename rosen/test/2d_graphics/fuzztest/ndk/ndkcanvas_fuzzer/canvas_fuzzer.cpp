@@ -42,6 +42,8 @@
 #include "image/pixelmap_native.h"
 
 constexpr uint32_t MAX_ARRAY_MAX = 5000;
+constexpr uint32_t SAVE_LAYER_FLAGS_NONE = 0;
+constexpr uint32_t SAVE_LAYER_FLAGS_INIT_WITH_PREVIOUS = 2;
 constexpr uint32_t ENUM_RANGE_ONE = 1;
 constexpr uint32_t ENUM_RANGE_TWO = 2;
 constexpr uint32_t ENUM_RANGE_THREE = 3;
@@ -303,6 +305,12 @@ void CanvasFuzzTest004(const uint8_t* data, size_t size)
 
     OH_Drawing_CanvasSaveLayer(canvas, rect, brush);
     OH_Drawing_CanvasSaveLayer(nullptr, rect, brush);
+
+    OH_Drawing_CanvasSaveLayerWithFlag(canvas, rect, brush, SAVE_LAYER_FLAGS_NONE);
+    OH_Drawing_CanvasSaveLayerWithFlag(canvas, rect, brush, SAVE_LAYER_FLAGS_INIT_WITH_PREVIOUS);
+    OH_Drawing_CanvasSaveLayerWithFlag(canvas, rect, brush, GetObject<uint32_t>());
+    OH_Drawing_CanvasSaveLayerWithFlag(nullptr, rect, brush, GetObject<uint32_t>());
+    OH_Drawing_CanvasSaveLayerWithFlag(canvas, nullptr, nullptr, GetObject<uint32_t>());
 
     OH_Drawing_CanvasDrawBackground(canvas, brush);
     OH_Drawing_CanvasDrawBackground(nullptr, brush);
@@ -712,6 +720,52 @@ void PrepareTest018(OH_PixelmapNative* pixelMap, OH_Pixelmap_InitializationOptio
     OH_PixelmapNative_CreatePixelmap(colorData.get(), dataLength, options, &pixelMap);
 }
 
+void CanvasFuzzTest020(const uint8_t* data, size_t size)
+{
+    if (data == nullptr || size < DATA_MIN_SIZE) {
+        return;
+    }
+    OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
+    OH_Drawing_Font* font = OH_Drawing_FontCreate();
+    int glyphCount = GetObject<int>() % MAX_ARRAY_MAX + 1;
+    if (glyphCount < 0) {
+        OH_Drawing_CanvasDestroy(canvas);
+        OH_Drawing_FontDestroy(font);
+        return;
+    }
+    int* glyphIds = new int [glyphCount];
+    for (int i = 0; i < glyphCount; i++) {
+        glyphIds[i] = GetObject<int>();
+    }
+    OH_Drawing_Point2D* positions = new OH_Drawing_Point2D[glyphCount];
+    for (int i = 0; i < glyphCount; i++) {
+        positions[i] = {GetObject<float>(), GetObject<float>()};
+    }
+    int glyphIdCount = GetObject<int>();
+    int glyphIdOffset = GetObject<int>();
+    int positionCount = GetObject<int>();
+    int positionOffset = GetObject<int>();
+    OH_Drawing_CanvasDrawGlyphs(canvas,
+                                glyphIds, glyphIdCount, glyphIdOffset,
+                                positions, positionCount, positionOffset, glyphCount, font);
+    OH_Drawing_CanvasDrawGlyphs(nullptr,
+                                glyphIds, glyphIdCount, glyphIdOffset,
+                                positions, positionCount, positionOffset, glyphCount, font);
+    OH_Drawing_CanvasDrawGlyphs(canvas,
+                                glyphIds, glyphIdCount, glyphIdOffset,
+                                positions, positionCount, positionOffset, glyphCount, nullptr);
+    OH_Drawing_CanvasDestroy(canvas);
+    OH_Drawing_FontDestroy(font);
+    if (glyphIds != nullptr) {
+        delete[] glyphIds;
+        glyphIds = nullptr;
+    }
+    if (positions != nullptr) {
+        delete[] positions;
+        positions = nullptr;
+    }
+}
+
 void CanvasFuzzTest018(const uint8_t* data, size_t size)
 {
     if (data == nullptr || size < DATA_MIN_SIZE) {
@@ -796,51 +850,6 @@ void CanvasFuzzTest019(const uint8_t* data, size_t size)
     OH_Drawing_GpuContextDestroy(gpuContext);
 }
 
-void CanvasFuzzTest020(const uint8_t* data, size_t size)
-{
-    if (data == nullptr || size < DATA_MIN_SIZE) {
-        return;
-    }
-    OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
-    OH_Drawing_Font* font = OH_Drawing_FontCreate();
-    int glyphCount = GetObject<int>() % MAX_ARRAY_MAX + 1;
-    if (glyphCount < 0) {
-        OH_Drawing_CanvasDestroy(canvas);
-        OH_Drawing_FontDestroy(font);
-        return;
-    }
-    int* glyphIds = new int [glyphCount];
-    for (int i = 0; i < glyphCount; i++) {
-        glyphIds[i] = GetObject<int>();
-    }
-    OH_Drawing_Point2D* positions = new OH_Drawing_Point2D[glyphCount];
-    for (int i = 0; i < glyphCount; i++) {
-        positions[i] = {GetObject<float>(), GetObject<float>()};
-    }
-    int glyphIdCount = GetObject<int>();
-    int glyphIdOffset = GetObject<int>();
-    int positionCount = GetObject<int>();
-    int positionOffset = GetObject<int>();
-    OH_Drawing_CanvasDrawGlyphs(canvas,
-                                glyphIds, glyphIdCount, glyphIdOffset,
-                                positions, positionCount, positionOffset, glyphCount, font);
-    OH_Drawing_CanvasDrawGlyphs(nullptr,
-                                glyphIds, glyphIdCount, glyphIdOffset,
-                                positions, positionCount, positionOffset, glyphCount, font);
-    OH_Drawing_CanvasDrawGlyphs(canvas,
-                                glyphIds, glyphIdCount, glyphIdOffset,
-                                positions, positionCount, positionOffset, glyphCount, nullptr);
-    OH_Drawing_CanvasDestroy(canvas);
-    OH_Drawing_FontDestroy(font);
-    if (glyphIds != nullptr) {
-        delete[] glyphIds;
-        glyphIds = nullptr;
-    }
-    if (positions != nullptr) {
-        delete[] positions;
-        positions = nullptr;
-    }
-}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

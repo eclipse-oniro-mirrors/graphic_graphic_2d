@@ -6,7 +6,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
+ * Unless required by applicable law or agreed to in writing, Hardware
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
@@ -126,7 +126,6 @@ HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithConsumer_MergeFence, T
 HWTEST_F(RSBufferManagerTest, OnReleaseLayerBuffers_AllBranches, TestSize.Level1)
 {
     auto mgr = std::make_shared<RSBufferManager>();
-
     auto ctx = std::make_shared<RSComposerContext>(nullptr);
     // Prepare a concrete RSLayer and bufferOwnerCount
     auto layer = std::static_pointer_cast<RSSurfaceLayer>(RSSurfaceLayer::Create(0, ctx));
@@ -944,8 +943,8 @@ HWTEST_F(RSBufferManagerTest, ReleaseUniOnDrawBuffers_CheckLastUniBufferOwnerTru
     auto mgr = std::make_shared<RSBufferManager>();
     auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
     owner->bufferId_ = 9999ULL;
-    std::atomic<bool> released{false};
-    owner->bufferReleaseCb_ = [&released](uint64_t){ released = true; };
+    std::atomic<bool> released { false };
+    owner->bufferReleaseCb_ = [&released](uint64_t) { released = true; };
 
     // Insert layerId and bufferId into uniOnDrawBuffersMap_
     uint64_t targetBufferId = GenerateBufferId();
@@ -962,7 +961,7 @@ HWTEST_F(RSBufferManagerTest, ReleaseUniOnDrawBuffers_CheckLastUniBufferOwnerTru
     bufferOwnerCount->bufferId_ = targetBufferId;
     layer->SetBufferOwnerCount(bufferOwnerCount, false);
 
-    std::set<uint64_t> decedSet{};
+    std::set<uint64_t> decedSet {};
     sptr<SyncFence> uniFence = new SyncFence(dup(STDOUT_FILENO));
     // Do NOT call SetUniBufferOwner, so CheckLastUniBufferOwner returns true
     // (screenId not found in uniBufferOwnerSeqNumMap_)
@@ -993,8 +992,8 @@ HWTEST_F(RSBufferManagerTest, ReleaseUniOnDrawBuffers_CheckLastUniBufferOwnerMat
     auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
     uint64_t targetBufferId = GenerateBufferId();
     owner->bufferId_ = targetBufferId;
-    std::atomic<bool> released{false};
-    owner->bufferReleaseCb_ = [&released](uint64_t){ released = true; };
+    std::atomic<bool> released { false };
+    owner->bufferReleaseCb_ = [&released](uint64_t) { released = true; };
 
     // Insert layerId and bufferId into uniOnDrawBuffersMap_
     owner->InsertUniOnDrawSet(TEST_LAYER_ID, targetBufferId);
@@ -1010,7 +1009,7 @@ HWTEST_F(RSBufferManagerTest, ReleaseUniOnDrawBuffers_CheckLastUniBufferOwnerMat
     bufferOwnerCount->bufferId_ = targetBufferId;
     layer->SetBufferOwnerCount(bufferOwnerCount, false);
 
-    std::set<uint64_t> decedSet{};
+    std::set<uint64_t> decedSet {};
     sptr<SyncFence> uniFence = new SyncFence(dup(STDOUT_FILENO));
     // Set matching bufferId so CheckLastUniBufferOwner returns true (iter->second == bufferId)
     owner->SetUniBufferOwner(targetBufferId, TEST_SCREEN_ID);
@@ -1048,8 +1047,8 @@ HWTEST_F(RSBufferManagerTest, OnReleaseLayerBuffers_NullBufferOwnerCountTest001,
     // Create owner and set it in layer, but with DIFFERENT bufferId
     auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
     owner->bufferId_ = 9999ULL; // Different from buffer's actual bufferId
-    std::atomic<bool> released{false};
-    owner->bufferReleaseCb_ = [&released](uint64_t){ released = true; };
+    std::atomic<bool> released { false };
+    owner->bufferReleaseCb_ = [&released](uint64_t) { released = true; };
     layer->SetBufferOwnerCount(owner, false);
 
     sptr<SyncFence> f = new SyncFence(dup(STDOUT_FILENO));

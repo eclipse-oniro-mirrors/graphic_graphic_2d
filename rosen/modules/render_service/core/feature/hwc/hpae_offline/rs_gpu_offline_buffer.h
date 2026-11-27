@@ -40,7 +40,6 @@ struct NativeWindowBufferInfo : public Parcelable {
     NativeWindowBufferInfo(NativeWindowBufferBaseInfo &info) : baseInfo(info) {};
     NativeWindowBufferBaseInfo baseInfo;
     bool mUseAutoSeq = false;
-
     ~NativeWindowBufferInfo()
     {
         baseInfo.sfbuffer = nullptr;
@@ -52,6 +51,7 @@ struct NativeWindowBufferInfo : public Parcelable {
     virtual bool Marshalling(Parcel &parcel) const override;
     static OHOS::sptr<NativeWindowBufferInfo> Unmarshalling(Parcel &parcel, bool autoSeq = false);
 };
+
 
 class RSGPUOfflineBuffer {
 public:

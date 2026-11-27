@@ -349,7 +349,7 @@ HWTEST_F(RSRenderPipelineAgentTest, GetScreenHdrStatusTest002, TestSize.Level1)
 
 /**
  * @tc.name: GetMaxGpuBufferSize_NullPipeline
- * @tc.desc: Verify GetMaxGpuBufferSize returns ERR_INVALID_VALUE when pipeline is null
+ * @tc.desc: Verify GetMaxGpuBufferSize returns INVALID_ARGUMENTS when pipeline is null
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPipelineAgentTest, GetMaxGpuBufferSize_NullPipeline, TestSize.Level1)
@@ -361,7 +361,7 @@ HWTEST_F(RSRenderPipelineAgentTest, GetMaxGpuBufferSize_NullPipeline, TestSize.L
     uint32_t maxWidth = 0;
     uint32_t maxHeight = 0;
     ErrCode ret = agent->GetMaxGpuBufferSize(maxWidth, maxHeight);
-    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+    EXPECT_EQ(ret, INVALID_ARGUMENTS);
 }
 
 /**

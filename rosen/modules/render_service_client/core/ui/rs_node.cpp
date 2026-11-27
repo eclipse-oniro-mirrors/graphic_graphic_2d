@@ -23,6 +23,7 @@
 #include <numeric>
 #include <vector>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -2484,6 +2485,40 @@ void RSNode::SetNGBlender(const std::shared_ptr<RSNGBlenderBase>& blender)
     SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetNGBlenderBase>(blender);
 }
 
+void RSNode::SetAdaptiveBlender(const std::shared_ptr<RSNGBlenderBase>& darkBlender,
+    const std::shared_ptr<RSNGBlenderBase>& lightBlender)
+{
+    if (!darkBlender && !lightBlender) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::BLENDER);
+        if (modifier == nullptr) {
+            return;
+        }
+        if (modifier->HasProperty(ModifierNG::RSPropertyType::ADAPTIVE_DARK_BLENDER)) {
+            modifier->DetachProperty(ModifierNG::RSPropertyType::ADAPTIVE_DARK_BLENDER);
+        }
+        if (modifier->HasProperty(ModifierNG::RSPropertyType::ADAPTIVE_LIGHT_BLENDER)) {
+            modifier->DetachProperty(ModifierNG::RSPropertyType::ADAPTIVE_LIGHT_BLENDER);
+        }
+        return;
+    }
+    if (darkBlender == nullptr || lightBlender == nullptr) {
+        ROSEN_LOGE("RSNode::SetAdaptiveBlender node[%{public}" PRIu64 "]: one blender is null, "
+            "both must be non-null or both null", GetId());
+        return;
+    }
+    if (darkBlender->GetType() != RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER ||
+        lightBlender->GetType() != RSNGEffectType::COLORFUL_BRIGHTNESS_BLENDER) {
+        ROSEN_LOGE("RSNode::SetAdaptiveBlender node[%{public}" PRIu64
+            "]: only colorful brightness blender is supported", GetId());
+        return;
+    }
+
+    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetNGAdaptiveDarkBlender>(darkBlender);
+    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetNGAdaptiveLightBlender>(lightBlender);
+}
+
 void RSNode::SetForegroundEffectRadius(const float blurRadius)
 {
     SetPropertyNG<ModifierNG::RSForegroundFilterModifier,
@@ -3310,6 +3345,23 @@ void RSNode::ClearAllModifiers()
     }
     modifiersNG_.clear();
     properties_.clear();
+}
+
+void RSNode::PopFrontRSCmdModifierQueue()
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    // The render side handles RSCanvasNodeClearRecording by removing the oldest
+    // anonymous modifier from every draw slot (RemoveModifierNG). Mirror that here:
+    // drop the oldest queued modifier of each draw slot instead of only the front one.
+    std::set<uint16_t> clearedSlots;
+    for (auto it = rsCmdModifierQueue_.begin(); it != rsCmdModifierQueue_.end();) {
+        auto drawSlot = (*it) != nullptr ? (*it)->GetDrawSlot() : RSCmdModifier::INVALID_DRAW_SLOT;
+        if (drawSlot != RSCmdModifier::INVALID_DRAW_SLOT && clearedSlots.insert(drawSlot).second) {
+            it = rsCmdModifierQueue_.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void RSNode::LoadRenderNodeIfNeed() const

@@ -32,7 +32,6 @@ namespace {
 constexpr float DEFAULT_SDR_NITS = 203.0f;
 constexpr float GAMMA2_2 = 2.2f;
 }
-
 inline HdrStatus CheckAIHDRType(uint8_t metadataType)
 {
     switch (metadataType) {

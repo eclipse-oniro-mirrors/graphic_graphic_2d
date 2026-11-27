@@ -942,12 +942,11 @@ HWTEST_F(RsRenderComposerManagerTest, SetAFBCEnabledWithRenderComposerAgentNull,
 
     ScreenId screenId = 0;
     mgr->rsRenderComposerAgentMap_[screenId] = nullptr;
-
     mgr->SetAFBCEnabled(screenId, true);
     auto agent = mgr->rsRenderComposerAgentMap_.find(screenId);
     EXPECT_NE(agent, mgr->rsRenderComposerAgentMap_.end());
 }
-
+ 
 /**
  * Function: SetAFBCEnabledWithRenderComposerAgent
  * Type: Function
@@ -990,20 +989,20 @@ HWTEST_F(RsRenderComposerManagerTest, RegisterVsyncManagerCallbacks_ScreenIdNotF
 {
     std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
     std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler);
-
+ 
     // Create dummy callbacks
     auto setHardwareTaskNumCb = [](uint32_t) {};
     auto setTaskEndWithTimeCb = [](uint64_t) {};
     auto getRealTimeOffsetOfDvsyncCb = [](uint64_t, int64_t&) -> uint64_t { return 0; };
-
+ 
     // Call RegisterVsyncManagerCallbacks with non-existent screenId
     // Line 313 branch: iter == rsRenderComposerAgentMap_.end() -> true
     mgr->RegisterVsyncManagerCallbacks(9999, setHardwareTaskNumCb, setTaskEndWithTimeCb, getRealTimeOffsetOfDvsyncCb);
-
+ 
     // Verify no composer was added
     EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 0u);
 }
-
+ 
 /**
  * Function: RegisterVsyncManagerCallbacks_NullAgentInMap_EarlyReturn
  * Type: Function
@@ -1018,24 +1017,24 @@ HWTEST_F(RsRenderComposerManagerTest, RegisterVsyncManagerCallbacks_NullAgentInM
 {
     std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
     std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler);
-
+ 
     // Manually insert nullptr agent into the map
     mgr->rsRenderComposerAgentMap_.insert(std::pair(222u, nullptr));
-
+ 
     // Create dummy callbacks
     auto setHardwareTaskNumCb = [](uint32_t) {};
     auto setTaskEndWithTimeCb = [](uint64_t) {};
     auto getRealTimeOffsetOfDvsyncCb = [](uint64_t, int64_t&) -> uint64_t { return 0; };
-
+ 
     // Call RegisterVsyncManagerCallbacks with screenId that has nullptr agent
     // Line 313 branch: iter == rsRenderComposerAgentMap_.end() -> false
     // Line 319 branch: renderComposerAgent == nullptr -> true
     mgr->RegisterVsyncManagerCallbacks(222u, setHardwareTaskNumCb, setTaskEndWithTimeCb, getRealTimeOffsetOfDvsyncCb);
-
+ 
     // Verify map still contains the nullptr entry (no removal occurred)
     EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 1u);
 }
-
+ 
 /**
  * Function: RegisterVsyncManagerCallbacks_ValidAgent_Success
  * Type: Function
@@ -1049,29 +1048,29 @@ HWTEST_F(RsRenderComposerManagerTest, RegisterVsyncManagerCallbacks_ValidAgent_S
 {
     std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
     std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler);
-
+ 
     auto output = std::make_shared<HdiOutput>(333u);
     output->Init();
     sptr<RSScreenProperty> property = new RSScreenProperty();
     mgr->OnScreenConnected(output, property);
     ASSERT_EQ(mgr->rsRenderComposerAgentMap_.size(), 0u);
-
+ 
     // Create dummy callbacks
     auto setHardwareTaskNumCb = [](uint32_t) {};
     auto setTaskEndWithTimeCb = [](uint64_t) {};
     auto getRealTimeOffsetOfDvsyncCb = [](uint64_t, int64_t&) -> uint64_t { return 0; };
-
+ 
     // Call RegisterVsyncManagerCallbacks with existing screenId
     // Line 313 branch: iter == rsRenderComposerAgentMap_.end() -> false
     // Line 319 branch: renderComposerAgent == nullptr -> false (agent is valid)
     // Note: Since uniRender is enabled, the agent map may be empty, but the function should not crash
     mgr->RegisterVsyncManagerCallbacks(333u, setHardwareTaskNumCb, setTaskEndWithTimeCb, getRealTimeOffsetOfDvsyncCb);
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
+ 
     // Verify composer still exists in map
     EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 0u);
 }
-
+ 
 /**
  * Function: RegisterVsyncManagerCallbacks_MultipleScreens
  * Type: Function
@@ -1085,7 +1084,7 @@ HWTEST_F(RsRenderComposerManagerTest, RegisterVsyncManagerCallbacks_MultipleScre
 {
     std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
     std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler);
-
+ 
     // Connect multiple screens
     for (uint32_t screenId = 130u; screenId < 133u; screenId++) {
         auto output = std::make_shared<HdiOutput>(screenId);
@@ -1094,22 +1093,22 @@ HWTEST_F(RsRenderComposerManagerTest, RegisterVsyncManagerCallbacks_MultipleScre
         mgr->OnScreenConnected(output, property);
     }
     ASSERT_EQ(mgr->rsRenderComposerAgentMap_.size(), 0u);
-
+ 
     // Create dummy callbacks
     auto setHardwareTaskNumCb = [](uint32_t) {};
     auto setTaskEndWithTimeCb = [](uint64_t) {};
     auto getRealTimeOffsetOfDvsyncCb = [](uint64_t, int64_t&) -> uint64_t { return 0; };
-
+ 
     // Register callbacks for each screen
     mgr->RegisterVsyncManagerCallbacks(130u, setHardwareTaskNumCb, setTaskEndWithTimeCb, getRealTimeOffsetOfDvsyncCb);
     mgr->RegisterVsyncManagerCallbacks(131u, setHardwareTaskNumCb, setTaskEndWithTimeCb, getRealTimeOffsetOfDvsyncCb);
     mgr->RegisterVsyncManagerCallbacks(132u, setHardwareTaskNumCb, setTaskEndWithTimeCb, getRealTimeOffsetOfDvsyncCb);
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
+ 
     // Verify all composers still exist
     EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 0u);
 }
-
+ 
 /**
  * Function: RegisterVsyncManagerCallbacks_CallbacksExecute
  * Type: Function
@@ -1123,29 +1122,29 @@ HWTEST_F(RsRenderComposerManagerTest, RegisterVsyncManagerCallbacks_CallbacksExe
 {
     std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
     std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler);
-
+ 
     auto output = std::make_shared<HdiOutput>(140u);
     output->Init();
     sptr<RSScreenProperty> property = new RSScreenProperty();
     mgr->OnScreenConnected(output, property);
     ASSERT_EQ(mgr->rsRenderComposerAgentMap_.size(), 0u);
-
+ 
     // Create callbacks that track execution
     std::atomic<bool> hardwareTaskNumCalled { false };
     std::atomic<bool> taskEndWithTimeCalled { false };
     std::atomic<bool> realTimeOffsetCalled { false };
-
+ 
     auto setHardwareTaskNumCb = [&hardwareTaskNumCalled](uint32_t) { hardwareTaskNumCalled.store(true); };
     auto setTaskEndWithTimeCb = [&taskEndWithTimeCalled](uint64_t) { taskEndWithTimeCalled.store(true); };
     auto getRealTimeOffsetOfDvsyncCb = [&realTimeOffsetCalled](uint64_t, int64_t&) -> uint64_t {
         realTimeOffsetCalled.store(true);
         return 0;
     };
-
+ 
     // Register callbacks
     mgr->RegisterVsyncManagerCallbacks(140u, setHardwareTaskNumCb, setTaskEndWithTimeCb, getRealTimeOffsetOfDvsyncCb);
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
+ 
     // Verify function completed without crash
     // Note: Callbacks may not be executed immediately as they are forwarded to agent
     EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 0u);

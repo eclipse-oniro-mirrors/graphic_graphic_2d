@@ -25,6 +25,12 @@ const RSBlendRenderModifier::LegacyPropertyApplierMap RSBlendRenderModifier::Leg
     // NG blender: store the NG object only; unpacking happens in RSBeginBlenderDrawable.
     { RSPropertyType::FOREGROUND_NG_BLENDER,
         RSRenderModifier::PropertyApplyHelper<std::shared_ptr<RSNGRenderBlenderBase>, &RSProperties::SetNGBlender> },
+    { RSPropertyType::ADAPTIVE_DARK_BLENDER,
+        RSRenderModifier::PropertyApplyHelper<std::shared_ptr<RSNGRenderBlenderBase>,
+            &RSProperties::SetNGAdaptiveDarkBlender> },
+    { RSPropertyType::ADAPTIVE_LIGHT_BLENDER,
+        RSRenderModifier::PropertyApplyHelper<std::shared_ptr<RSNGRenderBlenderBase>,
+            &RSProperties::SetNGAdaptiveLightBlender> },
 };
 
 void RSBlendRenderModifier::ResetProperties(RSProperties& properties)
@@ -32,5 +38,7 @@ void RSBlendRenderModifier::ResetProperties(RSProperties& properties)
     properties.SetColorBlendMode(0);
     properties.SetColorBlendApplyType(0);
     properties.SetNGBlender(nullptr);
+    properties.SetNGAdaptiveDarkBlender(nullptr);
+    properties.SetNGAdaptiveLightBlender(nullptr);
 }
 } // namespace OHOS::Rosen::ModifierNG

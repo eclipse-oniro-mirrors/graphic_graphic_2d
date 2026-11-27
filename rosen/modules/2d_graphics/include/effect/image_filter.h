@@ -147,14 +147,14 @@ public:
         const std::shared_ptr<Image>& image, const Rect& srcRect, const Rect& dstRect,
         const SamplingOptions& options = SamplingOptions());
 
-     /**
-     * @brief Create a filter that draws the 'srcRect' portion of image into 'dstRect' using HD Sampling.
-     *
-     * @param image The image that the filter will process.
-     * @param src   The source pixels sampled from the image, subset of image rect.
-     * @param dst   The local rectangle to draw the image into.
-     * @return      A shared pointer to ImageFilter that its type is hd sample.
-     */
+    /**
+    * @brief Create a filter that draws the 'srcRect' portion of image into 'dstRect' using HD Sampling.
+    *
+    * @param image The image that the filter will process.
+    * @param src   The source pixels sampled from the image, subset of image rect.
+    * @param dst   The local rectangle to draw the image into.
+    * @return      A shared pointer to ImageFilter that its type is hd sample.
+    */
     static std::shared_ptr<ImageFilter> CreateHDSampleImageFilter(
         const std::shared_ptr<Image>& image, const Rect& src, const Rect& dst, const HDSampleInfo& info);
 

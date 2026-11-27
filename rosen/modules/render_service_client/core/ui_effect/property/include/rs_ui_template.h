@@ -28,7 +28,7 @@ namespace OHOS {
 namespace Rosen {
 
 template <typename Derived, typename RenderEffect>
-class RSNGEffectBase : public std::enable_shared_from_this<Derived> {
+class [[clang::lto_visibility_public]] RSNGEffectBase : public std::enable_shared_from_this<Derived> {
 public:
     using RenderEffectBase = RenderEffect;
 
@@ -40,6 +40,17 @@ public:
     virtual void Attach(RSNode& node, const std::weak_ptr<ModifierNG::RSModifier>& modifier) = 0;
     virtual void Detach() = 0;
     virtual std::shared_ptr<Derived> CopyAsSingleEffect() = 0;
+
+    virtual void OnCopyCachePolicyTo(RenderEffectBase& server) {}
+
+    // Copy cache policy from another client-side effect (used by SetValue).
+    // Default no-op; overridden by RSNGShaderBase.
+    virtual void OnCopyCachePolicyFrom(const Derived& other) {}
+
+    // Check if other's staging cache policy differs from this's committed policy.
+    // If true, SetValue returns false to force GetRenderEffect.
+    // Default false (no cache policy); overridden by RSNGShaderBase.
+    virtual bool CachePolicyNeedsSync(const Derived& other) const { return false; }
 
     /**
     * @brief Append a single effect to the end of the current effect chain, enabling all
@@ -159,6 +170,7 @@ public:
                 (res->template Setter<std::decay_t<decltype(args)>>(args.value_->Get()), ...);
             },
             properties_);
+        res->OnCopyCachePolicyFrom(*this);
         return res; // Implicit upcast from std::shared_ptr<RSNGEffectTemplate> to std::shared_ptr<Base>.
     }
 
@@ -170,6 +182,7 @@ public:
 
         // 2. Create render filter by type and fill properties
         auto current = std::make_shared<RenderEffectTemplate>(renderProperties);
+        Base::OnCopyCachePolicyTo(*current);
         if (auto& nextEffect = Base::nextEffect_) {
             current->nextEffect_ = nextEffect->GetRenderEffect();
         }
@@ -188,11 +201,18 @@ public:
         if (Base::GetEffectCount() != otherDown->GetEffectCount()) {
             return false;
         }
+        // Cache policy changed since last GetRenderEffect commit — force full
+        // replacement so GetRenderEffect propagates the new policy to server.
+        if (Base::CachePolicyNeedsSync(*otherDown)) {
+            return false;
+        }
         auto& otherProps = otherDown->GetProperties();
         std::apply([&otherProps](const auto&... args) {
                 (args.value_->Set(std::get<std::decay_t<decltype(args)>>(otherProps).value_->Get()), ...);
             },
             properties_);
+        // Copy cache policy directly — no comparison, same as properties above.
+        Base::OnCopyCachePolicyFrom(*otherDown);
 
         auto& otherNextEffect = otherDown->nextEffect_;
         if (!Base::nextEffect_ || !Base::nextEffect_->SetValue(otherNextEffect, node, modifier)) {

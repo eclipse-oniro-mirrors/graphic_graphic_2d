@@ -15,8 +15,8 @@
 
 #ifndef RS_HPAE_OFFLINE_PROCESS_SYNC_H
 #define RS_HPAE_OFFLINE_PROCESS_SYNC_H
-
 #include <utility>
+
 #include "feature/hwc/hpae_offline/rs_offline_result.h"
 
 namespace OHOS::Rosen {

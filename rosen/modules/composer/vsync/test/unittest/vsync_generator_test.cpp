@@ -110,6 +110,12 @@ int64_t VSyncGeneratorTestCallback::GetPhaseOffset()
 }
 
 namespace {
+// Mock function to simulate DVSyncLibManager::SetCurrentRefreshRate returning non-zero delay time
+int64_t MockSetCurrentRefreshRateReturnDelay(uint32_t currRefreshRate, uint32_t lastRefreshRate)
+{
+    return 1000000; // 1000000ns == 1ms, non-zero delay
+}
+
 /*
 * Function: ThreadTest001
 * Type: Function
@@ -1269,6 +1275,67 @@ HWTEST_F(VSyncGeneratorTest, SetCurrentRefreshRateTest002, Function | MediumTest
     int64_t delayTime = VSyncGeneratorTest::vsyncGenerator_->SetCurrentRefreshRate(currRefreshRate, lastRefreshRate);
     ASSERT_EQ(delayTime, 0);
     OHOS::Rosen::DVSyncLibManager::Instance().initialized_ = init;
+}
+
+/*
+* Function: SetCurrentRefreshRateTest003
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: Test SetCurrentRefreshRate sets isLtpoNeedChange_ when delayTime is non-zero
+*/
+HWTEST_F(VSyncGeneratorTest, SetCurrentRefreshRateTest003, Function | MediumTest| Level0)
+{
+    auto vsyncGeneratorImpl = static_cast<impl::VSyncGenerator*>(VSyncGeneratorTest::vsyncGenerator_.GetRefPtr());
+    // save original state of DVSyncLibManager and VSyncGenerator
+    bool origInit = OHOS::Rosen::DVSyncLibManager::Instance().initialized_;
+    auto origFunc = OHOS::Rosen::DVSyncLibManager::Instance().setCurrentRefreshRateFunc_;
+    bool origIsLtpoNeedChange = vsyncGeneratorImpl->isLtpoNeedChange_;
+
+    vsyncGeneratorImpl->isLtpoNeedChange_ = false;
+    OHOS::Rosen::DVSyncLibManager::Instance().initialized_ = true;
+    OHOS::Rosen::DVSyncLibManager::Instance().setCurrentRefreshRateFunc_ = MockSetCurrentRefreshRateReturnDelay;
+
+    uint32_t currRefreshRate = 60; // 60hz
+    uint32_t lastRefreshRate = 30; // 30hz
+    int64_t delayTime = VSyncGeneratorTest::vsyncGenerator_->SetCurrentRefreshRate(currRefreshRate, lastRefreshRate);
+    // delayTime is non-zero, isLtpoNeedChange_ should be set to true
+    ASSERT_NE(delayTime, 0);
+    ASSERT_EQ(vsyncGeneratorImpl->isLtpoNeedChange_, true);
+
+    // restore original state
+    OHOS::Rosen::DVSyncLibManager::Instance().setCurrentRefreshRateFunc_ = origFunc;
+    OHOS::Rosen::DVSyncLibManager::Instance().initialized_ = origInit;
+    vsyncGeneratorImpl->isLtpoNeedChange_ = origIsLtpoNeedChange;
+}
+
+/*
+* Function: SetCurrentRefreshRateTest004
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: Test SetCurrentRefreshRate does not set isLtpoNeedChange_ when currRefreshRate is zero
+*/
+HWTEST_F(VSyncGeneratorTest, SetCurrentRefreshRateTest004, Function | MediumTest| Level0)
+{
+    auto vsyncGeneratorImpl = static_cast<impl::VSyncGenerator*>(VSyncGeneratorTest::vsyncGenerator_.GetRefPtr());
+    bool origInit = OHOS::Rosen::DVSyncLibManager::Instance().initialized_;
+    auto origFunc = OHOS::Rosen::DVSyncLibManager::Instance().setCurrentRefreshRateFunc_;
+    bool origIsLtpoNeedChange = vsyncGeneratorImpl->isLtpoNeedChange_;
+
+    vsyncGeneratorImpl->isLtpoNeedChange_ = false;
+    OHOS::Rosen::DVSyncLibManager::Instance().initialized_ = true;
+    OHOS::Rosen::DVSyncLibManager::Instance().setCurrentRefreshRateFunc_ = MockSetCurrentRefreshRateReturnDelay;
+
+    uint32_t currRefreshRate = 0; // zero refresh rate, isLtpoNeedChange_ should not be set
+    uint32_t lastRefreshRate = 30; // 30hz
+    int64_t delayTime = VSyncGeneratorTest::vsyncGenerator_->SetCurrentRefreshRate(currRefreshRate, lastRefreshRate);
+    ASSERT_NE(delayTime, 0);
+    ASSERT_EQ(vsyncGeneratorImpl->isLtpoNeedChange_, false);
+
+    OHOS::Rosen::DVSyncLibManager::Instance().setCurrentRefreshRateFunc_ = origFunc;
+    OHOS::Rosen::DVSyncLibManager::Instance().initialized_ = origInit;
+    vsyncGeneratorImpl->isLtpoNeedChange_ = origIsLtpoNeedChange;
 }
 
 /*

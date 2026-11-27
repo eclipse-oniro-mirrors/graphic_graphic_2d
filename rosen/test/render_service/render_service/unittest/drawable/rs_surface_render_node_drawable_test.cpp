@@ -47,7 +47,7 @@ public:
     RSTestDrawable() = default;
     ~RSTestDrawable() override = default;
 
-    //no need to sync, content_ only used in render thread
+    // no need to sync, content_ only used in render thread
     void OnSync() override {};
     void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override {};
 };
@@ -96,6 +96,7 @@ void RSSurfaceRenderNodeDrawableTest::SetUpTestCase()
 {
     CleanUpUniRenderEngine();
 }
+
 void RSSurfaceRenderNodeDrawableTest::TearDownTestCase()
 {
     RSTestUtil::InitRenderNodeGC();
@@ -431,12 +432,12 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture001, TestSize.Level1)
 
 /**
  * @tc.name: OnCapture002
- * @tc.desc: Test OnCapture  when CheckIfSurfaceSkipInMirrorOrScreenshot return false
+ * @tc.desc: Test OnCapture when CheckIfSurfaceSkipInMirrorOrScreenshot return false
  * @tc.type: FUNC
  * @tc.require: #I9NVOG
  */
- HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture002, TestSize.Level1)
- {
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture002, TestSize.Level1)
+{
     ASSERT_NE(surfaceDrawable_, nullptr);
     ASSERT_NE(drawable_->renderParams_, nullptr);
     drawable_->renderParams_->shouldPaint_ = true;
@@ -941,7 +942,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawUifirstContentChildrenTest, TestSi
     Drawing::Rect rect;
     surfaceDrawable->DrawUifirstContentChildren(canvas, rect);
     EXPECT_TRUE(surfaceDrawable->uifirstDrawCmdList_.empty());
-
     std::shared_ptr<RSTestDrawable> rsDrawable = std::make_shared<RSTestDrawable>();
     surfaceDrawable->uifirstDrawCmdList_.emplace_back(rsDrawable);
     EXPECT_FALSE(surfaceDrawable->uifirstDrawCmdList_.empty());
@@ -2185,7 +2185,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawMagnificationRegionTest, TestSize.
     surfaceDrawable_->DrawMagnificationRegion(canvas, *surfaceParams);
 }
 
-#ifdef SUBTREE_PARALLEL_ENABLE
+#ifdef  SUBTREE_PARALLEL_ENABLE
 /**
  * @tc.name: OnDraw004
  * @tc.desc: Test OnDraw
@@ -2520,7 +2520,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawWatermark01, TestSize.Level1)
 
     auto uniParams = std::make_unique<RSRenderThreadParams>();
     uniParams->GetWatermark("watermask11111");
-
     int width = 50;
     int height = 50;
     Media::InitializationOptions opts;
@@ -2564,11 +2563,11 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawWatermark01, TestSize.Level1)
 }
 
 /**
- * @tc.name: DrawWatermarkGrid01
- * @tc.desc: Test DrawWatermark with grid watermark (rowCount > 0 && colCount > 0)
- * @tc.type: FUNC
- * @tc.require:
- */
+* @tc.name: DrawWatermarkGrid01
+* @tc.desc: Test DrawWatermark with grid watermark (rowCount > 0 && colCount > 0)
+* @tc.type: FUNC
+* @tc.require:
+*/
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawWatermarkGrid01, TestSize.Level1)
 {
     ASSERT_TRUE(surfaceDrawable_ != nullptr);
@@ -2891,7 +2890,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, TryResumeLastBufferTest, TestSize.Leve
     surfaceDrawable_->TryResumeLastBuffer(buffer);
     EXPECT_TRUE(buffer->IsReclaimed());
 }
-
 /**
  * @tc.name: FilterCacheOcclusionSkip001
  * @tc.desc: Test OnDraw with shouldSkipForFilterCacheOcclusion = true (all conditions met)
@@ -3624,7 +3622,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, IsUIFirstFirstFrameCacheGenerated001, 
     if (!rtThread.uniRenderEngine_) {
         rtThread.uniRenderEngine_ = std::make_shared<RSRenderEngine>();
     }
-
+ 
     ASSERT_NE(surfaceDrawable_, nullptr);
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
     ASSERT_NE(surfaceParams, nullptr);

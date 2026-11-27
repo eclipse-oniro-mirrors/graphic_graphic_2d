@@ -40,11 +40,13 @@ ohos_unittest("2d_graphics_text_test") {
     "font_properties_query_test.cpp",
   ]
 
-  deps = [ "$graphic_2d_root/frameworks/text:rosen_text" ]
+  deps = [
+    "$graphic_2d_root/frameworks/text:rosen_text",
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+  ]
 
   external_deps = [
     "c_utils:utils",
-    "graphic_2d:2d_graphics",
     "hilog:libhilog",
     "icu:shared_icuuc",
     "skia:skia_canvaskit",

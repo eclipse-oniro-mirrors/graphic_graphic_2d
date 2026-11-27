@@ -89,6 +89,7 @@
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
+#include "pipeline/rs_effect_utils.h"
 #include "feature/pointer_window_manager/rs_pointer_window_manager.h"
 #include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display.h"
@@ -819,6 +820,7 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
         std::bind(&RSMainThread::ColorPickerNoticedNodeDirtyCallback, this, std::placeholders::_1));
     RSColorPickerThread::Instance().RegisterNotifyClientCallback(
         std::bind(&RSMainThread::SendColorPickerCallback, this, std::placeholders::_1, std::placeholders::_2));
+    RSEffectUtils::Init();
     rsVsyncManagerAgent_ = rsVsyncManagerAgent;
     if (isUniRender_) {
         unmarshalBarrierTask_ = [this]() {
@@ -861,7 +863,7 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
     };
     RSRenderNodeGC::Instance().SetMainTask(PostTaskProxy);
 #ifdef RS_ENABLE_GL
-    /* Planning move to render thread */
+    /* move to render thread ? */
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
         int cacheLimitsTimes = 3;
         auto gpuContext = isUniRender_? GetRenderEngine()->GetRenderContext()->GetDrGPUContext() :
@@ -888,10 +890,11 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
 #endif
 #if defined(RS_ENABLE_UNI_RENDER)
     RS_LOGI("InitRenderContext");
-    /* move to render thread ? */
+    /* Planning move to render thread */
     RSBackgroundThread::Instance().InitRenderContext(GetRenderEngine()->GetRenderContext());
     RSColorPickerThread::Instance().InitRenderContext(GetRenderEngine()->GetRenderContext());
 #endif
+
     RSRcdRenderManager::InitInstance();
 
 #if defined(ACCESSIBILITY_ENABLE)
@@ -1411,16 +1414,16 @@ void RSMainThread::InitVulkanErrorCallback(Drawing::GPUContext* gpuContext)
 
         HiSysEventParam pPID = { .name = "PID", .t = HISYSEVENT_UINT32, .v = { .ui32 = appPid_ }, .arraySize = 0 };
         HiSysEventParam pAppNodeId = {
-            .name = "AppNodeId", .t = HISYSEVENT_UINT64, .v = { .ui64 = appWindowId_ }, .arraySize = 0
+            .name = "APPNODEID", .t = HISYSEVENT_UINT64, .v = { .ui64 = appWindowId_ }, .arraySize = 0
         };
         HiSysEventParam pAppNodeName = {
-            .name = "AppNodeName", .t = HISYSEVENT_STRING, .v = { .s = appWindowName }, .arraySize = 0
+            .name = "APPNODENAME", .t = HISYSEVENT_STRING, .v = { .s = appWindowName }, .arraySize = 0
         };
         HiSysEventParam pLeashWindowId = {
-            .name = "LeashWindowId", .t = HISYSEVENT_UINT64, .v = { .ui64 = focusLeashWindowId_ }, .arraySize = 0
+            .name = "LEASHWINDOWID", .t = HISYSEVENT_UINT64, .v = { .ui64 = focusLeashWindowId_ }, .arraySize = 0
         };
         HiSysEventParam pLeashWindowName = {
-            .name = "LeashWindowName", .t = HISYSEVENT_STRING, .v = { .s = focusLeashWindowName }, .arraySize = 0
+            .name = "LEASHWINDOWNAME", .t = HISYSEVENT_STRING, .v = { .s = focusLeashWindowName }, .arraySize = 0
         };
         HiSysEventParam pExtInfo = {
             .name = "EXT_INFO", .t = HISYSEVENT_STRING, .v = { .s = extInfo }, .arraySize = 0
@@ -2627,12 +2630,14 @@ void RSMainThread::ClearMemoryCache(ClearMemoryMoment moment, bool deeply, pid_t
     if (!RSSystemProperties::GetReleaseResourceEnabled()) {
         return;
     }
+
     bool isDeeplyRelGpuResEnable = false;
     auto relGpuResParam = std::static_pointer_cast<DeeplyRelGpuResParam>(
         GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[DEEPLY_REL_GPU_RES]));
     if (relGpuResParam != nullptr) {
         isDeeplyRelGpuResEnable = relGpuResParam->IsDeeplyRelGpuResEnable();
     }
+
     this->clearMemoryFinished_ = false;
     this->clearMemDeeply_ = this->clearMemDeeply_ || deeply;
     this->SetClearMoment(moment);
@@ -3086,6 +3091,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 #if defined(ROSEN_OHOS)
     RSHpaeManager::GetInstance().OnUniRenderStart();
 #endif
+
     if (isAccessibilityConfigChanged_) {
         RS_LOGD_IF(DEBUG_PIPELINE, "UniRender AccessibilityConfig has Changed");
     }
@@ -3648,6 +3654,7 @@ void RSMainThread::Render()
         rsVisitor->SetAnimateState(doWindowAnimate_);
         rootNode->Prepare(rsVisitor);
         CalcOcclusion();
+
         bool doParallelComposition = false;
         if (!rsVisitor->ShouldForceSerial() && RSInnovation::GetParallelCompositionEnabled(isUniRender_)) {
             doParallelComposition = DoParallelComposition(rootNode);
@@ -3674,6 +3681,7 @@ void RSMainThread::OnUniRenderDraw()
         RsFrameReport::RenderEnd();
         return;
     }
+
     isLastFrameNeedPostAndWait_ = needPostAndWait_;
     needPostAndWait_ = !doDirectComposition_ && needDrawFrame_;
     UpdateScreenNodeScreenId();
@@ -4305,7 +4313,6 @@ void RSMainThread::ClearSelfDrawingNodes()
 {
     selfDrawingNodes_.clear();
 }
-
 void RSMainThread::RSJankStatsOnVsyncEnd(int64_t onVsyncStartTime, int64_t onVsyncStartTimeSteady,
                                          float onVsyncStartTimeSteadyFloat)
 {
@@ -4366,6 +4373,7 @@ void RSMainThread::SetVsyncInfo(uint64_t timestamp)
 void RSMainThread::Animate(uint64_t timestamp)
 {
     RS_TRACE_FUNC();
+
     lastAnimateTimestamp_ = timestamp;
 
     int64_t minLeftDelayTime = RSSystemProperties::GetAnimationDelayOptimizeEnabled() ? INT64_MAX : 0;
@@ -5004,7 +5012,6 @@ void RSMainThread::OnCommitDumpClientNodeTree(NodeId nodeId, pid_t pid, uint32_t
         taskId, result.size(), pid);
 }
 
-
 bool RSMainThread::DoParallelComposition(std::shared_ptr<RSBaseRenderNode> rootNode)
 {
     using CreateParallelSyncSignalFunc = void* (*)(uint32_t);
@@ -5235,7 +5242,7 @@ bool RSMainThread::IsFastComposeVsyncTimeSync(uint64_t unsignedVsyncPeriod, bool
     }
     // if vsynctimestamp updated but timestamp_ not, diff > 1/2 vsync， don't fastcompose
     if (static_cast<uint64_t>(vsyncTimeStamp) > timestamp_ &&
-        static_cast<uint64_t>(vsyncTimeStamp) - timestamp_ > REFRESH_PERIOD / 2) { // 1/2 vsync
+        static_cast<uint64_t>(vsyncTimeStamp) - timestamp_ > REFRESH_PERIOD / 2) {
         return false;
     }
     // when buffer come near vsync time, difference value need to add offset before division
@@ -5361,10 +5368,11 @@ void RSMainThread::ForceRefreshForUni(bool needDelay)
 void RSMainThread::PostForceRefreshTask()
 {
     if (!IsRequestedNextVSync()) {
-        PostTask([this]() {
+        PostTask([this](){
             RS_TRACE_NAME("No RNV, ForceRefreshOneFrame");
             SetDirtyFlag();
-            RequestNextVSync();}, FORCE_REFRESH_ONE_FRAME_TASK_NAME, 20); // delay 20ms
+            RequestNextVSync();
+        }, FORCE_REFRESH_ONE_FRAME_TASK_NAME, 20); // delay 20ms
     }
 }
 
@@ -5392,8 +5400,8 @@ void RSMainThread::PerfForBlurIfNeeded()
         auto now = std::chrono::steady_clock::now().time_since_epoch();
         auto timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
         RS_OPTIONAL_TRACE_NAME_FMT("PerfForBlurIfNeeded now[%ld] timestamp[%ld] preBlurCnt[%d]",
-            std::chrono::steady_clock::now().time_since_epoch(), timestamp, preBlurCnt);
-        if (static_cast<uint64_t>(timestamp) - prePerfTimestamp > PERF_PERIOD_BLUR_TIMEOUT && preBlurCnt != 0) {
+            now, timestamp, preBlurCnt);
+        if (static_cast<uint64_t>(timestamp) - prePerfTimestamp > PERF_PERIOD_BLUR_TIMEOUT) {
             PerfRequest(BLUR_CNT_TO_BLUR_CODE.at(preBlurCnt), false);
             prePerfTimestamp = 0;
             preBlurCnt = 0;
@@ -5583,29 +5591,28 @@ bool RSMainThread::IsOcclusionNodesNeedSync(NodeId id, bool useCurWindow)
     return needSync;
 }
 
-void RSMainThread::SetWatermark(const pid_t& pid, const std::string& name,
-    std::shared_ptr<Media::PixelMap> watermark, uint32_t rowCount, uint32_t colCount)
+void RSMainThread::SetWatermark(const pid_t& pid, const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
+    uint32_t rowCount, uint32_t colCount)
 {
     std::lock_guard<std::mutex> lock(watermarkMutex_);
-    (void)surfaceWatermarkHelper_.SetSurfaceWatermark(pid, name, watermark, {}, SYSTEM_WATER_MARK, GetContext(), true,
-        rowCount, colCount);
+    (void)surfaceWatermarkHelper_.SetSurfaceWatermark(
+        pid, name, watermark, {}, SYSTEM_WATER_MARK, GetContext(), true, rowCount, colCount);
     SetDirtyFlag();
     RequestNextVSync();
 }
 
 uint32_t RSMainThread::SetSurfaceWatermark(pid_t pid, const std::string& name,
-    std::shared_ptr<Media::PixelMap> watermark, const std::vector<NodeId>& nodeIdList,
-    SurfaceWatermarkType watermarkType, bool isSystemCalling,
-    uint32_t rowCount, uint32_t colCount)
+    std::shared_ptr<Media::PixelMap> watermark,
+    const std::vector<NodeId>& nodeList, SurfaceWatermarkType watermarkType,
+    bool isSystemCalling, uint32_t rowCount, uint32_t colCount)
 {
     std::lock_guard<std::mutex> lock(watermarkMutex_);
-    auto res = surfaceWatermarkHelper_.SetSurfaceWatermark(pid, name, watermark, nodeIdList,
+    auto res = surfaceWatermarkHelper_.SetSurfaceWatermark(pid, name, watermark, nodeList,
         watermarkType, GetContext(), isSystemCalling, rowCount, colCount);
     SetDirtyFlag(true);
     RequestNextVSync();
     return res;
 }
-
 
 void RSMainThread::ClearSurfaceWatermark(pid_t pid, const std::string& name, bool isSystemCalling)
 {
@@ -5631,9 +5638,10 @@ void RSMainThread::ClearPersistentProperties(pid_t pid)
 }
 
 void RSMainThread::ClearSurfaceWatermarkForNodes(pid_t pid, const std::string& name,
-    const std::vector<NodeId>& nodeList, bool isSystemCalling)
+        const std::vector<NodeId>& nodeList, bool isSystemCalling)
 {
     std::lock_guard<std::mutex> lock(watermarkMutex_);
+
     surfaceWatermarkHelper_.ClearSurfaceWatermarkForNodes(pid, name, nodeList, GetContext(), isSystemCalling);
     SetDirtyFlag(true);
     RequestNextVSync();
@@ -5851,7 +5859,6 @@ void RSMainThread::SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
         RS_LOGE("SetCurtainScreenUsingStatus CurtainScreenEnabled is not supported");
         return;
     }
-
     if (isCurtainScreenOn_ == isCurtainScreenOn) {
         RS_LOGD_IF(DEBUG_PIPELINE, "SetCurtainScreenUsingStatus: curtain screen status not change");
         return;
@@ -5959,6 +5966,7 @@ void RSMainThread::UpdateLuminanceAndColorTemp()
         if (screenNode == nullptr) {
             continue;
         }
+
         auto screenId = screenNode->GetScreenId();
         if (rsLuminance.IsNeedUpdateLuminance(screenId)) {
             uint32_t newLevel = rsLuminance.GetNewHdrLuminance(screenId);
@@ -6068,7 +6076,7 @@ void RSMainThread::RequestNextVSyncInner(VSyncReceiver::FrameCallback callback, 
         receiver_->RequestNextVSync(callback, fromWhom, lastVSyncTS);
     } else {
         int64_t requestVsyncTimeTmp = 0;
-        if (requestVsyncTime > 0 && static_cast<uint64_t>(requestVsyncTime) > vsyncRsTimestamp_.load()) {
+        if ((requestVsyncTime > 0) && (static_cast<uint64_t>(requestVsyncTime) > vsyncRsTimestamp_.load())) {
             requestVsyncTimeTmp = requestVsyncTime;
         }
         receiver_->RequestNextVSync(callback, fromWhom, lastVSyncTS, requestVsyncTimeTmp);
@@ -6298,7 +6306,6 @@ void RSMainThread::HandlePhysicalModeParamsChanged(
             needTraverseNodeTree |= true;
         }
     });
-
     if (needTraverseNodeTree) {
         SetDirtyFlag();
         RequestNextVSync();
@@ -6443,12 +6450,12 @@ bool RSMainThread::IsRebuildTransactionInProgress() const
 {
     return !pendingSplitTransactions_.empty();
 }
- 
+
 bool RSMainThread::IsPidRebuilding(pid_t pid) const
 {
     return pendingSplitTransactions_.count(pid) > 0;
 }
- 
+
 void RSMainThread::AddSplitTransaction(std::unique_ptr<RSTransactionData> transaction)
 {
     if (!transaction) {
@@ -6466,7 +6473,7 @@ void RSMainThread::AddSplitTransaction(std::unique_ptr<RSTransactionData> transa
     RS_TRACE_NAME_FMT(
         "AddSplitTransaction: pid=%d pending rebuild transactions count = %zu", pid, state.transactions.size());
 }
- 
+
 void RSMainThread::ProcessSplitTransactionCommands()
 {
     if (pendingSplitTransactions_.empty()) {
@@ -6592,12 +6599,12 @@ void RSMainThread::AddDisableReason(const std::string& reason)
     // Actual max for reasons: 344 - 4 = 340
     const size_t MAX_TRACE_LENGTH = 344;
     const size_t TRUNCATION_MARKER_LENGTH = 4; // "|..."
-    
+
     // Early return if already truncated
     if (isDirectCompositionDisableTraceTruncated_) {
         return;
     }
-    
+
     // Calculate new length after adding this reason
     size_t originalLength = directCompositionDisableReasons_.length();
     size_t newLength = originalLength;
@@ -6662,7 +6669,9 @@ void RSMainThread::DoDirectCompositionForDelegateModeIfNeed(std::shared_ptr<RSBa
 {
     std::optional<bool> ret =
         RsDelegateCompositeCallbackManager::GetInstance().GetDoDirectCompositionSupportByHwcEnable();
-    if (!ret.has_value()) {
+    if (!ret.has_value() || forceUpdateUniRenderFlag_) {
+        RS_OPTIONAL_TRACE_NAME_FMT("DoDirectCompositionForDelegateMode not need: %d, %d",
+            !ret.has_value(), forceUpdateUniRenderFlag_);
         return;
     }
     doDirectComposition_ = ret.value();

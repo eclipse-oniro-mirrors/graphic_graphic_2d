@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 #include "limit_number.h"
 #include "parameters.h"
+#include "params/rs_screen_render_params.h"
 
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "feature/hyper_graphic_manager/hgm_render_context.h"
@@ -2850,6 +2851,7 @@ HWTEST_F(RSBaseRenderUtilTest, CreateYuvToRGBABitMap_PaddingHeight001, TestSize.
     bool result = RSBaseRenderUtil::CreateYuvToRGBABitMap(buffer, newBuffer, bitmap);
     EXPECT_TRUE(result);
 }
+
 /**
  * @tc.name: GetFrameBufferRequestConfig_DeviceGpuSampling
  * @tc.desc: Test GetFrameBufferRequestConfig when SamplingMode is DEVICE_GPU, usePhysicalSize should be true

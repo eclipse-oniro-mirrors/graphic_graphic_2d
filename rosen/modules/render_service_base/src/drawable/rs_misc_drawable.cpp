@@ -320,6 +320,7 @@ bool RSBeginBlenderDrawable::OnUpdate(const RSRenderNode& node)
     auto blendMode = properties.GetColorBlendMode();
     stagingBlendApplyType_ = properties.GetColorBlendApplyType();
     // NG blender takes priority over the blendMode path
+    stagingBlender_ = nullptr;
     const auto& ngBlender = properties.GetNGBlender();
     if (ngBlender) {
         auto blender = RSBlenderDrawableUtils::MakeBlenderFromNG(ngBlender);
@@ -330,12 +331,9 @@ bool RSBeginBlenderDrawable::OnUpdate(const RSRenderNode& node)
             }
             stagingBlender_ = std::move(blender);
             stagingIsDangerous_ = false;
-            needSync_ = true;
-            PostUpdate(node);
-            return true;
         }
     }
-    if (blendMode && blendMode != static_cast<int>(RSColorBlendMode::NONE)) {
+    if (!stagingBlender_ && blendMode != static_cast<int>(RSColorBlendMode::NONE)) {
         if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
             stagingPropertyDescription_ = "BlendMode, blendMode: " + std::to_string(blendMode) +
                                           " blendApplyType: " + std::to_string(stagingBlendApplyType_);
@@ -343,12 +341,27 @@ bool RSBeginBlenderDrawable::OnUpdate(const RSRenderNode& node)
         // map blendMode to Drawing::BlendMode and convert to Blender
         stagingBlender_ = Drawing::Blender::CreateWithBlendMode(static_cast<Drawing::BlendMode>(blendMode - 1));
         stagingIsDangerous_ = RSBlenderDrawableUtils::IsDangerousBlendMode(blendMode - 1, stagingBlendApplyType_);
+    }
+
+    // AdaptiveBlender is an independent channel. When color picking is ready it overrides the
+    // NG/blendMode blender at draw time; otherwise the NG/blendMode blender is used as fallback.
+    stagingAdaptiveDarkBlender_ = properties.GetNGAdaptiveDarkBlender();
+    stagingAdaptiveLightBlender_ = properties.GetNGAdaptiveLightBlender();
+    if (stagingAdaptiveDarkBlender_ && stagingAdaptiveLightBlender_) {
+        if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
+            stagingPropertyDescription_ = "NG Adaptive Blender";
+        }
+        stagingIsDangerous_ = false;
         needSync_ = true;
         PostUpdate(node);
         return true;
     }
-
-    return false;
+    if (!stagingBlender_) {
+        return false;
+    }
+    needSync_ = true;
+    PostUpdate(node);
+    return true;
 }
 
 void RSBeginBlenderDrawable::OnSync()
@@ -360,7 +373,23 @@ void RSBeginBlenderDrawable::OnSync()
     blendApplyType_ = stagingBlendApplyType_;
     propertyDescription_ = stagingPropertyDescription_;
     stagingPropertyDescription_.clear();
+    adaptiveDarkBlender_ = stagingAdaptiveDarkBlender_;
+    adaptiveLightBlender_ = stagingAdaptiveLightBlender_;
+    lastFraction_ = -1.0f;
+    activeBlender_ = nullptr;
     needSync_ = false;
+}
+
+void RSBeginBlenderDrawable::UpdateAdaptiveBlender(float fraction) const
+{
+    if (activeBlender_ && lastFraction_ == fraction) {
+        return;
+    }
+    activeBlender_ = RSBlenderDrawableUtils::MakeAdaptiveBlenderFromNG(
+        adaptiveDarkBlender_, adaptiveLightBlender_, fraction);
+    if (activeBlender_) {
+        lastFraction_ = fraction;
+    }
 }
 
 void RSBeginBlenderDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const
@@ -375,7 +404,19 @@ void RSBeginBlenderDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect
 #endif
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO, "RSBeginBlenderDrawable:: %s, bounds: %s",
         propertyDescription_.c_str(), rect->ToString().c_str());
-    RSBlenderDrawableUtils::BeginBlender(*paintFilterCanvas, blender_, blendApplyType_, isDangerous_);
+    const bool colorPickedReady = paintFilterCanvas->IsColorPickedReady();
+    const bool hasAdaptive = adaptiveDarkBlender_ != nullptr && adaptiveLightBlender_ != nullptr;
+    if (hasAdaptive && colorPickedReady) {
+        const float fraction = paintFilterCanvas->GetColorPickedFraction();
+        UpdateAdaptiveBlender(fraction);
+    }
+    const bool useAdaptive = hasAdaptive && colorPickedReady && activeBlender_;
+    // Nothing to apply: keep the canvas blender inherited from ancestors untouched.
+    if (!useAdaptive && blender_ == nullptr) {
+        return;
+    }
+    RSBlenderDrawableUtils::BeginBlender(*paintFilterCanvas,
+        useAdaptive ? activeBlender_ : blender_, blendApplyType_, isDangerous_);
 }
 
 RSDrawable::Ptr RSEndBlenderDrawable::OnGenerate(const RSRenderNode& node)

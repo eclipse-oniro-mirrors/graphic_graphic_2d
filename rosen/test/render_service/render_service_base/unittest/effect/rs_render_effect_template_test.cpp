@@ -24,6 +24,7 @@
 #include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_shape_base.h"
 #include "pipeline/rs_render_node.h"
+#include "transaction/rs_marshalling_helper.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -907,5 +908,226 @@ HWTEST_F(RSNGRenderEffectTemplateTest, ShapeRecursionGuardUnmarshallingDeepNesti
     std::shared_ptr<RSNGRenderShapeBase> result;
     EXPECT_FALSE(RSNGRenderShapeBase::Unmarshalling(parcel, result));
     EXPECT_EQ(RSShapeRecursionGuard::Depth(), 0);
+}
+
+/**
+ * @tc.name: HasTrailersInChain_NoTrailer_ReturnsFalse
+ * @tc.desc: Verify HasTrailersInChain returns false when no effect has trailer flags
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, HasTrailersInChain_NoTrailer_ReturnsFalse, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT);
+    ASSERT_NE(shader, nullptr);
+    EXPECT_FALSE(shader->HasTrailersInChain());
+}
+
+/**
+ * @tc.name: HasTrailersInChain_WithTrailer_ReturnsTrue
+ * @tc.desc: Verify HasTrailersInChain returns true when an effect has trailer flags
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, HasTrailersInChain_WithTrailer_ReturnsTrue, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT);
+    ASSERT_NE(shader, nullptr);
+    shader->SetCachePolicy(RSFrameCacheLevel::PER_EFFECT, { RSFrameSkipMode::NONE, 0 });
+    EXPECT_TRUE(shader->HasTrailersInChain());
+}
+
+/**
+ * @tc.name: HasTrailersInChain_ChainWithTrailerInTail_ReturnsTrue
+ * @tc.desc: Verify HasTrailersInChain walks the chain and finds trailer on a tail effect
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, HasTrailersInChain_ChainWithTrailerInTail_ReturnsTrue, TestSize.Level1)
+{
+    auto head = RSNGRenderShaderBase::Create(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT);
+    ASSERT_NE(head, nullptr);
+    auto tail = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    ASSERT_NE(tail, nullptr);
+    tail->SetCachePolicy(RSFrameCacheLevel::CONTAINER, { RSFrameSkipMode::ON_PARAM_SAME, 2 });
+    head->nextEffect_ = tail;
+    EXPECT_TRUE(head->HasTrailersInChain());
+}
+
+/**
+ * @tc.name: HasTrailersInChain_ChainNoTrailer_ReturnsFalse
+ * @tc.desc: Verify HasTrailersInChain returns false for a chain where no effect has trailer flags
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, HasTrailersInChain_ChainNoTrailer_ReturnsFalse, TestSize.Level1)
+{
+    auto head = RSNGRenderShaderBase::Create(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT);
+    ASSERT_NE(head, nullptr);
+    auto tail = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    ASSERT_NE(tail, nullptr);
+    head->nextEffect_ = tail;
+    EXPECT_FALSE(head->HasTrailersInChain());
+}
+
+/**
+ * @tc.name: Marshalling_NoTrailer_WritesEndOfChain
+ * @tc.desc: Verify Marshalling without trailers writes END_OF_CHAIN directly
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, Marshalling_NoTrailer_WritesEndOfChain, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::WAVY_RIPPLE_LIGHT);
+    ASSERT_NE(shader, nullptr);
+    Parcel parcel;
+    EXPECT_TRUE(shader->Marshalling(parcel));
+}
+
+/**
+ * @tc.name: Marshalling_WithTrailer_WritesEndOfEffectsAndTrailers
+ * @tc.desc: Verify Marshalling with trailers writes END_OF_EFFECTS + trailers + END_OF_CHAIN
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, Marshalling_WithTrailer_WritesEndOfEffectsAndTrailers, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::WAVY_RIPPLE_LIGHT);
+    ASSERT_NE(shader, nullptr);
+    shader->SetCachePolicy(RSFrameCacheLevel::PER_EFFECT, { RSFrameSkipMode::ON_PARAM_SAME, 3 });
+    Parcel parcel;
+    EXPECT_TRUE(shader->Marshalling(parcel));
+}
+
+/**
+ * @tc.name: Marshalling_ChainWithTrailer_Succeeds
+ * @tc.desc: Verify Marshalling a chain with trailer on tail effect succeeds
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, Marshalling_ChainWithTrailer_Succeeds, TestSize.Level1)
+{
+    auto head = RSNGRenderShaderBase::Create(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT);
+    ASSERT_NE(head, nullptr);
+    auto tail = RSNGRenderShaderBase::Create(RSNGEffectType::DOT_MATRIX_SHADER);
+    ASSERT_NE(tail, nullptr);
+    tail->SetCachePolicy(RSFrameCacheLevel::CONTAINER, { RSFrameSkipMode::FIXED_INTERVAL, 5 });
+    head->nextEffect_ = tail;
+
+    Parcel parcel;
+    EXPECT_TRUE(head->Marshalling(parcel));
+}
+
+/**
+ * @tc.name: MarshalTrailers_UnmarshalTrailers_RoundTrip
+ * @tc.desc: Verify MarshalTrailers and UnmarshalTrailers round-trip preserves cache policy
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, MarshalTrailers_UnmarshalTrailers_RoundTrip, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT);
+    ASSERT_NE(shader, nullptr);
+    shader->SetCachePolicy(RSFrameCacheLevel::PER_EFFECT, { RSFrameSkipMode::ON_PARAM_SAME, 4 });
+
+    Parcel parcel;
+    ASSERT_TRUE(shader->MarshalTrailers(parcel));
+    parcel.RewindRead(0);
+
+    auto shader2 = RSNGRenderShaderBase::Create(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT);
+    ASSERT_NE(shader2, nullptr);
+    EXPECT_TRUE(shader2->UnmarshalTrailers(parcel));
+    EXPECT_EQ(shader2->GetFrameCacheLevel(), RSFrameCacheLevel::PER_EFFECT);
+    EXPECT_EQ(shader2->GetFrameSkipPolicy().mode, RSFrameSkipMode::ON_PARAM_SAME);
+    EXPECT_EQ(shader2->GetFrameSkipPolicy().skipInterval, 4u);
+}
+
+/**
+ * @tc.name: MarshalTrailers_UnmarshalTrailers_ChainRoundTrip
+ * @tc.desc: Verify trailer round-trip for a chain of two effects with different policies
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, MarshalTrailers_UnmarshalTrailers_ChainRoundTrip, TestSize.Level1)
+{
+    auto head = RSNGRenderShaderBase::Create(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT);
+    ASSERT_NE(head, nullptr);
+    head->SetCachePolicy(RSFrameCacheLevel::PER_EFFECT, { RSFrameSkipMode::ON_PARAM_SAME, 1 });
+    auto tail = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    ASSERT_NE(tail, nullptr);
+    tail->SetCachePolicy(RSFrameCacheLevel::CONTAINER, { RSFrameSkipMode::FIXED_INTERVAL, 3 });
+    head->nextEffect_ = tail;
+
+    Parcel parcel;
+    ASSERT_TRUE(head->MarshalTrailers(parcel));
+    parcel.RewindRead(0);
+
+    auto head2 = RSNGRenderShaderBase::Create(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT);
+    ASSERT_NE(head2, nullptr);
+    auto tail2 = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    ASSERT_NE(tail2, nullptr);
+    head2->nextEffect_ = tail2;
+
+    EXPECT_TRUE(head2->UnmarshalTrailers(parcel));
+    EXPECT_EQ(head2->GetFrameCacheLevel(), RSFrameCacheLevel::PER_EFFECT);
+    EXPECT_EQ(head2->GetFrameSkipPolicy().skipInterval, 1u);
+    EXPECT_EQ(tail2->GetFrameCacheLevel(), RSFrameCacheLevel::CONTAINER);
+    EXPECT_EQ(tail2->GetFrameSkipPolicy().mode, RSFrameSkipMode::FIXED_INTERVAL);
+    EXPECT_EQ(tail2->GetFrameSkipPolicy().skipInterval, 3u);
+}
+
+/**
+ * @tc.name: UnmarshalTrailers_UnknownFlags_StopsProcessing
+ * @tc.desc: Verify UnmarshalTrailers stops processing when encountering unknown trailer flags
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, UnmarshalTrailers_UnknownFlags_StopsProcessing, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::FLOW_LIGHT_SWEEP);
+    ASSERT_NE(shader, nullptr);
+
+    Parcel parcel;
+    uint32_t count = 1;
+    ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, count));
+    uint32_t unknownFlags = 0xFF;
+    ASSERT_TRUE(RSMarshallingHelper::Marshalling(parcel, unknownFlags));
+    parcel.RewindRead(0);
+
+    EXPECT_FALSE(shader->UnmarshalTrailers(parcel));
+    EXPECT_EQ(shader->GetFrameCacheLevel(), RSFrameCacheLevel::NONE);
+}
+
+/**
+ * @tc.name: FullMarshallingRoundTrip_WithCachePolicy
+ * @tc.desc: Verify full Marshalling + Unmarshalling round-trip preserves cache policy trailer
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, FullMarshallingRoundTrip_WithCachePolicy, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::WAVY_RIPPLE_LIGHT);
+    ASSERT_NE(shader, nullptr);
+    shader->SetCachePolicy(RSFrameCacheLevel::PER_EFFECT, { RSFrameSkipMode::FIXED_INTERVAL, 7 });
+
+    Parcel parcel;
+    ASSERT_TRUE(shader->Marshalling(parcel));
+    parcel.RewindRead(0);
+
+    std::shared_ptr<RSNGRenderShaderBase> result;
+    ASSERT_TRUE(RSNGRenderShaderBase::Unmarshalling(parcel, result));
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->GetFrameCacheLevel(), RSFrameCacheLevel::PER_EFFECT);
+    EXPECT_EQ(result->GetFrameSkipPolicy().mode, RSFrameSkipMode::FIXED_INTERVAL);
+    EXPECT_EQ(result->GetFrameSkipPolicy().skipInterval, 7u);
+}
+
+/**
+ * @tc.name: FullMarshallingRoundTrip_NoCachePolicy
+ * @tc.desc: Verify full Marshalling + Unmarshalling round-trip works without cache policy trailer
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderEffectTemplateTest, FullMarshallingRoundTrip_NoCachePolicy, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::WAVY_RIPPLE_LIGHT);
+    ASSERT_NE(shader, nullptr);
+
+    Parcel parcel;
+    ASSERT_TRUE(shader->Marshalling(parcel));
+    parcel.RewindRead(0);
+
+    std::shared_ptr<RSNGRenderShaderBase> result;
+    ASSERT_TRUE(RSNGRenderShaderBase::Unmarshalling(parcel, result));
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->GetFrameCacheLevel(), RSFrameCacheLevel::NONE);
 }
 } // namespace OHOS::Rosen

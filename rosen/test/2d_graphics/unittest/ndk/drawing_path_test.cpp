@@ -1314,7 +1314,7 @@ HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_PathIsInverseFillType054, 
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     OH_Drawing_PathSetFillType(path, PATH_FILL_TYPE_INVERSE_WINDING);
     bool isInverseFillType = false;
-    
+
     for (int i = 0; i < 5; i++) {
         EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, &isInverseFillType), OH_DRAWING_SUCCESS);
         EXPECT_EQ(isInverseFillType, true);
@@ -1354,25 +1354,25 @@ HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_PathToggleInverseFillType0
 {
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     bool isInverseFillType = false;
-    
+
     // Test concurrent calls to toggle and check functions
     EXPECT_EQ(OH_Drawing_PathToggleInverseFillType(path), OH_DRAWING_SUCCESS);
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, &isInverseFillType), OH_DRAWING_SUCCESS);
     EXPECT_EQ(isInverseFillType, true);
-    
+
     // Test multiple toggles
     EXPECT_EQ(OH_Drawing_PathToggleInverseFillType(path), OH_DRAWING_SUCCESS);
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, &isInverseFillType), OH_DRAWING_SUCCESS);
     EXPECT_EQ(isInverseFillType, false);
-    
+
     EXPECT_EQ(OH_Drawing_PathToggleInverseFillType(path), OH_DRAWING_SUCCESS);
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, &isInverseFillType), OH_DRAWING_SUCCESS);
     EXPECT_EQ(isInverseFillType, true);
-    
+
     EXPECT_EQ(OH_Drawing_PathToggleInverseFillType(path), OH_DRAWING_SUCCESS);
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, &isInverseFillType), OH_DRAWING_SUCCESS);
     EXPECT_EQ(isInverseFillType, false);
-    
+
     OH_Drawing_PathDestroy(path);
 }
 
@@ -1386,21 +1386,21 @@ HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_PathToggleInverseFillType0
 {
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     bool isInverseFillType = false;
-    
+
     // Test with null pointer parameter
     EXPECT_EQ(OH_Drawing_PathToggleInverseFillType(nullptr), OH_DRAWING_ERROR_INCORRECT_PARAMETER);
-    
+
     // Test valid path operations
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, &isInverseFillType), OH_DRAWING_SUCCESS);
     EXPECT_EQ(isInverseFillType, false);
-    
+
     EXPECT_EQ(OH_Drawing_PathToggleInverseFillType(path), OH_DRAWING_SUCCESS);
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, &isInverseFillType), OH_DRAWING_SUCCESS);
     EXPECT_EQ(isInverseFillType, true);
-    
+
     // Test invalid parameter for IsInverseFillType
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, nullptr), OH_DRAWING_ERROR_INCORRECT_PARAMETER);
-    
+
     OH_Drawing_PathDestroy(path);
 }
 
@@ -1414,22 +1414,22 @@ HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_PathToggleInverseFillType0
 {
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     bool isInverseFillType = false;
-    
+
     // Test repeated toggling to ensure state consistency
     for (int i = 0; i < 10; i++) {
         EXPECT_EQ(OH_Drawing_PathToggleInverseFillType(path), OH_DRAWING_SUCCESS);
         EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, &isInverseFillType), OH_DRAWING_SUCCESS);
         EXPECT_EQ(isInverseFillType, (i % 2 == 0));
     }
-    
+
     // Final state should be true (odd number of toggles)
     EXPECT_EQ(isInverseFillType, false);
-    
+
     // Reset to false
     EXPECT_EQ(OH_Drawing_PathToggleInverseFillType(path), OH_DRAWING_SUCCESS);
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, &isInverseFillType), OH_DRAWING_SUCCESS);
     EXPECT_EQ(isInverseFillType, true);
-    
+
     OH_Drawing_PathDestroy(path);
 }
 
@@ -1517,7 +1517,7 @@ HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_PathIsInverseFillType062, 
     EXPECT_EQ(OH_Drawing_PathToggleInverseFillType(path), OH_DRAWING_SUCCESS);
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path, &isInverseFillType), OH_DRAWING_SUCCESS);
     EXPECT_EQ(isInverseFillType, false);
-    
+
     OH_Drawing_PathDestroy(path);
 }
 
@@ -1531,26 +1531,26 @@ HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_PathIsInverseFillType063, 
 {
     OH_Drawing_Path* path1 = OH_Drawing_PathCreate();
     OH_Drawing_Path* path2 = OH_Drawing_PathCreate();
-    
+
     OH_Drawing_PathMoveTo(path1, 0, 0);
     OH_Drawing_PathLineTo(path1, 50, 50);
     OH_Drawing_PathSetFillType(path1, PATH_FILL_TYPE_INVERSE_WINDING);
-    
+
     OH_Drawing_PathMoveTo(path2, 0, 0);
     OH_Drawing_PathLineTo(path2, 50, 50);
     OH_Drawing_PathSetFillType(path2, PATH_FILL_TYPE_EVEN_ODD);
-    
+
     bool isInverseFillType1 = false;
     bool isInverseFillType2 = false;
-    
+
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(nullptr, &isInverseFillType1), OH_DRAWING_ERROR_INCORRECT_PARAMETER);
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path1, nullptr), OH_DRAWING_ERROR_INCORRECT_PARAMETER);
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path1, &isInverseFillType1), OH_DRAWING_SUCCESS);
     EXPECT_EQ(isInverseFillType1, true);
-    
+
     EXPECT_EQ(OH_Drawing_PathIsInverseFillType(path2, &isInverseFillType2), OH_DRAWING_SUCCESS);
     EXPECT_EQ(isInverseFillType2, false);
-    
+
     OH_Drawing_PathDestroy(path1);
     OH_Drawing_PathDestroy(path2);
 }

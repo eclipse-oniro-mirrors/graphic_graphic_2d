@@ -1823,4 +1823,84 @@ HWTEST_F(RSImageBaseTest, RSImageBaseFlushCacheTest001, TestSize.Level1)
     // FlushCache should not crash with a valid pixelMap
     rsImageBase->FlushCache();
 }
+
+/**
+ * @tc.name: PurgeGpuImageOnly_001
+ * @tc.desc: Verify PurgeGpuImageOnly when image_ is nullptr, should return early safely
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageBaseTest, PurgeGpuImageOnly_001, TestSize.Level1)
+{
+    RSImageBase imageBase;
+    imageBase.image_ = nullptr;
+    imageBase.PurgeGpuImageOnly();
+    EXPECT_EQ(imageBase.image_, nullptr);
+    EXPECT_FALSE(imageBase.isDrawn_);
+}
+
+/**
+ * @tc.name: PurgeGpuImageOnly_002
+ * @tc.desc: Verify PurgeGpuImageOnly when image_ use_count <= 2, should clear image_ and reset isDrawn_
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageBaseTest, PurgeGpuImageOnly_002, TestSize.Level1)
+{
+    RSImageBase imageBase;
+    auto img = std::make_shared<Drawing::Image>();
+    imageBase.image_ = img;
+    imageBase.isDrawn_ = true;
+    imageBase.PurgeGpuImageOnly();
+    EXPECT_EQ(imageBase.image_, nullptr);
+    EXPECT_FALSE(imageBase.isDrawn_);
+}
+
+/**
+ * @tc.name: PurgeGpuImageOnly_003
+ * @tc.desc: Verify PurgeGpuImageOnly when image_ use_count > 2, should NOT clear image_
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageBaseTest, PurgeGpuImageOnly_003, TestSize.Level1)
+{
+    RSImageBase imageBase;
+    auto img = std::make_shared<Drawing::Image>();
+    imageBase.image_ = img;
+    imageBase.isDrawn_ = true;
+
+    auto extraHolder = img;
+    ASSERT_EQ(img.use_count(), 3);
+
+    imageBase.PurgeGpuImageOnly();
+    EXPECT_NE(imageBase.image_, nullptr);
+    EXPECT_TRUE(imageBase.isDrawn_);
+
+    (void)extraHolder;
+}
+
+/**
+ * @tc.name: PurgeGpuImageOnly_004
+ * @tc.desc: Verify PurgeGpuImageOnly does NOT touch pixelMap_ or compressData_
+ * @tc.type: FUNC
+ * @tc.require: issue#IBZ6NM
+ */
+HWTEST_F(RSImageBaseTest, PurgeGpuImageOnly_004, TestSize.Level1)
+{
+    RSImageBase imageBase;
+    auto img = std::make_shared<Drawing::Image>();
+    imageBase.image_ = img;
+    imageBase.isDrawn_ = true;
+
+    auto pixelMap = std::make_shared<OHOS::Media::PixelMap>();
+    imageBase.pixelMap_ = pixelMap;
+    auto compressData = std::make_shared<Drawing::Data>();
+    imageBase.compressData_ = compressData;
+
+    imageBase.PurgeGpuImageOnly();
+    EXPECT_EQ(imageBase.image_, nullptr);
+    EXPECT_FALSE(imageBase.isDrawn_);
+    EXPECT_NE(imageBase.pixelMap_, nullptr);
+    EXPECT_NE(imageBase.compressData_, nullptr);
+}
 } // namespace OHOS::Rosen

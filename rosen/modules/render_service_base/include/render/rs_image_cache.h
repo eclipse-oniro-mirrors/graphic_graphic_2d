@@ -71,7 +71,7 @@ public:
     void CollectUniqueId(uint64_t uniqueId);
     void ReleaseUniqueIdList();
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    void RemoveImageMemForWindow(NodeId surfaceNodeId);
+    void RemoveImageMemForWindow(NodeId surfaceNodeId, bool isCleanCPUCache = true);
     void ReserveImageInfo(std::shared_ptr<RSImage> rsImage, NodeId nodeId, std::weak_ptr<RSExtendImageObject> drawCmd);
 #endif
 private:
@@ -97,6 +97,7 @@ private:
     std::vector<std::shared_ptr<Media::PixelMap>> editablePixelMapCacheToRelease_;
     std::mutex uniqueIdListMutex_;
     std::list<uint64_t> uniqueIdList_;
+    std::mutex rsImageInfoMapMutex_;
     std::unordered_map<NodeId, ImageContent> rsImageInfoMap;
 };
 } // namespace Rosen

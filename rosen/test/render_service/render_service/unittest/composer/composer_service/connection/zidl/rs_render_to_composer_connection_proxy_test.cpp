@@ -134,6 +134,7 @@ HWTEST_F(RSRenderToComposerConnectionProxyTest, ProxyStub_AllCommands, TestSize.
     ASSERT_NE(obj, nullptr);
 
     std::unique_ptr<RSLayerTransactionData> tx = std::make_unique<RSLayerTransactionData>();
+
     tx->GetPayload().emplace_back(static_cast<uint64_t>(1u), std::shared_ptr<RSLayerParcel>(nullptr));
     EXPECT_FALSE(proxy.CommitLayers(tx));
 
@@ -247,6 +248,7 @@ HWTEST_F(RSRenderToComposerConnectionProxyTest, Proxy_CommitLayers_MultipleParce
     RSRenderToComposerConnectionProxy proxy(stub->AsObject());
 
     std::unique_ptr<RSLayerTransactionData> tx = std::make_unique<RSLayerTransactionData>();
+
     tx->GetPayload().emplace_back(static_cast<uint64_t>(101u), std::shared_ptr<RSLayerParcel>(nullptr));
     tx->GetPayload().emplace_back(static_cast<uint64_t>(102u), std::shared_ptr<RSLayerParcel>(nullptr));
 

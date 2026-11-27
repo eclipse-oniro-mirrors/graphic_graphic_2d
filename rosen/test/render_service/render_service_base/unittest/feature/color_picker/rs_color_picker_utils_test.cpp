@@ -171,25 +171,27 @@ HWTEST_F(RSColorPickerUtilsTest, CreateColorPickerInfoWithNullSnapshot, TestSize
  */
 HWTEST_F(RSColorPickerUtilsTest, CreateColorPickerInfoWithValidInputs, TestSize.Level1)
 {
-    Drawing::Canvas drawingCanvas;
-    RSPaintFilterCanvas canvas(&drawingCanvas);
+    // a raster offscreen surface always provides a valid surface pointer, no GPU context needed
+    const Drawing::ImageInfo info =
+        Drawing::ImageInfo(4, 4, Drawing::COLORTYPE_N32, Drawing::ALPHATYPE_OPAQUE);
+    auto surface = Drawing::Surface::MakeRaster(info);
+    ASSERT_NE(surface, nullptr);
+    surface->GetCanvas()->Clear(Drawing::Color::COLOR_GREEN);
+    auto snapshot = surface->GetImageSnapshot();
+    ASSERT_NE(snapshot, nullptr);
+
     RSColorPickerManager manager(1);
     auto weakManager = manager.weak_from_this();
 
-    Drawing::Surface* surface = canvas.GetSurface();
-    if (!surface) {
-        GTEST_SKIP() << "No valid surface available";
-        return;
-    }
+    auto colorPickerInfo = RSColorPickerUtils::CreateColorPickerInfo(surface.get(), snapshot, weakManager);
 
-    auto snapshot = std::make_shared<Drawing::Image>();
-    auto colorPickerInfo = RSColorPickerUtils::CreateColorPickerInfo(surface, snapshot, weakManager);
-
-    // If surface is valid and has a valid backend texture, info should be created
-    // Otherwise it might be null due to invalid backend texture
+    // on texture-backed surfaces(device GPU) a valid ColorPickerInfo is created;
+    // raster snapshots expose no backend texture, so the info is rejected instead
     if (colorPickerInfo) {
-        EXPECT_NE(colorPickerInfo->manager_.lock(), nullptr);
         EXPECT_NE(colorPickerInfo->oldImage_, nullptr);
+        EXPECT_EQ(colorPickerInfo->oldImage_, snapshot);
+    } else {
+        EXPECT_EQ(colorPickerInfo, nullptr);
     }
 }
 

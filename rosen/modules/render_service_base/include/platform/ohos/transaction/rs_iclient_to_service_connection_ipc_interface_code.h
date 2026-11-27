@@ -235,6 +235,7 @@ enum class RSIClientToServiceConnectionInterfaceCode : CodeUnderlyingType {
     SET_APS_CONFIG_PARAMS = 1015,
     NOTIFY_WINDOW_MODE_TYPE_EVENT = 1016,
     SET_HGM_EXCLUSIVE_SCREEN = 1017,
+    RELEASE_GPU_MEMORY = 1018,
 };
 } // namespace Rosen
 } // namespace OHOS

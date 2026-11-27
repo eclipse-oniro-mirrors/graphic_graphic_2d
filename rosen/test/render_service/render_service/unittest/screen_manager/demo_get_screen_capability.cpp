@@ -12,15 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include <iostream>
 #include <vector>
 #include "transaction/rs_interfaces.h"
 #include "screen_manager/rs_screen_capability.h"
 #include "screen_manager/screen_types.h"
-
+ 
 using namespace OHOS::Rosen;
-
+ 
 // ScreenInterfaceType to string
 const char* ScreenInterfaceTypeToString(ScreenInterfaceType type)
 {
@@ -61,32 +61,32 @@ const char* ScreenInterfaceTypeToString(ScreenInterfaceType type)
             return "UNKNOWN";
     }
 }
-
+ 
 int main()
 {
     RSInterfaces& rsIf = RSInterfaces::GetInstance();
-
+ 
     // 1. get all screen ID
     std::vector<ScreenId> screenIds = rsIf.GetAllScreenIds();
     std::cout << "GetAllScreenIds count: " << screenIds.size() << std::endl;
-
+ 
     // 2. add INVALID_SCREEN_ID
     screenIds.push_back(INVALID_SCREEN_ID);
     std::cout << "After appending INVALID_SCREEN_ID, count: " << screenIds.size() << std::endl;
-
+ 
     // 3. tet screenId GetScreenCapability and print result
     for (ScreenId id : screenIds) {
         std::cout << "\n===== Screen ID: " << id << " =====" << std::endl;
-
+ 
         RSScreenCapability capability = rsIf.GetScreenCapability(id);
-
+ 
         std::cout << "Name: " << capability.GetName() << std::endl;
         std::cout << "Type: " << ScreenInterfaceTypeToString(capability.GetType())
                   << " (" << static_cast<int>(capability.GetType()) << ")" << std::endl;
         std::cout << "PhyWidth: " << capability.GetPhyWidth() << std::endl;
         std::cout << "PhyHeight: " << capability.GetPhyHeight() << std::endl;
     }
-
+ 
     std::cout << "\nDemo finished." << std::endl;
     return 0;
 }

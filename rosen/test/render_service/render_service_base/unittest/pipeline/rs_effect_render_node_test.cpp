@@ -199,7 +199,7 @@ HWTEST_F(RSEffectRenderNodeTest, CheckBlurFilterCacheNeedForceClearOrSaveTest, T
     rsEffectRenderNode.CheckBlurFilterCacheNeedForceClearOrSave(false, false);
     rsEffectRenderNode.CheckBlurFilterCacheNeedForceClearOrSave(false, true);
     EXPECT_TRUE(filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_ ||
-        filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceUseCache_);
+                filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceUseCache_);
 }
 
 /**
@@ -222,7 +222,7 @@ HWTEST_F(RSEffectRenderNodeTest, UpdateFilterCacheWithSelfDirtyTest001, TestSize
     filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceUseCache_ = false;
     rsEffectRenderNode.UpdateFilterCacheWithSelfDirty();
     EXPECT_FALSE(filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingFilterRegionChanged_ ||
-        filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingFilterInteractWithDirty_);
+                 filterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingFilterInteractWithDirty_);
 }
 
 /**
@@ -249,6 +249,7 @@ HWTEST_F(RSEffectRenderNodeTest, UpdateFilterCacheWithSelfDirtyTest002, TestSize
     } else {
         EXPECT_FALSE(rsEffectRenderNode.backgroundFilterRegionChanged_);
     }
+
     // Disable filter cache to cover the false branch
     RSFilterCacheManager::SetFilterCacheEnabledByCCM(false);
     rsEffectRenderNode.UpdateFilterCacheWithSelfDirty();
@@ -476,8 +477,8 @@ HWTEST_F(RSEffectRenderNodeTest, ForceClearForegroundFilterCacheWhenDirty, TestS
     renderNode->GetDrawableVec(__func__)[static_cast<uint32_t>(RSDrawableSlot::BACKGROUND_FILTER)]
         = backgroundFilterDrawable;
     renderNode->CheckBlurFilterCacheNeedForceClearOrSave(true);
-    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_,
-        false);
+    EXPECT_EQ(
+        backgroundFilterDrawable->stagingCacheManager_->GetRSCacheUpdateManager()->stagingForceClearCache_, false);
 }
 
 /**
