@@ -3912,7 +3912,7 @@ HWTEST_F(HdiOutputTest, DumpLayerInfoForSplitRender_LayerWithoutRSLayer_Skipped,
 }
 
 /**
- * Function: DumpLayerInfoForSplitRender_ValidLayerInsolidRSLayerIdMap_Processed
+ * Function: DumpLayerInfoForSplitRender_ValidLayerInSolidSurfaceIdMap_Processed
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
@@ -4139,7 +4139,7 @@ HWTEST_F(HdiOutputTest, DumpLayerInfoForSplitRender_ReorderLayerInfoMixed_AllCon
 }
 
 /**
- * Function: DumpLayerInfoForSplitRender_NullptrInsolidRSLayerIdMap_Skipped
+ * Function: DumpLayerInfoForSplitRender_NullptrInSolidSurfaceIdMap_Skipped
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A

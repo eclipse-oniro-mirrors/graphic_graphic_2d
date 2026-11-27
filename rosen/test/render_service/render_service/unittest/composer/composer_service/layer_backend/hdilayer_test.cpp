@@ -1607,7 +1607,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters_AllKeys_Success, Function | MediumT
  * CaseDescription: 1. Set paramKey_ with "SolidFill"
  *                  2. call SetPerFrameParameters
  *                  3. verify SetPerFrameLayerSolidFillParam is called
- *                   Cover branch: key == GENERIC_METADATA_KEY_SOLID_FILL (line 889 true)
+ *                   Cover branch: key == GENERIC_METADATA_KEY_SOLIC_FILL (line 889 true)
  */
 HWTEST_F(HdiLayerTest, SetPerFrameParameters_SolidFillKey_CallsSolidFillParam, Function | MediumTest| Level1)
 {
@@ -1640,7 +1640,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters_SolidFillKey_CallsSolidFillParam, F
  * CaseDescription: 1. Set paramKey_ without "SolidFill"
  *                  2. call SetPerFrameParameters
  *                  3. verify SetPerFrameLayerSolidFillParam is not called
- *                   Cover branch: key != GENERIC_METADATA_KEY_SOLID_FILL (line 889 false)
+ *                   Cover branch: key != GENERIC_METADATA_KEY_SOLIC_FILL (line 889 false)
  */
 HWTEST_F(HdiLayerTest, SetPerFrameParameters_NoSolidFillKey_NotCalled, Function | MediumTest| Level1)
 {
@@ -1669,7 +1669,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters_NoSolidFillKey_NotCalled, Function 
  * CaseDescription: 1. Set paramKey_ with multiple keys including "SolidFill"
  *                  2. call SetPerFrameParameters
  *                  3. verify all keys are processed
- *                   Cover branch: key == GENERIC_METADATA_KEY_SOLID_FILL (line 889 true)
+ *                   Cover branch: key == GENERIC_METADATA_KEY_SOLIC_FILL (line 889 true)
  */
 HWTEST_F(HdiLayerTest, SetPerFrameParameters_SolidFillKeyWithOtherKeys_AllProcessed, Function | MediumTest| Level1)
 {
@@ -1703,7 +1703,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters_SolidFillKeyWithOtherKeys_AllProces
  * CaseDescription: 1. Set paramKey_ with "SolidFill"
  *                  2. mock SetLayerPerFrameParameterSmq to return error
  *                  3. verify error is returned
- *                   Cover branch: key == GENERIC_METADATA_KEY_SOLID_FILL (line 889 true)
+ *                   Cover branch: key == GENERIC_METADATA_KEY_SOLIC_FILL (line 889 true)
  */
 HWTEST_F(HdiLayerTest, SetPerFrameParameters_SolidFillKeyFailure_ReturnsError, Function | MediumTest| Level1)
 {
@@ -5348,7 +5348,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
+ * CaseDescription: 1. call SetPerFrameLayerVcldParam()
  *                  2. check ret
  */
  HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest001, Function | MediumTest| Level1)
@@ -5358,6 +5358,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
     RSVcldParam preLayerVcldInfo;
     prevRSLayer->SetVcldInfo(preLayerVcldInfo);
     hdiLayer_->prevRSLayer_ = prevRSLayer;
+    // Expect SetLayerPerFrameParameterSmq to be called
     EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, "VcldParam", _))
         .Times(1)
         .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
@@ -5370,7 +5371,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
+ * CaseDescription: 1. call SetPerFrameLayerVcldParam()
  *                  2. check ret
  */
  HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest002, Function | MediumTest| Level1)
@@ -5394,7 +5395,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
+ * CaseDescription: 1. call SetPerFrameLayerVcldParam()
  *                  2. check ret
  */
  HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest003, Function | MediumTest| Level1)
@@ -5413,7 +5414,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
+ * CaseDescription: 1. call SetPerFrameLayerVcldParam()
  *                  2. check ret
  */
  HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest004, Function | MediumTest| Level1)
@@ -5435,7 +5436,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
+ * CaseDescription: 1. call SetPerFrameLayerVcldParam()
  *                  2. check ret
  */
  HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest005, Function | MediumTest| Level1)
@@ -5482,7 +5483,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_SolidAndSizeMa
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
 
-/**
+/*
  * Function: SetPerFrameLayerSolidFillParam_PrevNotNull_NotSolidOrSizeMismatch_False
  * Type: Function
  * Rank: Important(1)
@@ -5514,7 +5515,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNotNull_NotSolidOrSize
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
 
-/**
+/*
  * Function: SetPerFrameLayerSolidFillParam_PrevNull_NotSolid_True
  * Type: Function
  * Rank: Important(1)
@@ -5537,7 +5538,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameLayerSolidFillParam_PrevNull_NotSolid_True, Fu
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
 
-/**
+/*
  * Function: SetPerFrameLayerSolidFillParam_PrevNull_Solid_False
  * Type: Function
  * Rank: Important(1)

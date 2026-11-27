@@ -1403,7 +1403,7 @@ HWTEST_F(HdiDeviceTest, GetLayerSolidFilledColor_MultipleLayerIds, Function | Me
         GRAPHIC_DISPLAY_SUCCESS);
 }
 
-/*
+/**
 * Function: RegHwcDeadCallback_ComposerValid_FalseBranch
 * Type: Function
 * Rank: Important(3)
@@ -1420,7 +1420,7 @@ HWTEST_F(HdiDeviceTest, RegHwcDeadCallback_ComposerValid_FalseBranch, Function |
     SUCCEED();
 }
 
-/*
+/**
 * Function: RegHwcDeadCallback_ComposerNull_TrueBranch
 * Type: Function
 * Rank: Important(3)

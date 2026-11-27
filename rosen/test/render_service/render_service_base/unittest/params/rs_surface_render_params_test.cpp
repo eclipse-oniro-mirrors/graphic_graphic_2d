@@ -515,8 +515,8 @@ HWTEST_F(RSSurfaceRenderParamsTest, LayerLinearMatrixTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetSourceScreenRenderNodeDrawable
- * @tc.desc: Test function GetSourceScreenRenderNodeDrawable
+ * @tc.name: GetSourceDisplayRenderNodeDrawable
+ * @tc.desc: Test function GetSourceDisplayRenderNodeDrawable
  * @tc.type:FUNC
  * @tc.require: issueIBKU7U
  */
@@ -690,7 +690,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetIsParticipateInOcclusionTest, TestSize.Le
 }
 /**
  * @tc.name: SwapRelatedRenderParamsTest
- * @tc.desc: Test SwapRelatedRenderParams swaps occludedByFilterCache, skipDraw, matrix and shouldPaint
+ * @tc.desc: Test SwapRelatedRenderParams swaps occludedByFilterCache, skipDraw, m
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -765,24 +765,6 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetRebuildingState001, TestSize.Level1)
     params.SetRebuildingState(true); // same value -> early return
     params.SetRebuildingState(false);
     EXPECT_FALSE(params.GetRebuildingState());
-}
-
-/**
- * @tc.name: SetRebuildingStateOnSync001
- * @tc.desc: Test OnSync deep-copies isRebuildingState_ from staging to target
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSSurfaceRenderParamsTest, SetRebuildingStateOnSync001, TestSize.Level1)
-{
-    RSSurfaceRenderParams source(DEFAULT_NODEID);
-    source.SetRebuildingState(true);
-    ASSERT_TRUE(source.isRebuildingState_);
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSSurfaceRenderParams>(DEFAULT_NODEID);
-    ASSERT_NE(target, nullptr);
-    EXPECT_FALSE(static_cast<RSSurfaceRenderParams*>(target.get())->isRebuildingState_);
-    source.OnSync(target);
-    EXPECT_TRUE(static_cast<RSSurfaceRenderParams*>(target.get())->isRebuildingState_);
 }
 
 /**
@@ -961,10 +943,28 @@ HWTEST_F(RSSurfaceRenderParamsTest, ClipAndScaleDirtyManager003, TestSize.Level2
 }
 
 /**
+ * @tc.name: SetRebuildingStateOnSync001
+ * @tc.desc: Test OnSync deep-copies isRebuildingState_ from staging to target
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetRebuildingStateOnSync001, TestSize.Level1)
+{
+    RSSurfaceRenderParams source(DEFAULT_NODEID);
+    source.SetRebuildingState(true);
+    ASSERT_TRUE(source.isRebuildingState_);
+    std::unique_ptr<RSRenderParams> target = std::make_unique<RSSurfaceRenderParams>(DEFAULT_NODEID);
+    ASSERT_NE(target, nullptr);
+    EXPECT_FALSE(static_cast<RSSurfaceRenderParams*>(target.get())->isRebuildingState_);
+    source.OnSync(target);
+    EXPECT_TRUE(static_cast<RSSurfaceRenderParams*>(target.get())->isRebuildingState_);
+}
+
+/**
  * @tc.name: SetUifirstDisabledByAnimationOverlap001
  * @tc.desc: Test SetUifirstDisabledByAnimationOverlap with needSync behavior
  * @tc.type: FUNC
- * @tc.require: issue26284
+ * @tc.require: issueAnimationOverlap
  */
 HWTEST_F(RSSurfaceRenderParamsTest, SetUifirstDisabledByAnimationOverlap001, TestSize.Level1)
 {
@@ -985,7 +985,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetUifirstDisabledByAnimationOverlap001, Tes
  * @tc.name: SetUifirstDisabledByAnimationOverlapOnSync001
  * @tc.desc: Test OnSync copies uifirstDisabledByAnimationOverlap from staging to target
  * @tc.type: FUNC
- * @tc.require: issue26284
+ * @tc.require: issueAnimationOverlap
  */
 HWTEST_F(RSSurfaceRenderParamsTest, SetUifirstDisabledByAnimationOverlapOnSync001, TestSize.Level1)
 {
@@ -999,8 +999,8 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetUifirstDisabledByAnimationOverlapOnSync00
 }
 
 /**
- * @tc.name: SetCrossNodeLayerConversionMatrix001
- * @tc.desc: Test the layer conversion is kept apart from the skip display conversion and is synced to the target
+ * @tc.name: SetSolidLayerEnabled_001
+ * @tc.desc: 设 true 后 GetSolidLayerEnabled 返回 true
  * @tc.type: FUNC
  * @tc.require:
  */

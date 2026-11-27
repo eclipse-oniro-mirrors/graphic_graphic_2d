@@ -112,12 +112,11 @@ private:
 
     void ExecuteSwitchRefreshRate(ScreenId screenId);
     void UpdateRetrySetRateStatus(ScreenId id, int32_t modeId, uint32_t setRateRet);
+    void ReportRetryOverLimit(uint64_t vsyncId, uint32_t rate);
+    void RecordTimestampForAS(int64_t timestamp);
     void PerformSetActiveMode(const std::shared_ptr<HdiOutput>& output);
 
     void AddRefreshRateCount(ScreenId screenId);
-
-    void ReportRetryOverLimit(uint64_t vsyncId, uint32_t rate);
-    void RecordTimestampForAS(int64_t timestamp);
 
     HgmCore& hgmCore_ = HgmCore::Instance();
     HgmRefreshRates hgmRefreshRates_ = HgmRefreshRates::SET_RATE_NULL;

@@ -1801,7 +1801,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_ReleaseTextImage003, Function | MediumT
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. call OH_NativeImage_CreateWithSingleBufferMode with textureId in single buffer mode
+ * CaseDescription: 1. call OH_ConsumerSurface_CreateWithSingleBufferMode with textureId in single buffer mode
  *                  2. call OH_NativeWindow_NativeWindowRequestBuffer and OH_NativeWindow_NativeWindowFlushBuffer
  *                  3. call OH_NativeImage_UpdateSurfaceImage to update surface texture
  *                  4. call OH_NativeWindow_NativeWindowRequestBuffer to request buffer again

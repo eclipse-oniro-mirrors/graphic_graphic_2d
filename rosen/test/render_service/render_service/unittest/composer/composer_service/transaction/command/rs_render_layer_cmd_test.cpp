@@ -1238,7 +1238,7 @@ HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_CornerRadiusInfoForDRM_Success,
  * Type: Function
  * Rank: Important(2)
  * EnvConditions: N/A
- * CaseDescription: Round-trip bool command for CORNER_RADIUS_INFO_FOR_VCLD
+ * CaseDescription: Round-trip bool command for CORNER_RADIUS_INFO_FOR_DRM
  */
 HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_VcldInfo_Success, TestSize.Level1)
 {

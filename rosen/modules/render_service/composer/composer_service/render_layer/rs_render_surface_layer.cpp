@@ -738,8 +738,8 @@ void RSRenderSurfaceLayer::CopyLayerInfo(const std::shared_ptr<RSLayer>& rsLayer
     layerAlpha_ = rsLayer->GetAlpha();
     transformType_ = rsLayer->GetTransform();
     compositionType_ = rsLayer->GetCompositionType();
-    hdiCompositionType_ = rsLayer->GetHdiCompositionType();
     alphaType_ = rsLayer->GetAlphaType();
+    hdiCompositionType_ = rsLayer->GetHdiCompositionType();
     blendType_ = rsLayer->GetBlendType();
     colorTransformMatrix_ = rsLayer->GetColorTransform();
     colorSpace_ = rsLayer->GetColorDataSpace();

@@ -835,8 +835,7 @@ HWTEST_F(RSComposerClientManagerTest, PreAllocProtectedFrameBuffers_MultiThreadC
     EXPECT_EQ(successCount.load(), threadCount * loopCount);
 }
 
-
-/**
+/*
  * Function: CommitTunnelLayerBySurfaceId_NoClient_ReturnsFailure
  * Type: Function
  * Rank: Important(2)

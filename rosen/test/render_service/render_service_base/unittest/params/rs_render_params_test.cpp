@@ -615,23 +615,28 @@ HWTEST_F(RSRenderParamsTest, SetNodeGroupHasChildInBlacklistTest, TestSize.Level
     RSRenderParams params(id);
     auto renderParams = static_cast<RSRenderParams*>(target.get());
 
+    // Test initial state
     EXPECT_FALSE(renderParams->NodeGroupHasChildInBlacklist());
     ASSERT_EQ(renderParams->renderGroupCache_, nullptr);
 
+    // Test setting to true
     renderParams->SetNodeGroupHasChildInBlacklist(true);
     EXPECT_TRUE(renderParams->NodeGroupHasChildInBlacklist());
     ASSERT_NE(renderParams->renderGroupCache_, nullptr);
     EXPECT_TRUE(renderParams->needSync_);
 
+    // Test setting to false
     renderParams->SetNodeGroupHasChildInBlacklist(false);
     EXPECT_FALSE(renderParams->NodeGroupHasChildInBlacklist());
     EXPECT_TRUE(renderParams->needSync_);
 
+    // Test setting same value (should not need sync)
     renderParams->needSync_ = false;
     renderParams->SetNodeGroupHasChildInBlacklist(false);
     EXPECT_FALSE(renderParams->NodeGroupHasChildInBlacklist());
     EXPECT_FALSE(renderParams->needSync_);
 
+    // Test setting to true again
     renderParams->SetNodeGroupHasChildInBlacklist(true);
     EXPECT_TRUE(renderParams->NodeGroupHasChildInBlacklist());
     EXPECT_TRUE(renderParams->needSync_);
@@ -934,45 +939,6 @@ HWTEST_F(RSRenderParamsTest, GetLayerInfo_001, TestSize.Level2)
 }
 
 /**
- * @tc.name: SetLayerPartRenderEnabledTest
- * @tc.desc: Test SetLayerPartRenderEnabled
- * @tc.type: FUNC
- * @tc.require: issueLayerPart
- */
-HWTEST_F(RSRenderParamsTest, SetLayerPartRenderEnabledTest, TestSize.Level1)
-{
-    RSRenderParams params(1);
-
-    params.SetLayerPartRenderEnabled(true);
-    ASSERT_TRUE(params.GetLayerPartRenderEnabled());
-
-    params.SetLayerPartRenderEnabled(false);
-    ASSERT_FALSE(params.GetLayerPartRenderEnabled());
-}
-
-/**
- * @tc.name: GetLayerPartRenderCurrentFrameDirtyRegionTest
- * @tc.desc: Test GetLayerPartRenderCurrentFrameDirtyRegion
- * @tc.type: FUNC
- * @tc.require: issueLayerPart
- */
-HWTEST_F(RSRenderParamsTest, GetLayerPartRenderCurrentFrameDirtyRegionTest, TestSize.Level1)
-{
-    RSRenderParams params(1);
-
-    RectI dirtyRect = params.GetLayerPartRenderCurrentFrameDirtyRegion();
-    ASSERT_TRUE(dirtyRect.IsEmpty());
-
-    RectI testRect = {10, 10, 100, 100};
-    params.SetLayerPartRenderCurrentFrameDirtyRegion(testRect);
-    RectI result = params.GetLayerPartRenderCurrentFrameDirtyRegion();
-    ASSERT_EQ(result.GetLeft(), testRect.GetLeft());
-    ASSERT_EQ(result.GetTop(), testRect.GetTop());
-    ASSERT_EQ(result.GetWidth(), testRect.GetWidth());
-    ASSERT_EQ(result.GetHeight(), testRect.GetHeight());
-}
-
-/**
  * @tc.name: SetNeedClipHoleForFilterTest001
  * @tc.desc: Test SetNeedClipHoleForFilter with same value
  * @tc.type: FUNC
@@ -1043,6 +1009,45 @@ HWTEST_F(RSRenderParamsTest, SetNeedClipHoleForFilterTest003, TestSize.Level1)
     ASSERT_NE(params.renderGroupCache_, nullptr);
     EXPECT_TRUE(params.NeedClipHoleForFilter());
     EXPECT_TRUE(params.needSync_);
+}
+
+/**
+ * @tc.name: SetLayerPartRenderEnabledTest
+ * @tc.desc: Test SetLayerPartRenderEnabled
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSRenderParamsTest, SetLayerPartRenderEnabledTest, TestSize.Level1)
+{
+    RSRenderParams params(1);
+
+    params.SetLayerPartRenderEnabled(true);
+    ASSERT_TRUE(params.GetLayerPartRenderEnabled());
+
+    params.SetLayerPartRenderEnabled(false);
+    ASSERT_FALSE(params.GetLayerPartRenderEnabled());
+}
+
+/**
+ * @tc.name: GetLayerPartRenderCurrentFrameDirtyRegionTest
+ * @tc.desc: Test GetLayerPartRenderCurrentFrameDirtyRegion
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSRenderParamsTest, GetLayerPartRenderCurrentFrameDirtyRegionTest, TestSize.Level1)
+{
+    RSRenderParams params(1);
+
+    RectI dirtyRect = params.GetLayerPartRenderCurrentFrameDirtyRegion();
+    ASSERT_TRUE(dirtyRect.IsEmpty());
+
+    RectI testRect = {10, 10, 100, 100};
+    params.SetLayerPartRenderCurrentFrameDirtyRegion(testRect);
+    RectI result = params.GetLayerPartRenderCurrentFrameDirtyRegion();
+    ASSERT_EQ(result.GetLeft(), testRect.GetLeft());
+    ASSERT_EQ(result.GetTop(), testRect.GetTop());
+    ASSERT_EQ(result.GetWidth(), testRect.GetWidth());
+    ASSERT_EQ(result.GetHeight(), testRect.GetHeight());
 }
 
 /**

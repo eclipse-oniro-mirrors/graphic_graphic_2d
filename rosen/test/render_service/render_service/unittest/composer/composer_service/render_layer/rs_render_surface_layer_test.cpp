@@ -750,7 +750,7 @@ HWTEST(RSRenderSurfaceLayerTest, CopyLayerInfo_CopiesSelectedFields, TestSize.Le
  * Type: Function
  * Rank: Important(2)
  * CaseDescription: src has isDelegateMode=true; after CopyLayerInfo dst's
- *                  delegateModeCropRect_ is updated to src's value
+ *                  delegateSrcRect_ is updated to src's value
  *                  (covers TRUE path of new `if (isDelegateMode_)` branch in CopyLayerInfo).
  */
 HWTEST(RSRenderSurfaceLayerTest, CopyLayerInfo_DelegateModeTrue_UpdatesCropRect, TestSize.Level1)
@@ -778,7 +778,7 @@ HWTEST(RSRenderSurfaceLayerTest, CopyLayerInfo_DelegateModeTrue_UpdatesCropRect,
  * Type: Function
  * Rank: Important(2)
  * CaseDescription: src has isDelegateMode=false; after CopyLayerInfo dst's
- *                  delegateModeCropRect_ is NOT overwritten by src
+ *                  delegateSrcRect_ is NOT overwritten by src
  *                  (covers FALSE path of new `if (isDelegateMode_)` branch in CopyLayerInfo).
  */
 HWTEST(RSRenderSurfaceLayerTest, CopyLayerInfo_DelegateModeFalse_PreservesCropRect, TestSize.Level1)
