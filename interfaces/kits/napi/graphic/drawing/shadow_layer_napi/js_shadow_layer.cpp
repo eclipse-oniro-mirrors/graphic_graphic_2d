@@ -105,7 +105,7 @@ napi_value JsShadowLayer::Create(napi_env env, napi_callback_info info)
 
     double dy = 0.0;
     GET_DOUBLE_PARAM(ARGC_TWO, dy);
-    
+
     ColorQuad color;
     if (!ConvertFromAdaptHexJsColor(env, argv[ARGC_THREE], color)) {
         ROSEN_LOGE("JsShadowLayer::Create Argv[0] is invalid");

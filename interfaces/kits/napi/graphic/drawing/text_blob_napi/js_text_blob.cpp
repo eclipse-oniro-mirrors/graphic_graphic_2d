@@ -116,6 +116,11 @@ napi_value JsTextBlob::MakeFromRunBuffer(napi_env env, napi_callback_info info)
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             BuildParamTypeMismatchMsg(ARGC_ZERO, "array", env, argv[ARGC_ZERO]));
     }
+    if (size > MAX_ELEMENTSIZE) {
+        ROSEN_LOGE("JsTextBlob::MakeFromRunBuffer size exceeds the upper limit");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED,
+            "JsTextBlob::MakeFromRunBuffer size exceeds the upper limit");
+    }
 
     JsFont* jsFont = nullptr;
     GET_UNWRAP_PARAM_S(ARGC_ONE, jsFont, &FONT_TYPE_TAG);

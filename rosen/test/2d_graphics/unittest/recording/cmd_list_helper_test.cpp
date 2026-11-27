@@ -18,8 +18,8 @@
 #include "draw/brush.h"
 #include "effect/filter.h"
 #include "effect/image_filter_lazy.h"
-#include "effect/shader_effect_lazy.h"
 #include "effect/particle_builder.h"
+#include "effect/shader_effect_lazy.h"
 #include "image/image.h"
 #include "message_parcel.h"
 #include "pixel_map.h"
@@ -593,6 +593,25 @@ HWTEST_F(CmdListHelperTest, Picture, TestSize.Level1)
 }
 
 /**
+ * @tc.name: FontInfo00
+ * @tc.desc: Test the FontInfo function.
+ * @tc.type: FUNC
+ * @tc.require: XXXXXXXX
+ */
+HWTEST_F(CmdListHelperTest, FontInfo00, TestSize.Level1)
+{
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    OpFontHandle handle = CmdListHelper::AddFontToCmdList(*cmdList, nullptr);
+    auto sptr = CmdListHelper::GetFontFromCmdList(*cmdList, handle, 0);
+    auto cmdList1 = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    auto typeface = Typeface::MakeDefault();
+    Font font = Font(typeface, 1 ,1, 1);
+    OpFontHandle handle1 = CmdListHelper::AddFontToCmdList(*cmdList1, &font);
+    auto sptr1 = CmdListHelper::GetFontFromCmdList(*cmdList1, handle1, 0);
+    EXPECT_EQ(sptr, nullptr);
+}
+
+/**
  * @tc.name: FontInfo
  * @tc.desc: Test the FontInfo function.
  * @tc.type: FUNC
@@ -602,6 +621,21 @@ HWTEST_F(CmdListHelperTest, FontInfo, TestSize.Level1)
 {
     auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
     OpFontHandle handle = CmdListHelper::AddFontToCmdList(*cmdList, nullptr);
+    auto sptr = CmdListHelper::GetFontFromCmdList(*cmdList, handle, 0);
+    EXPECT_EQ(sptr, nullptr);
+}
+
+/**
+ * @tc.name: FontInfo02
+ * @tc.desc: Test the FontInfo function.
+ * @tc.type: FUNC
+ * @tc.require: XXXXXXXX
+ */
+HWTEST_F(CmdListHelperTest, FontInfo02, TestSize.Level1)
+{
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    Font font;
+    OpFontHandle handle = CmdListHelper::AddFontToCmdList(*cmdList, &font);
     auto sptr = CmdListHelper::GetFontFromCmdList(*cmdList, handle, 0);
     EXPECT_EQ(sptr, nullptr);
 }
@@ -1767,7 +1801,7 @@ HWTEST_F(CmdListHelperTest, AddParticleEffectToCmdListNull, TestSize.Level1)
     EXPECT_EQ(handle.offset, 0);
     EXPECT_EQ(handle.size, 0);
 }
- 
+
 /**
  * @tc.name: AddParticleEffectToCmdList003
  * @tc.desc: Test AddParticleEffectToCmdList with zero max particle size (empty serialize data)
@@ -1788,7 +1822,7 @@ HWTEST_F(CmdListHelperTest, AddParticleEffectToCmdListEmptyData, TestSize.Level1
     EXPECT_EQ(handle.offset, 0);
     EXPECT_EQ(handle.size, 0);
 }
- 
+
 /**
  * @tc.name: GetParticleEffectFromCmdList004
  * @tc.desc: Test GetParticleEffectFromCmdList with offset 0
@@ -1804,7 +1838,7 @@ HWTEST_F(CmdListHelperTest, GetParticleEffectFromCmdListOffsetZero, TestSize.Lev
     auto particleEffect = CmdListHelper::GetParticleEffectFromCmdList(*cmdList, handle);
     EXPECT_EQ(particleEffect, nullptr);
 }
- 
+
 /**
  * @tc.name: GetParticleEffectFromCmdList005
  * @tc.desc: Test GetParticleEffectFromCmdList with size 0
@@ -1820,7 +1854,7 @@ HWTEST_F(CmdListHelperTest, GetParticleEffectFromCmdListSizeZero, TestSize.Level
     auto particleEffect = CmdListHelper::GetParticleEffectFromCmdList(*cmdList, handle);
     EXPECT_EQ(particleEffect, nullptr);
 }
- 
+
 /**
  * @tc.name: GetParticleEffectFromCmdList001
  * @tc.desc: Test GetParticleEffectFromCmdList with invalid handle
@@ -1982,6 +2016,195 @@ HWTEST_F(CmdListHelperTest, ValidateLattice009, TestSize.Level1)
     lattice.fColors = std::vector<Color>(1);
     EXPECT_TRUE(CmdListHelper::ValidateLattice(lattice));
 }
+/**
+ * @tc.name: GetShaderEffectFromCmdListInvalidType001
+ * @tc.desc: Test GetShaderEffectFromCmdList type validation with type=0 (NO_TYPE, valid min).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CmdListHelperTest, GetShaderEffectFromCmdListTypeMin, TestSize.Level1)
+{
+    constexpr uint32_t shaderTypeNoType = -1;
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    FlattenableHandle handle;
+    handle.offset = 0;
+    handle.size = 1;
+    handle.type = shaderTypeNoType;
+    auto result = CmdListHelper::GetShaderEffectFromCmdList(*cmdList, handle);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name: GetShaderEffectFromCmdListInvalidType003
+ * @tc.desc: Test GetShaderEffectFromCmdList type validation with type=13 (above LAZY_SHADER).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CmdListHelperTest, GetShaderEffectFromCmdListTypeAboveMax, TestSize.Level1)
+{
+    constexpr uint32_t shaderTypeAboveMax = 13;
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    FlattenableHandle handle;
+    handle.offset = 0;
+    handle.size = 1;
+    handle.type = shaderTypeAboveMax;
+    auto result = CmdListHelper::GetShaderEffectFromCmdList(*cmdList, handle);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name: GetMaskFilterFromCmdListInvalidType001
+ * @tc.desc: Test GetMaskFilterFromCmdList type validation with type=0 (NO_TYPE, valid).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CmdListHelperTest, GetMaskFilterFromCmdListTypeValidMin, TestSize.Level1)
+{
+    constexpr uint32_t filterTypeNoType = -1;
+    constexpr size_t testDataSize = 16;
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    auto data = std::make_shared<Data>();
+    data->BuildUninitialized(testDataSize);
+    OpDataHandle dataHandle = CmdListHelper::AddDataToCmdList(*cmdList, data.get());
+    FlattenableHandle handle;
+    handle.offset = dataHandle.offset;
+    handle.size = 1;
+    handle.type = filterTypeNoType;
+    auto result = CmdListHelper::GetMaskFilterFromCmdList(*cmdList, handle);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name: GetMaskFilterFromCmdListInvalidType003
+ * @tc.desc: Test GetMaskFilterFromCmdList type validation with type=2 (above BLUR).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CmdListHelperTest, GetMaskFilterFromCmdListTypeAboveMax, TestSize.Level1)
+{
+    constexpr uint32_t filterTypeAboveMax = 2;
+    constexpr size_t testDataSize = 16;
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    auto data = std::make_shared<Data>();
+    data->BuildUninitialized(testDataSize);
+    OpDataHandle dataHandle = CmdListHelper::AddDataToCmdList(*cmdList, data.get());
+    FlattenableHandle handle;
+    handle.offset = dataHandle.offset;
+    handle.size = 1;
+    handle.type = filterTypeAboveMax;
+    auto result = CmdListHelper::GetMaskFilterFromCmdList(*cmdList, handle);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name: GetColorFilterFromCmdListInvalidType001
+ * @tc.desc: Test GetColorFilterFromCmdList type validation with type=0 (NO_TYPE, valid).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CmdListHelperTest, GetColorFilterFromCmdListTypeValidMin, TestSize.Level1)
+{
+    constexpr uint32_t colorFilterTypeNoType = -1;
+    constexpr size_t testDataSize = 16;
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    auto data = std::make_shared<Data>();
+    data->BuildUninitialized(testDataSize);
+    OpDataHandle dataHandle = CmdListHelper::AddDataToCmdList(*cmdList, data.get());
+    FlattenableHandle handle;
+    handle.offset = dataHandle.offset;
+    handle.size = 1;
+    handle.type = colorFilterTypeNoType;
+    auto result = CmdListHelper::GetColorFilterFromCmdList(*cmdList, handle);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name: GetColorFilterFromCmdListInvalidType003
+ * @tc.desc: Test GetColorFilterFromCmdList type validation with type=9 (above LIGHTING).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CmdListHelperTest, GetColorFilterFromCmdListTypeAboveMax, TestSize.Level1)
+{
+    constexpr uint32_t colorFilterTypeAboveMax = 9;
+    constexpr size_t testDataSize = 16;
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    auto data = std::make_shared<Data>();
+    data->BuildUninitialized(testDataSize);
+    OpDataHandle dataHandle = CmdListHelper::AddDataToCmdList(*cmdList, data.get());
+    FlattenableHandle handle;
+    handle.offset = dataHandle.offset;
+    handle.size = 1;
+    handle.type = colorFilterTypeAboveMax;
+    auto result = CmdListHelper::GetColorFilterFromCmdList(*cmdList, handle);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name: GetSymbolLayersFromCmdListLayersOverflow001
+ * @tc.desc: Test GetSymbolLayersFromCmdList with layers vector exceeding MAX_SYMBOL_VECTOR_SIZE.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CmdListHelperTest, GetSymbolLayersFromCmdListLayersOverflow001, TestSize.Level1)
+{
+    constexpr size_t overflowCount = 1001;
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    std::vector<std::pair<size_t, size_t>> largeLayers(overflowCount);
+    auto layersHandle = CmdListHelper::AddVectorToCmdList(*cmdList, largeLayers);
+
+    SymbolLayersHandle symbolHandle;
+    symbolHandle.id = 0;
+    symbolHandle.layers = layersHandle;
+    symbolHandle.groups = { 0, 0 };
+
+    auto result = CmdListHelper::GetSymbolLayersFromCmdList(*cmdList, symbolHandle);
+    EXPECT_TRUE(result.layers.empty());
+}
+
+/**
+ * @tc.name: GetSymbolLayersFromCmdListGroupsOverflow001
+ * @tc.desc: Test GetSymbolLayersFromCmdList with groups vector exceeding MAX_SYMBOL_VECTOR_SIZE.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CmdListHelperTest, GetSymbolLayersFromCmdListGroupsOverflow001, TestSize.Level1)
+{
+    constexpr size_t overflowCount = 1001;
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    std::vector<RenderGroupHandle> largeGroups(overflowCount);
+    auto groupsHandle = CmdListHelper::AddVectorToCmdList(*cmdList, largeGroups);
+
+    SymbolLayersHandle symbolHandle;
+    symbolHandle.id = 0;
+    symbolHandle.layers = { 0, 0 };
+    symbolHandle.groups = groupsHandle;
+
+    auto result = CmdListHelper::GetSymbolLayersFromCmdList(*cmdList, symbolHandle);
+    EXPECT_TRUE(result.renderGroups.empty());
+}
+
+/**
+ * @tc.name: GetRenderGroupFromCmdListOverflow001
+ * @tc.desc: Test GetRenderGroupFromCmdList with groupInfos vector exceeding MAX_SYMBOL_VECTOR_SIZE.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CmdListHelperTest, GetRenderGroupFromCmdListOverflow001, TestSize.Level1)
+{
+    constexpr size_t overflowCount = 1001;
+    auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    std::vector<GroupInfoHandle> largeInfos(overflowCount);
+    auto infosHandle = CmdListHelper::AddVectorToCmdList(*cmdList, largeInfos);
+
+    RenderGroupHandle groupHandle;
+    groupHandle.infos = infosHandle;
+    groupHandle.color = { 0, 0, 0, 0 };
+
+    auto result = CmdListHelper::GetRenderGroupFromCmdList(*cmdList, groupHandle);
+    EXPECT_TRUE(result.groupInfos.empty());
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

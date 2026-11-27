@@ -217,7 +217,7 @@ ani_object AniFont::GetTypeface(ani_env* env, ani_object obj)
     AniTypeface* aniTypeface = new AniTypeface(typeface);
     ani_object aniObj = CreateAniObject(env, AniGlobalClass::GetInstance().typeface,
         AniGlobalMethod::GetInstance().typefaceCtorWithPtr, reinterpret_cast<ani_long>(aniTypeface));
-    if (IsUndefined(env, aniObj)) {
+    if (IsUndefined(env, aniObj) || !aniObj) {
         ROSEN_LOGE("AniFont::GetTypeface failed create aniTypeface");
         delete aniTypeface;
         return CreateAniUndefined(env);
@@ -330,7 +330,8 @@ ani_double AniFont::MeasureSingleCharacterWithFeatures(ani_env* env, ani_object 
     ani_size aniLength;
     if (ANI_OK != env->Array_GetLength(featuresobj, &aniLength)) {
         ROSEN_LOGE("AniFont::MeasureSingleCharacterWithFeatures features are invalid");
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawPoints incorrect type points.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniFont::MeasureSingleCharacterWithFeatures features are invalid");
         return -1;
     }
     uint32_t size = static_cast<uint32_t>(aniLength);
@@ -338,7 +339,8 @@ ani_double AniFont::MeasureSingleCharacterWithFeatures(ani_env* env, ani_object 
     std::shared_ptr<Drawing::DrawingFontFeatures> drawingFontFeatures =
         std::make_shared<Drawing::DrawingFontFeatures>();
     if (!MakeFontFeaturesFromAniObjArray(env, drawingFontFeatures, size, featuresobj)) {
-        ROSEN_LOGE("AniFont::MeasureSingleCharacterWithFeatures MakeFontFeaturesFromAniObjArray is fail");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniFont::MeasureSingleCharacterWithFeatures MakeFontFeaturesFromAniObjArray failed.");
         return -1;
     }
     return realFont->MeasureSingleCharacterWithFeatures(str.data(), unicode, drawingFontFeatures);

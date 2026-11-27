@@ -16,12 +16,15 @@
 #include <memory>
 #include "gtest/gtest.h"
 
-#include "draw/surface.h"
 #include "draw/canvas.h"
 #include "effect/color_space.h"
 #include "effect/runtime_shader_builder.h"
 #include "effect/runtime_effect.h"
 #include "image/gpu_context.h"
+
+#define private public
+#include "draw/surface.h"
+#undef private
 
 using namespace testing;
 using namespace testing::ext;

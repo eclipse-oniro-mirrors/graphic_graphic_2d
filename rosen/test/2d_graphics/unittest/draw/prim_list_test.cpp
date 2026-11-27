@@ -47,6 +47,7 @@ HWTEST_F(PrimListTest, CreateAndDestroy001, TestSize.Level1)
 {
     auto primList = std::make_unique<PrimList>();
     ASSERT_TRUE(primList != nullptr);
+    primList.reset();
 }
 
 /**

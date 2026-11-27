@@ -25,8 +25,6 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-
-
 /* OpItem */
 /**
  * @brief  Helper class for mask playback.

@@ -92,7 +92,6 @@ bool FontStyleSetFuzzTest002(const uint8_t* data, size_t size)
     }
     return true;
 }
-
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

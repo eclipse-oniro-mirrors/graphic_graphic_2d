@@ -992,6 +992,7 @@ bool OH_Drawing_CanvasReadPixels(OH_Drawing_Canvas*, OH_Drawing_Image_Info*,
  * @since 12
  * @version 1.0
  */
+
 bool OH_Drawing_CanvasReadPixelsToBitmap(OH_Drawing_Canvas*, OH_Drawing_Bitmap*, int32_t srcX, int32_t srcY);
 
 /**

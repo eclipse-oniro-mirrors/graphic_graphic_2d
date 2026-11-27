@@ -102,7 +102,7 @@ void SkiaShaderEffect::InitWithImage(
 {
     SkTileMode modeX = static_cast<SkTileMode>(tileX);
     SkTileMode modeY = static_cast<SkTileMode>(tileY);
-
+    
     auto m = matrix.GetImpl<SkiaMatrix>();
     auto i = image.GetImpl<SkiaImage>();
     SkMatrix skiaMatrix;

@@ -216,7 +216,6 @@ void SkiaPath::AddRoundRect(
 void SkiaPath::AddRoundRect(const RoundRect& rrect, PathDirection dir)
 {
     SkPathDirection pathDir = static_cast<SkPathDirection>(dir);
-
     Rect rect = rrect.GetRect();
     SkRect outer = SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom());
 
