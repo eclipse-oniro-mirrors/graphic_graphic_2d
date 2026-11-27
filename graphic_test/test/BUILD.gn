@@ -311,17 +311,6 @@ effect_kit_sources = [
   "effect_kit/oh_filter_test/oh_filter_test_utils.cpp",
 ]
 
-framework_emulator_test_sources = [
-  "rs_framework/emulator/capture_config_test.cpp",
-  "rs_framework/emulator/emulator_catalog_test.cpp",
-  "rs_framework/emulator/environment_test.cpp",
-  "rs_framework/emulator/health_test.cpp",
-  "rs_framework/emulator/png_file_test.cpp",
-  "rs_framework/emulator/process_test.cpp",
-  "rs_framework/emulator/resource_test.cpp",
-  "rs_framework/emulator/runner_test.cpp",
-]
-
 group("test") {
   testonly = true
   deps = [
@@ -408,7 +397,16 @@ ohos_unittest("RSGraphicTest") {
 if (is_emulator) {
   ohos_unittest("RSGraphicTestFrameworkTest") {
     module_out_path = module_output_path
-    sources = framework_emulator_test_sources
+    sources = [
+      "rs_framework/emulator/capture_config_test.cpp",
+      "rs_framework/emulator/emulator_catalog_test.cpp",
+      "rs_framework/emulator/environment_test.cpp",
+      "rs_framework/emulator/health_test.cpp",
+      "rs_framework/emulator/png_file_test.cpp",
+      "rs_framework/emulator/process_test.cpp",
+      "rs_framework/emulator/resource_test.cpp",
+      "rs_framework/emulator/runner_test.cpp",
+    ]
 
     deps = [
       "$graphic_2d_root/graphic_test/graphic_test_framework:rs_graphic_test_src",
