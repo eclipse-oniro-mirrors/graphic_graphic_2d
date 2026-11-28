@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#include <parameters.h>
-
 #include "gtest/gtest.h"
 #include "drawable/rs_color_picker_drawable.h"
 #include "drawable/rs_effect_render_node_drawable.h"
@@ -23,6 +21,7 @@
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_render_node_gc.h"
+#include <parameters.h>
 
 #ifdef SUBTREE_PARALLEL_ENABLE
 #include "rs_parallel_manager.h"
@@ -204,7 +203,7 @@ HWTEST_F(RSEffectRenderNodeDrawableTest, OnDraw002, TestSize.Level2)
     auto params = std::make_unique<RSRenderThreadParams>();
     params->SetSecurityDisplay(true);
     RSUniRenderThread::Instance().Sync(std::move(params));
-    std::unordered_set<NodeId> whiteList = {effectDrawable->nodeId_};
+    std::unordered_set<NodeId> whiteList = {effectDrawable->GetId()};
     RSUniRenderThread::Instance().SetWhiteList(whiteList);
 
     Drawing::Canvas drawingCanvas;

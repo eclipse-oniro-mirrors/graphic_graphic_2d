@@ -1130,7 +1130,7 @@ HWTEST_F(RSSurfaceRCDLayerTest, RCDLayer_Inherited_SetSolidColorLayerProperty, T
  * Function: RCDLayer_Inherited_SetDelegateModeCropRect
  * Type: Function
  * Rank: Important(2)
- * CaseDescription: 1. test inherited SetDelegateModeCropRect/GetDelegateModeCropRect interface
+ * CaseDescription: 1. test inherited SetDelegateSrcRect/SetDelegateSrcRect interface
  */
 HWTEST_F(RSSurfaceRCDLayerTest, RCDLayer_Inherited_SetDelegateModeCropRect, TestSize.Level1)
 {

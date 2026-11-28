@@ -38,12 +38,12 @@ public:
     MOCK_METHOD(float, GetSdrDisplayNits, (ScreenId screenId), (override));
     MOCK_METHOD(float, GetDisplayNits, (ScreenId screenId), (override));
     MOCK_METHOD(double, GetNonlinearRatio, (ScreenId screenId, uint32_t mode), (override));
-    MOCK_METHOD(float, CalAIHDRScaler, (const RSSurfaceRenderNode& surfaceNode, const float& ratio,
-        HdrStatus hdrStatus), (override));
     MOCK_METHOD(float, CalScaler, (const float& maxContentLightLevel, const std::vector<uint8_t>& dynamicMetadata,
         const float& ratio, HdrStatus hdrStatus), (override));
     MOCK_METHOD(float, GetSurfaceNodeMaxScaler, (RSSurfaceRenderNode& surfaceNode, ScreenId screenId,
         HdrStatus hdrstatus), (override));
+    MOCK_METHOD(float, CalAIHDRScaler, (const RSSurfaceRenderNode& surfaceNode, const float& ratio,
+        HdrStatus hdrStatus), (override));
     MOCK_METHOD(uint32_t, ConvertScalerFromFloatToLevel, (float& scaler), (override, const));
     MOCK_METHOD(float, ConvertScalerFromLevelToFloat, (uint32_t& level), (override, const));
     using HdrToBrightnessScalerMap = const std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>;

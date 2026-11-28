@@ -33,6 +33,12 @@ void BufferReclaimParamParseTest::TearDownTestCase() {}
 void BufferReclaimParamParseTest::SetUp() {}
 void BufferReclaimParamParseTest::TearDown() {}
 
+/**
+ * @tc.name:  ParseFeatureParamTest001
+ * @tc.desc: test ParseFeatureParam
+ * @tc.type: FUNC
+ * @tc.require: issue#913
+ */
 HWTEST_F(BufferReclaimParamParseTest, ParseFeatureParamTest001, TestSize.Level1)
 {
     BufferReclaimParamParse paramParse;
@@ -69,6 +75,12 @@ HWTEST_F(BufferReclaimParamParseTest, ParseFeatureParamTest001, TestSize.Level1)
     EXPECT_EQ(BufferReclaimParam::GetInstance().IsBufferReclaimEnable(), false);
 }
 
+/**
+ * @tc.name:  ParseFeatureParamTest002
+ * @tc.desc: test ParseFeatureParam
+ * @tc.type: FUNC
+ * @tc.require: issue#913
+ */
 HWTEST_F(BufferReclaimParamParseTest, ParseFeatureParamTest002, TestSize.Level1)
 {
     BufferReclaimParamParse paramParse;

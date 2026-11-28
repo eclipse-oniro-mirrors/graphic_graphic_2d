@@ -77,7 +77,6 @@ public:
 private:
     using singlePidCmdMap = std::map<uint64_t, std::queue<std::unique_ptr<RSCommand>>>;
     using surfaceTransactionCmdMap = std::map<uint64_t, singlePidCmdMap>;
-
     void AddBufferReleaseInfoInner(pid_t pid, OnCompletedRet& ret);
     void GetBufferReleaseInfo(std::map<pid_t, std::queue<OnCompletedRet>>& outmap);
     void GetSurfaceTransactionCmdInfoLocked(std::map<uint64_t, std::queue<uint64_t>>& targetsListenerMap);

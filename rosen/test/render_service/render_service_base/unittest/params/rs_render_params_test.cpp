@@ -934,45 +934,6 @@ HWTEST_F(RSRenderParamsTest, GetLayerInfo_001, TestSize.Level2)
 }
 
 /**
- * @tc.name: SetLayerPartRenderEnabledTest
- * @tc.desc: Test SetLayerPartRenderEnabled
- * @tc.type: FUNC
- * @tc.require: issueLayerPart
- */
-HWTEST_F(RSRenderParamsTest, SetLayerPartRenderEnabledTest, TestSize.Level1)
-{
-    RSRenderParams params(1);
-
-    params.SetLayerPartRenderEnabled(true);
-    ASSERT_TRUE(params.GetLayerPartRenderEnabled());
-
-    params.SetLayerPartRenderEnabled(false);
-    ASSERT_FALSE(params.GetLayerPartRenderEnabled());
-}
-
-/**
- * @tc.name: GetLayerPartRenderCurrentFrameDirtyRegionTest
- * @tc.desc: Test GetLayerPartRenderCurrentFrameDirtyRegion
- * @tc.type: FUNC
- * @tc.require: issueLayerPart
- */
-HWTEST_F(RSRenderParamsTest, GetLayerPartRenderCurrentFrameDirtyRegionTest, TestSize.Level1)
-{
-    RSRenderParams params(1);
-
-    RectI dirtyRect = params.GetLayerPartRenderCurrentFrameDirtyRegion();
-    ASSERT_TRUE(dirtyRect.IsEmpty());
-
-    RectI testRect = {10, 10, 100, 100};
-    params.SetLayerPartRenderCurrentFrameDirtyRegion(testRect);
-    RectI result = params.GetLayerPartRenderCurrentFrameDirtyRegion();
-    ASSERT_EQ(result.GetLeft(), testRect.GetLeft());
-    ASSERT_EQ(result.GetTop(), testRect.GetTop());
-    ASSERT_EQ(result.GetWidth(), testRect.GetWidth());
-    ASSERT_EQ(result.GetHeight(), testRect.GetHeight());
-}
-
-/**
  * @tc.name: SetNeedClipHoleForFilterTest001
  * @tc.desc: Test SetNeedClipHoleForFilter with same value
  * @tc.type: FUNC
@@ -1043,6 +1004,45 @@ HWTEST_F(RSRenderParamsTest, SetNeedClipHoleForFilterTest003, TestSize.Level1)
     ASSERT_NE(params.renderGroupCache_, nullptr);
     EXPECT_TRUE(params.NeedClipHoleForFilter());
     EXPECT_TRUE(params.needSync_);
+}
+
+/**
+ * @tc.name: SetLayerPartRenderEnabledTest
+ * @tc.desc: Test SetLayerPartRenderEnabled
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSRenderParamsTest, SetLayerPartRenderEnabledTest, TestSize.Level1)
+{
+    RSRenderParams params(1);
+
+    params.SetLayerPartRenderEnabled(true);
+    ASSERT_TRUE(params.GetLayerPartRenderEnabled());
+
+    params.SetLayerPartRenderEnabled(false);
+    ASSERT_FALSE(params.GetLayerPartRenderEnabled());
+}
+
+/**
+ * @tc.name: GetLayerPartRenderCurrentFrameDirtyRegionTest
+ * @tc.desc: Test GetLayerPartRenderCurrentFrameDirtyRegion
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSRenderParamsTest, GetLayerPartRenderCurrentFrameDirtyRegionTest, TestSize.Level1)
+{
+    RSRenderParams params(1);
+
+    RectI dirtyRect = params.GetLayerPartRenderCurrentFrameDirtyRegion();
+    ASSERT_TRUE(dirtyRect.IsEmpty());
+
+    RectI testRect = {10, 10, 100, 100};
+    params.SetLayerPartRenderCurrentFrameDirtyRegion(testRect);
+    RectI result = params.GetLayerPartRenderCurrentFrameDirtyRegion();
+    ASSERT_EQ(result.GetLeft(), testRect.GetLeft());
+    ASSERT_EQ(result.GetTop(), testRect.GetTop());
+    ASSERT_EQ(result.GetWidth(), testRect.GetWidth());
+    ASSERT_EQ(result.GetHeight(), testRect.GetHeight());
 }
 
 /**

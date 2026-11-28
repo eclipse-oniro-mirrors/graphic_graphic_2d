@@ -928,7 +928,6 @@ sptr<SurfaceBuffer> RSSurfaceLayer::GetBuffer() const
     std::lock_guard<std::mutex> lock(mutex_);
     auto sbuffer = sbuffer_.promote();
     if (sbuffer == nullptr) {
-        ROSEN_LOGE("%{public}s layer id: %{public}" PRIu64 " buffer is released", __func__, rsLayerId_);
         return nullptr;
     }
     return sbuffer;
@@ -947,7 +946,6 @@ sptr<SurfaceBuffer> RSSurfaceLayer::GetPreBuffer() const
 {
     auto pbuffer = pbuffer_.promote();
     if (pbuffer == nullptr) {
-        ROSEN_LOGE("%{public}s layer id: %{public}" PRIu64 " buffer is released", __func__, rsLayerId_);
         return nullptr;
     }
     return pbuffer;
@@ -1030,6 +1028,15 @@ bool RSSurfaceLayer::GetUseDeviceOffline() const
     return useDeviceOffline_;
 }
 
+void RSSurfaceLayer::SetIgnoreAlpha(bool ignoreAlpha)
+{
+    if (ignoreAlpha_ == ignoreAlpha) {
+        return;
+    }
+    ignoreAlpha_ = ignoreAlpha;
+    SetRSLayerCmd<RSRenderLayerIgnoreAlphaCmd>(ignoreAlpha);
+}
+
 void RSSurfaceLayer::SetHpaeOriginalInfo(const HpaeOriginalInfo& hpaeOriginalInfo)
 {
     if (hpaeOriginalInfo_ == hpaeOriginalInfo) {
@@ -1044,15 +1051,6 @@ const HpaeOriginalInfo& RSSurfaceLayer::GetHpaeOriginalInfo() const
     return hpaeOriginalInfo_;
 }
 // hpae_offline end
-
-void RSSurfaceLayer::SetIgnoreAlpha(bool ignoreAlpha)
-{
-    if (ignoreAlpha_ == ignoreAlpha) {
-        return;
-    }
-    ignoreAlpha_ = ignoreAlpha;
-    SetRSLayerCmd<RSRenderLayerIgnoreAlphaCmd>(ignoreAlpha);
-}
 
 bool RSSurfaceLayer::GetIgnoreAlpha() const
 {

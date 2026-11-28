@@ -768,24 +768,6 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetRebuildingState001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetRebuildingStateOnSync001
- * @tc.desc: Test OnSync deep-copies isRebuildingState_ from staging to target
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSSurfaceRenderParamsTest, SetRebuildingStateOnSync001, TestSize.Level1)
-{
-    RSSurfaceRenderParams source(DEFAULT_NODEID);
-    source.SetRebuildingState(true);
-    ASSERT_TRUE(source.isRebuildingState_);
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSSurfaceRenderParams>(DEFAULT_NODEID);
-    ASSERT_NE(target, nullptr);
-    EXPECT_FALSE(static_cast<RSSurfaceRenderParams*>(target.get())->isRebuildingState_);
-    source.OnSync(target);
-    EXPECT_TRUE(static_cast<RSSurfaceRenderParams*>(target.get())->isRebuildingState_);
-}
-
-/**
  * @tc.name: GetScreenInfoIfNeedRogScaleNotDefaultParams
  * @tc.desc: test GetScreenInfoIfNeedRogScale returns false when params type is not default
  * @tc.type: FUNC
@@ -958,6 +940,24 @@ HWTEST_F(RSSurfaceRenderParamsTest, ClipAndScaleDirtyManager003, TestSize.Level2
     RSSurfaceRenderParams params(DEFAULT_NODEID);
     params.ClipAndScaleDirtyManager(nullptr);
     EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name: SetRebuildingStateOnSync001
+ * @tc.desc: Test OnSync deep-copies isRebuildingState_ from staging to target
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetRebuildingStateOnSync001, TestSize.Level1)
+{
+    RSSurfaceRenderParams source(DEFAULT_NODEID);
+    source.SetRebuildingState(true);
+    ASSERT_TRUE(source.isRebuildingState_);
+    std::unique_ptr<RSRenderParams> target = std::make_unique<RSSurfaceRenderParams>(DEFAULT_NODEID);
+    ASSERT_NE(target, nullptr);
+    EXPECT_FALSE(static_cast<RSSurfaceRenderParams*>(target.get())->isRebuildingState_);
+    source.OnSync(target);
+    EXPECT_TRUE(static_cast<RSSurfaceRenderParams*>(target.get())->isRebuildingState_);
 }
 
 /**

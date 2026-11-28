@@ -963,7 +963,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawUifirstContentChildrenTest, TestSi
  * @tc.name: SyncUifirstDrawCmdsTest
  * @tc.desc: Test SyncUifirstDrawCmds
  * @tc.type: FUNC
- * @tc.require: issueI9UTMA
+ * @tc.require: #issueI9UTMA
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, SyncUifirstDrawCmdsTest, TestSize.Level1)
 {
@@ -1664,7 +1664,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithSelfDrawingNodeBufferTest001, 
 
 /**
  * @tc.name: DealWithSelfDrawingNodeBuffer
- * @tc.desc: Test DealWithSelfDrawingNodeBuffer when renderEngine is nullptr (early return at top)
+ * @tc.desc: Test DealWithSelfDrawingNodeBuffer
  * @tc.type: FUNC
  * @tc.require: issueIAOJHQ
  */
@@ -2886,7 +2886,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, TryResumeLastBufferTest, TestSize.Leve
     }
     EXPECT_EQ(buffer->TryReclaim(), GSERROR_OK);
     EXPECT_TRUE(buffer->IsReclaimed());
-    // buffer is not reclaimed by RSBufferReclaim, TryResumeLastBuffer shouild fail
+    // buffer is not reclaim by RSBufferReclaim, TryResumeLastBuffer should fail
     surfaceDrawable_->TryResumeLastBuffer(buffer);
     EXPECT_TRUE(buffer->IsReclaimed());
 }
@@ -3412,27 +3412,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, Destructor_SelfDrawingType, TestSize.L
 }
 
 /**
- * @tc.name: OnDrawAbnormalProcessTest
- * @tc.desc: Test OnDraw with abnormal process check
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDrawAbnormalProcessTest, TestSize.Level1)
-{
-    // Mark process as abnormal
-    pid_t pid = ExtractPid(DEFAULT_ID);
-    MemorySnapshot::Instance().SetAbnormalProcess(pid);
-
-    // OnDraw should return early for abnormal process
-    surfaceDrawable_->OnDraw(*canvas_);
-    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::MEMORYOVER_SKIP);
-
-    // Clean up
-    std::set<pid_t> exitedPids = {pid};
-    MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
-}
-
-/**
  * @tc.name: BackFaceSkipTest001
  * @tc.desc: Test OnDraw skips with BACKFACE_SKIP when single sided + back face
  * @tc.type: FUNC
@@ -3604,6 +3583,27 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCaptureBackFaceSkipTest003, TestSize
     surfaceDrawable_->OnCapture(*canvas_);
 
     ASSERT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
+}
+
+/**
+ * @tc.name: OnDrawAbnormalProcessTest
+ * @tc.desc: Test OnDraw with abnormal process check
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDrawAbnormalProcessTest, TestSize.Level1)
+{
+    // Mark process as abnormal
+    pid_t pid = ExtractPid(DEFAULT_ID);
+    MemorySnapshot::Instance().SetAbnormalProcess(pid);
+
+    // OnDraw should return early for abnormal process
+    surfaceDrawable_->OnDraw(*canvas_);
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::MEMORYOVER_SKIP);
+
+    // Clean up
+    std::set<pid_t> exitedPids = {pid};
+    MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
 }
 
 /**

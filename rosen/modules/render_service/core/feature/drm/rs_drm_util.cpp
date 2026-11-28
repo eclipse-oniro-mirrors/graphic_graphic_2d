@@ -409,7 +409,7 @@ void RSDrmUtil::MarkAllBlurIntersectWithDRM(const std::shared_ptr<RSRenderNode>&
     if (curScreenNode == nullptr) {
         return;
     }
-    
+
     if (node->GetRenderProperties().GetBackgroundBlurMaskColor().GetAlpha() >= BLUR_MIN_ALPHA) {
         // if alpha is greater than 100, blurEffect is not transparent
         return;

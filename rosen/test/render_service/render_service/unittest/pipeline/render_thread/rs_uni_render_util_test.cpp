@@ -2195,11 +2195,11 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode001, TestSize.Level1)
 }
 
 /**
-* @tc.name: DrawSingleSelfDrawingNode002
- * @tc.desc: test DrawSingleSelfDrawingNode with special layer
-* @tc.type: FUNC
- * @tc.require: #ICGE8J
-*/
+ * @tc.name: DrawSingleSelfDrawingNode002
+ * @tc.desc: Test DrawSingleSelfDrawingNode with special layer
+ * @tc.type: FUNC
+ * @tc.require: issueI22872
+ */
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode002, TestSize.Level1)
 {
     RSDisplayNodeConfig config;
@@ -2233,9 +2233,9 @@ HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode002, TestSize.Level1)
 }
 
 /**
-* @tc.name: DrawSingleSelfDrawingNode003
- * @tc.desc: test DrawSingleSelfDrawingNode with blacklist
-* @tc.type: FUNC
+ * @tc.name: DrawSingleSelfDrawingNode002
+ * @tc.desc: test DrawSingleSelfDrawingNode with special layer
+ * @tc.type: FUNC
  * @tc.require: #ICGE8J
 */
 HWTEST_F(RSUniRenderUtilTest, DrawSingleSelfDrawingNode003, TestSize.Level1)

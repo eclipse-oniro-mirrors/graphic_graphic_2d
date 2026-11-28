@@ -16,6 +16,8 @@
 #ifndef PIPELINE_RS_VIRTUAL_SCREEN_THREAD_ID_ADAPT_H
 #define PIPELINE_RS_VIRTUAL_SCREEN_THREAD_ID_ADAPT_H
 
+#include "pipeline/rs_paint_filter_canvas.h"
+
 namespace OHOS {
 namespace Rosen {
 
