@@ -536,3 +536,9 @@ rosen/test/render_service/render_service_base/fuzztest/rsrenderanimation_fuzzer/
 rosen/test/render_service/render_service_base/fuzztest/rsrenderinteractiveimplictanimator_fuzzer/ @wang-luyu4
 rosen/test/render_service/render_service_base/fuzztest/rsrenderpropertyanimation_fuzzer/ @wang-luyu4
 rosen/test/render_service/render_service_base/unittest/command/rs_animation_command_test.cpp @wang-luyu4
+
+[vsync]
+rosen/modules/composer/vsync/ @opasser
+rosen/modules/composer/native_vsync/ @opasser
+utils/socketpair/ @opasser
+rosen/modules/render_service/vsync/ @opasser
