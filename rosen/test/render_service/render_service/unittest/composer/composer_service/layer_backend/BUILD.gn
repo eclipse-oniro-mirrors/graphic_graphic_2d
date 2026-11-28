@@ -82,6 +82,7 @@ lb_ext_common = [
   "init:libbegetutil",
   "ipc:ipc_core",
   "libxml2:libxml2",
+  "samgr:samgr_proxy",
 ]
 
 lb_ext_unittest = lb_ext_common + [
@@ -91,7 +92,6 @@ lb_ext_unittest = lb_ext_common + [
                     "googletest:gmock_main",
                     "googletest:gtest_main",
                     "hitrace:hitrace_meter",
-                    "samgr:samgr_proxy",
                   ]
 
 lb_unittest_cflags = [
