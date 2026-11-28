@@ -25,9 +25,11 @@ namespace Rosen {
 inline constexpr int32_t EMULATOR_EXPECTED_WIDTH = 1200;
 inline constexpr int32_t EMULATOR_EXPECTED_HEIGHT = 2000;
 inline constexpr const char* EMULATOR_PRODUCT_NAME = "x86_64_virt";
+inline constexpr const char* EMULATOR_HARDWARE_NAME = "virt";
 
 struct DisplayEnvironmentInfo {
     std::string product = "unknown";
+    std::string bootHardware;
     uint64_t screenId = 0;
     int32_t width = 0;
     int32_t height = 0;

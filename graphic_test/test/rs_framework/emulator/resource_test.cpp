@@ -231,8 +231,11 @@ TEST_F(ResourceTest, SymlinkEscapeIsRejected)
 {
     std::string path = "/data/local/tmp/" + UniqueName("rs_graphic_link_") + ".png";
     deviceFiles_.push_back(path);
+    // A dangling link fails realpath() first and is reported as "invalid_symlink", so the target must exist.
+    const std::string escapeTarget = "/proc/version";
+    ASSERT_TRUE(std::filesystem::exists(escapeTarget)) << "symlink target is missing: " << escapeTarget;
     std::error_code ec;
-    std::filesystem::create_symlink("/etc/hostname", path, ec);
+    std::filesystem::create_symlink(escapeTarget, path, ec);
     if (ec) {
         GTEST_SKIP() << "symlink unavailable: " << ec.message();
     }

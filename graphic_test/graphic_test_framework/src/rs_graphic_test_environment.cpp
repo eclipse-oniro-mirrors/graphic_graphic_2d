@@ -26,6 +26,7 @@ namespace Rosen {
 bool ProbeDisplayEnvironment(DisplayEnvironmentInfo& info, std::string& error)
 {
     info.product = system::GetParameter("const.product.name", "unknown");
+    info.bootHardware = system::GetParameter("ohos.boot.hardware", "");
     info.screenId = RSInterfaces::GetInstance().GetDefaultScreenId();
     const auto display = DisplayManager::GetInstance().GetDefaultDisplay();
     if (display == nullptr) {
@@ -46,8 +47,7 @@ bool ValidateEmulatorProduct(const DisplayEnvironmentInfo& info, std::string& er
 {
     // Stock x86_64_virt images keep const.product.name at the base default ("OpenHarmony 3.2");
     // fall back to the boot hardware so prebuilt images pass the identity check.
-    const std::string bootHardware = system::GetParameter("ohos.boot.hardware", "");
-    if (info.product != EMULATOR_PRODUCT_NAME && bootHardware != "virt") {
+    if (info.product != EMULATOR_PRODUCT_NAME && info.bootHardware != EMULATOR_HARDWARE_NAME) {
         error = "unexpected product identity: " + info.product;
         return false;
     }
