@@ -27,6 +27,7 @@ DisplayEnvironmentInfo MakeEnvironment()
 {
     DisplayEnvironmentInfo info;
     info.product = EMULATOR_PRODUCT_NAME;
+    info.bootHardware = EMULATOR_HARDWARE_NAME;
     info.width = EMULATOR_EXPECTED_WIDTH;
     info.height = EMULATOR_EXPECTED_HEIGHT;
     info.renderMode = "divided";
@@ -45,6 +46,7 @@ TEST(DisplayEnvironmentTest, RejectsRealDeviceProduct)
 {
     auto info = MakeEnvironment();
     info.product = "phone";
+    info.bootHardware = "rk3568";
     std::string error;
     EXPECT_FALSE(ValidateEmulatorEnvironment(
         info, EMULATOR_EXPECTED_WIDTH, EMULATOR_EXPECTED_HEIGHT, error));
@@ -55,9 +57,24 @@ TEST(DisplayEnvironmentTest, RejectsUnknownProduct)
 {
     auto info = MakeEnvironment();
     info.product = "unknown";
+    info.bootHardware = "rk3568";
     std::string error;
     EXPECT_FALSE(ValidateEmulatorEnvironment(
         info, EMULATOR_EXPECTED_WIDTH, EMULATOR_EXPECTED_HEIGHT, error));
+}
+
+TEST(DisplayEnvironmentTest, AcceptsVirtHardwareFallback)
+{
+    // Stock images keep const.product.name at the base default and rely on virt hardware instead.
+    auto info = MakeEnvironment();
+    info.product = "OpenHarmony 3.2";
+    std::string error;
+    EXPECT_TRUE(ValidateEmulatorEnvironment(
+        info, EMULATOR_EXPECTED_WIDTH, EMULATOR_EXPECTED_HEIGHT, error));
+    EXPECT_TRUE(error.empty());
+    info.renderMode = "uni";
+    EXPECT_FALSE(ValidateEmulatorProduct(info, error));
+    EXPECT_NE(error.find("render mode"), std::string::npos);
 }
 
 TEST(DisplayEnvironmentTest, RejectsWrongDimensions)
