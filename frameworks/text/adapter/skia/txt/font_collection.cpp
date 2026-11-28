@@ -191,6 +191,14 @@ void FontCollection::UpdateDefaultFamiliesInner()
         defaultFontFamilies.emplace_back(family);
     }
     sktFontCollection_->setDefaultFontManager(defaultFontManager_, std::move(defaultFontFamilies));
+    // Mirror the theme families into the skparagraph collection so shaping fast
+    // paths know that the default-family resolution prefers a theme font.
+    std::vector<SkString> themeFontFamilies;
+    for (const std::string& family :
+        OHOS::Rosen::SPText::DefaultFamilyNameMgr::GetInstance().GetThemeFontFamilies()) {
+        themeFontFamilies.emplace_back(family);
+    }
+    sktFontCollection_->setThemeFamilyNames(themeFontFamilies);
 }
 
 void FontCollection::UpdateDefaultFamilies()

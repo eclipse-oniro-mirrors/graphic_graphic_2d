@@ -40,6 +40,7 @@ private:
 
     std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection_;
     std::shared_ptr<Drawing::FontMgr> fontMgr_;
+    sk_sp<skia::textlayout::FontCollection> sktFontCollection_;
     static std::vector<uint8_t> symbolData_;
     static std::vector<uint8_t> cjkData_;
     static std::vector<uint8_t> sansData_;
@@ -79,9 +80,9 @@ void AdapterFontCollectionTest::SetUp()
     FontCollection::RegisterLoadFontStartCallback(nullptr);
     auto fc = std::make_shared<txt::FontCollection>();
     ASSERT_NE(fc, nullptr);
-    fc->CreateSktFontCollection();
-    fontCollection_ = OHOS::Rosen::FontCollection::From(std::move(fc));
+    fontCollection_ = OHOS::Rosen::FontCollection::From(fc);
     ASSERT_NE(fontCollection_, nullptr);
+    sktFontCollection_ = fc->CreateSktFontCollection();
     fontMgr_ = fontCollection_->GetFontMgr();
     ASSERT_NE(fontMgr_, nullptr);
 }
@@ -587,6 +588,24 @@ HWTEST_F(AdapterFontCollectionTest, AdapterFontCollectionTest020, TestSize.Level
     EXPECT_NE(typeface1, nullptr);
     EXPECT_EQ(typeface->GetFamilyName(), typeface1->GetFamilyName());
     fontCollection_->UnloadFont(familyName1);
+}
+
+/*
+ * @tc.name: AdapterFontCollectionTest021
+ * @tc.desc: test for theme font state mirrored into the skparagraph font collection
+ * @tc.type: FUNC
+ */
+HWTEST_F(AdapterFontCollectionTest, AdapterFontCollectionTest021, TestSize.Level0)
+{
+    fontCollection_->ClearThemeFont();
+    EXPECT_FALSE(sktFontCollection_->hasThemeFont());
+
+    auto typefaces = fontCollection_->LoadThemeFont("familyname", { { sansData_.data(), sansData_.size() } });
+    ASSERT_EQ(typefaces.size(), 1);
+    EXPECT_TRUE(sktFontCollection_->hasThemeFont());
+
+    fontCollection_->ClearThemeFont();
+    EXPECT_FALSE(sktFontCollection_->hasThemeFont());
 }
 } // namespace Rosen
 } // namespace OHOS
